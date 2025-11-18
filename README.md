@@ -14,6 +14,7 @@ A beautiful, modern mobile app for hairstyle planning and education built with E
   - Smooth animations with Reanimated 4
   - Responsive design
 - **Enhanced Profile**: Stats dashboard, active goals, favorites, and hair profile summary
+- **Settings & Support**: Profile editing, FAQs, privacy settings, report a problem
 - **Offline-First**: Mock API for development, easy to swap for real backend
 
 ## Tech Stack
@@ -41,8 +42,8 @@ A beautiful, modern mobile app for hairstyle planning and education built with E
 
 1. Clone the repository
 ```bash
-git clone <repository-url>
-cd kalon
+git clone https://github.com/ElPrinceD/Kalon.git
+cd Kalon
 ```
 
 2. Install dependencies
@@ -65,21 +66,22 @@ npm run android
 ## Project Structure
 
 ```
+/app
+  /(tabs)          # Tab-based screens (home, education, planner, profile)
+  /onboarding      # Onboarding flow
 /src
-  /api              # Mock API and React Query hooks
-  /assets           # Images, Lottie animations, icons
-  /components       # Reusable UI components
-    /ui            # Atomic components
-    /composed      # Composed components
-    /animations    # Animation wrappers
-  /hooks           # Custom React hooks
-  /navigation      # Navigation configuration
-  /screens         # Screen components
-  /services        # Image, notification, storage services
-  /state           # Zustand stores
-  /theme           # Design tokens and theme provider
-  /types           # TypeScript type definitions
-  /utils           # Utility functions
+  /api             # Mock API and React Query hooks
+  /assets          # Images, Lottie animations, icons
+  /components      # Reusable UI components
+    /ui           # Atomic components (Button, Card, Input, etc.)
+    /composed     # Composed components (TopBar, BottomTabBar, etc.)
+    /animations   # Animation wrappers
+  /hooks          # Custom React hooks
+  /services       # Image, notification, storage services
+  /state          # Zustand stores
+  /theme          # Design tokens and theme provider
+  /types          # TypeScript type definitions
+  /utils          # Utility functions
 ```
 
 ## Design Tokens
@@ -128,7 +130,7 @@ npm run test:watch
 - Unit tests for `GreetingBanner` (rotation logic)
 - Unit tests for `greetings` utility (rotation, time-of-day)
 
-## New Features
+## Key Features
 
 ### Floating Tab Bar
 - Full-width pill container with animated highlight
@@ -149,8 +151,15 @@ npm run test:watch
 ### Enhanced Profile
 - Quick stats dashboard (growth, goals, last photo, routines)
 - Active goals list
-- Favorites carousel
+- Favorites carousel with horizontal scroll
 - Hair profile summary with badges
+- Settings pages (Edit Profile, FAQs, Privacy, Report a Problem)
+
+### DIY Story View
+- Full-screen story-like experience for DIY tutorials
+- Tap zones for navigation (left 40% = previous, right 60% = next)
+- Progress indicators showing current step
+- Swipe down to dismiss
 
 ## Building for Production
 
@@ -171,8 +180,13 @@ eas build --platform android
 - All components are in `/src` directory
 - Theme tokens are centralized in `src/theme/tokens.ts`
 - Responsive utilities in `src/utils/responsive.ts`
+- Back buttons use consistent white rounded square design
+- Navigation buttons use text link style for modern app feel
+
+## Contributing
+
+This is a private project. All rights reserved.
 
 ## License
 
 Private - All rights reserved
-
