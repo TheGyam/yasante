@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { seedMockData } from '@/utils/seed';
 import { LogBox } from 'react-native';
@@ -55,7 +56,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <QueryClientProvider client={queryClient}>
-            <RootLayoutNav />
+            <AuthProvider>
+              <RootLayoutNav />
+            </AuthProvider>
           </QueryClientProvider>
         </ThemeProvider>
       </SafeAreaProvider>

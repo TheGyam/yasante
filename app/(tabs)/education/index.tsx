@@ -11,6 +11,7 @@ import { DIYCard, DIY } from '@/components/composed/DIYCard';
 import { useEducationStore } from '@/state/stores/educationStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/Text';
+import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
 import { 
   Droplets, 
   Scissors, 
@@ -69,6 +70,7 @@ export default function ContentLibraryScreen() {
   const { searchQuery, setSearchQuery } = useEducationStore();
   const { data: contentResponse, isLoading } = useContent();
   const [activeTab, setActiveTab] = useState<'education' | 'diy'>('education');
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   const tabs = [
     { id: 'education', label: 'Education' },
@@ -211,6 +213,7 @@ export default function ContentLibraryScreen() {
                     title={topicDisplayNames[topic]}
                     content={content}
                     onContentPress={handleContentPress}
+                    onFavoritePress={() => setShowAuthPrompt(true)}
                     testID={`topic-section-${topic}`}
                   />
                 );
@@ -240,6 +243,11 @@ export default function ContentLibraryScreen() {
           </ContentWrapper>
         )}
       </ScrollableContent>
+      <AuthPromptModal
+        visible={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        feature="favorites"
+      />
     </Container>
   );
 }

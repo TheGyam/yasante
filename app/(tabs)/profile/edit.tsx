@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
 import { useTheme } from '@/hooks/useTheme';
 import { useUser, useUpdateUser } from '@/api/hooks/useUser';
+import { useAuth } from '@/contexts/AuthContext';
 import { TopBar } from '@/components/composed/TopBar';
 import { Input } from '@/components/ui/Input';
 import { TouchableOpacity } from 'react-native';
@@ -51,8 +52,9 @@ const TextLink = styled.TouchableOpacity`
 export default function EditProfileScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  const userId = 'user-1'; // TODO: Get from auth context
-  const { data: user } = useUser(userId);
+  const { user: authUser } = useAuth();
+  const userId = authUser?.id || '';
+  const { data: user } = useUser(userId, { enabled: !!userId });
   const updateUser = useUpdateUser(userId);
 
   const [name, setName] = useState('');

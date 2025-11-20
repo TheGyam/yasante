@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, View, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import styled from 'styled-components/native';
@@ -7,12 +7,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useContentItem } from '@/api/hooks/useContent';
 import { useToggleFavorite, useIsFavorite } from '@/api/hooks/useContent';
+import { useAuth } from '@/contexts/AuthContext';
+import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
 import { SharedElement } from 'react-native-shared-element';
 import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
 import { Text } from '@/components/ui/Text';
 import { Avatar } from '@/components/ui/Avatar';
 import type { Theme } from '@/theme/ThemeProvider';
+
+const ScreenContainer = styled.View`
+  flex: 1;
+  background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};
+`;
 
 const Container = styled.ScrollView`
   flex: 1;
@@ -130,9 +137,13 @@ export default function ContentDetailScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isAuthenticated, user } = useAuth();
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const { data: content, isLoading } = useContentItem(id || '');
-  const { data: isFavorite = false } = useIsFavorite('user-1', id || '');
-  const toggleFavorite = useToggleFavorite('user-1');
+  
+  const userId = user?.id;
+  const { data: isFavorite = false } = useIsFavorite(userId || '', id || '', { enabled: !!userId });
+  const toggleFavorite = useToggleFavorite(userId || '');
 
   // Parse article content - must be before early return (Rules of Hooks)
   const articleText = content?.articleContent || content?.description || 'No content available.';
@@ -195,7 +206,12 @@ export default function ContentDetailScreen() {
   }, [content?.id, articleText, articleParts.length]);
 
   const handleToggleFavorite = () => {
-    if (id) {
+    if (!isAuthenticated) {
+      setShowAuthPrompt(true);
+      return;
+    }
+    
+    if (id && userId) {
       toggleFavorite.mutate(id);
     }
   };
@@ -220,136 +236,143 @@ export default function ContentDetailScreen() {
   };
 
   return (
-    <Container
-      testID="content-detail-screen"
-      showsVerticalScrollIndicator={true}
-      contentContainerStyle={{
-        paddingBottom: insets.bottom + 100,
-        flexGrow: 1,
-      }}
-    >
-      <Header topInset={insets.top}>
-        <CloseButton onPress={handleClose} activeOpacity={0.7}>
-          <ArrowLeft size={20} color="#000000" strokeWidth={2.5} />
-        </CloseButton>
-        <View style={{ flex: 1 }} />
-        <FavoriteButton onPress={handleToggleFavorite} activeOpacity={0.7}>
-          <Heart
-            size={24}
-            color={isFavorite ? theme.colors.primary : theme.colors.text.medium}
-            fill={isFavorite ? theme.colors.primary : 'none'}
-            strokeWidth={2.5}
-          />
-        </FavoriteButton>
-      </Header>
+    <ScreenContainer>
+      <Container
+        testID="content-detail-screen"
+        showsVerticalScrollIndicator={true}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 100,
+          flexGrow: 1,
+        }}
+      >
+        <Header topInset={insets.top}>
+          <CloseButton onPress={handleClose} activeOpacity={0.7}>
+            <ArrowLeft size={20} color="#000000" strokeWidth={2.5} />
+          </CloseButton>
+          <View style={{ flex: 1 }} />
+          <FavoriteButton onPress={handleToggleFavorite} activeOpacity={0.7}>
+            <Heart
+              size={24}
+              color={isFavorite ? theme.colors.primary : theme.colors.text.medium}
+              fill={isFavorite ? theme.colors.primary : 'none'}
+              strokeWidth={2.5}
+            />
+          </FavoriteButton>
+        </Header>
 
-      <Content>
-        <ArticleTitle variant="h1" weight="bold">
-          {content.title}
-        </ArticleTitle>
+        <Content>
+          <ArticleTitle variant="h1" weight="bold">
+            {content.title}
+          </ArticleTitle>
 
-        <ReviewedBySection>
-          <AvatarContainer>
-            <Avatar size={48} name={reviewer.name.split(' ').map((n) => n[0]).join('')} />
-            <VerifiedBadge>
-              <Text variant="caption" color="#fff" style={{ fontSize: 10 }}>
-                ✓
+          <ReviewedBySection>
+            <AvatarContainer>
+              <Avatar size={48} name={reviewer.name.split(' ').map((n) => n[0]).join('')} />
+              <VerifiedBadge>
+                <Text variant="caption" color="#fff" style={{ fontSize: 10 }}>
+                  ✓
+                </Text>
+              </VerifiedBadge>
+            </AvatarContainer>
+            <ReviewerInfo>
+              <Text variant="caption" color={theme.colors.text.low} style={{ marginBottom: 4 }}>
+                Reviewed By
               </Text>
-            </VerifiedBadge>
-          </AvatarContainer>
-          <ReviewerInfo>
-            <Text variant="caption" color={theme.colors.text.low} style={{ marginBottom: 4 }}>
-              Reviewed By
-            </Text>
-            <ReviewerName variant="body" weight="semibold">
-              {reviewer.name}
-            </ReviewerName>
-            <ReviewerCredentials variant="caption" color={theme.colors.text.medium} numberOfLines={2}>
-              {reviewer.credentials}
-            </ReviewerCredentials>
-          </ReviewerInfo>
-        </ReviewedBySection>
+              <ReviewerName variant="body" weight="semibold">
+                {reviewer.name}
+              </ReviewerName>
+              <ReviewerCredentials variant="caption" color={theme.colors.text.medium} numberOfLines={2}>
+                {reviewer.credentials}
+              </ReviewerCredentials>
+            </ReviewerInfo>
+          </ReviewedBySection>
 
-        <IllustrationCard>
-          {content.thumbnailUri ? (
-            <View style={{ width: '100%', height: 280 }}>
-              <SharedElement id={`media.${content.id}`}>
-                {content.type === 'video' && content.videoUri ? (
-                  <VideoPlayer
-                    source={{ uri: content.videoUri }}
-                    poster={content.thumbnailUri}
-                    autoPlay={false}
-                  />
-                ) : (
-                  <ImageWithPlaceholder
-                    source={{ uri: content.thumbnailUri }}
-                    style={{ width: '100%', height: 280 }}
-                    resizeMode="cover"
-                  />
-                )}
-              </SharedElement>
-            </View>
-          ) : (
-            <View style={{ width: '100%', height: 280, alignItems: 'center', justifyContent: 'center' }}>
-              <Text variant="body" color={theme.colors.text.low}>
-                Illustration
-              </Text>
-            </View>
-          )}
-        </IllustrationCard>
-
-        <ArticleBody>
-          {articleParts.length > 0 ? (
-            <>
-              {articleParts.map((part, index) => {
-                if (part.type === 'subheading') {
-                  return (
-                    <SubHeading key={`subheading-${index}`} variant="h3" weight="bold">
-                      {part.content}
-                    </SubHeading>
-                  );
-                }
-                
-                return (
-                  <Paragraph key={`paragraph-${index}`} variant="body" color={theme.colors.text.high}>
-                    {part.content}
-                  </Paragraph>
-                );
-              })}
-            </>
-          ) : (
-            <View style={{ padding: theme.spacing[4] }}>
-              <Paragraph variant="body" color={theme.colors.text.medium}>
-                {content.description || 'No content available.'}
-              </Paragraph>
-              <Paragraph variant="caption" color={theme.colors.text.low} style={{ marginTop: theme.spacing[2] }}>
-                Debug: articleParts.length = {articleParts.length}, articleText length = {articleText.length}
-              </Paragraph>
-            </View>
-          )}
-
-          {/* Inline image section for articles */}
-          {content.type === 'article' && content.thumbnailUri && (
-            <View style={{ marginTop: theme.spacing[5], marginBottom: theme.spacing[4] }}>
-              <IllustrationCard>
-                <SharedElement id={`media.${content.id}.inline`}>
-                  <ImageWithPlaceholder
-                    source={{ uri: content.thumbnailUri }}
-                    style={{ width: '100%', height: 280 }}
-                    resizeMode="cover"
-                  />
+          <IllustrationCard>
+            {content.thumbnailUri ? (
+              <View style={{ width: '100%', height: 280 }}>
+                <SharedElement id={`media.${content.id}`}>
+                  {content.type === 'video' && content.videoUri ? (
+                    <VideoPlayer
+                      source={{ uri: content.videoUri }}
+                      poster={content.thumbnailUri}
+                      autoPlay={false}
+                    />
+                  ) : (
+                    <ImageWithPlaceholder
+                      source={{ uri: content.thumbnailUri }}
+                      style={{ width: '100%', height: 280 }}
+                      resizeMode="cover"
+                    />
+                  )}
                 </SharedElement>
-              </IllustrationCard>
-            </View>
-          )}
+              </View>
+            ) : (
+              <View style={{ width: '100%', height: 280, alignItems: 'center', justifyContent: 'center' }}>
+                <Text variant="body" color={theme.colors.text.low}>
+                  Illustration
+                </Text>
+              </View>
+            )}
+          </IllustrationCard>
 
-          {content.type === 'video' && content.videoUri && (
-            <View style={{ marginTop: theme.spacing[5], marginBottom: theme.spacing[4] }}>
-              <VideoPlayer source={{ uri: content.videoUri }} autoPlay={false} />
-            </View>
-          )}
-        </ArticleBody>
-      </Content>
-    </Container>
+          <ArticleBody>
+            {articleParts.length > 0 ? (
+              <>
+                {articleParts.map((part, index) => {
+                  if (part.type === 'subheading') {
+                    return (
+                      <SubHeading key={`subheading-${index}`} variant="h3" weight="bold">
+                        {part.content}
+                      </SubHeading>
+                    );
+                  }
+                  
+                  return (
+                    <Paragraph key={`paragraph-${index}`} variant="body" color={theme.colors.text.high}>
+                      {part.content}
+                    </Paragraph>
+                  );
+                })}
+              </>
+            ) : (
+              <View style={{ padding: theme.spacing[4] }}>
+                <Paragraph variant="body" color={theme.colors.text.medium}>
+                  {content.description || 'No content available.'}
+                </Paragraph>
+                <Paragraph variant="caption" color={theme.colors.text.low} style={{ marginTop: theme.spacing[2] }}>
+                  Debug: articleParts.length = {articleParts.length}, articleText length = {articleText.length}
+                </Paragraph>
+              </View>
+            )}
+
+            {/* Inline image section for articles */}
+            {content.type === 'article' && content.thumbnailUri && (
+              <View style={{ marginTop: theme.spacing[5], marginBottom: theme.spacing[4] }}>
+                <IllustrationCard>
+                  <SharedElement id={`media.${content.id}.inline`}>
+                    <ImageWithPlaceholder
+                      source={{ uri: content.thumbnailUri }}
+                      style={{ width: '100%', height: 280 }}
+                      resizeMode="cover"
+                    />
+                  </SharedElement>
+                </IllustrationCard>
+              </View>
+            )}
+
+            {content.type === 'video' && content.videoUri && (
+              <View style={{ marginTop: theme.spacing[5], marginBottom: theme.spacing[4] }}>
+                <VideoPlayer source={{ uri: content.videoUri }} autoPlay={false} />
+              </View>
+            )}
+          </ArticleBody>
+        </Content>
+      </Container>
+      <AuthPromptModal
+        visible={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        feature="favorites"
+      />
+    </ScreenContainer>
   );
 }

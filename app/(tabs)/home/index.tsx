@@ -13,6 +13,7 @@ import { Play, Share2, Search, Lightbulb, Sparkles } from 'lucide-react-native';
 import { SharedElement } from 'react-native-shared-element';
 import { GreetingBanner } from '@/components/composed/GreetingBanner';
 import { HorizontalContentCard } from '@/components/composed/HorizontalContentCard';
+import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
 import type { Theme } from '@/theme/ThemeProvider';
 
 const Container = styled.View`
@@ -229,6 +230,7 @@ export default function HomeScreen() {
   const { data: contentData, isLoading, refetch } = useContent();
   const { data: user } = useUser('user-1');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   // Get first name for greeting
   const firstName = user?.name?.split(' ')[0] || 'there';
@@ -401,6 +403,7 @@ export default function HomeScreen() {
                 key={item.id}
                 content={item}
                 onPress={() => handleDIYTipPress(item.id)}
+                onFavoritePress={() => setShowAuthPrompt(true)}
               />
             ))}
           </DIYTipsScroll>
@@ -479,6 +482,11 @@ export default function HomeScreen() {
           </GridContainer>
         </InspoSection>
       </MainScrollView>
+      <AuthPromptModal
+        visible={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        feature="favorites"
+      />
     </Container>
   );
 }

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
 import { useTheme } from '@/hooks/useTheme';
 import { useFavorites, useContent } from '@/api/hooks/useContent';
+import { useAuth } from '@/contexts/AuthContext';
 import { TopBar } from '@/components/composed/TopBar';
 import { TopTabs } from '@/components/composed/TopTabs';
 import { ContentCard } from '@/components/composed/ContentCard';
@@ -106,8 +107,9 @@ interface CompactContentCardProps {
 
 function CompactContentCard({ content, onPress, width }: CompactContentCardProps) {
   const { theme } = useTheme();
-  const userId = 'user-1';
-  const { data: isFavorite = false } = useIsFavorite(userId, content.id);
+  const { user } = useAuth();
+  const userId = user?.id || '';
+  const { data: isFavorite = false } = useIsFavorite(userId, content.id, { enabled: !!userId });
   const toggleFavorite = useToggleFavorite(userId);
 
   const handleFavoritePress = (e: any) => {
@@ -156,7 +158,8 @@ export default function FavoritesScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { data: favorites } = useFavorites();
+  const { user: authUser, isAuthenticated } = useAuth();
+  const { data: favorites } = useFavorites(authUser?.id || '', { enabled: !!authUser?.id && isAuthenticated });
   const { data: allContent } = useContent();
   const [activeTab, setActiveTab] = useState<'inspiration' | 'diy' | 'education'>('inspiration');
 

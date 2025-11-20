@@ -70,13 +70,14 @@ export function useSearchContent() {
   });
 }
 
-export function useFavorites(userId: string = 'user-1') {
+export function useFavorites(userId: string = 'user-1', options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [FAVORITES_QUERY_KEY, userId],
     queryFn: async () => {
       const response = await api.favorites.getAll(userId);
       return response.data;
     },
+    enabled: options?.enabled !== false && !!userId,
   });
 }
 
@@ -95,14 +96,14 @@ export function useToggleFavorite(userId: string = 'user-1') {
   });
 }
 
-export function useIsFavorite(userId: string = 'user-1', contentId: string) {
+export function useIsFavorite(userId: string = 'user-1', contentId: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: [FAVORITES_QUERY_KEY, userId, contentId],
     queryFn: async () => {
       const response = await api.favorites.isFavorite(userId, contentId);
       return response.data;
     },
-    enabled: !!contentId,
+    enabled: (options?.enabled !== false) && !!contentId && !!userId,
   });
 }
 

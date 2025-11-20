@@ -11,6 +11,7 @@ import { ImageWithPlaceholder } from '../ui/ImageWithPlaceholder';
 import { Content } from '@/types/education';
 import { formatRelativeTime } from '@/utils/date';
 import { useToggleFavorite, useIsFavorite } from '@/api/hooks/useContent';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Theme } from '@/theme/ThemeProvider';
 
 const ImageContainer = styled.View`
@@ -56,18 +57,33 @@ const Footer = styled.View`
 export interface ContentCardProps {
   content: Content;
   onPress?: () => void;
+  onFavoritePress?: () => void;
   testID?: string;
 }
 
-export function ContentCard({ content, onPress, testID }: ContentCardProps) {
+export function ContentCard({ content, onPress, onFavoritePress, testID }: ContentCardProps) {
   const { theme } = useTheme();
-  const userId = 'user-1'; // TODO: Get from auth context
-  const { data: isFavorite = false } = useIsFavorite(userId, content.id);
-  const toggleFavorite = useToggleFavorite(userId);
+  const { isAuthenticated, user } = useAuth();
+  
+  const userId = user?.id;
+  const { data: isFavorite = false } = useIsFavorite(userId || '', content.id, {
+    enabled: !!userId,
+  });
+  const toggleFavorite = useToggleFavorite(userId || '');
 
   const handleFavoritePress = (e: any) => {
     e.stopPropagation(); // Prevent card press
-    toggleFavorite.mutate(content.id);
+    
+    if (!isAuthenticated) {
+      if (onFavoritePress) {
+        onFavoritePress();
+      }
+      return;
+    }
+    
+    if (userId) {
+      toggleFavorite.mutate(content.id);
+    }
   };
 
   return (

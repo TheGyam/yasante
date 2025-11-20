@@ -37,12 +37,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="education/diy/[id]"
-        options={{
-          href: null, // Hide from tab bar
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',

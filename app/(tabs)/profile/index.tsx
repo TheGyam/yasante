@@ -7,6 +7,7 @@ import { useUser } from '@/api/hooks/useUser';
 import { useGoals } from '@/api/hooks/useGoals';
 import { useRoutines } from '@/api/hooks/useRoutines';
 import { useFavorites, useContent } from '@/api/hooks/useContent';
+import { useAuth } from '@/contexts/AuthContext';
 import { TopBar } from '@/components/composed/TopBar';
 import { Card } from '@/components/ui/Card';
 import { Text } from '@/components/ui/Text';
@@ -20,7 +21,7 @@ import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
 import { useTheme as useThemeHook } from '@/hooks/useTheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatRelativeTime } from '@/utils/date';
-import { ChevronRight, Edit2 } from 'lucide-react-native';
+import { ChevronRight, Edit2, User } from 'lucide-react-native';
 import type { Theme } from '@/theme/ThemeProvider';
 
 const Container = styled.ScrollView`
@@ -180,10 +181,11 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: user } = useUser();
-  const { data: goals } = useGoals();
-  const { data: routines } = useRoutines();
-  const { data: favorites } = useFavorites();
+  const { user: authUser, isAuthenticated } = useAuth();
+  const { data: user } = useUser(authUser?.id || '', { enabled: !!authUser?.id });
+  const { data: goals } = useGoals(authUser?.id || '', { enabled: !!authUser?.id });
+  const { data: routines } = useRoutines(authUser?.id || '', { enabled: !!authUser?.id });
+  const { data: favorites } = useFavorites(authUser?.id || '', { enabled: !!authUser?.id });
   const { data: allContent } = useContent();
   const { colorScheme, setColorScheme } = useThemeHook();
 
@@ -239,6 +241,52 @@ export default function ProfileScreen() {
     if (hairProfile.porosity) parts.push(hairProfile.porosity + ' porosity');
     return parts.join(', ') || 'Hair profile complete';
   };
+
+  if (!isAuthenticated) {
+    return (
+      <Container
+        testID="profile-screen"
+        contentContainerStyle={{ 
+          flexGrow: 1,
+          justifyContent: 'center',
+          paddingBottom: insets.bottom + 100 
+        }}
+      >
+        <TopBar title="" showBack={false} />
+        <Content>
+          <ProfileHeader>
+            <AvatarContainer>
+              <View style={{
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: theme.colors.surfaceVariant,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <User size={40} color={theme.colors.primary} strokeWidth={2} />
+              </View>
+            </AvatarContainer>
+            <Text variant="h2" weight="semibold">
+              Sign In to Access Profile
+            </Text>
+            <Text variant="body" color={theme.colors.text.medium} style={{ marginTop: theme.spacing[2], marginBottom: theme.spacing[3], textAlign: 'center', paddingHorizontal: theme.spacing[4] }}>
+              Sign up to access your personal profile, track your progress, and save your favorites.
+            </Text>
+            <TextLink
+              onPress={() => router.push('/auth/login')}
+              activeOpacity={0.7}
+              style={{ alignItems: 'center' }}
+            >
+              <Text variant="body" weight="semibold" color={theme.colors.primary}>
+                Sign In
+              </Text>
+            </TextLink>
+          </ProfileHeader>
+        </Content>
+      </Container>
+    );
+  }
 
   return (
     <Container

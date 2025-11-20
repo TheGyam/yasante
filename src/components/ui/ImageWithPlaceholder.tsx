@@ -7,6 +7,8 @@ import type { Theme } from '@/theme/ThemeProvider';
 const Container = styled.View`
   position: relative;
   overflow: hidden;
+  width: 100%;
+  height: 100%;
 `;
 
 const StyledImage = styled(Image)`

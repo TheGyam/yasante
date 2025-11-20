@@ -9,9 +9,11 @@ import {
   mockProducts,
   mockFavorites,
   mockMonthlyHairstyles,
+  mockMoodBoardEntries,
+  mockTreatments,
 } from './data';
 import { User, HairProfile } from '@/types/user';
-import { Goal, ProgressPhoto, Activity, Routine, ScheduledRoutine, MonthlyHairstyle } from '@/types/planner';
+import { Goal, ProgressPhoto, Activity, Routine, ScheduledRoutine, MonthlyHairstyle, MoodBoardEntry, Treatment } from '@/types/planner';
 import { Content, ProductRecommendation, Favorite } from '@/types/education';
 import { ApiResponse, PaginatedResponse } from '@/types/api';
 
@@ -27,6 +29,8 @@ let content: Content[] = JSON.parse(JSON.stringify(mockContent));
 let products: ProductRecommendation[] = [...mockProducts];
 let favorites: Favorite[] = [...mockFavorites];
 let monthlyHairstyles: MonthlyHairstyle[] = [...mockMonthlyHairstyles];
+let moodBoardEntries: MoodBoardEntry[] = [...mockMoodBoardEntries];
+let treatments: Treatment[] = [...mockTreatments];
 
 // Simulate network delay
 const delay = (ms: number = 300) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -359,6 +363,294 @@ export const monthlyHairstylesApi = {
   },
 };
 
+// Mood Board API
+export const moodBoardApi = {
+  getAll: async (userId: string, month?: string): Promise<ApiResponse<MoodBoardEntry[]>> => {
+    await delay();
+    let userEntries = moodBoardEntries.filter((e) => e.userId === userId);
+    if (month) {
+      userEntries = userEntries.filter((e) => e.month === month);
+    }
+    return { data: userEntries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) };
+  },
+
+  getById: async (entryId: string): Promise<ApiResponse<MoodBoardEntry>> => {
+    await delay();
+    const entry = moodBoardEntries.find((e) => e.id === entryId);
+    if (!entry) throw new Error('Mood board entry not found');
+    return { data: entry };
+  },
+
+  create: async (entry: Omit<MoodBoardEntry, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<MoodBoardEntry>> => {
+    await delay();
+    const newEntry: MoodBoardEntry = {
+      ...entry,
+      id: `moodboard-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    moodBoardEntries.push(newEntry);
+    return { data: newEntry };
+  },
+
+  update: async (entryId: string, updates: Partial<MoodBoardEntry>): Promise<ApiResponse<MoodBoardEntry>> => {
+    await delay();
+    const entryIndex = moodBoardEntries.findIndex((e) => e.id === entryId);
+    if (entryIndex >= 0) {
+      moodBoardEntries[entryIndex] = {
+        ...moodBoardEntries[entryIndex],
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+      return { data: moodBoardEntries[entryIndex] };
+    }
+    throw new Error('Mood board entry not found');
+  },
+
+  delete: async (entryId: string): Promise<ApiResponse<void>> => {
+    await delay();
+    moodBoardEntries = moodBoardEntries.filter((e) => e.id !== entryId);
+    return { data: undefined };
+  },
+};
+
+// Treatments API
+export const treatmentsApi = {
+  getAll: async (userId: string): Promise<ApiResponse<Treatment[]>> => {
+    await delay();
+    const userTreatments = treatments.filter((t) => t.userId === userId);
+    return { data: userTreatments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) };
+  },
+
+  getById: async (treatmentId: string): Promise<ApiResponse<Treatment>> => {
+    await delay();
+    const treatment = treatments.find((t) => t.id === treatmentId);
+    if (!treatment) throw new Error('Treatment not found');
+    return { data: treatment };
+  },
+
+  create: async (treatment: Omit<Treatment, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Treatment>> => {
+    await delay();
+    const newTreatment: Treatment = {
+      ...treatment,
+      id: `treatment-${Date.now()}`,
+      sessions: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    treatments.push(newTreatment);
+    return { data: newTreatment };
+  },
+
+  update: async (treatmentId: string, updates: Partial<Treatment>): Promise<ApiResponse<Treatment>> => {
+    await delay();
+    const treatmentIndex = treatments.findIndex((t) => t.id === treatmentId);
+    if (treatmentIndex >= 0) {
+      treatments[treatmentIndex] = {
+        ...treatments[treatmentIndex],
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+      return { data: treatments[treatmentIndex] };
+    }
+    throw new Error('Treatment not found');
+  },
+
+  delete: async (treatmentId: string): Promise<ApiResponse<void>> => {
+    await delay();
+    treatments = treatments.filter((t) => t.id !== treatmentId);
+    return { data: undefined };
+  },
+};
+
+// Auth API - Mock user database with passwords
+interface AuthUser {
+  id: string;
+  email: string;
+  password: string; // In real app, this would be hashed
+  name: string;
+  createdAt: string;
+}
+
+// Mock users database (in real app, passwords would be hashed)
+let authUsers: AuthUser[] = [
+  {
+    id: 'user-1',
+    email: 'demo@kalon.app',
+    password: 'Demo123!@#', // Demo password
+    name: 'Demo User',
+    createdAt: new Date().toISOString(),
+  },
+];
+
+// Password reset tokens (in real app, these would be stored securely)
+let resetTokens: Map<string, { email: string; expiresAt: number }> = new Map();
+
+// Generate a simple token (in real app, use crypto)
+function generateToken(): string {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
+// Auth API
+export const authApi = {
+  login: async (email: string, password: string): Promise<ApiResponse<{
+    user: User;
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+  }>> => {
+    await delay();
+    
+    const authUser = authUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    
+    if (!authUser || authUser.password !== password) {
+      throw new Error('Invalid email or password');
+    }
+
+    // Find or create user in users array
+    let user = users.find((u) => u.id === authUser.id);
+    if (!user) {
+      user = {
+        id: authUser.id,
+        name: authUser.name,
+        email: authUser.email,
+        createdAt: authUser.createdAt,
+        updatedAt: new Date().toISOString(),
+      };
+      users.push(user);
+    }
+
+    // Generate tokens (in real app, use JWT)
+    const accessToken = generateToken();
+    const refreshToken = generateToken();
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    return {
+      data: {
+        user,
+        accessToken,
+        refreshToken,
+        expiresAt,
+      },
+    };
+  },
+
+  signup: async (name: string, email: string, password: string): Promise<ApiResponse<{
+    user: User;
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+  }>> => {
+    await delay();
+
+    // Check if user already exists
+    if (authUsers.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
+      throw new Error('Email already registered');
+    }
+
+    // Create new user
+    const userId = `user-${Date.now()}`;
+    const newAuthUser: AuthUser = {
+      id: userId,
+      email: email.toLowerCase(),
+      password, // In real app, hash this
+      name,
+      createdAt: new Date().toISOString(),
+    };
+    authUsers.push(newAuthUser);
+
+    const newUser: User = {
+      id: userId,
+      name,
+      email: email.toLowerCase(),
+      createdAt: newAuthUser.createdAt,
+      updatedAt: newAuthUser.createdAt,
+    };
+    users.push(newUser);
+
+    // Generate tokens
+    const accessToken = generateToken();
+    const refreshToken = generateToken();
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    return {
+      data: {
+        user: newUser,
+        accessToken,
+        refreshToken,
+        expiresAt,
+      },
+    };
+  },
+
+  forgotPassword: async (email: string): Promise<ApiResponse<{ message: string }>> => {
+    await delay();
+
+    const authUser = authUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    
+    // Don't reveal if email exists (security best practice)
+    if (authUser) {
+      // Generate reset token
+      const token = generateToken();
+      const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour
+      resetTokens.set(token, { email: authUser.email, expiresAt });
+
+      // In real app, send email with reset link
+      console.log(`Password reset token for ${email}: ${token}`);
+    }
+
+    return {
+      data: {
+        message: 'If an account exists with this email, a password reset link has been sent.',
+      },
+    };
+  },
+
+  resetPassword: async (token: string, newPassword: string): Promise<ApiResponse<{ message: string }>> => {
+    await delay();
+
+    const resetData = resetTokens.get(token);
+    
+    if (!resetData || Date.now() > resetData.expiresAt) {
+      throw new Error('Invalid or expired reset token');
+    }
+
+    // Update password
+    const authUserIndex = authUsers.findIndex((u) => u.email === resetData.email);
+    if (authUserIndex >= 0) {
+      authUsers[authUserIndex].password = newPassword; // In real app, hash this
+    }
+
+    // Remove used token
+    resetTokens.delete(token);
+
+    return {
+      data: {
+        message: 'Password has been reset successfully',
+      },
+    };
+  },
+
+  refreshToken: async (refreshToken: string): Promise<ApiResponse<{
+    accessToken: string;
+    expiresAt: number;
+  }>> => {
+    await delay();
+
+    // In real app, validate refresh token
+    // For mock, just generate new access token
+    const accessToken = generateToken();
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    return {
+      data: {
+        accessToken,
+        expiresAt,
+      },
+    };
+  },
+};
+
 // Seed function for dev mode
 export const seedData = () => {
   users = [mockUser];
@@ -372,5 +664,19 @@ export const seedData = () => {
   products = [...mockProducts];
   favorites = [...mockFavorites];
   monthlyHairstyles = [...mockMonthlyHairstyles];
+  moodBoardEntries = [...mockMoodBoardEntries];
+  treatments = [...mockTreatments];
+  
+  // Reset auth users
+  authUsers = [
+    {
+      id: 'user-1',
+      email: 'demo@kalon.app',
+      password: 'Demo123!@#',
+      name: 'Demo User',
+      createdAt: new Date().toISOString(),
+    },
+  ];
+  resetTokens.clear();
 };
 

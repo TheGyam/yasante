@@ -36,10 +36,11 @@ export interface TopicSectionProps {
   title: string;
   content: Content[];
   onContentPress: (contentId: string) => void;
+  onFavoritePress?: () => void;
   testID?: string;
 }
 
-export function TopicSection({ title, content, onContentPress, testID }: TopicSectionProps) {
+export function TopicSection({ title, content, onContentPress, onFavoritePress, testID }: TopicSectionProps) {
   const { theme } = useTheme();
 
   if (content.length === 0) {
@@ -59,6 +60,7 @@ export function TopicSection({ title, content, onContentPress, testID }: TopicSe
             key={item.id}
             content={item}
             onPress={() => onContentPress(item.id)}
+            onFavoritePress={onFavoritePress}
             testID={`${testID}-card-${item.id}`}
           />
         ))}

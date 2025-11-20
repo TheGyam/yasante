@@ -1,5 +1,5 @@
 import { User, HairProfile } from '@/types/user';
-import { Goal, ProgressPhoto, Activity, Routine, ScheduledRoutine, MonthlyHairstyle } from '@/types/planner';
+import { Goal, ProgressPhoto, Activity, Routine, ScheduledRoutine, MonthlyHairstyle, MoodBoardEntry, Treatment } from '@/types/planner';
 import { Content, ProductRecommendation, Favorite } from '@/types/education';
 import { DIY } from '@/components/composed/DIYCard';
 import { FlashcardStep } from '@/components/composed/SwipeableFlashcard';
@@ -853,6 +853,154 @@ export const mockMonthlyHairstyles: MonthlyHairstyle[] = [
     thumbnailUri: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=200&h=150&fit=crop&q=80',
     notes: 'Curly bob with highlights',
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+// Mock Mood Board Entries
+// Use current month for mock data
+const currentMonth = new Date().toISOString().slice(0, 7); // Format: "YYYY-MM"
+const currentYear = new Date().getFullYear();
+const currentMonthNum = new Date().getMonth(); // 0-11
+
+export const mockMoodBoardEntries: MoodBoardEntry[] = [
+  {
+    id: 'moodboard-1',
+    userId: 'user-1',
+    month: currentMonth,
+    name: 'Curly Bob with Highlights',
+    mainPhotoUri: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=300&fit=crop&q=80',
+    photos: [
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&h=600&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1492106087820-71f1a00d2b11?w=800&h=600&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=800&h=600&fit=crop&q=80',
+    ],
+    stylistPrice: 150,
+    hairPrice: 80,
+    stylistLocation: 'Downtown Salon, NYC',
+    appointmentTime: new Date(currentYear, currentMonthNum, 5, 14, 0).toISOString(),
+    monthColor: '#5e1d31',
+    notes: 'Want to add some caramel highlights and keep the length around shoulder level.',
+    completed: false,
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'moodboard-2',
+    userId: 'user-1',
+    month: currentMonth,
+    name: 'Long Layers with Face-Framing',
+    mainPhotoUri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop&q=80',
+    photos: [
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=600&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&h=600&fit=crop&q=80',
+    ],
+    stylistPrice: 200,
+    hairPrice: 120,
+    stylistLocation: 'Beauty Studio, Brooklyn',
+    appointmentTime: new Date(currentYear, currentMonthNum, 12, 10, 30).toISOString(),
+    monthColor: '#8B4513',
+    notes: 'Planning for next month. Want to grow it out a bit more first.',
+    completed: false,
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'moodboard-3',
+    userId: 'user-1',
+    month: currentMonth,
+    name: 'Sleek Straight with Side Part',
+    mainPhotoUri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=300&fit=crop&q=80',
+    photos: [
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=600&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&h=600&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1605497788044-5a32c7078486?w=800&h=600&fit=crop&q=80',
+    ],
+    stylistPrice: 180,
+    hairPrice: 0,
+    stylistLocation: 'Elite Hair Studio, Manhattan',
+    appointmentTime: new Date(currentYear, currentMonthNum, 18, 16, 0).toISOString(),
+    monthColor: '#2c3e50',
+    notes: 'Going for a professional look for the holiday season. No extensions needed.',
+    completed: true,
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'moodboard-4',
+    userId: 'user-1',
+    month: currentMonth,
+    name: 'Braided Updo with Accessories',
+    mainPhotoUri: 'https://images.unsplash.com/photo-1605497788044-5a32c7078486?w=400&h=300&fit=crop&q=80',
+    photos: [
+      'https://images.unsplash.com/photo-1605497788044-5a32c7078486?w=800&h=600&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&h=600&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop&q=80',
+    ],
+    stylistPrice: 250,
+    hairPrice: 150,
+    stylistLocation: 'Luxury Braids & Styles, Queens',
+    appointmentTime: new Date(currentYear, currentMonthNum, 22, 11, 0).toISOString(),
+    monthColor: '#8B008B',
+    notes: 'Special occasion style for Thanksgiving. Want gold accessories to match my outfit.',
+    completed: false,
+    createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'moodboard-5',
+    userId: 'user-1',
+    month: currentMonth,
+    name: 'Wavy Lob with Balayage',
+    mainPhotoUri: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=300&fit=crop&q=80',
+    photos: [
+      'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800&h=600&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1492106087820-71f1a00d2b11?w=800&h=600&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=800&h=600&fit=crop&q=80',
+    ],
+    stylistPrice: 220,
+    hairPrice: 100,
+    stylistLocation: 'Color Bar Salon, Brooklyn',
+    appointmentTime: new Date(currentYear, currentMonthNum, 28, 13, 30).toISOString(),
+    monthColor: '#FF6B6B',
+    notes: 'End of month refresh. Want honey blonde balayage with natural waves.',
+    completed: false,
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+// Mock Treatments
+export const mockTreatments: Treatment[] = [
+  {
+    id: 'treatment-1',
+    userId: 'user-1',
+    name: 'Deep Conditioning Treatment',
+    frequency: 'weekly',
+    timeOfDay: 'evening',
+    startDate: new Date().toISOString().split('T')[0],
+    duration: 30,
+    reminderEnabled: true,
+    reminderTime: 60,
+    notes: 'Use protein-rich conditioner for damaged ends',
+    sessions: [],
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'treatment-2',
+    userId: 'user-1',
+    name: 'Hot Oil Treatment',
+    frequency: 'every-2-days',
+    timeOfDay: 'morning',
+    startDate: new Date().toISOString().split('T')[0],
+    duration: 20,
+    reminderEnabled: true,
+    reminderTime: 30,
+    notes: 'Apply before showering',
+    sessions: [],
+    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
   },
 ];

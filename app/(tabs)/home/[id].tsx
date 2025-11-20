@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ScrollView, View, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import styled from 'styled-components/native';
@@ -7,6 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useContentItem, useContent } from '@/api/hooks/useContent';
 import { useToggleFavorite, useIsFavorite, useFavorites } from '@/api/hooks/useContent';
+import { useAuth } from '@/contexts/AuthContext';
+import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
 import { SharedElement } from 'react-native-shared-element';
 import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
@@ -173,9 +175,13 @@ export default function InspoPostDetailScreen() {
   
   const { data: content, isLoading, error } = useContentItem(originalId);
   const { data: allContent } = useContent();
-  const { data: favorites } = useFavorites('user-1');
-  const { data: isFavorite = false } = useIsFavorite('user-1', originalId);
-  const toggleFavorite = useToggleFavorite('user-1');
+  const { isAuthenticated, user } = useAuth();
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  
+  const userId = user?.id;
+  const { data: favorites } = useFavorites(userId || '', { enabled: !!userId });
+  const { data: isFavorite = false } = useIsFavorite(userId || '', originalId, { enabled: !!userId });
+  const toggleFavorite = useToggleFavorite(userId || '');
   
   // Calculate saves count (mock - in real app, this would come from API)
   // For now, we'll use a mock number based on content ID
@@ -209,7 +215,12 @@ export default function InspoPostDetailScreen() {
   };
 
   const handleToggleFavorite = () => {
-    if (originalId) {
+    if (!isAuthenticated) {
+      setShowAuthPrompt(true);
+      return;
+    }
+    
+    if (originalId && userId) {
       toggleFavorite.mutate(originalId);
     }
   };
@@ -366,9 +377,14 @@ export default function InspoPostDetailScreen() {
                 ))}
               </SimilarPostsGrid>
             </MoreToExploreSection>
-          )}
-        </ContentSection>
+        )}
+      </ContentSection>
       </ScrollView>
+      <AuthPromptModal
+        visible={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        feature="favorites"
+      />
     </Container>
   );
 }
