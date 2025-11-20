@@ -6,14 +6,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useContent } from '@/api/hooks/useContent';
 import { useUser } from '@/api/hooks/useUser';
+import { useAuth } from '@/contexts/AuthContext';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
 import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
-import { Play, Share2, Search, Lightbulb, Sparkles } from 'lucide-react-native';
+import { Play, Share2, Search, Lightbulb, Sparkles, LayoutGrid } from 'lucide-react-native';
 import { SharedElement } from 'react-native-shared-element';
 import { GreetingBanner } from '@/components/composed/GreetingBanner';
 import { HorizontalContentCard } from '@/components/composed/HorizontalContentCard';
 import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
+import { AddToMoodBoardModal } from '@/components/composed/AddToMoodBoardModal';
 import type { Theme } from '@/theme/ThemeProvider';
 
 const Container = styled.View`
@@ -209,6 +211,12 @@ const ShareButton = styled(TouchableOpacity)`
   justify-content: center;
 `;
 
+const BottomCardActions = styled.View`
+  flex-direction: row;
+  gap: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
+  align-items: center;
+`;
+
 interface InspoItem {
   id: string;
   imageUri: string;
@@ -229,8 +237,11 @@ export default function HomeScreen() {
   const { width, height: screenHeight } = useWindowDimensions();
   const { data: contentData, isLoading, refetch } = useContent();
   const { data: user } = useUser('user-1');
+  const { isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [showAddToMoodBoard, setShowAddToMoodBoard] = useState(false);
+  const [selectedInspoForMoodBoard, setSelectedInspoForMoodBoard] = useState<{ title: string; imageUri?: string } | null>(null);
 
   // Get first name for greeting
   const firstName = user?.name?.split(' ')[0] || 'there';
@@ -467,12 +478,31 @@ export default function HomeScreen() {
                         )}
                       </ImageWrapper>
                       <BottomCard>
-                        <ShareButton
-                          onPress={(e: GestureResponderEvent) => handleShare(item, e)}
-                          activeOpacity={0.7}
-                        >
-                          <Share2 size={12} color={theme.colors.text.high} strokeWidth={2} />
-                        </ShareButton>
+                        <BottomCardActions>
+                          <ShareButton
+                            onPress={(e: GestureResponderEvent) => {
+                              e.stopPropagation();
+                              handleShare(item, e);
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <Share2 size={12} color={theme.colors.text.high} strokeWidth={2} />
+                          </ShareButton>
+                          <ShareButton
+                            onPress={(e: GestureResponderEvent) => {
+                              e.stopPropagation();
+                              if (!isAuthenticated) {
+                                setShowAuthPrompt(true);
+                              } else {
+                                setSelectedInspoForMoodBoard({ title: item.title, imageUri: item.imageUri });
+                                setShowAddToMoodBoard(true);
+                              }
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <LayoutGrid size={12} color={theme.colors.text.high} strokeWidth={2} />
+                          </ShareButton>
+                        </BottomCardActions>
                       </BottomCard>
                     </CardContainer>
                   </GridItem>
@@ -487,6 +517,17 @@ export default function HomeScreen() {
         onClose={() => setShowAuthPrompt(false)}
         feature="favorites"
       />
+      {selectedInspoForMoodBoard && (
+        <AddToMoodBoardModal
+          visible={showAddToMoodBoard}
+          onClose={() => {
+            setShowAddToMoodBoard(false);
+            setSelectedInspoForMoodBoard(null);
+          }}
+          inspoTitle={selectedInspoForMoodBoard.title}
+          inspoImageUri={selectedInspoForMoodBoard.imageUri}
+        />
+      )}
     </Container>
   );
 }

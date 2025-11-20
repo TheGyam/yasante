@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, Platform } from 'react-native';
 import styled from 'styled-components/native';
-import { ChevronDown, ChevronUp, Clock, Calendar, Edit } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Clock, Calendar, Edit, Share2 } from 'lucide-react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { Text } from '../ui/Text';
 import { Treatment } from '@/types/planner';
+import { shareTreatment } from '@/utils/share';
 import type { Theme } from '@/theme/ThemeProvider';
 import { format } from 'date-fns';
 
@@ -115,6 +116,15 @@ export function TreatmentCard({ treatment, onPress, onEdit, testID }: TreatmentC
           </InfoRow>
         </HeaderLeft>
         <HeaderRight>
+          <EditButton
+            onPress={(e) => {
+              e.stopPropagation();
+              shareTreatment(treatment);
+            }}
+            activeOpacity={0.7}
+          >
+            <Share2 size={18} color={theme.colors.text.medium} strokeWidth={2} />
+          </EditButton>
           {onEdit && (
             <EditButton
               onPress={(e) => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, View, TouchableOpacity, Alert, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 
@@ -173,6 +173,7 @@ const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD'];
 export default function MoodBoardCreateScreen() {
   const { theme } = useTheme();
   const router = useRouter();
+  const params = useLocalSearchParams<{ name?: string; mainPhotoUri?: string }>();
   const insets = useSafeAreaInsets();
   const { isAuthenticated, user } = useAuth();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -186,8 +187,9 @@ export default function MoodBoardCreateScreen() {
     }
   }, [isAuthenticated]);
 
-  const [name, setName] = useState('');
-  const [photos, setPhotos] = useState<string[]>([]);
+  // Pre-fill data from query params if available
+  const [name, setName] = useState(params.name || '');
+  const [photos, setPhotos] = useState<string[]>(params.mainPhotoUri ? [params.mainPhotoUri] : []);
   const [stylistPrice, setStylistPrice] = useState('');
   const [hairPrice, setHairPrice] = useState('');
   const [currency, setCurrency] = useState('USD');

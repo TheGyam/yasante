@@ -70,3 +70,17 @@ export function useDeleteMoodBoardEntry(entryId: string, userId: string = 'user-
   });
 }
 
+export function useAddPhotoToMoodBoardEntry(userId: string = 'user-1') {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ entryId, photoUri }: { entryId: string; photoUri: string }) => {
+      const response = await moodBoardApi.addPhotoToEntry(entryId, photoUri);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [MOOD_BOARD_QUERY_KEY, userId] });
+    },
+  });
+}
+

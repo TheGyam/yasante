@@ -412,6 +412,32 @@ export const moodBoardApi = {
     moodBoardEntries = moodBoardEntries.filter((e) => e.id !== entryId);
     return { data: undefined };
   },
+
+  addPhotoToEntry: async (entryId: string, photoUri: string): Promise<ApiResponse<MoodBoardEntry>> => {
+    await delay();
+    const entryIndex = moodBoardEntries.findIndex((e) => e.id === entryId);
+    if (entryIndex >= 0) {
+      const entry = moodBoardEntries[entryIndex];
+      // Ensure photos array doesn't exceed 3 items
+      const updatedPhotos = [...entry.photos];
+      if (updatedPhotos.length < 3) {
+        updatedPhotos.push(photoUri);
+      } else {
+        // Replace the last photo if already at max
+        updatedPhotos[2] = photoUri;
+      }
+      
+      moodBoardEntries[entryIndex] = {
+        ...entry,
+        photos: updatedPhotos,
+        // Update mainPhotoUri if it's the first photo
+        mainPhotoUri: updatedPhotos[0],
+        updatedAt: new Date().toISOString(),
+      };
+      return { data: moodBoardEntries[entryIndex] };
+    }
+    throw new Error('Mood board entry not found');
+  },
 };
 
 // Treatments API

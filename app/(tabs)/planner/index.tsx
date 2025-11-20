@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { MapPin, CreditCard, Calendar as CalendarIcon, Edit, CheckCircle2, Circle, LayoutGrid, Clipboard } from 'lucide-react-native';
+import { MapPin, CreditCard, Calendar as CalendarIcon, Edit, CheckCircle2, Circle, LayoutGrid, Clipboard, Share2 } from 'lucide-react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { TopTabs } from '@/components/composed/TopTabs';
 import { FloatingActionButton } from '@/components/composed/FloatingActionButton';
@@ -18,6 +18,7 @@ import { moodBoardApi } from '@/api/mock/server';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTreatments } from '@/api/hooks/useTreatments';
 import { useAuth } from '@/contexts/AuthContext';
+import { shareMoodBoardEntry } from '@/utils/share';
 import type { Theme } from '@/theme/ThemeProvider';
 import { format } from 'date-fns';
 
@@ -319,9 +320,14 @@ export default function PlannerScreen() {
                       {entry.name}
                     </Text>
                   </TitleSection>
-                  <EditButton onPress={() => handleMoodBoardEdit(entry.id)} activeOpacity={0.7}>
-                    <Edit size={20} color={theme.colors.text.high} strokeWidth={2.5} />
-                  </EditButton>
+                  <View style={{ flexDirection: 'row', gap: theme.spacing[2] }}>
+                    <EditButton onPress={() => shareMoodBoardEntry(entry)} activeOpacity={0.7}>
+                      <Share2 size={20} color={theme.colors.text.high} strokeWidth={2.5} />
+                    </EditButton>
+                    <EditButton onPress={() => handleMoodBoardEdit(entry.id)} activeOpacity={0.7}>
+                      <Edit size={20} color={theme.colors.text.high} strokeWidth={2.5} />
+                    </EditButton>
+                  </View>
                 </HeaderRow>
 
                 {entry.photos.length > 0 && (

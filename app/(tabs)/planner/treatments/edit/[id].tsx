@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, View, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
-import { Sparkles, RefreshCw, Calendar as CalendarIcon, Clock, Check, ChevronLeft, ChevronRight, Sun, Sunset, Moon } from 'lucide-react-native';
+import { Sparkles, RefreshCw, Calendar as CalendarIcon, Clock, Check, ChevronLeft, ChevronRight, Sun, Sunset, Moon, Share2 } from 'lucide-react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { useTreatment, useUpdateTreatment } from '@/api/hooks/useTreatments';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { Card } from '@/components/ui/Card';
 import { isRequired } from '@/utils/validation';
+import { shareTreatment } from '@/utils/share';
 import type { Theme } from '@/theme/ThemeProvider';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay, isSameMonth, parseISO } from 'date-fns';
 
@@ -32,6 +33,16 @@ const CancelButton = styled(TouchableOpacity)``;
 const HeaderTitle = styled(Text)`
   flex: 1;
   text-align: center;
+`;
+
+const HeaderRight = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
+`;
+
+const ShareButton = styled(TouchableOpacity)`
+  padding: ${({ theme }: { theme: Theme }) => theme.spacing[1]}px;
 `;
 
 const Content = styled.View`
@@ -322,7 +333,14 @@ export default function TreatmentEditScreen() {
         <HeaderTitle variant="h3" weight="semibold" color={theme.colors.text.high}>
           Edit Treatment
         </HeaderTitle>
-        <View style={{ width: 60 }} />
+        <HeaderRight>
+          {treatment && (
+            <ShareButton onPress={() => shareTreatment(treatment)} activeOpacity={0.7}>
+              <Share2 size={20} color={theme.colors.text.high} strokeWidth={2.5} />
+            </ShareButton>
+          )}
+          <View style={{ width: 20 }} />
+        </HeaderRight>
       </Header>
 
       <Content>

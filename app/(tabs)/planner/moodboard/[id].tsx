@@ -2,12 +2,13 @@ import React from 'react';
 import { ScrollView, View, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import styled from 'styled-components/native';
-import { ArrowLeft, MapPin, DollarSign, Calendar, Edit } from 'lucide-react-native';
+import { ArrowLeft, MapPin, DollarSign, Calendar, Edit, Share2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useMoodBoardEntry } from '@/api/hooks/useMoodBoard';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
 import { Text } from '@/components/ui/Text';
+import { shareMoodBoardEntry } from '@/utils/share';
 import type { Theme } from '@/theme/ThemeProvider';
 import { format } from 'date-fns';
 
@@ -47,7 +48,28 @@ const BackButton = styled(TouchableOpacity)`
   border-color: rgba(0, 0, 0, 0.05);
 `;
 
+const HeaderRight = styled.View`
+  flex-direction: row;
+  gap: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
+`;
+
 const EditButton = styled(TouchableOpacity)`
+  width: 40px;
+  height: 40px;
+  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
+  background-color: #ffffff;
+  align-items: center;
+  justify-content: center;
+  shadow-color: #000;
+  shadow-offset: 0px 2px;
+  shadow-opacity: 0.1;
+  shadow-radius: 4px;
+  elevation: 3;
+  border-width: 1px;
+  border-color: rgba(0, 0, 0, 0.05);
+`;
+
+const ShareButton = styled(TouchableOpacity)`
   width: 40px;
   height: 40px;
   border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
@@ -135,6 +157,12 @@ export default function MoodBoardDetailScreen() {
     router.push(`/(tabs)/planner/moodboard/edit/${id}` as any);
   };
 
+  const handleShare = async () => {
+    if (entry) {
+      await shareMoodBoardEntry(entry);
+    }
+  };
+
   if (isLoading || !entry) {
     return (
       <Container>
@@ -165,9 +193,14 @@ export default function MoodBoardDetailScreen() {
         <BackButton onPress={handleBack} activeOpacity={0.7}>
           <ArrowLeft size={20} color="#000000" strokeWidth={2.5} />
         </BackButton>
-        <EditButton onPress={handleEdit} activeOpacity={0.7}>
-          <Edit size={20} color="#000000" strokeWidth={2.5} />
-        </EditButton>
+        <HeaderRight>
+          <ShareButton onPress={handleShare} activeOpacity={0.7}>
+            <Share2 size={20} color="#000000" strokeWidth={2.5} />
+          </ShareButton>
+          <EditButton onPress={handleEdit} activeOpacity={0.7}>
+            <Edit size={20} color="#000000" strokeWidth={2.5} />
+          </EditButton>
+        </HeaderRight>
       </Header>
 
       <Content>

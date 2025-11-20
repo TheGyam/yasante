@@ -2,13 +2,14 @@ import React, { useMemo, useState } from 'react';
 import { ScrollView, View, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import styled from 'styled-components/native';
-import { ArrowLeft, Bookmark, Share2, MoreHorizontal } from 'lucide-react-native';
+import { ArrowLeft, Bookmark, Share2, MoreHorizontal, LayoutGrid } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { useContentItem, useContent } from '@/api/hooks/useContent';
 import { useToggleFavorite, useIsFavorite, useFavorites } from '@/api/hooks/useContent';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
+import { AddToMoodBoardModal } from '@/components/composed/AddToMoodBoardModal';
 import { SharedElement } from 'react-native-shared-element';
 import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
@@ -177,6 +178,7 @@ export default function InspoPostDetailScreen() {
   const { data: allContent } = useContent();
   const { isAuthenticated, user } = useAuth();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [showAddToMoodBoard, setShowAddToMoodBoard] = useState(false);
   
   const userId = user?.id;
   const { data: favorites } = useFavorites(userId || '', { enabled: !!userId });
@@ -305,6 +307,15 @@ export default function InspoPostDetailScreen() {
             <ArrowLeft size={20} color="#000000" strokeWidth={2.5} />
           </BackButton>
           <HeaderRight>
+            <HeaderButton onPress={() => {
+              if (!isAuthenticated) {
+                setShowAuthPrompt(true);
+              } else {
+                setShowAddToMoodBoard(true);
+              }
+            }} activeOpacity={0.7}>
+              <LayoutGrid size={18} color="#fff" strokeWidth={2.5} />
+            </HeaderButton>
             <HeaderButton onPress={handleShare} activeOpacity={0.7}>
               <Share2 size={18} color="#fff" strokeWidth={2.5} />
             </HeaderButton>
@@ -385,6 +396,14 @@ export default function InspoPostDetailScreen() {
         onClose={() => setShowAuthPrompt(false)}
         feature="favorites"
       />
+      {content && (
+        <AddToMoodBoardModal
+          visible={showAddToMoodBoard}
+          onClose={() => setShowAddToMoodBoard(false)}
+          inspoTitle={content.title}
+          inspoImageUri={content.thumbnailUri}
+        />
+      )}
     </Container>
   );
 }
