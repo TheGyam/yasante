@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ScrollView, TouchableOpacity, View, FlatList, Keyboard, InteractionManager } from 'react-native';
+import { ScrollView, TouchableOpacity, View, Keyboard, InteractionManager } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -157,7 +158,7 @@ const SuggestionIcon = styled.View`
   margin-right: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
 `;
 
-const ResultsList = styled(FlatList)`
+const ResultsListContainer = styled.View`
   flex: 1;
 `;
 
@@ -608,15 +609,18 @@ export default function SearchScreen() {
     if (filteredResults.length === 0) return null;
 
     return (
-      <ResultsList
-        data={filteredResults}
-        renderItem={renderSearchResult}
-        keyExtractor={(item) => `${item.type}-${item.id}`}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + 100,
-        }}
-      />
+      <ResultsListContainer>
+        <FlashList
+          data={filteredResults}
+          renderItem={renderSearchResult}
+          keyExtractor={(item) => `${item.type}-${item.id}`}
+          estimatedItemSize={80}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + 100,
+          }}
+        />
+      </ResultsListContainer>
     );
   };
 

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -7,13 +8,17 @@ import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { useNotifications } from '@/hooks/useNotifications';
 import { seedMockData } from '@/utils/seed';
 import { LogBox } from 'react-native';
+import { asyncStoragePersister } from '@/utils/cachePersistence';
 
-// Create a client
+// Create a client with optimized cache settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 10 * 60 * 1000, // 10 minutes (increased from 5)
+      gcTime: 30 * 60 * 1000, // 30 minutes (garbage collection time)
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+      refetchOnReconnect: true, // Refetch when reconnecting
     },
   },
 });
@@ -44,11 +49,18 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{
+              persister: asyncStoragePersister,
+              maxAge: 24 * 60 * 60 * 1000, // 24 hours
+              buster: '1.0.0', // Change this when you want to invalidate cache
+            }}
+          >
             <AppContent>
               {/* Expo Router handles routing via app/_layout.tsx */}
             </AppContent>
-          </QueryClientProvider>
+          </PersistQueryClientProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

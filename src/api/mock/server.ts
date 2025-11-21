@@ -15,7 +15,7 @@ import {
 import { User, HairProfile } from '@/types/user';
 import { Goal, ProgressPhoto, Activity, Routine, ScheduledRoutine, MonthlyHairstyle, MoodBoardEntry, Treatment } from '@/types/planner';
 import { Content, ProductRecommendation, Favorite } from '@/types/education';
-import { ApiResponse, PaginatedResponse } from '@/types/api';
+import { ApiResponse, PaginatedResponse, CursorPaginatedResponse } from '@/types/api';
 
 // Simple in-memory storage (simulates database)
 let users: User[] = [mockUser];
@@ -217,7 +217,9 @@ export const contentApi = {
     type?: string;
     page?: number;
     limit?: number;
-  }): Promise<PaginatedResponse<Content>> => {
+    cursor?: string;
+    excludeId?: string;
+  }): Promise<PaginatedResponse<Content> | CursorPaginatedResponse<Content>> => {
     await delay();
     let filtered = [...content];
 
@@ -230,7 +232,48 @@ export const contentApi = {
     if (filters?.type) {
       filtered = filtered.filter((c) => c.type === filters.type);
     }
+    if (filters?.excludeId) {
+      filtered = filtered.filter((c) => c.id !== filters.excludeId);
+    }
 
+    // Sort by publishedAt DESC (newest first)
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.publishedAt).getTime();
+      const dateB = new Date(b.publishedAt).getTime();
+      return dateB - dateA;
+    });
+
+    // Cursor-based pagination
+    // Use cursor-based pagination if cursor is in filters (even if undefined)
+    // This ensures infinite queries always get cursor-based pagination
+    if (filters && 'cursor' in filters) {
+      const limit = filters?.limit || 20;
+      
+      // Filter items where publishedAt < cursor (only if cursor has a value)
+      if (filters.cursor) {
+        const cursorDate = new Date(filters.cursor).getTime();
+        filtered = filtered.filter((item) => {
+          const itemDate = new Date(item.publishedAt).getTime();
+          return itemDate < cursorDate;
+        });
+      }
+
+      const pageData = filtered.slice(0, limit);
+      const lastItem = pageData[pageData.length - 1];
+      const hasMore = filtered.length > limit;
+
+      return {
+        data: pageData,
+        pagination: {
+          cursor: filters.cursor || undefined,
+          nextCursor: hasMore && lastItem ? lastItem.publishedAt : undefined,
+          hasMore,
+          limit,
+        },
+      };
+    }
+
+    // Offset-based pagination (backward compatibility)
     const page = filters?.page || 1;
     const limit = filters?.limit || 20;
     const start = (page - 1) * limit;

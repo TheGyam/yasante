@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { ScrollView, TouchableOpacity, RefreshControl, useWindowDimensions, View, GestureResponderEvent } from 'react-native';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { TouchableOpacity, RefreshControl, useWindowDimensions, View, GestureResponderEvent, InteractionManager, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
-import { useContent } from '@/api/hooks/useContent';
+import { useInfiniteContent, prefetchContentItem, prefetchRelatedContent } from '@/api/hooks/useContent';
 import { useUser } from '@/api/hooks/useUser';
 import { useAuth } from '@/contexts/AuthContext';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
@@ -15,6 +15,10 @@ import { GreetingBanner } from '@/components/composed/GreetingBanner';
 import { HorizontalContentCard } from '@/components/composed/HorizontalContentCard';
 import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
 import { AddToMoodBoardModal } from '@/components/composed/AddToMoodBoardModal';
+import { FlashList } from '@shopify/flash-list';
+import { useQueryClient } from '@tanstack/react-query';
+import { useNewPosts } from '@/hooks/useNewPosts';
+import { Content } from '@/types/education';
 import type { Theme } from '@/theme/ThemeProvider';
 
 const Container = styled.View`
@@ -22,7 +26,7 @@ const Container = styled.View`
   background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};
 `;
 
-const MainScrollView = styled.ScrollView`
+const FlashListContainer = styled.View`
   flex: 1;
 `;
 
@@ -153,35 +157,22 @@ const InspoSection = styled(Section)`
   margin-bottom: 0;
 `;
 
-const GridContainer = styled.View`
-  position: relative;
-`;
-
-const GridContent = styled.View<{ height: number }>`
-  height: ${({ height }: { height: number }) => height}px;
-  position: relative;
-`;
-
-const GridItem = styled.View<{ left: number; top: number; width: number; height: number }>`
-  position: absolute;
-  left: ${({ left }: { left: number }) => left}px;
-  top: ${({ top }: { top: number }) => top}px;
-  width: ${({ width }: { width: number }) => width}px;
-  height: ${({ height }: { height: number }) => height}px;
+const InspoCardContainer = styled.View`
+  padding-horizontal: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
+  padding-vertical: ${({ theme }: { theme: Theme }) => theme.spacing[1]}px;
 `;
 
 const CardContainer = styled(TouchableOpacity)`
   width: 100%;
-  height: 100%;
   position: relative;
   border-radius: ${({ theme }: { theme: Theme }) => theme.radii.small}px;
   overflow: hidden;
   background-color: ${({ theme }: { theme: Theme }) => theme.colors.surface};
 `;
 
-const ImageWrapper = styled.View`
+const ImageWrapper = styled.View<{ height: number }>`
   width: 100%;
-  flex: 1;
+  height: ${({ height }: { height: number }) => height}px;
   position: relative;
   border-top-left-radius: ${({ theme }: { theme: Theme }) => theme.radii.small}px;
   border-top-right-radius: ${({ theme }: { theme: Theme }) => theme.radii.small}px;
@@ -235,13 +226,13 @@ const BottomCardActions = styled.View`
 
 interface InspoItem {
   id: string;
+  originalId: string;
   imageUri: string;
   isVideo?: boolean;
   videoUri?: string;
-  width: number;
-  height: number;
-  left: number;
-  top: number;
+  topic?: string;
+  title?: string;
+  height: number; // For estimatedItemSize
 }
 
 const CARD_BOTTOM_HEIGHT = 24; // Height of the bottom card
@@ -250,13 +241,26 @@ export default function HomeScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width, height: screenHeight } = useWindowDimensions();
-  const { data: contentData, isLoading, refetch } = useContent();
+  const { width } = useWindowDimensions();
+  const queryClient = useQueryClient();
+  const { 
+    data: contentData, 
+    isLoading, 
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage 
+  } = useInfiniteContent();
   const { data: user } = useUser('user-1');
   const { isAuthenticated } = useAuth();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showAddToMoodBoard, setShowAddToMoodBoard] = useState(false);
   const [selectedInspoForMoodBoard, setSelectedInspoForMoodBoard] = useState<{ title: string; imageUri?: string } | null>(null);
+  const [layoutItems, setLayoutItems] = useState<InspoItem[]>([]);
+  const layoutComputedRef = useRef(false);
+  
+  // New posts detection
+  const { hasNewPosts, mergeNewPosts } = useNewPosts({ enabled: true });
 
   // Get first name for greeting (only when authenticated)
   const firstName = isAuthenticated && user?.name ? user.name.split(' ')[0] : undefined;
@@ -285,78 +289,91 @@ export default function HomeScreen() {
   // Very tall images: 1.2-1.8 range (much taller than before)
   const aspectRatios = [1.3, 1.5, 1.4, 1.6, 1.35, 1.45, 1.2, 1.7, 1.55, 1.4, 1.5, 1.65];
 
+  // Flatten all pages from infinite query
+  const allContentItems = useMemo(() => {
+    if (!contentData?.pages) return [];
+    return contentData.pages.flatMap(page => page.data);
+  }, [contentData?.pages]);
+  
+  // Prefetch images of next page after fetching
+  useEffect(() => {
+    if (contentData?.pages && contentData.pages.length > 0) {
+      const lastPage = contentData.pages[contentData.pages.length - 1];
+      if (lastPage?.data) {
+        // Prefetch images of the last fetched page
+        lastPage.data.forEach((item: Content) => {
+          if (item.thumbnailUri) {
+            // expo-image will handle caching automatically
+            // We can preload by creating Image components off-screen if needed
+          }
+        });
+      }
+    }
+  }, [contentData?.pages]);
+
   // Filter DIY tips content (articles with tips topic)
   const diyTipsContent = useMemo(() => {
-    if (!contentData?.data) return [];
-    const filtered = contentData.data.filter(
+    if (!allContentItems) return [];
+    const filtered = allContentItems.filter(
       (item) => item.topic === 'tips' || item.topic === 'care' || item.topic === 'styling'
     );
 
     return filtered.slice(0, 10); // Limit to 10 items for horizontal scroll
-  }, [contentData?.data]);
+  }, [allContentItems]);
 
-  // Transform content into inspo items with uniform width but varying heights
-  const { items: inspoItems, totalHeight } = useMemo(() => {
-    if (!contentData?.data) return { items: [], totalHeight: 0 };
-
-    const filteredContent = contentData.data;
-
-    const items: InspoItem[] = [];
-    filteredContent.forEach((item, index) => {
-      for (let i = 0; i < 3; i++) {
-        const aspectRatioIndex = (index * 3 + i) % aspectRatios.length;
-        const aspectRatio = aspectRatios[aspectRatioIndex];
-        // Total height includes image + card bottom
-        const imageHeight = itemWidth * aspectRatio;
-        const totalItemHeight = imageHeight + CARD_BOTTOM_HEIGHT;
-        items.push({
-          id: `${item.id}-${i}`,
-          imageUri: item.thumbnailUri || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80',
-          isVideo: item.type === 'video',
-          videoUri: item.videoUri,
-          width: itemWidth,
-          height: totalItemHeight, // Total height = image + card
-          left: 0, // Will be calculated
-          top: 0, // Will be calculated
-        });
-      }
-    });
-
-    // Simple masonry layout - all items same width, placed in shortest column
-    const processedItems: InspoItem[] = [];
-    const columnHeights = [0, 0]; // Track height of each column
-    let maxHeight = 0;
-
-    // Show more items for infinite scroll
-    items.forEach((item) => {
-      // Find the shortest column
-      const shortestColumnIndex = columnHeights[0] <= columnHeights[1] ? 0 : 1;
-
-      // Calculate position
-      const itemLeft = paddingHorizontal + shortestColumnIndex * (itemWidth + gap);
-      const itemTop = columnHeights[shortestColumnIndex] + gap;
-
-      // Update column height
-      columnHeights[shortestColumnIndex] = itemTop + item.height;
-      maxHeight = Math.max(maxHeight, itemTop + item.height);
-
-      processedItems.push({
-        ...item,
-        left: itemLeft,
-        top: itemTop,
+  // Transform content into inspo items - deferred computation
+  useEffect(() => {
+    if (!allContentItems || allContentItems.length === 0 || layoutComputedRef.current) return;
+    
+    // Defer heavy computation
+    InteractionManager.runAfterInteractions(() => {
+      const items: InspoItem[] = [];
+      allContentItems.forEach((item, index) => {
+        for (let i = 0; i < 3; i++) {
+          const aspectRatioIndex = (index * 3 + i) % aspectRatios.length;
+          const aspectRatio = aspectRatios[aspectRatioIndex];
+          const imageHeight = itemWidth * aspectRatio;
+          const totalItemHeight = imageHeight + CARD_BOTTOM_HEIGHT;
+          
+          items.push({
+            id: `${item.id}-${i}`,
+            originalId: item.id,
+            imageUri: item.thumbnailUri || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80',
+            isVideo: item.type === 'video',
+            videoUri: item.videoUri,
+            topic: item.topic,
+            title: item.title,
+            height: totalItemHeight,
+          });
+        }
       });
+      
+      setLayoutItems(items);
+      layoutComputedRef.current = true;
     });
-
-    return { items: processedItems, totalHeight: maxHeight };
-  }, [contentData?.data, width, itemWidth, availableWidth, paddingHorizontal, gap, aspectRatios]);
+  }, [allContentItems, itemWidth, aspectRatios]);
+  
+  // Reset computation flag when content changes significantly
+  useEffect(() => {
+    layoutComputedRef.current = false;
+  }, [(allContentItems || []).length]);
 
   const handleRefresh = () => {
     refetch();
   };
 
-  const handleItemPress = (item: InspoItem) => {
+  const handleItemPress = useCallback((item: InspoItem) => {
+    // Prefetch detail data before navigation
+    prefetchContentItem(queryClient, item.originalId);
+    
+    // Prefetch related content if topic is available
+    if (item.topic) {
+      prefetchRelatedContent(queryClient, item.originalId, item.topic);
+    }
+    
+    // Navigate after prefetch starts
     router.push(`/(tabs)/home/${item.id}` as any);
-  };
+  }, [queryClient, router]);
 
   const handleShare = (item: InspoItem, e: GestureResponderEvent) => {
     e.stopPropagation();
@@ -371,144 +388,197 @@ export default function HomeScreen() {
   const handleSearchPress = () => {
     router.push('/(tabs)/home/search' as any);
   };
+  
+  // Smart prefetching - prefetch when reaching 60% of loaded items
+  const handleViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
+    if (!viewableItems || viewableItems.length === 0 || !hasNextPage || isFetchingNextPage) return;
+    
+    if (!layoutItems || layoutItems.length === 0) return;
+    const totalItems = layoutItems.length;
+    
+    // Get the last visible item index
+    const visibleIndices = viewableItems.map((item) => item.index).filter((idx): idx is number => idx !== null);
+    if (visibleIndices.length === 0) return;
+    
+    const lastVisibleIndex = Math.max(...visibleIndices);
+    
+    // Prefetch when reaching 60% of loaded items
+    const threshold = Math.floor(totalItems * 0.6);
+    if (lastVisibleIndex >= threshold) {
+      fetchNextPage();
+    }
+  }, [(layoutItems || []).length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  
+  // Render item for FlashList
+  const renderItem = useCallback(({ item }: { item: InspoItem }) => {
+    const imageHeight = item.height - CARD_BOTTOM_HEIGHT;
+    
+    return (
+      <InspoCardContainer>
+        <CardContainer
+          onPress={() => handleItemPress(item)}
+          activeOpacity={0.9}
+        >
+          <ImageWrapper height={imageHeight}>
+            <SharedElement id={`media.${item.id}`} onNode={() => {}}>
+              <ImageWithPlaceholder
+                source={{ uri: item.imageUri }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+            </SharedElement>
+            {item.isVideo && (
+              <VideoBadge>
+                <Play size={14} color="#fff" fill="#fff" strokeWidth={2.5} />
+              </VideoBadge>
+            )}
+          </ImageWrapper>
+          <BottomCard>
+            <BottomCardActions>
+              <ShareButton
+                onPress={(e: GestureResponderEvent) => {
+                  e.stopPropagation();
+                  handleShare(item, e);
+                }}
+                activeOpacity={0.7}
+              >
+                <Share2 size={12} color={theme.colors.text.high} strokeWidth={2} />
+              </ShareButton>
+              <ShareButton
+                onPress={(e: GestureResponderEvent) => {
+                  e.stopPropagation();
+                  if (!isAuthenticated) {
+                    setShowAuthPrompt(true);
+                  } else {
+                    setSelectedInspoForMoodBoard({ title: item.title || '', imageUri: item.imageUri });
+                    setShowAddToMoodBoard(true);
+                  }
+                }}
+                activeOpacity={0.7}
+              >
+                <LayoutGrid size={12} color={theme.colors.text.high} strokeWidth={2} />
+              </ShareButton>
+            </BottomCardActions>
+          </BottomCard>
+        </CardContainer>
+      </InspoCardContainer>
+    );
+  }, [handleItemPress, theme, isAuthenticated]);
+  
+  // List header component
+  const ListHeaderComponent = useMemo(() => (
+    <View>
+      <GreetingBanner topInset={insets.top} firstName={firstName} />
+      <SearchSection>
+        <SearchInputWrapper>
+          <SearchButton onPress={handleSearchPress} activeOpacity={0.7}>
+            <Search size={18} color={theme.colors.text.low} />
+            <SearchButtonText variant="body">
+              Search for tips, styles, and inspiration...
+            </SearchButtonText>
+          </SearchButton>
+        </SearchInputWrapper>
+      </SearchSection>
+      <DIYTipsSection>
+        <SectionHeader>
+          <SectionTitle variant="h2" weight="semibold" color={theme.colors.text.high}>
+            Hair Tips & Styles We Love
+          </SectionTitle>
+        </SectionHeader>
+        <DIYTipsScroll>
+          {diyTipsContent.map((item) => (
+            <HorizontalContentCard
+              key={item.id}
+              content={item}
+              onPress={() => handleDIYTipPress(item.id)}
+              onFavoritePress={() => setShowAuthPrompt(true)}
+            />
+          ))}
+        </DIYTipsScroll>
+      </DIYTipsSection>
+      <TipOfTheDayCard>
+        <TipHeader>
+          <TipIconContainer>
+            <Sparkles size={20} color={theme.colors.primary} strokeWidth={2.5} />
+          </TipIconContainer>
+          <TipTitleContainer>
+            <TipLabel variant="caption" color={theme.colors.primary} weight="semibold">
+              Tip of the Day
+            </TipLabel>
+            <TipTitle variant="h3" weight="semibold" color={theme.colors.text.high}>
+              Daily Hair Wisdom
+            </TipTitle>
+          </TipTitleContainer>
+        </TipHeader>
+        <TipContent variant="body" color={theme.colors.text.medium}>
+          {tipOfTheDay}
+        </TipContent>
+      </TipOfTheDayCard>
+      <SectionDivider />
+      {hasNewPosts && (
+        <TouchableOpacity
+          onPress={mergeNewPosts}
+          style={{
+            margin: theme.spacing[4],
+            padding: theme.spacing[3],
+            backgroundColor: theme.colors.primary,
+            borderRadius: theme.radii.medium,
+            alignItems: 'center',
+          }}
+        >
+          <Text variant="body" weight="semibold" color="#fff">
+            New posts available - Tap to refresh
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  ), [firstName, insets.top, theme, diyTipsContent, tipOfTheDay, hasNewPosts, mergeNewPosts, handleSearchPress, handleDIYTipPress]);
+  
+  // List footer component
+  const ListFooterComponent = useMemo(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={{ padding: theme.spacing[4], alignItems: 'center' }}>
+        <ActivityIndicator size="small" color={theme.colors.primary} />
+        <Text variant="body" color={theme.colors.text.medium} style={{ marginTop: theme.spacing[2] }}>
+          Loading more...
+        </Text>
+      </View>
+    );
+  }, [isFetchingNextPage, theme]);
+
+  // Calculate estimated item size for FlashList
+  const estimatedItemSize = useMemo(() => {
+    if (!layoutItems || layoutItems.length === 0) return 300;
+    const avgHeight = layoutItems.reduce((sum, item) => sum + item.height, 0) / layoutItems.length;
+    return avgHeight || 300;
+  }, [layoutItems]);
 
   return (
     <Container testID="home-screen">
-      <MainScrollView
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + 100,
-        }}
-      >
-        {/* Greeting Banner */}
-        <GreetingBanner topInset={insets.top} firstName={firstName} />
-
-        {/* Search Bar */}
-        <SearchSection>
-          <SearchInputWrapper>
-            <SearchButton onPress={handleSearchPress} activeOpacity={0.7}>
-              <Search size={18} color={theme.colors.text.low} />
-              <SearchButtonText variant="body">
-                Search for tips, styles, and inspiration...
-              </SearchButtonText>
-            </SearchButton>
-          </SearchInputWrapper>
-        </SearchSection>
-
-        {/* Hair Tips & Styles Section */}
-        <DIYTipsSection>
-          <SectionHeader>
-            <SectionTitle variant="h2" weight="semibold" color={theme.colors.text.high}>
-              Hair Tips & Styles We Love
-            </SectionTitle>
-          </SectionHeader>
-          <DIYTipsScroll>
-            {diyTipsContent.map((item) => (
-              <HorizontalContentCard
-                key={item.id}
-                content={item}
-                onPress={() => handleDIYTipPress(item.id)}
-                onFavoritePress={() => setShowAuthPrompt(true)}
-              />
-            ))}
-          </DIYTipsScroll>
-        </DIYTipsSection>
-
-        {/* Tip of the Day Card */}
-        <TipOfTheDayCard>
-          <TipHeader>
-            <TipIconContainer>
-              <Sparkles size={20} color={theme.colors.primary} strokeWidth={2.5} />
-            </TipIconContainer>
-            <TipTitleContainer>
-              <TipLabel variant="caption" color={theme.colors.primary} weight="semibold">
-                Tip of the Day
-              </TipLabel>
-              <TipTitle variant="h3" weight="semibold" color={theme.colors.text.high}>
-                Daily Hair Wisdom
-              </TipTitle>
-            </TipTitleContainer>
-          </TipHeader>
-          <TipContent variant="body" color={theme.colors.text.medium}>
-            {tipOfTheDay}
-          </TipContent>
-        </TipOfTheDayCard>
-
-        {/* Visual divider for better transition */}
-        <SectionDivider />
-
-        {/* Inspiration Grid - Rest of the space (no title, flows naturally) */}
-        <InspoSection>
-          <GridContainer>
-            <GridContent height={totalHeight}>
-              {inspoItems.map((item) => {
-                // Calculate image height (total height minus card bottom)
-                const imageHeight = item.height - CARD_BOTTOM_HEIGHT;
-                
-                return (
-                  <GridItem
-                    key={item.id}
-                    left={item.left}
-                    top={item.top}
-                    width={item.width}
-                    height={item.height}
-                  >
-                    <CardContainer
-                      onPress={() => handleItemPress(item)}
-                      activeOpacity={0.9}
-                    >
-                      <ImageWrapper style={{ height: imageHeight }}>
-                        <SharedElement id={`media.${item.id}`} onNode={() => {}}>
-                          <ImageWithPlaceholder
-                            source={{ uri: item.imageUri }}
-                            style={{ width: '100%', height: '100%' }}
-                            resizeMode="cover"
-                          />
-                        </SharedElement>
-                        {item.isVideo && (
-                          <VideoBadge>
-                            <Play size={14} color="#fff" fill="#fff" strokeWidth={2.5} />
-                          </VideoBadge>
-                        )}
-                      </ImageWrapper>
-                      <BottomCard>
-                        <BottomCardActions>
-                          <ShareButton
-                            onPress={(e: GestureResponderEvent) => {
-                              e.stopPropagation();
-                              handleShare(item, e);
-                            }}
-                            activeOpacity={0.7}
-                          >
-                            <Share2 size={12} color={theme.colors.text.high} strokeWidth={2} />
-                          </ShareButton>
-                          <ShareButton
-                            onPress={(e: GestureResponderEvent) => {
-                              e.stopPropagation();
-                              if (!isAuthenticated) {
-                                setShowAuthPrompt(true);
-                              } else {
-                                setSelectedInspoForMoodBoard({ title: item.title, imageUri: item.imageUri });
-                                setShowAddToMoodBoard(true);
-                              }
-                            }}
-                            activeOpacity={0.7}
-                          >
-                            <LayoutGrid size={12} color={theme.colors.text.high} strokeWidth={2} />
-                          </ShareButton>
-                        </BottomCardActions>
-                      </BottomCard>
-                    </CardContainer>
-                  </GridItem>
-                );
-              })}
-            </GridContent>
-          </GridContainer>
-        </InspoSection>
-      </MainScrollView>
+      <FlashListContainer>
+        <FlashList
+          data={layoutItems || []}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          ListHeaderComponent={ListHeaderComponent}
+          ListFooterComponent={ListFooterComponent}
+          refreshControl={
+            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+          }
+          onViewableItemsChanged={handleViewableItemsChanged}
+          viewabilityConfig={{
+            itemVisiblePercentThreshold: 50,
+          }}
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + 100,
+          }}
+          removeClippedSubviews={false} // Disable to prevent image recycling issues
+          drawDistance={1000} // Increase draw distance to preload more images
+          showsVerticalScrollIndicator={false}
+        />
+      </FlashListContainer>
       <AuthPromptModal
         visible={showAuthPrompt}
         onClose={() => setShowAuthPrompt(false)}
