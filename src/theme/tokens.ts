@@ -41,6 +41,13 @@ export const lineHeights = {
   6: 40,
 } as const;
 
+export const fontFamily = {
+  regular: 'DeliusSwashCaps-Regular',
+  medium: 'DeliusSwashCaps-Regular',
+  semibold: 'DeliusSwashCaps-Regular',
+  bold: 'DeliusSwashCaps-Regular',
+} as const;
+
 export const fontWeights = {
   regular: '400' as const,
   medium: '500' as const,
