@@ -9,7 +9,6 @@ import { useUser } from '@/api/hooks/useUser';
 import { useAuth } from '@/contexts/AuthContext';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
 import { Text } from '@/components/ui/Text';
-import { Input } from '@/components/ui/Input';
 import { Play, Share2, Search, Lightbulb, Sparkles, LayoutGrid } from 'lucide-react-native';
 import { SharedElement } from 'react-native-shared-element';
 import { GreetingBanner } from '@/components/composed/GreetingBanner';
@@ -69,6 +68,23 @@ const SearchSection = styled(Section)`
 `;
 
 const SearchInputWrapper = styled.View``;
+
+const SearchButton = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  border-width: 1px;
+  border-color: ${({ theme }: { theme: Theme }) => theme.colors.border};
+  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
+  background-color: ${({ theme }: { theme: Theme }) => theme.colors.surface};
+  padding: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
+  min-height: 44px;
+`;
+
+const SearchButtonText = styled(Text)`
+  flex: 1;
+  margin-left: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
+  color: ${({ theme }: { theme: Theme }) => theme.colors.text.low};
+`;
 
 const TipOfTheDayCard = styled.View`
   margin-horizontal: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
@@ -238,7 +254,6 @@ export default function HomeScreen() {
   const { data: contentData, isLoading, refetch } = useContent();
   const { data: user } = useUser('user-1');
   const { isAuthenticated } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showAddToMoodBoard, setShowAddToMoodBoard] = useState(false);
   const [selectedInspoForMoodBoard, setSelectedInspoForMoodBoard] = useState<{ title: string; imageUri?: string } | null>(null);
@@ -273,39 +288,18 @@ export default function HomeScreen() {
   // Filter DIY tips content (articles with tips topic)
   const diyTipsContent = useMemo(() => {
     if (!contentData?.data) return [];
-    let filtered = contentData.data.filter(
+    const filtered = contentData.data.filter(
       (item) => item.topic === 'tips' || item.topic === 'care' || item.topic === 'styling'
     );
 
-    // Apply search filter if query exists
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (item) =>
-          item.title.toLowerCase().includes(query) ||
-          item.description.toLowerCase().includes(query) ||
-          item.topic.toLowerCase().includes(query)
-      );
-    }
-
     return filtered.slice(0, 10); // Limit to 10 items for horizontal scroll
-  }, [contentData?.data, searchQuery]);
+  }, [contentData?.data]);
 
   // Transform content into inspo items with uniform width but varying heights
   const { items: inspoItems, totalHeight } = useMemo(() => {
     if (!contentData?.data) return { items: [], totalHeight: 0 };
 
-    // Filter content by search query if exists
-    let filteredContent = contentData.data;
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filteredContent = contentData.data.filter(
-        (item) =>
-          item.title.toLowerCase().includes(query) ||
-          item.description.toLowerCase().includes(query) ||
-          item.topic.toLowerCase().includes(query)
-      );
-    }
+    const filteredContent = contentData.data;
 
     const items: InspoItem[] = [];
     filteredContent.forEach((item, index) => {
@@ -354,7 +348,7 @@ export default function HomeScreen() {
     });
 
     return { items: processedItems, totalHeight: maxHeight };
-  }, [contentData?.data, searchQuery, width, itemWidth, availableWidth, paddingHorizontal, gap, aspectRatios]);
+  }, [contentData?.data, width, itemWidth, availableWidth, paddingHorizontal, gap, aspectRatios]);
 
   const handleRefresh = () => {
     refetch();
@@ -374,6 +368,10 @@ export default function HomeScreen() {
     router.push(`/(tabs)/education/${contentId}` as any);
   };
 
+  const handleSearchPress = () => {
+    router.push('/(tabs)/home/search' as any);
+  };
+
   return (
     <Container testID="home-screen">
       <MainScrollView
@@ -391,13 +389,12 @@ export default function HomeScreen() {
         {/* Search Bar */}
         <SearchSection>
           <SearchInputWrapper>
-            <Input
-              placeholder="Search for tips, styles, and inspiration..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              leftIcon={<Search size={18} color={theme.colors.text.low} />}
-              clearable
-            />
+            <SearchButton onPress={handleSearchPress} activeOpacity={0.7}>
+              <Search size={18} color={theme.colors.text.low} />
+              <SearchButtonText variant="body">
+                Search for tips, styles, and inspiration...
+              </SearchButtonText>
+            </SearchButton>
           </SearchInputWrapper>
         </SearchSection>
 

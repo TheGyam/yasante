@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { AnimatedView } from './AnimatedView';
+import { ANIMATION_PRESETS, getAnimationConfig, getSpringConfig } from '@/utils/animations';
 
 // Conditionally import Reanimated
 const useSharedValue = (() => {
@@ -42,9 +43,12 @@ interface FadeInProps {
   useSpring?: boolean;
 }
 
-export function FadeIn({ children, duration = 360, delay = 0, useSpring = false }: FadeInProps) {
+export function FadeIn({ children, duration, delay = 0, useSpring = false }: FadeInProps) {
   const opacity = useSharedValue(0);
   const reduceMotion = useReducedMotion();
+
+  // Use preset duration if not specified
+  const animationDuration = duration || (useSpring ? undefined : ANIMATION_PRESETS.fadeIn.duration);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -54,14 +58,19 @@ export function FadeIn({ children, duration = 360, delay = 0, useSpring = false 
 
     const timer = setTimeout(() => {
       if (useSpring) {
-        opacity.value = withSpring(1, { damping: 16, stiffness: 120 });
+        const springConfig = getSpringConfig(ANIMATION_PRESETS.springIn, reduceMotion);
+        opacity.value = withSpring(1, springConfig);
       } else {
-        opacity.value = withTiming(1, { duration });
+        const timingConfig = getAnimationConfig(
+          { duration: animationDuration!, easing: ANIMATION_PRESETS.fadeIn.easing },
+          reduceMotion
+        );
+        opacity.value = withTiming(1, timingConfig);
       }
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [duration, delay, useSpring, reduceMotion]);
+  }, [animationDuration, delay, useSpring, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
