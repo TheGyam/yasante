@@ -6,7 +6,7 @@ import styled from 'styled-components/native';
 import { ArrowLeft, Bookmark, Share2, MoreHorizontal, LayoutGrid } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
-import { useContentItem, useContent } from '@/api/hooks/useContent';
+import { useContentItem, useRelatedContent } from '@/api/hooks/useContent';
 import { useToggleFavorite, useIsFavorite, useFavorites } from '@/api/hooks/useContent';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
@@ -181,7 +181,14 @@ export default function InspoPostDetailScreen() {
   }, [idParam, originalId]);
   
   const { data: content, isLoading, error } = useContentItem(originalId);
-  const { data: allContent } = useContent();
+  // Only enable related content query when we have both content and topic
+  const hasValidTopic = !!(content && content.topic);
+  // Pass topic (hook will handle empty string by disabling the query)
+  const { data: relatedContentData } = useRelatedContent(
+    originalId,
+    content?.topic || '',
+    { enabled: hasValidTopic }
+  );
   const { isAuthenticated, user } = useAuth();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showAddToMoodBoard, setShowAddToMoodBoard] = useState(false);
@@ -252,13 +259,22 @@ export default function InspoPostDetailScreen() {
     }
   }, [content, error]);
 
-  // Get similar posts (same topic, exclude current)
+  // Get similar posts (same topic, exclude current) - using cursor-based pagination
   const similarPosts = useMemo(() => {
-    if (!content || !allContent?.data) return [];
-    return allContent.data
-      .filter((item) => item.id !== originalId && item.topic === content.topic)
-      .slice(0, 2);
-  }, [content, allContent?.data, originalId]);
+    if (!relatedContentData?.pages || !Array.isArray(relatedContentData.pages) || relatedContentData.pages.length === 0) {
+      return [];
+    }
+    // Flatten all pages and take first 2 items
+    try {
+      const allRelated = relatedContentData.pages
+        .filter(page => page && page.data && Array.isArray(page.data))
+        .flatMap(page => page.data || []);
+      return Array.isArray(allRelated) ? allRelated.slice(0, 2) : [];
+    } catch (error) {
+      console.error('Error processing similar posts:', error);
+      return [];
+    }
+  }, [relatedContentData?.pages]);
 
   const isNavigatingRef = useRef(false);
 

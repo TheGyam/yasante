@@ -19,3 +19,13 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface CursorPaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    cursor?: string;
+    nextCursor?: string;
+    hasMore: boolean;
+    limit: number;
+  };
+}
+
