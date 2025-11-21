@@ -48,6 +48,7 @@ const withTiming = (() => {
 import { useTheme } from '@/hooks/useTheme';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { TabIcon, type TabIconName } from '../icons/TabIcon';
+import { ANIMATION_PRESETS, getAnimationConfig, getSpringConfig } from '@/utils/animations';
 import type { Theme } from '@/theme/ThemeProvider';
 
 // Floating container - positioned absolutely at bottom
@@ -207,10 +208,13 @@ export function BottomTabBar() {
 
   // Keyboard visibility handling
   useEffect(() => {
+    const exitConfig = getAnimationConfig(ANIMATION_PRESETS.fadeOut, reduceMotion);
+    const enterConfig = getAnimationConfig(ANIMATION_PRESETS.fadeIn, reduceMotion);
+
     const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
       if (!reduceMotion) {
-        opacity.value = withTiming(0, { duration: 200 });
-        scale.value = withTiming(0.9, { duration: 200 });
+        opacity.value = withTiming(0, exitConfig);
+        scale.value = withTiming(0.9, exitConfig);
       } else {
         opacity.value = 0;
         scale.value = 0.9;
@@ -219,8 +223,8 @@ export function BottomTabBar() {
 
     const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
       if (!reduceMotion) {
-        opacity.value = withTiming(1, { duration: 200 });
-        scale.value = withTiming(1, { duration: 200 });
+        opacity.value = withTiming(1, enterConfig);
+        scale.value = withTiming(1, enterConfig);
       } else {
         opacity.value = 1;
         scale.value = 1;
@@ -233,9 +237,9 @@ export function BottomTabBar() {
     };
   }, [reduceMotion]);
 
-  const handleTabPress = (tab: Tab) => {
-    router.push(tab.route as any);
-  };
+  const handleTabPress = React.useCallback((tab: Tab) => {
+    router.replace(tab.route as any);
+  }, [router]);
 
   // Animated styles
   const containerStyle = useAnimatedStyle
@@ -251,17 +255,18 @@ export function BottomTabBar() {
   // Icon scale animation effect
   useEffect(() => {
     const timers: NodeJS.Timeout[] = [];
+    const springConfig = getSpringConfig(ANIMATION_PRESETS.springIn, reduceMotion);
     
     tabs.forEach((_, index) => {
       const isActive = index === activeIndex;
       if (isActive && !reduceMotion) {
-        iconScales[index].value = withSpring(1.12, { damping: 12, stiffness: 200 });
+        iconScales[index].value = withSpring(1.12, springConfig);
         const timer = setTimeout(() => {
-          iconScales[index].value = withSpring(1.0, { damping: 12, stiffness: 200 });
+          iconScales[index].value = withSpring(1.0, springConfig);
         }, 150);
         timers.push(timer);
       } else {
-        iconScales[index].value = withSpring(1.0, { damping: 12, stiffness: 200 });
+        iconScales[index].value = withSpring(1.0, springConfig);
       }
     });
 
@@ -275,19 +280,20 @@ export function BottomTabBar() {
   // Indicator and background animation effect - soft grow animation when appearing
   useEffect(() => {
     if (!reduceMotion) {
-      // Soft grow-in animation for active indicator - starts from higher values for gentler effect
+      const iconConfig = getAnimationConfig(ANIMATION_PRESETS.icon, reduceMotion);
+      const scaleConfig = getAnimationConfig(ANIMATION_PRESETS.scaleIn, reduceMotion);
+
+      // Soft grow-in animation for active indicator
       indicatorScale.value = 0.75;
       indicatorOpacity.value = 0.6;
+      indicatorScale.value = withTiming(1, iconConfig);
+      indicatorOpacity.value = withTiming(1, iconConfig);
 
-      indicatorScale.value = withTiming(1, { duration: 220 });
-      indicatorOpacity.value = withTiming(1, { duration: 220 });
-
-      // Soft grow-in animation for active background pill - starts from higher values for gentler effect
+      // Soft grow-in animation for active background pill
       backgroundScale.value = 0.85;
       backgroundOpacity.value = 0.6;
-
-      backgroundScale.value = withTiming(1, { duration: 420 });
-      backgroundOpacity.value = withTiming(1, { duration: 220 });
+      backgroundScale.value = withTiming(1, scaleConfig);
+      backgroundOpacity.value = withTiming(1, iconConfig);
     } else {
       indicatorScale.value = 1;
       indicatorOpacity.value = 1;

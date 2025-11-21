@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { AnimatedView } from './AnimatedView';
+import { ANIMATION_PRESETS, getAnimationConfig, getSpringConfig } from '@/utils/animations';
 
 // Conditionally import Reanimated
 const useSharedValue = (() => {
@@ -42,10 +43,13 @@ interface ScaleInProps {
   useSpring?: boolean;
 }
 
-export function ScaleIn({ children, duration = 360, delay = 0, useSpring = true }: ScaleInProps) {
+export function ScaleIn({ children, duration, delay = 0, useSpring = false }: ScaleInProps) {
   const scale = useSharedValue(0);
   const opacity = useSharedValue(0);
   const reduceMotion = useReducedMotion();
+
+  // Use preset duration if not specified
+  const animationDuration = duration || (useSpring ? undefined : ANIMATION_PRESETS.scaleIn.duration);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -56,16 +60,21 @@ export function ScaleIn({ children, duration = 360, delay = 0, useSpring = true 
 
     const timer = setTimeout(() => {
       if (useSpring) {
-        scale.value = withSpring(1, { damping: 16, stiffness: 120 });
-        opacity.value = withSpring(1, { damping: 16, stiffness: 120 });
+        const springConfig = getSpringConfig(ANIMATION_PRESETS.springIn, reduceMotion);
+        scale.value = withSpring(1, springConfig);
+        opacity.value = withSpring(1, springConfig);
       } else {
-        opacity.value = withTiming(1, { duration });
-        scale.value = withTiming(1, { duration });
+        const timingConfig = getAnimationConfig(
+          { duration: animationDuration!, easing: ANIMATION_PRESETS.scaleIn.easing },
+          reduceMotion
+        );
+        opacity.value = withTiming(1, timingConfig);
+        scale.value = withTiming(1, timingConfig);
       }
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [duration, delay, useSpring, reduceMotion]);
+  }, [animationDuration, delay, useSpring, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],

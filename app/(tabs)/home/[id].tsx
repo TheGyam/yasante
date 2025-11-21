@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { ScrollView, View, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import styled from 'styled-components/native';
 import { ArrowLeft, Bookmark, Share2, MoreHorizontal, LayoutGrid } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +15,9 @@ import { SharedElement } from 'react-native-shared-element';
 import { VideoPlayer } from '@/components/ui/VideoPlayer';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
 import { Text } from '@/components/ui/Text';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { ANIMATION_PRESETS, getAnimationConfig } from '@/utils/animations';
 import type { Theme } from '@/theme/ThemeProvider';
 
 const Container = styled.View`
@@ -21,7 +25,7 @@ const Container = styled.View`
   background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};
 `;
 
-const Header = styled.View<{ topInset: number }>`
+const Header = styled(Animated.View)<{ topInset: number }>`
   position: absolute;
   top: 0;
   left: 0;
@@ -71,7 +75,7 @@ const MediaContainer = styled.View<{ height: number }>`
   background-color: ${({ theme }: { theme: Theme }) => theme.colors.surfaceVariant};
 `;
 
-const ContentSection = styled.View`
+const ContentSection = styled(Animated.View)`
   padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
   background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};
 `;
@@ -145,9 +149,11 @@ const SimilarPostCard = styled(TouchableOpacity)`
 
 
 export default function InspoPostDetailScreen() {
-  const params = useLocalSearchParams<{ id: string | string[] }>();
+  const params = useLocalSearchParams<{ id: string | string[]; returnTo?: string; query?: string }>();
+  const { returnTo, query } = params;
   const { theme } = useTheme();
   const router = useRouter();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   
@@ -179,11 +185,53 @@ export default function InspoPostDetailScreen() {
   const { isAuthenticated, user } = useAuth();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showAddToMoodBoard, setShowAddToMoodBoard] = useState(false);
+  const reduceMotion = useReducedMotion();
   
   const userId = user?.id;
   const { data: favorites } = useFavorites(userId || '', { enabled: !!userId });
   const { data: isFavorite = false } = useIsFavorite(userId || '', originalId, { enabled: !!userId });
   const toggleFavorite = useToggleFavorite(userId || '');
+
+  // Animation values for fade-in effects
+  const headerOpacity = useSharedValue(0);
+  const contentOpacity = useSharedValue(0);
+
+  // Animate elements in after shared element transition
+  useEffect(() => {
+    // Only animate if not coming from search (shared element transition)
+    const shouldAnimate = returnTo !== 'search';
+    
+    if (shouldAnimate && content) {
+      // Delay animations to start after shared element transition (300-400ms)
+      const headerDelay = 350;
+      const contentDelay = 400;
+      
+      const fadeInConfig = getAnimationConfig(ANIMATION_PRESETS.fadeIn, reduceMotion);
+      
+      headerOpacity.value = withDelay(
+        headerDelay,
+        withTiming(1, fadeInConfig)
+      );
+      
+      contentOpacity.value = withDelay(
+        contentDelay,
+        withTiming(1, fadeInConfig)
+      );
+    } else {
+      // If coming from search, show immediately
+      headerOpacity.value = 1;
+      contentOpacity.value = 1;
+    }
+  }, [content, returnTo, reduceMotion]);
+
+  // Animated styles
+  const headerAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: headerOpacity.value,
+  }));
+
+  const contentAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+  }));
   
   // Calculate saves count (mock - in real app, this would come from API)
   // For now, we'll use a mock number based on content ID
@@ -212,9 +260,40 @@ export default function InspoPostDetailScreen() {
       .slice(0, 2);
   }, [content, allContent?.data, originalId]);
 
+  const isNavigatingRef = useRef(false);
+
   const handleBack = () => {
-    router.back();
+    // If we came from search, navigate back to search screen with preserved query
+    // Use replace to avoid stack buildup - replaces current screen with search
+    if (returnTo === 'search') {
+      isNavigatingRef.current = true;
+      const queryParam = query ? `?query=${encodeURIComponent(query)}` : '';
+      router.replace(`/(tabs)/home/search${queryParam}` as any);
+    } else {
+      router.back();
+    }
   };
+
+  // Intercept gesture navigation (swipe back) to ensure proper navigation
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      // Only intercept if we came from search and we're not already navigating
+      if (returnTo === 'search' && !isNavigatingRef.current) {
+        // Only intercept actual back actions (POP, not our own navigation)
+        if (e.data.action.type === 'POP' || e.data.action.type === 'GO_BACK') {
+          // Prevent default behavior
+          e.preventDefault();
+          // Set flag to prevent re-entry
+          isNavigatingRef.current = true;
+          // Navigate to search with preserved query
+          const queryParam = query ? `?query=${encodeURIComponent(query)}` : '';
+          router.replace(`/(tabs)/home/search${queryParam}` as any);
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, returnTo, router, query]);
 
   const handleToggleFavorite = () => {
     if (!isAuthenticated) {
@@ -284,25 +363,44 @@ export default function InspoPostDetailScreen() {
       >
         {/* Full-screen media */}
         <MediaContainer height={width * 1.33}>
-          <SharedElement id={`media.${idParam}`} onNode={() => {}}>
-            {content.type === 'video' && content.videoUri ? (
-              <VideoPlayer
-                source={{ uri: content.videoUri }}
-                poster={content.thumbnailUri}
-                autoPlay={false}
-              />
-            ) : (
-              <ImageWithPlaceholder
-                source={{ uri: content.thumbnailUri || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80' }}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
-              />
-            )}
-          </SharedElement>
+          {/* Only use SharedElement when coming from homepage (not from search) */}
+          {returnTo !== 'search' ? (
+            <SharedElement id={`media.${idParam}`} onNode={() => {}}>
+              {content.type === 'video' && content.videoUri ? (
+                <VideoPlayer
+                  source={{ uri: content.videoUri }}
+                  poster={content.thumbnailUri}
+                  autoPlay={false}
+                />
+              ) : (
+                <ImageWithPlaceholder
+                  source={{ uri: content.thumbnailUri || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80' }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                />
+              )}
+            </SharedElement>
+          ) : (
+            <>
+              {content.type === 'video' && content.videoUri ? (
+                <VideoPlayer
+                  source={{ uri: content.videoUri }}
+                  poster={content.thumbnailUri}
+                  autoPlay={false}
+                />
+              ) : (
+                <ImageWithPlaceholder
+                  source={{ uri: content.thumbnailUri || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80' }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                />
+              )}
+            </>
+          )}
         </MediaContainer>
 
-        {/* Header overlay */}
-        <Header topInset={insets.top} style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}>
+        {/* Header */}
+        <Header topInset={insets.top} style={headerAnimatedStyle}>
           <BackButton onPress={handleBack} activeOpacity={0.7}>
             <ArrowLeft size={20} color="#000000" strokeWidth={2.5} />
           </BackButton>
@@ -326,7 +424,7 @@ export default function InspoPostDetailScreen() {
         </Header>
 
         {/* Content section */}
-        <ContentSection>
+        <ContentSection style={contentAnimatedStyle}>
           {/* Saves count */}
           <SavesCount>
             <Bookmark size={18} color={theme.colors.primary} fill={theme.colors.primary} strokeWidth={2} />

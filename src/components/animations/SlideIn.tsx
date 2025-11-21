@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { AnimatedView } from './AnimatedView';
+import { ANIMATION_PRESETS, getAnimationConfig, getSpringConfig } from '@/utils/animations';
 
 // Conditionally import Reanimated
 const useSharedValue = (() => {
@@ -49,15 +50,18 @@ interface SlideInProps {
 export function SlideIn({
   children,
   direction = 'up',
-  duration = 360,
+  duration,
   delay = 0,
-  distance = 50,
-  useSpring = true,
+  distance = 30,
+  useSpring = false,
 }: SlideInProps) {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(0);
   const reduceMotion = useReducedMotion();
+
+  // Use preset duration if not specified
+  const animationDuration = duration || (useSpring ? undefined : ANIMATION_PRESETS.slideIn.duration);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -85,18 +89,23 @@ export function SlideIn({
 
     const timer = setTimeout(() => {
       if (useSpring) {
-        translateX.value = withSpring(0, { damping: 16, stiffness: 120 });
-        translateY.value = withSpring(0, { damping: 16, stiffness: 120 });
-        opacity.value = withSpring(1, { damping: 16, stiffness: 120 });
+        const springConfig = getSpringConfig(ANIMATION_PRESETS.springIn, reduceMotion);
+        translateX.value = withSpring(0, springConfig);
+        translateY.value = withSpring(0, springConfig);
+        opacity.value = withSpring(1, springConfig);
       } else {
-        translateX.value = withTiming(0, { duration });
-        translateY.value = withTiming(0, { duration });
-        opacity.value = withTiming(1, { duration });
+        const timingConfig = getAnimationConfig(
+          { duration: animationDuration!, easing: ANIMATION_PRESETS.slideIn.easing },
+          reduceMotion
+        );
+        translateX.value = withTiming(0, timingConfig);
+        translateY.value = withTiming(0, timingConfig);
+        opacity.value = withTiming(1, timingConfig);
       }
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [direction, duration, delay, distance, useSpring, reduceMotion]);
+  }, [direction, animationDuration, delay, distance, useSpring, reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }, { translateY: translateY.value }],

@@ -9,9 +9,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSpring,
-  Easing
 } from 'react-native-reanimated';
+import { ANIMATION_PRESETS, getAnimationConfig } from '@/utils/animations';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import type { Theme } from '@/theme/ThemeProvider';
 
 const BannerContainer = styled.View`
@@ -69,6 +69,7 @@ export interface GreetingBannerProps {
 export function GreetingBanner({ topInset, firstName }: GreetingBannerProps) {
   const { theme } = useTheme();
   const { isAuthenticated } = useAuth();
+  const reduceMotion = useReducedMotion();
   const [greeting, setGreeting] = useState<string>('');
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
@@ -80,15 +81,22 @@ export function GreetingBanner({ topInset, firstName }: GreetingBannerProps) {
       setGreeting(text);
     });
 
-    // Animate entrance with less bouncy spring
-    opacity.value = withTiming(1, { duration: 250, easing: Easing.out(Easing.cubic) });
-    translateY.value = withSpring(0, { damping: 22, stiffness: 85 });
+    // Animate entrance with professional timing (less bouncy, faster)
+    const fadeConfig = getAnimationConfig(ANIMATION_PRESETS.fadeIn, reduceMotion);
+    const slideConfig = getAnimationConfig(ANIMATION_PRESETS.slideIn, reduceMotion);
+    
+    opacity.value = withTiming(1, fadeConfig);
+    translateY.value = withTiming(0, slideConfig);
 
-    // Animate underline with timing-based animation
+    // Animate underline with slight delay for choreography
+    const underlineConfig = getAnimationConfig(
+      { duration: 200, easing: ANIMATION_PRESETS.fadeIn.easing },
+      reduceMotion
+    );
     setTimeout(() => {
-      underlineWidth.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) });
-    }, 150);
-  }, []);
+      underlineWidth.value = withTiming(1, underlineConfig);
+    }, 100);
+  }, [reduceMotion]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

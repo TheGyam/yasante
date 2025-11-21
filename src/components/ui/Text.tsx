@@ -16,10 +16,16 @@ const StyledText = styled.Text<StyledTextProps>`
   color: ${({ theme, color }) => color || theme.colors.text.high};
   text-align: ${({ align }) => align || 'left'};
   font-family: ${({ weight, variant, theme }) => {
-    if (weight) return theme.fontFamily[weight];
-    if (variant === 'h1' || variant === 'h2' || variant === 'h3') return theme.fontFamily.bold;
-    if (variant === 'label') return theme.fontFamily.semibold;
-    return theme.fontFamily.regular;
+    // Use custom font if available, otherwise fallback to system font
+    const fontName = weight 
+      ? theme.fontFamily[weight] 
+      : variant === 'h1' || variant === 'h2' || variant === 'h3' 
+        ? theme.fontFamily.bold 
+        : variant === 'label' 
+          ? theme.fontFamily.semibold 
+          : theme.fontFamily.regular;
+    // React Native will fallback to system font if font doesn't exist
+    return fontName || 'System';
   }};
   font-weight: ${({ weight, variant, theme }) => {
     if (weight) return theme.fontWeights[weight];

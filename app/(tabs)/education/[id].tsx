@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ScrollView, View, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import styled from 'styled-components/native';
 import { X, Heart, ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -133,9 +134,11 @@ const VerifiedBadge = styled.View`
 `;
 
 export default function ContentDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; returnTo?: string; query?: string }>();
+  const { id, returnTo, query } = params;
   const { theme } = useTheme();
   const router = useRouter();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { isAuthenticated, user } = useAuth();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
@@ -216,9 +219,40 @@ export default function ContentDetailScreen() {
     }
   };
 
+  const isNavigatingRef = useRef(false);
+
   const handleClose = () => {
-    router.back();
+    // If we came from search, navigate back to search screen with preserved query
+    // Use replace to avoid stack buildup - replaces current screen with search
+    if (returnTo === 'search') {
+      isNavigatingRef.current = true;
+      const queryParam = query ? `?query=${encodeURIComponent(query)}` : '';
+      router.replace(`/(tabs)/home/search${queryParam}` as any);
+    } else {
+      router.back();
+    }
   };
+
+  // Intercept gesture navigation (swipe back) to ensure proper navigation
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      // Only intercept if we came from search and we're not already navigating
+      if (returnTo === 'search' && !isNavigatingRef.current) {
+        // Only intercept actual back actions (POP, not our own navigation)
+        if (e.data.action.type === 'POP' || e.data.action.type === 'GO_BACK') {
+          // Prevent default behavior
+          e.preventDefault();
+          // Set flag to prevent re-entry
+          isNavigatingRef.current = true;
+          // Navigate to search with preserved query
+          const queryParam = query ? `?query=${encodeURIComponent(query)}` : '';
+          router.replace(`/(tabs)/home/search${queryParam}` as any);
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, returnTo, router, query]);
 
   if (isLoading || !content) {
     return (
