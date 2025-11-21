@@ -258,8 +258,8 @@ export default function HomeScreen() {
   const [showAddToMoodBoard, setShowAddToMoodBoard] = useState(false);
   const [selectedInspoForMoodBoard, setSelectedInspoForMoodBoard] = useState<{ title: string; imageUri?: string } | null>(null);
 
-  // Get first name for greeting
-  const firstName = user?.name?.split(' ')[0] || 'there';
+  // Get first name for greeting (only when authenticated)
+  const firstName = isAuthenticated && user?.name ? user.name.split(' ')[0] : undefined;
 
   // Tip of the day - rotate tips daily
   const tipsOfTheDay = [

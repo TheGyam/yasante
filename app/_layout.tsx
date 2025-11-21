@@ -6,7 +6,7 @@ import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { seedMockData } from '@/utils/seed';
-import { LogBox, Linking } from 'react-native';
+import { LogBox, Linking, View, ActivityIndicator } from 'react-native';
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { parseMoodBoardDeepLink, parseTreatmentDeepLink } from '@/utils/deepLinks';
@@ -82,20 +82,35 @@ function RootLayoutNav() {
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: theme.colors.background },
-        animation: 'slide_from_right',
+        animation: 'fade', // Use fade animation to work better with shared elements
       }}
     />
   );
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    'DeliusSwashCaps-Regular': 'https://fonts.gstatic.com/s/deliusswashcaps/v18/JOpUQ0Be7R1Kq8r9HjSpDIV6AQ.woff2',
+  // Load Delius Swash Caps font from local assets
+  // The key 'DeliusSwashCaps-Regular' is the name we'll use in fontFamily
+  const [fontsLoaded, fontError] = useFonts({
+    'DeliusSwashCaps-Regular': require('../assets/fonts/DeliusSwashCaps-Regular.ttf'),
   });
 
-  if (!fontsLoaded) {
-    return null; // or a loading screen
+  // Log when font is loaded for debugging
+  useEffect(() => {
+    if (fontsLoaded) {
+      console.log('Delius Swash Caps font loaded successfully');
+    }
+  }, [fontsLoaded]);
+
+  // Log errors for debugging
+  if (fontError) {
+    console.warn('Font loading error:', fontError);
+    console.warn('Please ensure DeliusSwashCaps-Regular.ttf is in assets/fonts/ folder');
   }
+
+  // Show app immediately - fonts will apply when loaded
+  // React Native will use system font as fallback if custom font isn't available
+  // The font will be applied automatically once loaded
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

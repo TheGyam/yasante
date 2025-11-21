@@ -56,8 +56,8 @@ export function useContentItem(contentId: string) {
       return response.data;
     },
     enabled: !!contentId,
-    staleTime: 0, // Always fetch fresh data for detail pages
-    gcTime: 0, // Don't cache detail pages
+    staleTime: 5 * 60 * 1000, // 5 minutes - cache for instant navigation
+    gcTime: 10 * 60 * 1000, // 10 minutes - keep cached data longer
   });
 }
 
