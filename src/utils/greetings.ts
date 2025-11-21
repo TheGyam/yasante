@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const GREETINGS = [
-  'Hey, glow-getter ✨',
+  'Hey, glow-getter',
   'Looking fabulous today — same vibes!',
-  'Hair goals loading... 🔁',
+  'Hair goals loading...',
   'Top of the hair, top of the world.',
   'Ready to slay today?',
   'Crown check — looking iconic.',

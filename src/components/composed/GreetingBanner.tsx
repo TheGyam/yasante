@@ -2,14 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import styled from 'styled-components/native';
 import { useTheme } from '@/hooks/useTheme';
+import { useAuth } from '@/contexts/AuthContext';
 import { Text } from '../ui/Text';
 import { getNextGreeting } from '@/utils/greetings';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming, 
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
   withSpring,
-  Easing 
+  Easing
 } from 'react-native-reanimated';
 import type { Theme } from '@/theme/ThemeProvider';
 
@@ -67,6 +68,7 @@ export interface GreetingBannerProps {
 
 export function GreetingBanner({ topInset, firstName }: GreetingBannerProps) {
   const { theme } = useTheme();
+  const { isAuthenticated } = useAuth();
   const [greeting, setGreeting] = useState<string>('');
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
@@ -78,14 +80,14 @@ export function GreetingBanner({ topInset, firstName }: GreetingBannerProps) {
       setGreeting(text);
     });
 
-    // Animate entrance
-    opacity.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.ease) });
-    translateY.value = withSpring(0, { damping: 15, stiffness: 100 });
-    
-    // Animate underline with delay
+    // Animate entrance with less bouncy spring
+    opacity.value = withTiming(1, { duration: 250, easing: Easing.out(Easing.cubic) });
+    translateY.value = withSpring(0, { damping: 22, stiffness: 85 });
+
+    // Animate underline with timing-based animation
     setTimeout(() => {
-      underlineWidth.value = withSpring(1, { damping: 12, stiffness: 80 });
-    }, 200);
+      underlineWidth.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) });
+    }, 150);
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -102,7 +104,7 @@ export function GreetingBanner({ topInset, firstName }: GreetingBannerProps) {
       <Animated.View style={animatedStyle}>
         <GreetingWrapper>
           <MainGreeting variant="h1" weight="bold" color={theme.colors.text.high}>
-            Hey {firstName || 'there'}
+            Hey {isAuthenticated && firstName ? firstName : 'there'}
           </MainGreeting>
           <SubGreeting 
             variant="body" 

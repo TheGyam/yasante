@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useMemo } from '
 import { useColorScheme } from 'react-native';
 import { ThemeProvider as StyledThemeProvider } from 'styled-components/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors, spacing, radii, fontSizes, lineHeights, fontWeights, iconSizes, shadows, breakpoints } from './tokens';
+import { colors, spacing, radii, fontSizes, lineHeights, fontWeights, fontFamily, iconSizes, shadows, breakpoints } from './tokens';
 
 export type ColorScheme = 'light' | 'dark' | 'system';
 
@@ -35,6 +35,7 @@ export interface Theme {
   fontSizes: typeof fontSizes;
   lineHeights: typeof lineHeights;
   fontWeights: typeof fontWeights;
+  fontFamily: typeof fontFamily;
   iconSizes: typeof iconSizes;
   shadows: typeof shadows;
   breakpoints: typeof breakpoints;
@@ -120,6 +121,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       fontSizes,
       lineHeights,
       fontWeights,
+      fontFamily,
       iconSizes,
       shadows,
       breakpoints,
