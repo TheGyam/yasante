@@ -8,6 +8,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { seedMockData } from '@/utils/seed';
 import { LogBox, Linking } from 'react-native';
 import { useEffect } from 'react';
+import { useFonts } from 'expo-font';
 import { parseMoodBoardDeepLink, parseTreatmentDeepLink } from '@/utils/deepLinks';
 
 // Create a client
@@ -88,6 +89,14 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    'DeliusSwashCaps-Regular': 'https://fonts.gstatic.com/s/deliusswashcaps/v18/JOpUQ0Be7R1Kq8r9HjSpDIV6AQ.woff2',
+  });
+
+  if (!fontsLoaded) {
+    return null; // or a loading screen
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

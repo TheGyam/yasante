@@ -257,12 +257,32 @@ export const contentApi = {
   search: async (query: string): Promise<ApiResponse<Content[]>> => {
     await delay();
     const lowerQuery = query.toLowerCase();
-    const results = content.filter(
-      (c) =>
-        c.title.toLowerCase().includes(lowerQuery) ||
-        c.description.toLowerCase().includes(lowerQuery)
+
+    // Use smart search for better matching
+    const { smartSearch } = await import('@/utils/smartSearch');
+
+    // Create searchable texts from content
+    const searchableItems = content.map(c => ({
+      content: c,
+      searchText: `${c.title} ${c.description} ${c.topic} ${c.hairTypes.join(' ')}`.toLowerCase()
+    }));
+
+    // Perform smart search
+    const searchResults = smartSearch(
+      lowerQuery,
+      searchableItems.map(item => item.searchText)
     );
-    return { data: results };
+
+    // Map back to content items, sorted by relevance
+    const results = searchResults
+      .map(result => {
+        const item = searchableItems.find(item => item.searchText === result.text);
+        return item ? { ...item.content, _searchScore: result.score } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => (b!._searchScore || 0) - (a!._searchScore || 0));
+
+    return { data: results as any };
   },
 };
 
