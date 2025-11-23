@@ -251,8 +251,8 @@ export default function HomeScreen() {
     hasNextPage,
     isFetchingNextPage 
   } = useInfiniteContent();
-  const { data: user } = useUser('user-1');
-  const { isAuthenticated } = useAuth();
+  const { user: authUser, isAuthenticated } = useAuth();
+  const { data: user } = useUser(authUser?.id, { enabled: !!authUser?.id });
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showAddToMoodBoard, setShowAddToMoodBoard] = useState(false);
   const [selectedInspoForMoodBoard, setSelectedInspoForMoodBoard] = useState<{ title: string; imageUri?: string } | null>(null);

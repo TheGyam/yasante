@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
 import { useTheme } from '@/hooks/useTheme';
 import { useCreateGoal } from '@/api/hooks/useGoals';
+import { useAuth } from '@/contexts/AuthContext';
 import { TopBar } from '@/components/composed/TopBar';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -28,7 +29,8 @@ const FormCard = styled(Card)`
 export default function GoalCreateScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  const createGoal = useCreateGoal();
+  const { user } = useAuth();
+  const createGoal = useCreateGoal(user?.id);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -55,8 +57,11 @@ export default function GoalCreateScreen() {
     if (!validate()) return;
 
     try {
+      if (!user?.id) {
+        console.error('User not authenticated');
+        return;
+      }
       await createGoal.mutateAsync({
-        userId: 'user-1',
         name,
         description: description || undefined,
         targetDate: targetDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),

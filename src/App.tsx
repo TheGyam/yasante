@@ -6,18 +6,18 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { useNotifications } from '@/hooks/useNotifications';
-import { seedMockData } from '@/utils/seed';
 import { LogBox } from 'react-native';
 import { asyncStoragePersister } from '@/utils/cachePersistence';
 
 // Create a client with optimized cache settings
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2,
       staleTime: 10 * 60 * 1000, // 10 minutes (increased from 5)
       gcTime: 30 * 60 * 1000, // 30 minutes (garbage collection time)
       refetchOnWindowFocus: false, // Don't refetch on window focus
+      refetchOnMount: false, // Don't refetch on mount if data is fresh
       refetchOnReconnect: true, // Refetch when reconnecting
     },
   },
@@ -27,9 +27,6 @@ const queryClient = new QueryClient({
 if (__DEV__) {
   LogBox.ignoreLogs([]);
   console.log('=== KALON APP STARTING ===');
-  
-  // Seed mock data in dev mode
-  seedMockData();
 }
 
 function AppContent({ children }: { children?: React.ReactNode }) {

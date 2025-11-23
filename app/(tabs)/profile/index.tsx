@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { ScrollView, View, TouchableOpacity, Linking, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '@/hooks/useTheme';
 import { useUser } from '@/api/hooks/useUser';
 import { useGoals } from '@/api/hooks/useGoals';
@@ -21,8 +22,9 @@ import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
 import { useTheme as useThemeHook } from '@/hooks/useTheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatRelativeTime } from '@/utils/date';
-import { ChevronRight, Edit2, User } from 'lucide-react-native';
+import { ChevronRight, Edit2, User, LogOut } from 'lucide-react-native';
 import type { Theme } from '@/theme/ThemeProvider';
+import { useQueryClient } from '@tanstack/react-query';
 
 const Container = styled.ScrollView`
   flex: 1;
@@ -154,6 +156,24 @@ const SettingRowDescription = styled(Text)`
   font-size: 13px;
 `;
 
+const LogoutButton = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
+  margin-top: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
+  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
+  background-color: ${({ theme }: { theme: Theme }) => theme.colors.error}15;
+  border-width: 1px;
+  border-color: ${({ theme }: { theme: Theme }) => theme.colors.error}40;
+`;
+
+const LogoutButtonContent = styled.View`
+  flex-direction: row;
+  align-items: center;
+  gap: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
+`;
+
 const CTARow = styled.View`
   flex-direction: row;
   gap: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
@@ -181,7 +201,8 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { user: authUser, isAuthenticated } = useAuth();
+  const { user: authUser, isAuthenticated, logout } = useAuth();
+  const queryClient = useQueryClient();
   const { data: user } = useUser(authUser?.id || '', { enabled: !!authUser?.id });
   const { data: goals } = useGoals(authUser?.id || '', { enabled: !!authUser?.id });
   const { data: routines } = useRoutines(authUser?.id || '', { enabled: !!authUser?.id });
@@ -578,6 +599,65 @@ export default function ProfileScreen() {
               <ChevronRight size={20} color={theme.colors.text.low} />
             </SettingRow>
           </SettingsCard>
+
+          {/* Logout Button */}
+          <LogoutButton
+            onPress={() => {
+              // Haptic feedback
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+              
+              Alert.alert(
+                'Sign Out',
+                'Are you sure you want to sign out? You will need to sign in again to access your profile and data.',
+                [
+                  {
+                    text: 'Cancel',
+                    style: 'cancel',
+                    onPress: () => {
+                      if (Platform.OS === 'ios') {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }
+                    },
+                  },
+                  {
+                    text: 'Sign Out',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        // Haptic feedback for confirmation
+                        if (Platform.OS === 'ios') {
+                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        }
+                        
+                        // Call logout from auth context
+                        // This handles: cache clearing, auth store cleanup, and navigation
+                        await logout();
+                      } catch (error) {
+                        console.error('Error during logout:', error);
+                        // Still proceed with logout even if there's an error
+                        logout();
+                      }
+                    },
+                  },
+                ],
+                { cancelable: true }
+              );
+            }}
+            activeOpacity={0.7}
+            accessible={true}
+            accessibilityLabel="Sign out"
+            accessibilityRole="button"
+            accessibilityHint="Signs you out of your account and clears all cached data"
+          >
+            <LogoutButtonContent>
+              <LogOut size={20} color={theme.colors.error} strokeWidth={2} />
+              <Text variant="body" weight="semibold" color={theme.colors.error}>
+                Sign Out
+              </Text>
+            </LogoutButtonContent>
+          </LogoutButton>
         </Section>
 
         {/* CTA Row */}

@@ -14,7 +14,6 @@ import { TreatmentCard } from '@/components/composed/TreatmentCard';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
 import DaySelector from '@/components/composed/DaySelector';
 import { useMoodBoardEntries, useUpdateMoodBoardEntry } from '@/api/hooks/useMoodBoard';
-import { moodBoardApi } from '@/api/mock/server';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTreatments } from '@/api/hooks/useTreatments';
 import { useAuth } from '@/contexts/AuthContext';
@@ -205,7 +204,7 @@ export default function PlannerScreen() {
   // Handle toggle completed - moved to component level to avoid hooks violation
   const handleToggleCompleted = useCallback(async (entryId: string, currentStatus: boolean) => {
     try {
-      await moodBoardApi.update(entryId, { completed: !currentStatus });
+      await api.moodBoard.update(entryId, { completed: !currentStatus });
       // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['moodBoard', userId, selectedMonth] });
       queryClient.invalidateQueries({ queryKey: ['moodBoard', entryId] });
@@ -280,8 +279,23 @@ export default function PlannerScreen() {
     }
 
     // Sort entries by appointment date (earlier first)
-    const sortedEntries = [...moodBoardEntries].sort((a, b) => {
-      return new Date(a.appointmentTime).getTime() - new Date(b.appointmentTime).getTime();
+    // Filter out entries with invalid appointmentTime and handle them separately
+    const validEntries = moodBoardEntries.filter(entry => {
+      if (!entry.appointmentTime) return false;
+      const date = new Date(entry.appointmentTime);
+      return !isNaN(date.getTime());
+    });
+    
+    const invalidEntries = moodBoardEntries.filter(entry => {
+      if (!entry.appointmentTime) return true;
+      const date = new Date(entry.appointmentTime);
+      return isNaN(date.getTime());
+    });
+
+    const sortedEntries = [...validEntries].sort((a, b) => {
+      const dateA = new Date(a.appointmentTime).getTime();
+      const dateB = new Date(b.appointmentTime).getTime();
+      return dateA - dateB;
     });
 
     return (
@@ -289,7 +303,14 @@ export default function PlannerScreen() {
         <CardsList>
           {sortedEntries.map((entry, index) => {
             const postNumber = index + 1;
-            const appointmentDate = format(new Date(entry.appointmentTime), 'MMM d, yyyy h:mm a');
+            // Validate appointmentTime before formatting
+            let appointmentDate = 'Date not set';
+            if (entry.appointmentTime) {
+              const date = new Date(entry.appointmentTime);
+              if (!isNaN(date.getTime())) {
+                appointmentDate = format(date, 'MMM d, yyyy h:mm a');
+              }
+            }
             const isCompleted = entry.completed ?? false;
 
             return (

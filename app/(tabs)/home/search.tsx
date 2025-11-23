@@ -10,11 +10,9 @@ import { Text } from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
-import { DIY } from '@/components/composed/DIYCard';
 import { Search, ArrowLeft, Clock, TrendingUp, Play } from 'lucide-react-native';
 import { getRecentSearches, addToSearchHistory, removeFromSearchHistory, clearSearchHistory } from '@/utils/searchHistory';
 import { smartSearch, getSearchSuggestions, SearchResult } from '@/utils/smartSearch';
-import { mockDIYs } from '@/api/mock/data';
 import { Content } from '@/types/education';
 import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
 import type { Theme } from '@/theme/ThemeProvider';
@@ -235,7 +233,7 @@ const EmptyStateText = styled(Text)`
   margin-top: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
 `;
 
-type FilterType = 'all' | 'inspo' | 'education' | 'diy';
+type FilterType = 'all' | 'inspo' | 'education';
 
 interface UnifiedSearchResult {
   id: string;
@@ -243,10 +241,10 @@ interface UnifiedSearchResult {
   subtitle: string;
   thumbnailUri?: string;
   category: 'inspo' | 'education' | 'diy';
-  type: 'content' | 'diy';
+  type: 'content';
   contentType?: 'article' | 'video';
   relevanceScore: number;
-  originalItem: Content | DIY;
+  originalItem: Content;
 }
 
 // Debounce hook
@@ -306,9 +304,8 @@ export default function SearchScreen() {
     setRecentSearches(searches);
   };
 
-  // Get all content and DIYs
+  // Get all content
   const allContent = useMemo(() => contentData?.data || [], [contentData]);
-  const allDIYs = useMemo(() => mockDIYs, []);
 
   // Get suggestions based on current input
   const suggestions = useMemo(() => {
@@ -330,19 +327,11 @@ export default function SearchScreen() {
       50
     );
 
-    // Search DIYs
-    const diyResults = smartSearch<DIY>(
-      debouncedQuery,
-      allDIYs,
-      ['title', 'description'],
-      20
-    );
-
     return {
       content: contentResults,
-      diy: diyResults,
+      diy: [], // DIYs not yet implemented in backend
     };
-  }, [debouncedQuery, allContent, allDIYs]);
+  }, [debouncedQuery, allContent]);
 
   // Merge and sort all results by relevance
   const mergedResults = useMemo((): UnifiedSearchResult[] => {
@@ -369,20 +358,7 @@ export default function SearchScreen() {
       });
     });
 
-    // Add DIY results
-    searchResultsWithScores.diy.forEach((result: SearchResult<DIY>) => {
-      const item = result.item;
-      results.push({
-        id: item.id,
-        title: item.title,
-        subtitle: 'DIY Tutorial',
-        thumbnailUri: item.thumbnailUri,
-        category: 'diy',
-        type: 'diy',
-        relevanceScore: result.score,
-        originalItem: item,
-      });
-    });
+    // DIYs not yet implemented in backend - removed
 
     // Sort by relevance score (descending)
     return results.sort((a, b) => b.relevanceScore - a.relevanceScore);
@@ -444,9 +420,7 @@ export default function SearchScreen() {
   const handleResultPress = useCallback((result: UnifiedSearchResult) => {
     // Pass returnTo and query parameters to preserve search state
     const queryParam = searchQuery ? `&query=${encodeURIComponent(searchQuery)}` : '';
-    if (result.type === 'diy') {
-      router.push(`/(tabs)/education/diy/${result.id}?returnTo=search${queryParam}` as any);
-    } else if (result.category === 'inspo') {
+    if (result.category === 'inspo') {
       router.push(`/(tabs)/home/${result.id}?returnTo=search${queryParam}` as any);
     } else {
       router.push(`/(tabs)/education/${result.id}?returnTo=search${queryParam}` as any);
@@ -528,13 +502,11 @@ export default function SearchScreen() {
     const categoryColors = {
       inspo: theme.colors.primary,
       education: theme.colors.info,
-      diy: theme.colors.success,
     };
 
     const categoryLabels = {
       inspo: 'Inspo',
       education: 'Education',
-      diy: 'DIY',
     };
 
     return (
@@ -671,13 +643,6 @@ export default function SearchScreen() {
             activeOpacity={0.7}
           >
             <FilterButtonText active={activeFilter === 'education'}>Education</FilterButtonText>
-          </FilterButton>
-          <FilterButton
-            active={activeFilter === 'diy'}
-            onPress={() => handleFilterChange('diy')}
-            activeOpacity={0.7}
-          >
-            <FilterButtonText active={activeFilter === 'diy'}>DIY</FilterButtonText>
           </FilterButton>
         </FilterButtonsContainer>
       </SearchHeader>

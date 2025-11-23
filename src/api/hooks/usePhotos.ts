@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../client';
+import { api } from '../index';
 import { ProgressPhoto } from '@/types/planner';
 
 const PHOTOS_QUERY_KEY = 'photos';
@@ -23,8 +23,12 @@ export function useUploadPhoto(goalId: string) {
       const response = await api.photos.upload(photo);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [PHOTOS_QUERY_KEY, goalId] });
+    onSuccess: (newPhoto) => {
+      // Add new photo to list cache
+      queryClient.setQueryData<ProgressPhoto[]>(
+        [PHOTOS_QUERY_KEY, goalId],
+        (old = []) => [...old, newPhoto]
+      );
     },
   });
 }
@@ -37,8 +41,12 @@ export function useDeletePhoto(goalId: string) {
       await api.photos.delete(photoId);
       return photoId;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [PHOTOS_QUERY_KEY, goalId] });
+    onSuccess: (photoId) => {
+      // Remove from list cache
+      queryClient.setQueryData<ProgressPhoto[]>(
+        [PHOTOS_QUERY_KEY, goalId],
+        (old = []) => old.filter(photo => photo.id !== photoId)
+      );
     },
   });
 }

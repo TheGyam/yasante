@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
 import { useTheme } from '@/hooks/useTheme';
 import { useCreateMonthlyHairstyle } from '@/api/hooks/useMonthlyHairstyles';
+import { useAuth } from '@/contexts/AuthContext';
 import { TopBar } from '@/components/composed/TopBar';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -64,7 +65,8 @@ export default function AddHairstyleScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const { month } = useLocalSearchParams<{ month: string }>();
-  const createHairstyle = useCreateMonthlyHairstyle();
+  const { user } = useAuth();
+  const createHairstyle = useCreateMonthlyHairstyle(user?.id);
 
   const [photoUri, setPhotoUri] = useState<string>('');
   const [notes, setNotes] = useState('');
@@ -91,8 +93,11 @@ export default function AddHairstyleScreen() {
     if (!validate() || !month) return;
 
     try {
+      if (!user?.id) {
+        console.error('User not authenticated');
+        return;
+      }
       await createHairstyle.mutateAsync({
-        userId: 'user-1',
         month,
         photoUri,
         thumbnailUri: photoUri, // In a real app, generate thumbnail
