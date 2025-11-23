@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useCallback } from 'react'
 import { useAuthStore, AuthTokens } from '@/state/stores/authStore';
 import { User } from '@/types/user';
 import { useRouter, useSegments } from 'expo-router';
+import { queryClient } from '@/App';
+import { api } from '@/api/index';
 
 interface AuthContextType {
   user: User | null;
@@ -38,20 +40,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Refresh token
   const refreshToken = useCallback(async (): Promise<boolean> => {
-    if (!tokens?.refreshToken) return false;
+    if (!tokens?.refreshToken) {
+      if (__DEV__) {
+        console.log('❌ No refresh token available');
+      }
+      return false;
+    }
 
     try {
-      // In a real app, this would call the API
-      // For now, we'll just check if the token is still valid
+      // Check if token is still valid (not expired)
       if (!isTokenExpired()) {
+        if (__DEV__) {
+          console.log('✅ Access token still valid, no refresh needed');
+        }
         return true;
       }
 
-      // Token expired, need to re-authenticate
-      logoutStore();
-      return false;
-    } catch (error) {
-      console.error('Token refresh failed:', error);
+      if (__DEV__) {
+        console.log('🔄 Access token expired, refreshing...');
+      }
+
+      // Call the API to refresh the token
+      const response = await api.auth.refreshToken(tokens.refreshToken);
+      const { accessToken, expiresAt } = response.data;
+
+      // Convert expiresAt to timestamp if needed
+      const expiresAtTimestamp = typeof expiresAt === 'string' 
+        ? new Date(expiresAt).getTime() 
+        : expiresAt;
+
+      // Update tokens in store
+      useAuthStore.getState().setTokens({
+        accessToken,
+        refreshToken: tokens.refreshToken, // Keep the same refresh token
+        expiresAt: expiresAtTimestamp,
+      });
+
+      if (__DEV__) {
+        console.log('✅ Token refreshed successfully');
+      }
+
+      return true;
+    } catch (error: any) {
+      if (__DEV__) {
+        console.error('❌ Token refresh failed:', {
+          error: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+      }
+      // Token refresh failed, logout user
       logoutStore();
       return false;
     }
@@ -99,9 +137,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuth(user, tokens);
   }, [setAuth]);
 
-  const logout = useCallback(() => {
-    logoutStore();
-    router.replace('/auth/login');
+  const logout = useCallback(async () => {
+    try {
+      // Clear React Query cache to remove all user-specific data
+      await queryClient.clear();
+      
+      // Clear persisted cache storage
+      try {
+        const { asyncStoragePersister } = await import('@/utils/cachePersistence');
+        await asyncStoragePersister.removeClient();
+      } catch (persisterError) {
+        // If persister removal fails, try manual removal
+        try {
+          const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+          await AsyncStorage.removeItem('REACT_QUERY_OFFLINE_CACHE');
+        } catch (storageError) {
+          console.warn('Failed to clear persisted cache:', storageError);
+        }
+      }
+      
+      // Logout from auth store (clears tokens and user)
+      logoutStore();
+      
+      // Navigate to login screen
+      router.replace('/auth/login');
+      
+      if (__DEV__) {
+        console.log('✅ Logout successful - cache cleared');
+      }
+    } catch (error) {
+      // Even if cache clearing fails, proceed with logout
+      console.error('Error during logout cleanup:', error);
+      logoutStore();
+      router.replace('/auth/login');
+    }
   }, [logoutStore, router]);
 
   const updateUser = useCallback((user: User) => {

@@ -5,7 +5,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
-import { seedMockData } from '@/utils/seed';
 import { LogBox, Linking, View, ActivityIndicator } from 'react-native';
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
@@ -25,7 +24,6 @@ const queryClient = new QueryClient({
 if (__DEV__) {
   LogBox.ignoreLogs([]);
   console.log('=== KALON APP STARTING ===');
-  seedMockData();
 }
 
 function RootLayoutNav() {

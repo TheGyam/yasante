@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { api } from '../client';
-import { Content } from '@/types/education';
+import { useEffect, useMemo } from 'react';
+import { api } from '../index';
+import { Content, Favorite } from '@/types/education';
 import { CursorPaginatedResponse } from '@/types/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 const CONTENT_QUERY_KEY = 'content';
 const FAVORITES_QUERY_KEY = 'favorites';
@@ -176,53 +177,118 @@ export function useSearchContent() {
   });
 }
 
-export function useFavorites(userId: string = 'user-1', options?: { enabled?: boolean }) {
+export function useFavorites(userId?: string, options?: { enabled?: boolean }) {
+  const { user: authUser } = useAuth();
+  const actualUserId = userId || authUser?.id;
+
   return useQuery({
-    queryKey: [FAVORITES_QUERY_KEY, userId],
+    queryKey: [FAVORITES_QUERY_KEY, actualUserId],
     queryFn: async () => {
-      const response = await api.favorites.getAll(userId);
+      if (!actualUserId) {
+        throw new Error('User ID is required');
+      }
+      const response = await api.favorites.getAll(actualUserId);
       return response.data;
     },
-    enabled: options?.enabled !== false && !!userId,
+    enabled: (options?.enabled !== false) && !!actualUserId,
+    staleTime: 10 * 60 * 1000, // 10 minutes - keep favorites fresh longer
+    gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
 
-export function useToggleFavorite(userId: string = 'user-1') {
+export function useToggleFavorite(userId?: string) {
   const queryClient = useQueryClient();
+  const { user: authUser } = useAuth();
+  const actualUserId = userId || authUser?.id;
 
   return useMutation({
     mutationFn: async (contentId: string) => {
-      const response = await api.favorites.toggle(userId, contentId);
+      if (!actualUserId) {
+        throw new Error('User ID is required');
+      }
+      const response = await api.favorites.toggle(actualUserId, contentId);
       return { contentId, ...response.data };
     },
     // Optimistic update
     onMutate: async (contentId) => {
+      if (!actualUserId) return;
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: [FAVORITES_QUERY_KEY, userId] });
-      await queryClient.cancelQueries({ queryKey: [FAVORITES_QUERY_KEY, userId, contentId] });
+      await queryClient.cancelQueries({ queryKey: [FAVORITES_QUERY_KEY, actualUserId] });
+      await queryClient.cancelQueries({ queryKey: [FAVORITES_QUERY_KEY, actualUserId, contentId] });
 
       // Snapshot the previous value
-      const previousFavorites = queryClient.getQueryData([FAVORITES_QUERY_KEY, userId]);
-      const previousIsFavorite = queryClient.getQueryData([FAVORITES_QUERY_KEY, userId, contentId]);
+      const previousFavorites = queryClient.getQueryData<Favorite[]>([FAVORITES_QUERY_KEY, actualUserId]);
+      const previousIsFavorite = queryClient.getQueryData<boolean>([FAVORITES_QUERY_KEY, actualUserId, contentId]);
 
-      // Optimistically update
-      queryClient.setQueryData([FAVORITES_QUERY_KEY, userId, contentId], (old: boolean) => !old);
+      // Optimistically update isFavorite cache
+      const newIsFavorite = !previousIsFavorite;
+      queryClient.setQueryData([FAVORITES_QUERY_KEY, actualUserId, contentId], newIsFavorite);
+
+      // Optimistically update favorites list
+      queryClient.setQueryData<Favorite[]>([FAVORITES_QUERY_KEY, actualUserId], (old = []) => {
+        if (newIsFavorite) {
+          // Add favorite if it doesn't exist
+          if (!old.find(f => f.contentId === contentId)) {
+            return [...old, {
+              id: `temp-${contentId}`, // Temporary ID until we get real response
+              userId: actualUserId,
+              contentId,
+              createdAt: new Date().toISOString(),
+            }];
+          }
+          return old;
+        } else {
+          // Remove favorite
+          return old.filter(f => f.contentId !== contentId);
+        }
+      });
       
       return { previousFavorites, previousIsFavorite };
     },
+    onSuccess: (data, contentId) => {
+      if (!actualUserId) return;
+      
+      // Update isFavorite cache with actual response
+      queryClient.setQueryData(
+        [FAVORITES_QUERY_KEY, actualUserId, contentId],
+        data.isFavorite
+      );
+      
+      // Update favorites list cache with actual response
+      queryClient.setQueryData<Favorite[]>(
+        [FAVORITES_QUERY_KEY, actualUserId],
+        (old = []) => {
+          if (data.isFavorite) {
+            // Add favorite if it doesn't exist, or replace temp one
+            const existingIndex = old.findIndex(f => f.contentId === contentId);
+            if (data.favorite) {
+              if (existingIndex >= 0) {
+                // Replace temp favorite with real one
+                const updated = [...old];
+                updated[existingIndex] = data.favorite;
+                return updated;
+              } else {
+                // Add new favorite
+                return [...old, data.favorite];
+              }
+            }
+            return old;
+          } else {
+            // Remove favorite
+            return old.filter(f => f.contentId !== contentId);
+          }
+        }
+      );
+    },
     onError: (err, contentId, context) => {
+      if (!actualUserId) return;
       // Rollback on error
-      if (context?.previousFavorites) {
-        queryClient.setQueryData([FAVORITES_QUERY_KEY, userId], context.previousFavorites);
+      if (context?.previousFavorites !== undefined) {
+        queryClient.setQueryData([FAVORITES_QUERY_KEY, actualUserId], context.previousFavorites);
       }
       if (context?.previousIsFavorite !== undefined) {
-        queryClient.setQueryData([FAVORITES_QUERY_KEY, userId, contentId], context.previousIsFavorite);
+        queryClient.setQueryData([FAVORITES_QUERY_KEY, actualUserId, contentId], context.previousIsFavorite);
       }
-    },
-    onSettled: () => {
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: [FAVORITES_QUERY_KEY, userId] });
-      queryClient.invalidateQueries({ queryKey: [CONTENT_QUERY_KEY] });
     },
   });
 }
@@ -283,15 +349,93 @@ export async function prefetchRelatedContent(
   }
 }
 
-export function useIsFavorite(userId: string = 'user-1', contentId: string, options?: { enabled?: boolean }) {
-  return useQuery({
-    queryKey: [FAVORITES_QUERY_KEY, userId, contentId],
+export function useIsFavorite(userId: string | undefined, contentId: string, options?: { enabled?: boolean }) {
+  const { user: authUser } = useAuth();
+  const actualUserId = userId || authUser?.id;
+  const queryClient = useQueryClient();
+
+  // Helper to get cached favorite status from persisted cache
+  // This function checks both the specific cache and the favorites list
+  const getCachedFavoriteStatus = (): boolean | undefined => {
+    if (!actualUserId || !contentId) return undefined;
+    
+    // Check if we have the specific favorite cache (from persisted cache)
+    const cachedValue = queryClient.getQueryData<boolean>([FAVORITES_QUERY_KEY, actualUserId, contentId]);
+    if (cachedValue !== undefined) {
+      return cachedValue;
+    }
+    
+    // Check if we have the favorites list and can derive the value
+    const favoritesList = queryClient.getQueryData<Favorite[]>([FAVORITES_QUERY_KEY, actualUserId]);
+    if (favoritesList && Array.isArray(favoritesList)) {
+      const isFavorite = favoritesList.some(f => f.contentId === contentId);
+      // Update the specific cache entry for future use
+      queryClient.setQueryData([FAVORITES_QUERY_KEY, actualUserId, contentId], isFavorite);
+      return isFavorite;
+    }
+    
+    return undefined;
+  };
+
+  const query = useQuery({
+    queryKey: [FAVORITES_QUERY_KEY, actualUserId, contentId],
     queryFn: async () => {
-      const response = await api.favorites.isFavorite(userId, contentId);
-      return response.data;
+      if (!actualUserId) {
+        throw new Error('User ID is required');
+      }
+      
+      // First, check if we have cached data (from persisted cache or in-memory)
+      // This is critical - we check cache BEFORE making API call
+      const cachedValue = getCachedFavoriteStatus();
+      if (cachedValue !== undefined) {
+        if (__DEV__) {
+          console.log('✅ useIsFavorite: Using cached value (no API call)', { 
+            contentId, 
+            isFavorite: cachedValue,
+            hasSpecificCache: queryClient.getQueryData<boolean>([FAVORITES_QUERY_KEY, actualUserId, contentId]) !== undefined,
+            hasFavoritesList: queryClient.getQueryData<Favorite[]>([FAVORITES_QUERY_KEY, actualUserId]) !== undefined,
+          });
+        }
+        return cachedValue;
+      }
+      
+      // If not in cache, make API call
+      if (__DEV__) {
+        console.log('📡 useIsFavorite: Making API call (no cache found)', { contentId });
+      }
+      const response = await api.favorites.isFavorite(actualUserId, contentId);
+      const isFavorite = response.data;
+      // Update cache with API response
+      queryClient.setQueryData([FAVORITES_QUERY_KEY, actualUserId, contentId], isFavorite);
+      return isFavorite;
     },
-    enabled: (options?.enabled !== false) && !!contentId && !!userId,
+    enabled: (options?.enabled !== false) && !!contentId && !!actualUserId,
+    // Use placeholder data for immediate UI updates from persisted cache
+    // This is called on every render, so it will pick up restored cache
+    placeholderData: getCachedFavoriteStatus,
+    staleTime: 10 * 60 * 1000, // 10 minutes - consider cached data fresh
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnMount: false, // Don't refetch on mount - use cached data
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnReconnect: false, // Don't refetch on reconnect - use cached data
   });
+
+  // Sync cache when it becomes available (after persistence restore)
+  useEffect(() => {
+    if (!actualUserId || !contentId) return;
+    
+    // Check if cache was restored and update query data
+    const cachedValue = getCachedFavoriteStatus();
+    if (cachedValue !== undefined && query.data === undefined) {
+      // If we have cached data but query doesn't have data yet, set it
+      queryClient.setQueryData([FAVORITES_QUERY_KEY, actualUserId, contentId], cachedValue);
+      if (__DEV__) {
+        console.log('🔄 useIsFavorite: Synced cache to query', { contentId, isFavorite: cachedValue });
+      }
+    }
+  }, [actualUserId, contentId, queryClient, query.data]);
+
+  return query;
 }
 
 export function useRelatedContent(contentId: string, topic: string, options?: { enabled?: boolean }) {

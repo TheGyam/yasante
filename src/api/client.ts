@@ -1,27 +1,60 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import * as mockApi from './mock/server';
 import { useAuthStore } from '@/state/stores/authStore';
+import { apiConfig, validateApiConfig, isUsingNgrok } from '@/config/api';
 
-// In a real app, this would point to your backend API
-const API_BASE_URL = __DEV__ ? 'http://localhost:3000/api' : 'https://api.kalon.app';
+// Validate API configuration on module load
+validateApiConfig();
 
 // Create axios instance
 export const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
+  baseURL: apiConfig.baseURL,
+  timeout: apiConfig.timeout,
   headers: {
     'Content-Type': 'application/json',
+    // Add ngrok bypass header if using ngrok
+    ...(apiConfig.baseURL.includes('ngrok') && {
+      'ngrok-skip-browser-warning': 'true',
+    }),
   },
+  // Axios will automatically serialize objects to JSON when Content-Type is application/json
 });
 
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
+    // Always add ngrok bypass header if using ngrok (ensures it's on every request)
+    // This prevents the ngrok browser warning page from appearing
+    if (isUsingNgrok()) {
+      config.headers['ngrok-skip-browser-warning'] = 'true';
+    }
+    
     // Add auth token if available
     const state = useAuthStore.getState();
     if (state.tokens?.accessToken) {
       config.headers.Authorization = `Bearer ${state.tokens.accessToken}`;
     }
+    
+    // Ensure Content-Type is set for POST/PUT/PATCH requests with data
+    if (config.data && ['post', 'put', 'patch'].includes(config.method?.toLowerCase() || '')) {
+      if (!config.headers['Content-Type']) {
+        config.headers['Content-Type'] = 'application/json';
+      }
+    }
+    
+    // Log request in development
+    if (__DEV__ && apiConfig.enableLogging) {
+      const fullUrl = `${config.baseURL}${config.url}`;
+      console.log('📤 API Request:', {
+        method: config.method?.toUpperCase(),
+        url: fullUrl,
+        data: config.data,
+        headers: {
+          ...config.headers,
+          Authorization: config.headers.Authorization ? 'Bearer ***' : undefined,
+        },
+      });
+    }
+    
     return config;
   },
   (error) => {
@@ -74,15 +107,22 @@ apiClient.interceptors.response.use(
       const state = useAuthStore.getState();
       if (state.tokens?.refreshToken) {
         try {
-          // Try to refresh token
-          const response = await mockApi.authApi.refreshToken(state.tokens.refreshToken);
+          // Lazy import to avoid circular dependency
+          const { authApi } = await import('./services');
+          // Try to refresh token using real API
+          const response = await authApi.refreshToken(state.tokens.refreshToken);
           const { accessToken, expiresAt } = response.data;
 
           // Update tokens in store
+          // Convert expiresAt string to timestamp if needed
+          const expiresAtTimestamp = typeof expiresAt === 'string' 
+            ? new Date(expiresAt).getTime() 
+            : expiresAt;
+
           useAuthStore.getState().setTokens({
             accessToken,
             refreshToken: state.tokens.refreshToken,
-            expiresAt,
+            expiresAt: expiresAtTimestamp,
           });
 
           // Update authorization header
@@ -109,10 +149,21 @@ apiClient.interceptors.response.use(
     // Handle other errors globally
     if (error.response) {
       // Server responded with error
-      console.error('API Error:', error.response.status, error.response.data);
+      console.error('API Error:', {
+        status: error.response.status,
+        statusText: error.response.statusText,
+        data: error.response.data,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+      });
     } else if (error.request) {
       // Request made but no response
-      console.error('Network Error:', error.request);
+      console.error('Network Error:', {
+        message: 'No response received from server',
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+        request: error.request,
+      });
     } else {
       // Something else happened
       console.error('Error:', error.message);
@@ -121,22 +172,8 @@ apiClient.interceptors.response.use(
   }
 );
 
-// For MVP, we'll use the mock API directly
-// In production, replace these with actual API calls
-export const api = {
-  auth: mockApi.authApi,
-  user: mockApi.userApi,
-  goals: mockApi.goalsApi,
-  photos: mockApi.photosApi,
-  activities: mockApi.activitiesApi,
-  routines: mockApi.routinesApi,
-  content: mockApi.contentApi,
-  favorites: mockApi.favoritesApi,
-  products: mockApi.productsApi,
-  monthlyHairstyles: mockApi.monthlyHairstylesApi,
-  moodBoard: mockApi.moodBoardApi,
-  treatments: mockApi.treatmentsApi,
-};
+// API exports are now in ./index.ts to avoid circular dependency
+// Import from './index' instead of './client' for the api object
 
 export default apiClient;
 

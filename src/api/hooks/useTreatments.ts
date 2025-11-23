@@ -1,18 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { treatmentsApi } from '@/api/mock/server';
+import { api } from '../index';
 import { Treatment } from '@/types/planner';
-import { ApiResponse } from '@/types/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 const TREATMENTS_QUERY_KEY = 'treatments';
 
-export function useTreatments(userId: string = 'user-1', options?: { enabled?: boolean }) {
+export function useTreatments(userId?: string, options?: { enabled?: boolean }) {
+  const { user: authUser } = useAuth();
+  const actualUserId = userId || authUser?.id;
+
   return useQuery({
-    queryKey: [TREATMENTS_QUERY_KEY, userId],
+    queryKey: [TREATMENTS_QUERY_KEY, actualUserId],
     queryFn: async () => {
-      const response = await treatmentsApi.getAll(userId);
+      if (!actualUserId) {
+        throw new Error('User ID is required');
+      }
+      const response = await api.treatments.getAll(actualUserId);
       return response.data;
     },
-    enabled: options?.enabled !== false && !!userId,
+    enabled: (options?.enabled !== false) && !!actualUserId,
   });
 }
 
@@ -20,52 +26,81 @@ export function useTreatment(treatmentId: string) {
   return useQuery({
     queryKey: [TREATMENTS_QUERY_KEY, treatmentId],
     queryFn: async () => {
-      const response = await treatmentsApi.getById(treatmentId);
+      const response = await api.treatments.getById(treatmentId);
       return response.data;
     },
     enabled: !!treatmentId,
   });
 }
 
-export function useCreateTreatment(userId: string = 'user-1') {
+export function useCreateTreatment(userId?: string) {
   const queryClient = useQueryClient();
+  const { user: authUser } = useAuth();
+  const actualUserId = userId || authUser?.id;
 
   return useMutation({
     mutationFn: async (treatment: Omit<Treatment, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const response = await treatmentsApi.create(treatment);
+      const response = await api.treatments.create(treatment);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [TREATMENTS_QUERY_KEY, userId] });
+    onSuccess: (newTreatment) => {
+      if (actualUserId) {
+        // Add new treatment to list cache
+        queryClient.setQueryData<Treatment[]>(
+          [TREATMENTS_QUERY_KEY, actualUserId],
+          (old = []) => [...old, newTreatment]
+        );
+        // Set detail cache
+        queryClient.setQueryData([TREATMENTS_QUERY_KEY, newTreatment.id], newTreatment);
+      }
     },
   });
 }
 
-export function useUpdateTreatment(treatmentId: string, userId: string = 'user-1') {
+export function useUpdateTreatment(treatmentId: string, userId?: string) {
   const queryClient = useQueryClient();
+  const { user: authUser } = useAuth();
+  const actualUserId = userId || authUser?.id;
 
   return useMutation({
     mutationFn: async (updates: Partial<Treatment>) => {
-      const response = await treatmentsApi.update(treatmentId, updates);
+      const response = await api.treatments.update(treatmentId, updates);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [TREATMENTS_QUERY_KEY, userId] });
-      queryClient.invalidateQueries({ queryKey: [TREATMENTS_QUERY_KEY, treatmentId] });
+    onSuccess: (updatedTreatment) => {
+      if (actualUserId) {
+        // Update list cache
+        queryClient.setQueryData<Treatment[]>(
+          [TREATMENTS_QUERY_KEY, actualUserId],
+          (old = []) => old.map(treatment => treatment.id === updatedTreatment.id ? updatedTreatment : treatment)
+        );
+        // Update detail cache
+        queryClient.setQueryData([TREATMENTS_QUERY_KEY, treatmentId], updatedTreatment);
+      }
     },
   });
 }
 
-export function useDeleteTreatment(treatmentId: string, userId: string = 'user-1') {
+export function useDeleteTreatment(treatmentId: string, userId?: string) {
   const queryClient = useQueryClient();
+  const { user: authUser } = useAuth();
+  const actualUserId = userId || authUser?.id;
 
   return useMutation({
     mutationFn: async () => {
-      const response = await treatmentsApi.delete(treatmentId);
-      return response.data;
+      await api.treatments.delete(treatmentId);
+      return treatmentId;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [TREATMENTS_QUERY_KEY, userId] });
+    onSuccess: (treatmentId) => {
+      if (actualUserId) {
+        // Remove from list cache
+        queryClient.setQueryData<Treatment[]>(
+          [TREATMENTS_QUERY_KEY, actualUserId],
+          (old = []) => old.filter(treatment => treatment.id !== treatmentId)
+        );
+        // Remove detail cache
+        queryClient.removeQueries({ queryKey: [TREATMENTS_QUERY_KEY, treatmentId] });
+      }
     },
   });
 }

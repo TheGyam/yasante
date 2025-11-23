@@ -15,7 +15,7 @@ interface UserState {
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
-      currentUserId: 'user-1',
+      currentUserId: '', // No default - will be set from auth context
       setCurrentUserId: (userId) => set({ currentUserId: userId }),
       onboardingCompleted: false,
       setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),

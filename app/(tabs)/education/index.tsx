@@ -24,7 +24,6 @@ import {
 } from 'lucide-react-native';
 import { ContentTopic } from '@/types/education';
 import type { Theme } from '@/theme/ThemeProvider';
-import { mockDIYs } from '@/api/mock/data';
 
 const Container = styled.View`
   flex: 1;
@@ -230,16 +229,11 @@ export default function ContentLibraryScreen() {
           </ContentWrapper>
         ) : (
           <ContentWrapper>
-            {mockDIYs.map((diy) => (
-              <DIYCard key={diy.id} diy={diy} />
-            ))}
-            {mockDIYs.length === 0 && (
-              <View style={{ padding: theme.spacing[4], alignItems: 'center' }}>
-                <Text variant="body" color={theme.colors.text.medium}>
-                  No DIY tutorials available yet.
+            <View style={{ padding: theme.spacing[4], alignItems: 'center' }}>
+              <Text variant="body" color={theme.colors.text.medium}>
+                DIY tutorials coming soon.
               </Text>
-    </View>
-            )}
+            </View>
           </ContentWrapper>
         )}
       </ScrollableContent>

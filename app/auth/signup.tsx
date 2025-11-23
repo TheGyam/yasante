@@ -191,10 +191,21 @@ export default function SignupScreen() {
     }
 
     try {
-      await signupMutation.mutateAsync({ name, email, password });
+      await signupMutation.mutateAsync({ 
+        name, 
+        email, 
+        password,
+        // Note: password_confirm removed - backend doesn't require it per API docs
+        // Frontend still validates passwords match for UX
+      });
       // Navigation will be handled by AuthContext
     } catch (error: any) {
-      setGeneralError(error?.message || 'Signup failed. Please try again.');
+      // Handle API error responses
+      const errorMessage = error?.response?.data?.non_field_errors?.[0] 
+        || error?.response?.data?.message
+        || error?.message 
+        || 'Signup failed. Please try again.';
+      setGeneralError(errorMessage);
     }
   };
 
