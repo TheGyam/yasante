@@ -42,8 +42,7 @@ Kalon is a React Native mobile application built with Expo for hair care managem
 ## Base Configuration
 
 ### API Base URLs
-- **Development**: `http://localhost:3000/api`
-- **Production**: `https://api.kalon.app`
+- **Base URL**: `https://yasante.com`
 
 ### API Versioning
 All endpoints should be prefixed with `/api/v1` (or your preferred versioning strategy).

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
-import { useInfiniteContent, prefetchContentItem, prefetchRelatedContent } from '@/api/hooks/useContent';
+import { useInfiniteContent, prefetchContentItem, prefetchRelatedContent, prefetchNextPage } from '@/api/hooks/useContent';
 import { useUser } from '@/api/hooks/useUser';
 import { useAuth } from '@/contexts/AuthContext';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
@@ -18,6 +18,7 @@ import { AddToMoodBoardModal } from '@/components/composed/AddToMoodBoardModal';
 import { FlashList } from '@shopify/flash-list';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNewPosts } from '@/hooks/useNewPosts';
+import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { Content } from '@/types/education';
 import type { Theme } from '@/theme/ThemeProvider';
 
@@ -261,6 +262,9 @@ export default function HomeScreen() {
   
   // New posts detection
   const { hasNewPosts, mergeNewPosts } = useNewPosts({ enabled: true });
+  
+  // Background sync when app becomes active
+  useBackgroundSync({ enabled: true });
 
   // Get first name for greeting (only when authenticated)
   const firstName = isAuthenticated && user?.name ? user.name.split(' ')[0] : undefined;
@@ -358,8 +362,23 @@ export default function HomeScreen() {
     layoutComputedRef.current = false;
   }, [(allContentItems || []).length]);
 
-  const handleRefresh = () => {
-    refetch();
+  const handleRefresh = async () => {
+    // Haptic feedback
+    try {
+      const Haptics = await import('expo-haptics');
+      await Haptics.default.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (error) {
+      // Haptics not available, continue without it
+    }
+    
+    // Reset infinite query to first page
+    queryClient.setQueryData(['content', 'infinite', undefined], {
+      pages: [],
+      pageParams: [],
+    });
+    
+    // Refetch
+    await refetch();
   };
 
   const handleItemPress = useCallback((item: InspoItem) => {
@@ -389,7 +408,7 @@ export default function HomeScreen() {
     router.push('/(tabs)/home/search' as any);
   };
   
-  // Smart prefetching - prefetch when reaching 60% of loaded items
+  // Smart prefetching - prefetch when reaching 80% of loaded items
   const handleViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
     if (!viewableItems || viewableItems.length === 0 || !hasNextPage || isFetchingNextPage) return;
     
@@ -402,12 +421,36 @@ export default function HomeScreen() {
     
     const lastVisibleIndex = Math.max(...visibleIndices);
     
-    // Prefetch when reaching 60% of loaded items
-    const threshold = Math.floor(totalItems * 0.6);
+    // Prefetch images for upcoming items (next 5-10 items)
+    const upcomingItems = layoutItems.slice(lastVisibleIndex + 1, lastVisibleIndex + 10);
+    upcomingItems.forEach((item) => {
+      if (item.imageUri) {
+        // Prefetch image using expo-image
+        try {
+          const { prefetch } = require('expo-image');
+          prefetch(item.imageUri, { priority: 'normal' });
+        } catch (error) {
+          // expo-image prefetch not available, skip
+        }
+      }
+    });
+    
+    // Prefetch content details for items near viewport
+    const nearViewportItems = layoutItems.slice(Math.max(0, lastVisibleIndex - 2), lastVisibleIndex + 5);
+    nearViewportItems.forEach((item) => {
+      if (item.originalId) {
+        prefetchContentItem(queryClient, item.originalId);
+      }
+    });
+    
+    // Prefetch next page when 80% scrolled
+    const threshold = Math.floor(totalItems * 0.8);
     if (lastVisibleIndex >= threshold) {
       fetchNextPage();
+      // Also prefetch the next page content
+      prefetchNextPage(queryClient);
     }
-  }, [(layoutItems || []).length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [(layoutItems || []).length, hasNextPage, isFetchingNextPage, fetchNextPage, queryClient]);
   
   // Render item for FlashList
   const renderItem = useCallback(({ item }: { item: InspoItem }) => {

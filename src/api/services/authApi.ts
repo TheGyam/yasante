@@ -2,7 +2,7 @@ import { apiClient } from '../client';
 import { ApiResponse } from '@/types/api';
 import { User } from '@/types/user';
 import axios from 'axios';
-import { apiConfig, isUsingNgrok } from '@/config/api';
+import { apiConfig } from '@/config/api';
 
 /**
  * Authentication API Service
@@ -25,6 +25,7 @@ export interface SignupRequest {
   email: string;
   name: string;
   password: string;
+  password_confirm: string;
 }
 
 export interface RefreshTokenRequest {
@@ -210,10 +211,6 @@ export const authApi = {
         timeout: apiConfig.timeout,
         headers: {
           'Content-Type': 'application/json',
-          // Add ngrok bypass header if using ngrok
-          ...(isUsingNgrok() && {
-            'ngrok-skip-browser-warning': 'true',
-          }),
         },
       });
 

@@ -129,7 +129,7 @@ const goal = await api.goals.create({
 - **Products API**: Still using mock implementation as it's not in the Swagger spec
 - **Field Mapping**: Backend uses snake_case, frontend uses camelCase - transformation handled automatically
 - **Pagination**: Most endpoints use DRF pagination format, content API uses array with client-side cursor pagination
-- **Base URL**: Configured in `src/config/api.ts` - automatically includes ngrok bypass header
+- **Base URL**: Configured in `src/config/api.ts`
 
 ## Testing
 

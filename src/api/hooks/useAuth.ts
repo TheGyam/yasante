@@ -53,17 +53,20 @@ export function useSignup() {
     mutationFn: async ({ 
       name, 
       email, 
-      password
+      password,
+      password_confirm
     }: { 
       name: string; 
       email: string; 
       password: string;
+      password_confirm: string;
     }) => {
-      // Pass as object to match SignupRequest interface (no password_confirm per API docs)
+      // Pass as object to match SignupRequest interface
       const response = await api.auth.signup({
         name,
         email,
         password,
+        password_confirm,
       });
       return response.data;
     },

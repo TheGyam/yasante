@@ -169,7 +169,7 @@ const ColorOption = styled(TouchableOpacity)<{ color: string; selected: boolean 
 `;
 
 const colorOptions = [
-  '#5e1d31', '#8B4513', '#FF6B6B', '#4ECDC4', '#45B7D1',
+  '#8DA399', '#8B4513', '#FF6B6B', '#4ECDC4', '#45B7D1',
   '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
 ];
 

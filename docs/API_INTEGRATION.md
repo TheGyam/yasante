@@ -3,20 +3,16 @@
 ## Overview
 This document describes the integration with the backend API based on the Swagger specification.
 
-**Swagger URL**: https://af4b3b4f74ab.ngrok-free.app/swagger/  
+**Swagger URL**: https://yasante.com/swagger/  
 **Base Path**: `/api`  
 **API Version**: v1
 
 ## Configuration
 
 ### Base URL
-- **Development**: `https://af4b3b4f74ab.ngrok-free.app`
-- **Production**: `https://api.kalon.app`
+- **Base URL**: `https://yasante.com`
 
 The base URL does NOT include `/api` as it's handled by the basePath in Swagger.
-
-### Ngrok Bypass
-The API client automatically adds the `ngrok-skip-browser-warning: true` header when using ngrok URLs to bypass the warning page.
 
 ## Content API Endpoints
 

@@ -15,8 +15,7 @@ The API base URL is determined in the following order (highest to lowest priorit
    - Good for build-time configuration
 
 3. **Hardcoded Fallback**
-   - Development: `https://af4b3b4f74ab.ngrok-free.app`
-   - Production: `https://api.kalon.app`
+   - Default: `https://yasante.com`
 
 ## Setup
 
@@ -29,7 +28,7 @@ The API base URL is determined in the following order (highest to lowest priorit
 
 2. Update `.env` with your API URL:
    ```env
-   EXPO_PUBLIC_API_BASE_URL=https://af4b3b4f74ab.ngrok-free.app
+   EXPO_PUBLIC_API_BASE_URL=https://yasante.com
    ```
 
 3. Restart your Expo development server
@@ -41,7 +40,7 @@ Update `app.json`:
 {
   "expo": {
     "extra": {
-      "apiBaseUrl": "https://af4b3b4f74ab.ngrok-free.app"
+      "apiBaseUrl": "https://yasante.com"
     }
   }
 }
@@ -70,38 +69,15 @@ const fullUrl = getApiUrl('/api/auth/login');
 - ✅ Environment-based configuration
 - ✅ TypeScript support
 - ✅ Configuration validation
-- ✅ Automatic ngrok header handling
-- ✅ Development/production fallbacks
 - ✅ Error handling and logging
 
 ## Updating the API URL
 
-### For Development (ngrok URL changes)
-
-1. Update `.env` file:
-   ```env
-   EXPO_PUBLIC_API_BASE_URL=https://new-ngrok-url.ngrok-free.app
-   ```
-
-2. Restart Expo dev server
-
-### For Production
-
-Update `app.json` or set environment variable during build:
-```json
-{
-  "expo": {
-    "extra": {
-      "apiBaseUrl": "https://api.kalon.app"
-    }
-  }
-}
-```
+Update `.env` or `app.json` with your API base URL (e.g. `https://yasante.com`), then restart the Expo dev server.
 
 ## Notes
 
 - Environment variables prefixed with `EXPO_PUBLIC_` are embedded at build time
-- The ngrok bypass header is automatically added when using ngrok URLs
 - Configuration is validated on module load in development mode
 - All API requests use the centralized configuration
 

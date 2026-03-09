@@ -14,6 +14,7 @@ export interface Theme {
     accent: string;
     accentLight: string;
     accentDark: string;
+    accentSecondary: string;
     background: string;
     surface: string;
     surfaceVariant: string;
@@ -105,6 +106,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         accent: colors.accent,
         accentLight: colors.accentLight,
         accentDark: colors.accentDark,
+        accentSecondary: colors.accentSecondary,
         background: isDark ? colors.dark.background : colors.light.background,
         surface: isDark ? colors.dark.surface : colors.light.surface,
         surfaceVariant: isDark ? colors.dark.surfaceVariant : colors.light.surfaceVariant,

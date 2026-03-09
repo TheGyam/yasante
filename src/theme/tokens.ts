@@ -42,10 +42,10 @@ export const lineHeights = {
 } as const;
 
 export const fontFamily = {
-  regular: 'DeliusSwashCaps-Regular',
-  medium: 'DeliusSwashCaps-Regular',
-  semibold: 'DeliusSwashCaps-Regular',
-  bold: 'DeliusSwashCaps-Regular',
+  regular: 'Lato_400Regular',
+  medium: 'Lato_400Regular',
+  semibold: 'Lato_700Bold',
+  bold: 'Lato_700Bold',
 } as const;
 
 export const fontWeights = {
@@ -94,53 +94,56 @@ export const shadows = {
   },
 } as const;
 
-// Color palette
+// Color palette — Sage Green brand
 export const colors = {
-  // Primary brand color
-  primary: '#5e1d31',
-  primaryVariant: '#4b1626',
-  primaryLight: '#7a2a42',
-  
-  // Accent colors
-  accent: '#f7c6d1',
-  accentLight: '#fce4ea',
-  accentDark: '#e8a4b5',
-  
-  // Light theme colors
+  // Primary (Sage Green) — buttons, headers, active states, progress rings
+  primary: '#8DA399',
+  primaryVariant: '#6d8a82',
+  primaryLight: '#a8beb6',
+
+  // Accent (Burnished Copper) — Premium badges, streaks, success icons
+  accent: '#D4AF37',
+  accentLight: '#e5c968',
+  accentDark: '#b8942a',
+
+  // Secondary accent (Terracotta) — alerts, warmth (sparingly)
+  accentSecondary: '#C27C62',
+
+  // Light theme — Cream/Bone background, Slate Grey text
   light: {
-    background: '#ffffff',
-    surface: '#f6f6f7',
-    surfaceVariant: '#f0f0f1',
-    border: '#e6e6e9',
-    borderLight: '#f0f0f1',
+    background: '#FAF9F6',
+    surface: '#f5f4f0',
+    surfaceVariant: '#efeeea',
+    border: '#e6e5e1',
+    borderLight: '#f0efeb',
     text: {
-      high: '#111827',
-      medium: '#374151',
-      low: '#6b7280',
-      disabled: '#9ca3af',
+      high: '#333333',
+      medium: '#555555',
+      low: '#777777',
+      disabled: '#9a9a95',
     },
     error: '#dc2626',
-    success: '#16a34a',
-    warning: '#ea580c',
+    success: '#D4AF37',
+    warning: '#C27C62',
     info: '#2563eb',
   },
-  
-  // Dark theme colors
+
+  // Dark theme — warm dark background
   dark: {
-    background: '#0b0b0c',
-    surface: '#111214',
-    surfaceVariant: '#1a1b1d',
-    border: '#2a2b2e',
-    borderLight: '#1a1b1d',
+    background: '#1a1b18',
+    surface: '#232520',
+    surfaceVariant: '#2d2e2a',
+    border: '#3a3b36',
+    borderLight: '#2d2e2a',
     text: {
-      high: '#f8fafc',
-      medium: '#cbd5e1',
-      low: '#94a3b8',
-      disabled: '#64748b',
+      high: '#f5f5f3',
+      medium: '#c8c8c4',
+      low: '#9a9a95',
+      disabled: '#6b6b67',
     },
     error: '#ef4444',
-    success: '#22c55e',
-    warning: '#f97316',
+    success: '#D4AF37',
+    warning: '#C27C62',
     info: '#3b82f6',
   },
 } as const;

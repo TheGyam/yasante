@@ -16,7 +16,7 @@ export interface ContentFilters {
 /**
  * Content API Service
  * 
- * Based on Swagger spec from: https://af4b3b4f74ab.ngrok-free.app/swagger/
+ * Based on Swagger spec from: https://yasante.com/swagger/
  * Base path: /api
  * Endpoints:
  * - GET /api/content/content/ - List content (returns array)

@@ -1,9 +1,9 @@
 export const typography = {
   fontFamily: {
-    regular: 'DeliusSwashCaps-Regular',
-    medium: 'DeliusSwashCaps-Regular',
-    semiBold: 'DeliusSwashCaps-Regular',
-    bold: 'DeliusSwashCaps-Regular',
+    regular: 'Lato_400Regular',
+    medium: 'Lato_400Regular',
+    semiBold: 'Lato_700Bold',
+    bold: 'Lato_700Bold',
   },
   fontSize: {
     xs: 12,
