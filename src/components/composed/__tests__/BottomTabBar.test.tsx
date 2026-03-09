@@ -29,9 +29,9 @@ jest.mock('@/hooks/useTheme', () => ({
   useTheme: () => ({
     theme: {
       colors: {
-        primary: '#5e1d31',
-        text: { low: '#6b7280', medium: '#374151', high: '#111827' },
-        surface: '#ffffff',
+        primary: '#8DA399',
+        text: { low: '#777777', medium: '#555555', high: '#333333' },
+        surface: '#FAF9F6',
       },
       spacing: { 1: 4, 2: 8, 3: 12 },
     },

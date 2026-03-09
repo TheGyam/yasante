@@ -28,6 +28,8 @@ export interface ImageWithPlaceholderProps extends Omit<RNImageProps, 'source'> 
   placeholder?: React.ReactNode;
   testID?: string;
   resizeMode?: 'cover' | 'contain' | 'stretch' | 'center' | 'repeat';
+  priority?: 'low' | 'normal' | 'high'; // Priority for loading
+  cachePolicy?: 'none' | 'disk' | 'memory' | 'memory-disk'; // Cache policy
 }
 
 export function ImageWithPlaceholder({
@@ -38,6 +40,8 @@ export function ImageWithPlaceholder({
   onLoadEnd,
   onError,
   resizeMode = 'cover',
+  priority = 'high',
+  cachePolicy = 'memory-disk',
   style,
   ...props
 }: ImageWithPlaceholderProps) {
@@ -143,14 +147,15 @@ export function ImageWithPlaceholder({
       <ExpoImage
         source={imageSource}
         contentFit={contentFit}
-        cachePolicy="memory-disk"
+        cachePolicy={cachePolicy}
         transition={hasLoaded ? 0 : 200} // No transition if already loaded (cached)
         onLoadStart={handleLoadStart}
         onLoadEnd={handleLoadEnd}
         onError={handleError}
         style={{ width: '100%', height: '100%' }}
-        // Priority for better loading
-        priority="high"
+        priority={priority}
+        // Enable progressive loading for better UX
+        contentPosition="center"
       />
     </Container>
   );

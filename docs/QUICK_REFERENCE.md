@@ -5,8 +5,7 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 ## Essential Information
 
 ### Base URLs
-- **Development**: `http://localhost:3000/api`
-- **Production**: `https://api.kalon.app`
+- **Base URL**: `https://yasante.com`
 
 ### Authentication
 - **Type**: JWT (Bearer tokens)

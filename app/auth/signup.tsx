@@ -195,8 +195,7 @@ export default function SignupScreen() {
         name, 
         email, 
         password,
-        // Note: password_confirm removed - backend doesn't require it per API docs
-        // Frontend still validates passwords match for UX
+        password_confirm: confirmPassword,
       });
       // Navigation will be handled by AuthContext
     } catch (error: any) {

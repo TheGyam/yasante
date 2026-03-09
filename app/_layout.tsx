@@ -7,7 +7,8 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
 import { LogBox, Linking, View, ActivityIndicator } from 'react-native';
 import { useEffect } from 'react';
-import { useFonts } from 'expo-font';
+import { useFonts } from '@expo-google-fonts/lato/useFonts';
+import { Lato_400Regular, Lato_700Bold } from '@expo-google-fonts/lato';
 import { parseMoodBoardDeepLink, parseTreatmentDeepLink } from '@/utils/deepLinks';
 
 // Create a client
@@ -87,28 +88,20 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  // Load Delius Swash Caps font from local assets
-  // The key 'DeliusSwashCaps-Regular' is the name we'll use in fontFamily
   const [fontsLoaded, fontError] = useFonts({
-    'DeliusSwashCaps-Regular': require('../assets/fonts/DeliusSwashCaps-Regular.ttf'),
+    Lato_400Regular,
+    Lato_700Bold,
   });
 
-  // Log when font is loaded for debugging
   useEffect(() => {
-    if (fontsLoaded) {
-      console.log('Delius Swash Caps font loaded successfully');
+    if (fontsLoaded && __DEV__) {
+      console.log('Lato font loaded successfully');
     }
   }, [fontsLoaded]);
 
-  // Log errors for debugging
   if (fontError) {
     console.warn('Font loading error:', fontError);
-    console.warn('Please ensure DeliusSwashCaps-Regular.ttf is in assets/fonts/ folder');
   }
-
-  // Show app immediately - fonts will apply when loaded
-  // React Native will use system font as fallback if custom font isn't available
-  // The font will be applied automatically once loaded
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

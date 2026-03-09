@@ -37,7 +37,7 @@ Welcome! This folder contains comprehensive API documentation for the Kalon mobi
 
 ## Key Points
 
-- **Base URL**: `https://api.kalon.app` (production), `http://localhost:3000/api` (development)
+- **Base URL**: `https://yasante.com`
 - **Authentication**: JWT Bearer tokens (15 min access, 7-30 day refresh)
 - **Response Format**: All responses wrapped in `{ data: ... }` format
 - **File Uploads**: Use `multipart/form-data` for images

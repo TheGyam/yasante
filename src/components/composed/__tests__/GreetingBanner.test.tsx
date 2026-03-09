@@ -28,8 +28,8 @@ jest.mock('@/hooks/useTheme', () => ({
   useTheme: () => ({
     theme: {
       colors: {
-        primary: '#5e1d31',
-        text: { high: '#111827' },
+        primary: '#8DA399',
+        text: { high: '#333333' },
       },
       spacing: { 1: 4, 2: 8, 4: 16 },
     },

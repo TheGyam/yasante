@@ -66,7 +66,7 @@ const FloatingContainer = styled(Animated.View)`
   padding-horizontal: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
   padding-top: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
   padding-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
-  shadow-color: #5e1d31;
+  shadow-color: #8DA399;
   shadow-offset: 0px 4px;
   shadow-opacity: 0.16;
   shadow-radius: 18px;
@@ -94,7 +94,7 @@ const ActiveBackground = styled(Animated.View)`
   right: 4px;
   bottom: 4px;
   border-radius: 20px;
-  background-color: rgba(94, 29, 49, 0.5);
+  background-color: rgba(141, 163, 153, 0.8);
 `;
 
 // Active indicator underline below the icon - now animated

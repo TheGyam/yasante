@@ -63,16 +63,8 @@ const getApiBaseUrl = (): string => {
   }
 
   // Priority 3: Fallback based on environment
-  // Development: Use ngrok URL or localhost
-  // Production: Use production API URL
   // Note: basePath is /api according to Swagger, so base URL should NOT include /api
-  if (__DEV__) {
-    // Default development URL - can be overridden via environment variable
-    return 'https://af4b3b4f74ab.ngrok-free.app';
-  }
-
-  // Production fallback
-  return 'https://api.kalon.app';
+  return 'https://yasante.com';
 };
 
 /**
@@ -104,14 +96,6 @@ export const validateApiConfig = (): void => {
   if (apiConfig.timeout <= 0) {
     throw new Error('API timeout must be greater than 0');
   }
-};
-
-/**
- * Check if the API is using ngrok
- * @returns true if baseURL contains 'ngrok'
- */
-export const isUsingNgrok = (): boolean => {
-  return apiConfig.baseURL.includes('ngrok');
 };
 
 /**

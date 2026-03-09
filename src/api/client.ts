@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { useAuthStore } from '@/state/stores/authStore';
-import { apiConfig, validateApiConfig, isUsingNgrok } from '@/config/api';
+import { apiConfig, validateApiConfig } from '@/config/api';
+import { offlineQueue } from './utils/offlineQueue';
 
 // Validate API configuration on module load
 validateApiConfig();
@@ -11,10 +12,6 @@ export const apiClient: AxiosInstance = axios.create({
   timeout: apiConfig.timeout,
   headers: {
     'Content-Type': 'application/json',
-    // Add ngrok bypass header if using ngrok
-    ...(apiConfig.baseURL.includes('ngrok') && {
-      'ngrok-skip-browser-warning': 'true',
-    }),
   },
   // Axios will automatically serialize objects to JSON when Content-Type is application/json
 });
@@ -22,12 +19,6 @@ export const apiClient: AxiosInstance = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Always add ngrok bypass header if using ngrok (ensures it's on every request)
-    // This prevents the ngrok browser warning page from appearing
-    if (isUsingNgrok()) {
-      config.headers['ngrok-skip-browser-warning'] = 'true';
-    }
-    
     // Add auth token if available
     const state = useAuthStore.getState();
     if (state.tokens?.accessToken) {
@@ -157,16 +148,69 @@ apiClient.interceptors.response.use(
         baseURL: error.config?.baseURL,
       });
     } else if (error.request) {
-      // Request made but no response
-      console.error('Network Error:', {
-        message: 'No response received from server',
-        url: error.config?.url,
-        baseURL: error.config?.baseURL,
-        request: error.request,
-      });
+      // Request made but no response - network error (offline)
+      // Queue mutation if it's a POST/PUT/PATCH/DELETE request
+      const method = originalRequest?.method?.toLowerCase();
+      if (method && ['post', 'put', 'patch', 'delete'].includes(method)) {
+        // Extract mutation type from URL
+        const url = originalRequest?.url || '';
+        let mutationType = 'unknown';
+        let params: any = {};
+
+        // Map common endpoints to mutation types
+        if (url.includes('/favorites/toggle')) {
+          mutationType = 'toggleFavorite';
+          params = {
+            userId: useAuthStore.getState().user?.id,
+            contentId: originalRequest?.data?.contentId || originalRequest?.params?.contentId,
+          };
+        } else if (url.includes('/goals/')) {
+          if (method === 'post') {
+            mutationType = 'createGoal';
+            params = {
+              userId: useAuthStore.getState().user?.id,
+              data: originalRequest?.data,
+            };
+          } else if (method === 'patch') {
+            mutationType = 'updateGoal';
+            const goalId = url.match(/\/goals\/([^/]+)/)?.[1];
+            params = {
+              userId: useAuthStore.getState().user?.id,
+              goalId,
+              data: originalRequest?.data,
+            };
+          } else if (method === 'delete') {
+            mutationType = 'deleteGoal';
+            const goalId = url.match(/\/goals\/([^/]+)/)?.[1];
+            params = {
+              userId: useAuthStore.getState().user?.id,
+              goalId,
+            };
+          }
+        }
+
+        // Queue the mutation if we identified the type
+        if (mutationType !== 'unknown' && params.userId) {
+          offlineQueue.enqueue(mutationType, params).catch((queueError) => {
+            if (__DEV__) {
+              console.error('Failed to queue mutation:', queueError);
+            }
+          });
+        }
+      }
+
+      if (__DEV__) {
+        console.error('Network Error (offline):', {
+          message: 'No response received from server',
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+        });
+      }
     } else {
       // Something else happened
-      console.error('Error:', error.message);
+      if (__DEV__) {
+        console.error('Error:', error.message);
+      }
     }
     return Promise.reject(error);
   }

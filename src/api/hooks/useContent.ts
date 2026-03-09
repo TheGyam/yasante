@@ -1,9 +1,11 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
+import { persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import { api } from '../index';
 import { Content, Favorite } from '@/types/education';
 import { CursorPaginatedResponse } from '@/types/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { asyncStoragePersister } from '@/utils/cachePersistence';
 
 const CONTENT_QUERY_KEY = 'content';
 const FAVORITES_QUERY_KEY = 'favorites';
@@ -19,7 +21,7 @@ export function useContent(filters?: {
       const response = await api.content.getAll(filters);
       return response;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes for filtered lists
     gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
@@ -144,7 +146,7 @@ export function useInfiniteContent(filters?: {
     },
     getPreviousPageParam: () => undefined, // Cursor-based pagination only goes forward
     initialPageParam: undefined,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 30 * 1000, // 30 seconds for feed (optimized for social media)
     gcTime: 30 * 60 * 1000, // 30 minutes
   });
 }
@@ -163,7 +165,7 @@ export function useContentItem(contentId: string) {
       return response.data;
     },
     enabled: !!contentId,
-    staleTime: 10 * 60 * 1000, // 10 minutes - cache for instant navigation
+    staleTime: 5 * 60 * 1000, // 5 minutes for detail pages
     gcTime: 30 * 60 * 1000, // 30 minutes - keep cached data longer
   });
 }
@@ -200,14 +202,20 @@ export function useToggleFavorite(userId?: string) {
   const queryClient = useQueryClient();
   const { user: authUser } = useAuth();
   const actualUserId = userId || authUser?.id;
+  
+  // Get persister for saving cache
+  const persister = asyncStoragePersister;
 
   return useMutation({
     mutationFn: async (contentId: string) => {
       if (!actualUserId) {
         throw new Error('User ID is required');
       }
+      // Generate client UUID for idempotency
+      const clientMutationId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const response = await api.favorites.toggle(actualUserId, contentId);
-      return { contentId, ...response.data };
+      // Server returns canonical state - use it
+      return { contentId, ...response.data, clientMutationId };
     },
     // Optimistic update
     onMutate: async (contentId) => {
@@ -248,13 +256,13 @@ export function useToggleFavorite(userId?: string) {
     onSuccess: (data, contentId) => {
       if (!actualUserId) return;
       
-      // Update isFavorite cache with actual response
+      // Update isFavorite cache with server-confirmed state
       queryClient.setQueryData(
         [FAVORITES_QUERY_KEY, actualUserId, contentId],
         data.isFavorite
       );
       
-      // Update favorites list cache with actual response
+      // Update favorites list cache with server-confirmed state
       queryClient.setQueryData<Favorite[]>(
         [FAVORITES_QUERY_KEY, actualUserId],
         (old = []) => {
@@ -279,6 +287,14 @@ export function useToggleFavorite(userId?: string) {
           }
         }
       );
+      
+      // Immediately persist the server-confirmed state
+      // Type assertion needed due to QueryClient version mismatch between packages
+      persistQueryClientSave({ queryClient: queryClient as any, persister }).catch((error) => {
+        if (__DEV__) {
+          console.warn('Failed to persist cache after favorite toggle:', error);
+        }
+      });
     },
     onError: (err, contentId, context) => {
       if (!actualUserId) return;
@@ -301,7 +317,49 @@ export function prefetchContentItem(queryClient: ReturnType<typeof useQueryClien
       const response = await api.content.getById(contentId);
       return response.data;
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes for prefetched content
   });
+}
+
+export function prefetchNextPage(
+  queryClient: ReturnType<typeof useQueryClient>,
+  filters?: {
+    hairType?: string;
+    topic?: string;
+    type?: string;
+  }
+) {
+  // Prefetch next page of infinite content
+  const queryKey = [CONTENT_QUERY_KEY, 'infinite', filters];
+  const queryData = queryClient.getQueryData(queryKey) as any;
+  
+  if (queryData?.pages && queryData.pages.length > 0) {
+    const lastPage = queryData.pages[queryData.pages.length - 1];
+    const nextCursor = lastPage?.pagination?.nextCursor;
+    
+    if (nextCursor) {
+      return queryClient.prefetchInfiniteQuery({
+        queryKey,
+        queryFn: async ({ pageParam }) => {
+          const response = await api.content.getAll({
+            ...filters,
+            cursor: pageParam as string | undefined,
+            limit: 20,
+          });
+          return response;
+        },
+        initialPageParam: undefined,
+        getNextPageParam: (lastPage: any) => {
+          if (lastPage?.pagination?.hasMore && lastPage?.pagination?.nextCursor) {
+            return lastPage.pagination.nextCursor;
+          }
+          return undefined;
+        },
+      });
+    }
+  }
+  
+  return Promise.resolve();
 }
 
 export async function prefetchRelatedContent(
@@ -354,24 +412,21 @@ export function useIsFavorite(userId: string | undefined, contentId: string, opt
   const actualUserId = userId || authUser?.id;
   const queryClient = useQueryClient();
 
-  // Helper to get cached favorite status from persisted cache
-  // This function checks both the specific cache and the favorites list
-  const getCachedFavoriteStatus = (): boolean | undefined => {
+  // Get initial data from cache (for use in initialData)
+  // This writes to global cache, making it available to all observers
+  const getInitialData = (): boolean | undefined => {
     if (!actualUserId || !contentId) return undefined;
     
-    // Check if we have the specific favorite cache (from persisted cache)
+    // Check if we have the specific favorite cache entry
     const cachedValue = queryClient.getQueryData<boolean>([FAVORITES_QUERY_KEY, actualUserId, contentId]);
     if (cachedValue !== undefined) {
       return cachedValue;
     }
     
-    // Check if we have the favorites list and can derive the value
+    // Fallback: check favorites list and derive value
     const favoritesList = queryClient.getQueryData<Favorite[]>([FAVORITES_QUERY_KEY, actualUserId]);
     if (favoritesList && Array.isArray(favoritesList)) {
-      const isFavorite = favoritesList.some(f => f.contentId === contentId);
-      // Update the specific cache entry for future use
-      queryClient.setQueryData([FAVORITES_QUERY_KEY, actualUserId, contentId], isFavorite);
-      return isFavorite;
+      return favoritesList.some(f => f.contentId === contentId);
     }
     
     return undefined;
@@ -384,25 +439,6 @@ export function useIsFavorite(userId: string | undefined, contentId: string, opt
         throw new Error('User ID is required');
       }
       
-      // First, check if we have cached data (from persisted cache or in-memory)
-      // This is critical - we check cache BEFORE making API call
-      const cachedValue = getCachedFavoriteStatus();
-      if (cachedValue !== undefined) {
-        if (__DEV__) {
-          console.log('✅ useIsFavorite: Using cached value (no API call)', { 
-            contentId, 
-            isFavorite: cachedValue,
-            hasSpecificCache: queryClient.getQueryData<boolean>([FAVORITES_QUERY_KEY, actualUserId, contentId]) !== undefined,
-            hasFavoritesList: queryClient.getQueryData<Favorite[]>([FAVORITES_QUERY_KEY, actualUserId]) !== undefined,
-          });
-        }
-        return cachedValue;
-      }
-      
-      // If not in cache, make API call
-      if (__DEV__) {
-        console.log('📡 useIsFavorite: Making API call (no cache found)', { contentId });
-      }
       const response = await api.favorites.isFavorite(actualUserId, contentId);
       const isFavorite = response.data;
       // Update cache with API response
@@ -410,30 +446,15 @@ export function useIsFavorite(userId: string | undefined, contentId: string, opt
       return isFavorite;
     },
     enabled: (options?.enabled !== false) && !!contentId && !!actualUserId,
-    // Use placeholder data for immediate UI updates from persisted cache
-    // This is called on every render, so it will pick up restored cache
-    placeholderData: getCachedFavoriteStatus,
-    staleTime: 10 * 60 * 1000, // 10 minutes - consider cached data fresh
+    // Use initialData to write to global cache (not just observer-local)
+    // This ensures the cached value is available to all observers
+    initialData: getInitialData,
+    staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
-    refetchOnMount: false, // Don't refetch on mount - use cached data
-    refetchOnWindowFocus: false, // Don't refetch on window focus
-    refetchOnReconnect: false, // Don't refetch on reconnect - use cached data
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
-
-  // Sync cache when it becomes available (after persistence restore)
-  useEffect(() => {
-    if (!actualUserId || !contentId) return;
-    
-    // Check if cache was restored and update query data
-    const cachedValue = getCachedFavoriteStatus();
-    if (cachedValue !== undefined && query.data === undefined) {
-      // If we have cached data but query doesn't have data yet, set it
-      queryClient.setQueryData([FAVORITES_QUERY_KEY, actualUserId, contentId], cachedValue);
-      if (__DEV__) {
-        console.log('🔄 useIsFavorite: Synced cache to query', { contentId, isFavorite: cachedValue });
-      }
-    }
-  }, [actualUserId, contentId, queryClient, query.data]);
 
   return query;
 }

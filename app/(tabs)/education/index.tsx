@@ -52,14 +52,14 @@ const topicDisplayNames: Record<ContentTopic, string> = {
 
 // Quick category icons mapping
 const quickCategoryIcons = {
-  'Hair Type Quiz': <Droplets size={24} color="#5e1d31" strokeWidth={2.5} />,
-  'Hair Growth': <TrendingUp size={24} color="#5e1d31" strokeWidth={2.5} />,
-  'Product Guide': <Sparkles size={24} color="#5e1d31" strokeWidth={2.5} />,
-  'Styling Tips': <Scissors size={24} color="#5e1d31" strokeWidth={2.5} />,
-  'Hair Health': <Activity size={24} color="#5e1d31" strokeWidth={2.5} />,
-  'Color Care': <Palette size={24} color="#5e1d31" strokeWidth={2.5} />,
-  'Daily Tips': <Lightbulb size={24} color="#5e1d31" strokeWidth={2.5} />,
-  'Favorites': <Heart size={24} color="#5e1d31" strokeWidth={2.5} />,
+  'Hair Type Quiz': <Droplets size={24} color="#8DA399" strokeWidth={2.5} />,
+  'Hair Growth': <TrendingUp size={24} color="#8DA399" strokeWidth={2.5} />,
+  'Product Guide': <Sparkles size={24} color="#8DA399" strokeWidth={2.5} />,
+  'Styling Tips': <Scissors size={24} color="#8DA399" strokeWidth={2.5} />,
+  'Hair Health': <Activity size={24} color="#8DA399" strokeWidth={2.5} />,
+  'Color Care': <Palette size={24} color="#8DA399" strokeWidth={2.5} />,
+  'Daily Tips': <Lightbulb size={24} color="#8DA399" strokeWidth={2.5} />,
+  'Favorites': <Heart size={24} color="#8DA399" strokeWidth={2.5} />,
 };
 
 export default function ContentLibraryScreen() {
