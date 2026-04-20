@@ -87,6 +87,51 @@ export const moodBoardApi = {
   },
 
   /**
+   * Get SAVED mood board entries from other users
+   * GET /api/moodboard/moodboard/saved/
+   * NOTE: Endpoint pending backend implementation
+   */
+  getSaved: async (userId?: string, month?: string): Promise<ApiResponse<MoodBoardEntry[]>> => {
+    const params = new URLSearchParams();
+    if (month) params.append('month', month);
+    
+    const url = `/api/moodboard/moodboard/saved/${params.toString() ? `?${params.toString()}` : ''}`;
+    
+    if (__DEV__) {
+      console.log('📡 API Request:', { method: 'GET', url, userId });
+    }
+    
+    try {
+      const response = await apiClient.get<MoodBoardEntry[] | PaginatedResponse<MoodBoardEntry>>(url);
+      
+      let data = Array.isArray(response.data) 
+        ? response.data 
+        : (response.data as any).results || [];
+      
+      if ((response.data as any).data && Array.isArray((response.data as any).data)) {
+        data = (response.data as any).data;
+      }
+      
+      data = data.map((entry: any) => ({
+        ...entry,
+        mainPhotoUri: entry.mainPhotoUri || entry.main_photo_uri,
+        stylistPrice: entry.stylistPrice ?? entry.stylist_price,
+        hairPrice: entry.hairPrice ?? entry.hair_price,
+        stylistLocation: entry.stylistLocation || entry.stylist_location,
+        appointmentTime: entry.appointmentTime || entry.appointment_time,
+        monthColor: entry.monthColor || entry.month_color,
+      }));
+      
+      return { data };
+    } catch (error: any) {
+      if (__DEV__) {
+        console.error('❌ API Error explicitly caught for missing endpoint:', error.message);
+      }
+      return { data: [] }; // Fail gracefully while backend builds it
+    }
+  },
+
+  /**
    * Get mood board entry by ID
    * GET /api/moodboard/moodboard/{id}/
    */
@@ -145,23 +190,36 @@ export const moodBoardApi = {
     
     try {
       // Clean the entry: ensure photos is always an array and remove undefined values
+      // Handle both camelCase (from interface) and snake_case (from mutation hook transform)
       const cleanEntry: any = {};
       
-      // Required fields (using camelCase as per API documentation)
+      // TODO: Replace with real image upload. For now, use placeholder URLs for local file URIs.
+      const toValidUrl = (uri: string): string => {
+        if (uri && uri.startsWith('file://')) {
+          const seed = Math.random().toString(36).substring(2, 8);
+          return `https://picsum.photos/seed/${seed}/800/1000`;
+        }
+        return uri;
+      };
+      
+      // Required fields — accept both camelCase and snake_case keys
       cleanEntry.month = entry.month;
       cleanEntry.name = entry.name;
-      cleanEntry.mainPhotoUri = entry.mainPhotoUri;
-      cleanEntry.stylistPrice = entry.stylistPrice;
-      cleanEntry.hairPrice = entry.hairPrice;
-      cleanEntry.stylistLocation = entry.stylistLocation;
-      cleanEntry.appointmentTime = entry.appointmentTime;
+      const mainPhoto = (entry as any).main_photo_uri || entry.mainPhotoUri;
+      cleanEntry.main_photo_uri = toValidUrl(mainPhoto);
+      cleanEntry.stylist_price = (entry as any).stylist_price ?? entry.stylistPrice;
+      cleanEntry.hair_price = (entry as any).hair_price ?? entry.hairPrice;
+      cleanEntry.stylist_location = (entry as any).stylist_location || entry.stylistLocation;
+      cleanEntry.appointment_time = (entry as any).appointment_time || entry.appointmentTime;
       
-      // Photos must always be an array (even if empty)
-      cleanEntry.photos = Array.isArray(entry.photos) ? entry.photos : [];
+      // Photos must always be an array (even if empty) — convert local URIs to placeholder URLs
+      const rawPhotos = Array.isArray(entry.photos) ? entry.photos : [];
+      cleanEntry.photos = rawPhotos.map((p: string) => toValidUrl(p));
       
       // Optional fields (only include if they have values)
-      if (entry.monthColor !== undefined && entry.monthColor !== null) {
-        cleanEntry.monthColor = entry.monthColor;
+      const monthColor = (entry as any).month_color || entry.monthColor;
+      if (monthColor !== undefined && monthColor !== null) {
+        cleanEntry.month_color = monthColor;
       }
       if (entry.notes !== undefined && entry.notes !== null && entry.notes !== '') {
         cleanEntry.notes = entry.notes;

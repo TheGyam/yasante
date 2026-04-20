@@ -102,19 +102,19 @@ export const colors = {
   primaryLight: '#a8beb6',
 
   // Accent (Burnished Copper) — Premium badges, streaks, success icons
-  accent: '#D4AF37',
-  accentLight: '#e5c968',
-  accentDark: '#b8942a',
+  accent: '#C07850',
+  accentLight: '#d18a66',
+  accentDark: '#a1603a',
 
   // Secondary accent (Terracotta) — alerts, warmth (sparingly)
-  accentSecondary: '#C27C62',
+  accentSecondary: '#C4704A',
 
   // Light theme — Cream/Bone background, Slate Grey text
   light: {
-    background: '#FAF9F6',
-    surface: '#f5f4f0',
-    surfaceVariant: '#efeeea',
-    border: '#e6e5e1',
+    background: '#F5F0EB',
+    surface: '#FFFFFF',
+    surfaceVariant: '#f0ece7',
+    border: '#333333',
     borderLight: '#f0efeb',
     text: {
       high: '#333333',

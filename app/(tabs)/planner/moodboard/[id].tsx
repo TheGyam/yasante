@@ -1,145 +1,27 @@
-import React from 'react';
-import { ScrollView, View, TouchableOpacity } from 'react-native';
+import React, { useRef, useMemo, useCallback, useState } from 'react';
+import { View, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import styled from 'styled-components/native';
-import { ArrowLeft, MapPin, DollarSign, Calendar, Edit, Share2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import BottomSheet from '@gorhom/bottom-sheet';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { ArrowLeft, Share2, Edit, Info, Camera } from 'lucide-react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { useMoodBoardEntry } from '@/api/hooks/useMoodBoard';
 import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
 import { Text } from '@/components/ui/Text';
 import { shareMoodBoardEntry } from '@/utils/share';
-import type { Theme } from '@/theme/ThemeProvider';
 import { format } from 'date-fns';
+import { BoardDetailsSheetContent } from '@/components/moodboard/screens/BoardDetailsSheetContent';
 
-const Container = styled.ScrollView`
-  flex: 1;
-  background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};
-`;
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const Header = styled.View<{ topInset: number }>`
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: ${({ topInset, theme }: { topInset: number; theme: Theme }) => topInset + theme.spacing[3]}px;
-  padding-horizontal: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-  padding-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
-  background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-`;
+const COLUMN_GAP = 8;
+const NUM_COLUMNS = 2;
+const PADDING = 16;
 
-const BackButton = styled(TouchableOpacity)`
-  width: 40px;
-  height: 40px;
-  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  background-color: #ffffff;
-  align-items: center;
-  justify-content: center;
-  shadow-color: #000;
-  shadow-offset: 0px 2px;
-  shadow-opacity: 0.1;
-  shadow-radius: 4px;
-  elevation: 3;
-  border-width: 1px;
-  border-color: rgba(0, 0, 0, 0.05);
-`;
-
-const HeaderRight = styled.View`
-  flex-direction: row;
-  gap: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
-`;
-
-const EditButton = styled(TouchableOpacity)`
-  width: 40px;
-  height: 40px;
-  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  background-color: #ffffff;
-  align-items: center;
-  justify-content: center;
-  shadow-color: #000;
-  shadow-offset: 0px 2px;
-  shadow-opacity: 0.1;
-  shadow-radius: 4px;
-  elevation: 3;
-  border-width: 1px;
-  border-color: rgba(0, 0, 0, 0.05);
-`;
-
-const ShareButton = styled(TouchableOpacity)`
-  width: 40px;
-  height: 40px;
-  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  background-color: #ffffff;
-  align-items: center;
-  justify-content: center;
-  shadow-color: #000;
-  shadow-offset: 0px 2px;
-  shadow-opacity: 0.1;
-  shadow-radius: 4px;
-  elevation: 3;
-  border-width: 1px;
-  border-color: rgba(0, 0, 0, 0.05);
-`;
-
-const Content = styled.View`
-  padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-  padding-top: ${({ theme }: { theme: Theme }) => theme.spacing[4] + 60}px;
-`;
-
-const PhotosContainer = styled.View`
-  gap: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
-  margin-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-`;
-
-const PhotoContainer = styled.View`
-  width: 100%;
-  height: 300px;
-  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  overflow: hidden;
-  background-color: ${({ theme }: { theme: Theme }) => theme.colors.surfaceVariant};
-`;
-
-const Photo = styled(ImageWithPlaceholder)`
-  width: 100%;
-  height: 100%;
-`;
-
-const DetailsSection = styled.View`
-  gap: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-`;
-
-const InfoRow = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
-`;
-
-const PriceRow = styled.View`
-  flex-direction: row;
-  gap: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-`;
-
-const PriceItem = styled.View`
-  flex-direction: row;
-  align-items: center;
-  gap: ${({ theme }: { theme: Theme }) => theme.spacing[1]}px;
-`;
-
-const NotesSection = styled.View`
-  margin-top: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
-  padding: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
-  background-color: ${({ theme }: { theme: Theme }) => theme.colors.surfaceVariant};
-  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-`;
-
-const getMonthName = (month: string): string => {
-  const [year, monthNum] = month.split('-');
-  const date = new Date(parseInt(year), parseInt(monthNum) - 1, 1);
-  return format(date, 'MMMM yyyy');
+const getPhotoHeight = (index: number): number => {
+  const heights = [200, 260, 180, 240, 220, 280, 190, 250];
+  return heights[index % heights.length];
 };
 
 export default function MoodBoardDetailScreen() {
@@ -148,125 +30,199 @@ export default function MoodBoardDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: entry, isLoading } = useMoodBoardEntry(id || '');
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
-  const handleBack = () => {
-    router.back();
-  };
+  const snapPoints = useMemo(() => ['55%'], []);
 
-  const handleEdit = () => {
-    router.push(`/(tabs)/planner/moodboard/edit/${id}` as any);
-  };
-
+  const handleBack = () => router.back();
+  const handleEdit = () => router.push(`/(tabs)/planner/moodboard/edit/${id}` as any);
   const handleShare = async () => {
-    if (entry) {
-      await shareMoodBoardEntry(entry);
-    }
+    if (entry) await shareMoodBoardEntry(entry);
   };
+
+  const handleOpenDetails = useCallback(() => {
+    setDetailsOpen(true);
+    bottomSheetRef.current?.snapToIndex(0);
+  }, []);
+
+  const columns = useMemo(() => {
+    if (!entry?.photos?.length) return [[], []];
+    const col1: { uri: string; height: number; index: number }[] = [];
+    const col2: { uri: string; height: number; index: number }[] = [];
+    let h1 = 0, h2 = 0;
+
+    entry.photos.forEach((uri: string, index: number) => {
+      const height = getPhotoHeight(index);
+      if (h1 <= h2) {
+        col1.push({ uri, height, index });
+        h1 += height + COLUMN_GAP;
+      } else {
+        col2.push({ uri, height, index });
+        h2 += height + COLUMN_GAP;
+      }
+    });
+
+    return [col1, col2];
+  }, [entry?.photos]);
+
+  let appointmentDate = '';
+  if (entry?.appointmentTime) {
+    try {
+      const date = new Date(entry.appointmentTime);
+      if (!isNaN(date.getTime())) {
+        appointmentDate = format(date, 'EEEE, MMM d, yyyy · h:mm a');
+      }
+    } catch {}
+  }
 
   if (isLoading || !entry) {
     return (
-      <Container>
-        <Header topInset={insets.top}>
-          <BackButton onPress={handleBack} activeOpacity={0.7}>
-            <ArrowLeft size={20} color="#000000" strokeWidth={2.5} />
-          </BackButton>
-        </Header>
-        <Content>
-          <Text>Loading...</Text>
-        </Content>
-      </Container>
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, paddingTop: insets.top + 16, paddingHorizontal: 16 }}>
+        <TouchableOpacity onPress={handleBack} activeOpacity={0.7} style={{
+          width: 40, height: 40, borderRadius: 12, backgroundColor: theme.colors.surface,
+          borderWidth: 2, borderColor: theme.colors.text.high,
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <ArrowLeft size={20} color={theme.colors.text.high} strokeWidth={2.5} />
+        </TouchableOpacity>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text variant="body" color={theme.colors.primary} weight="bold" style={{ textTransform: 'uppercase', letterSpacing: 2 }}>Loading...</Text>
+        </View>
+      </View>
     );
   }
 
-  const monthName = getMonthName(entry.month);
-  const appointmentDate = format(new Date(entry.appointmentTime), 'MMM d, yyyy h:mm a');
-
   return (
-    <Container
-      testID="moodboard-detail-screen"
-      showsVerticalScrollIndicator={true}
-      contentContainerStyle={{
-        paddingBottom: insets.bottom + 100,
-      }}
-    >
-      <Header topInset={insets.top}>
-        <BackButton onPress={handleBack} activeOpacity={0.7}>
-          <ArrowLeft size={20} color="#000000" strokeWidth={2.5} />
-        </BackButton>
-        <HeaderRight>
-          <ShareButton onPress={handleShare} activeOpacity={0.7}>
-            <Share2 size={20} color="#000000" strokeWidth={2.5} />
-          </ShareButton>
-          <EditButton onPress={handleEdit} activeOpacity={0.7}>
-            <Edit size={20} color="#000000" strokeWidth={2.5} />
-          </EditButton>
-        </HeaderRight>
-      </Header>
-
-      <Content>
-        <Text variant="caption" weight="medium" color={theme.colors.primary} style={{ marginBottom: theme.spacing[2] }}>
-          {monthName}
-        </Text>
-
-        <Text variant="h1" weight="bold" color={theme.colors.text.high} style={{ marginBottom: theme.spacing[4] }}>
-          {entry.name}
-        </Text>
-
-        <PhotosContainer>
-          {entry.photos.map((photoUri, index) => (
-            <PhotoContainer key={index}>
-              <Photo
-                source={{ uri: photoUri }}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
-              />
-            </PhotoContainer>
-          ))}
-        </PhotosContainer>
-
-        <DetailsSection>
-          <PriceRow>
-            <PriceItem>
-              <DollarSign size={20} color={theme.colors.text.high} strokeWidth={2} />
-              <Text variant="h3" weight="semibold" color={theme.colors.text.high}>
-                Stylist: ${entry.stylistPrice}
-              </Text>
-            </PriceItem>
-            <PriceItem>
-              <DollarSign size={20} color={theme.colors.text.high} strokeWidth={2} />
-              <Text variant="h3" weight="semibold" color={theme.colors.text.high}>
-                Hair: ${entry.hairPrice}
-              </Text>
-            </PriceItem>
-          </PriceRow>
-
-          <InfoRow>
-            <MapPin size={20} color={theme.colors.text.medium} strokeWidth={2} />
-            <Text variant="body" color={theme.colors.text.high}>
-              {entry.stylistLocation}
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }} testID="moodboard-detail-screen">
+      {/* Header */}
+      <View style={{
+        paddingTop: insets.top + 8, paddingHorizontal: 20, paddingBottom: 12,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        backgroundColor: theme.colors.background, borderBottomWidth: 4, borderBottomColor: theme.colors.border,
+        zIndex: 10,
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 }}>
+          <TouchableOpacity onPress={handleBack} activeOpacity={0.7} style={{
+            width: 40, height: 40, borderRadius: 12,
+            backgroundColor: theme.colors.surface, borderWidth: 2, borderColor: theme.colors.border,
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <ArrowLeft size={18} color={theme.colors.text.high} strokeWidth={2.5} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text variant="h3" weight="bold" color={theme.colors.text.high} numberOfLines={1} style={{
+              fontSize: 20, textTransform: 'uppercase', fontStyle: 'italic', letterSpacing: -1,
+            }}>
+              {entry.name}
             </Text>
-          </InfoRow>
+          </View>
+        </View>
 
-          <InfoRow>
-            <Calendar size={20} color={theme.colors.text.medium} strokeWidth={2} />
-            <Text variant="body" color={theme.colors.text.high}>
-              {appointmentDate}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity onPress={handleShare} activeOpacity={0.7} style={{
+            width: 40, height: 40, borderRadius: 12,
+            backgroundColor: theme.colors.surface, borderWidth: 2, borderColor: theme.colors.border,
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Share2 size={16} color={theme.colors.text.high} strokeWidth={2.5} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleEdit} activeOpacity={0.7} style={{
+            width: 40, height: 40, borderRadius: 12,
+            backgroundColor: theme.colors.primary, borderWidth: 2, borderColor: theme.colors.border,
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Edit size={16} color={theme.colors.surface} strokeWidth={2.5} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Masonry Photo Grid */}
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: PADDING, paddingTop: 16, paddingBottom: insets.bottom + 240,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {entry.photos && entry.photos.length > 0 ? (
+          <View style={{ flexDirection: 'row', gap: COLUMN_GAP }}>
+            {columns.map((column, colIndex) => (
+              <View key={colIndex} style={{ flex: 1, gap: COLUMN_GAP }}>
+                {column.map((photo) => (
+                  <Animated.View key={photo.index} entering={FadeIn.delay(photo.index * 60).duration(300)}>
+                    <View style={{ position: 'relative' }}>
+                      <View style={{
+                        height: photo.height, borderRadius: 16, overflow: 'hidden',
+                        borderWidth: 2, borderColor: theme.colors.text.high,
+                        backgroundColor: theme.colors.surface,
+                      }}>
+                        <ImageWithPlaceholder source={{ uri: photo.uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                      </View>
+                    </View>
+                  </Animated.View>
+                ))}
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={{ paddingVertical: 60, alignItems: 'center' }}>
+            <View style={{
+              width: 80, height: 80, backgroundColor: theme.colors.primary,
+              borderWidth: 4, borderColor: theme.colors.text.high, borderRadius: 20,
+              alignItems: 'center', justifyContent: 'center',
+              marginBottom: 16, transform: [{ rotate: '-10deg' }],
+            }}>
+              <Camera size={40} color={theme.colors.surface} strokeWidth={2} />
+            </View>
+            <Text variant="h3" weight="bold" color={theme.colors.text.high} style={{
+              textTransform: 'uppercase', fontStyle: 'italic', fontSize: 22, marginBottom: 4,
+            }}>
+              NO PINS YET
             </Text>
-          </InfoRow>
+            <Text variant="caption" weight="bold" color={theme.colors.primary} style={{
+              letterSpacing: 3, textTransform: 'uppercase', fontSize: 9,
+            }}>
+              ADD MEDIA TO THIS BOARD
+            </Text>
+          </View>
+        )}
+      </ScrollView>
 
-          {entry.notes && (
-            <NotesSection>
-              <Text variant="body" weight="medium" color={theme.colors.text.high} style={{ marginBottom: theme.spacing[2] }}>
-                Notes
-              </Text>
-              <Text variant="body" color={theme.colors.text.medium}>
-                {entry.notes}
-              </Text>
-            </NotesSection>
-          )}
-        </DetailsSection>
-      </Content>
-    </Container>
+      {/* Floating Details Button */}
+      {!detailsOpen && (
+        <View style={{
+          position: 'absolute', bottom: insets.bottom + 100, left: 0, right: 0,
+          alignItems: 'center', zIndex: 20,
+        }}>
+          <TouchableOpacity onPress={handleOpenDetails} activeOpacity={0.85} style={{
+            flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 28, paddingVertical: 16,
+            backgroundColor: theme.colors.accentSecondary || theme.colors.accent, borderWidth: 4, borderColor: theme.colors.text.high,
+            borderRadius: 20, shadowColor: theme.colors.text.high, shadowOffset: { width: 4, height: 4 }, shadowOpacity: 1, shadowRadius: 0, elevation: 8,
+          }}>
+            <Info size={18} color={theme.colors.text.high} strokeWidth={2.5} />
+            <Text variant="body" weight="bold" color={theme.colors.text.high} style={{ fontSize: 15, textTransform: 'uppercase', fontStyle: 'italic' }}>
+              Details
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Details Bottom Sheet */}
+      <BottomSheet
+        ref={bottomSheetRef}
+        snapPoints={snapPoints}
+        index={-1}
+        enablePanDownToClose={true}
+        onClose={() => setDetailsOpen(false)}
+        backgroundStyle={{
+          backgroundColor: theme.colors.background,
+          borderTopLeftRadius: 32, borderTopRightRadius: 32,
+          borderColor: theme.colors.text.high,
+        }}
+        handleIndicatorStyle={{ backgroundColor: theme.colors.primary, width: 40, height: 5, borderRadius: 3 }}
+      >
+        <BoardDetailsSheetContent entry={entry as any} appointmentDate={appointmentDate} />
+      </BottomSheet>
+    </View>
   );
 }
-

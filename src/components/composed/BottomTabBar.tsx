@@ -143,7 +143,6 @@ interface Tab {
 const tabs: Tab[] = [
   { name: 'home', route: '/(tabs)/home', label: 'Home' },
   { name: 'planner', route: '/(tabs)/planner', label: 'Planner' },
-  { name: 'education', route: '/(tabs)/education', label: 'Learn' },
   { name: 'profile', route: '/(tabs)/profile', label: 'Profile' },
 ];
 
@@ -189,10 +188,9 @@ export function BottomTabBar() {
   const iconScale0 = useSharedValue(1.0);
   const iconScale1 = useSharedValue(1.0);
   const iconScale2 = useSharedValue(1.0);
-  const iconScale3 = useSharedValue(1.0);
   // Memoize array to prevent unnecessary re-renders (shared values are stable)
   const iconScales = React.useMemo(
-    () => [iconScale0, iconScale1, iconScale2, iconScale3],
+    () => [iconScale0, iconScale1, iconScale2],
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );

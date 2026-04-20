@@ -1,8 +1,8 @@
 import React from 'react';
-import { Home, Calendar, BookOpen, User } from 'lucide-react-native';
+import { Home, Calendar, User } from 'lucide-react-native';
 import { useTheme } from '@/hooks/useTheme';
 
-export type TabIconName = 'home' | 'planner' | 'education' | 'profile';
+export type TabIconName = 'home' | 'planner' | 'profile';
 
 export interface TabIconProps {
   name: TabIconName;
@@ -14,7 +14,6 @@ export interface TabIconProps {
 const iconMap = {
   home: Home,
   planner: Calendar,
-  education: BookOpen,
   profile: User,
 };
 

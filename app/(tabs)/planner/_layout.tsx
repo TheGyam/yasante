@@ -16,8 +16,6 @@ export default function PlannerLayout() {
       <Stack.Screen name="moodboard/[id]" />
       <Stack.Screen name="moodboard/create" />
       <Stack.Screen name="moodboard/edit/[id]" />
-      <Stack.Screen name="treatments/create" />
-      <Stack.Screen name="treatments/edit/[id]" />
     </Stack>
   );
 }

@@ -62,6 +62,7 @@ export default function GoalCreateScreen() {
         return;
       }
       await createGoal.mutateAsync({
+        userId: user.id,
         name,
         description: description || undefined,
         targetDate: targetDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),

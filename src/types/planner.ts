@@ -89,16 +89,18 @@ export interface MoodBoardEntry {
   id: string;
   userId: string;
   month: string; // Format: "YYYY-MM" (e.g., "2024-01")
-  name: string; // Hairstyle name
+  name: string; // Board name
   mainPhotoUri: string; // Thumbnail for card
-  photos: string[]; // Array of 3 photo URIs
+  photos: string[]; // Array of photo URIs (unlimited)
   stylistPrice: number; // Stylist service fee
   hairPrice: number; // Cost of hair extensions/materials
+  stylistName?: string; // Name of the stylist
   stylistLocation: string;
   appointmentTime: string; // ISO datetime or time string
   monthColor?: string; // Hex color code for month customization
   notes?: string; // User's additional notes
   completed?: boolean; // Whether the style has been done
+  isSecret?: boolean; // Private/secret board
   createdAt: string;
   updatedAt: string;
 }

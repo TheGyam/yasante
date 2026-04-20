@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, ImageSourcePropType } from 'react-native';
+import { Image, ImageSourcePropType, ViewStyle, StyleProp } from 'react-native';
 import styled from 'styled-components/native';
 import { useTheme } from '@/hooks/useTheme';
 import { Text } from './Text';
@@ -25,9 +25,10 @@ export interface AvatarProps {
   name?: string;
   size?: number;
   testID?: string;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function Avatar({ source, name, size = 40, testID }: AvatarProps) {
+export function Avatar({ source, name, size = 40, testID, style }: AvatarProps) {
   const { theme } = useTheme();
 
   const initials = name
@@ -38,7 +39,7 @@ export function Avatar({ source, name, size = 40, testID }: AvatarProps) {
     .slice(0, 2);
 
   return (
-    <Container size={size} testID={testID} accessible={true} accessibilityRole="image">
+    <Container size={size} testID={testID} style={style} accessible={true} accessibilityRole="image">
       {source ? (
         <StyledImage source={source} resizeMode="cover" />
       ) : (
