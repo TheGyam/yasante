@@ -1,55 +1,47 @@
 import React from 'react';
-import { TouchableOpacity, Platform } from 'react-native';
+import { TouchableOpacity, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import styled from 'styled-components/native';
 import { useTheme } from '@/hooks/useTheme';
-import { Text } from '../ui/Text';
-import type { Theme } from '@/theme/ThemeProvider';
-
-const Container = styled(TouchableOpacity)<{ bottomInset: number }>`
-  position: absolute;
-  bottom: ${({ bottomInset, theme }: { bottomInset: number; theme: Theme }) => 
-    bottomInset + 16 + 56 + 16}px; /* safe area + tab bar height (56) + spacing */
-  right: ${({ theme }: { theme: Theme }) => theme.spacing[6]}px;
-  width: 56px;
-  height: 56px;
-  border-radius: 28px;
-  background-color: ${({ theme }: { theme: Theme }) => theme.colors.primary};
-  align-items: center;
-  justify-content: center;
-  shadow-color: ${({ theme }: { theme: Theme }) => theme.shadows.large.shadowColor};
-  shadow-offset: ${({ theme }: { theme: Theme }) => `${theme.shadows.large.shadowOffset.width}px ${theme.shadows.large.shadowOffset.height}px`};
-  shadow-opacity: ${({ theme }: { theme: Theme }) => theme.shadows.large.shadowOpacity};
-  shadow-radius: ${({ theme }: { theme: Theme }) => theme.shadows.large.shadowRadius}px;
-  elevation: ${({ theme }: { theme: Theme }) => (Platform.OS === 'android' ? 12 : 0)};
-  z-index: 1001;
-`;
 
 export interface FloatingActionButtonProps {
   onPress: () => void;
-  icon?: React.ReactNode;
-  testID?: string;
+  icon: React.ReactNode;
+  visible?: boolean;
 }
 
-export function FloatingActionButton({ onPress, icon, testID }: FloatingActionButtonProps) {
+export function FloatingActionButton({ onPress, icon, visible = true }: FloatingActionButtonProps) {
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   
+  if (!visible) return null;
+
   return (
-    <Container
-      bottomInset={insets.bottom}
-      onPress={onPress}
-      testID={testID}
-      accessible={true}
-      accessibilityLabel="Add new item"
-      accessibilityRole="button"
+    <TouchableOpacity
       activeOpacity={0.8}
+      onPress={onPress}
+      style={{
+        position: 'absolute',
+        bottom: insets.bottom + 16 + 56 + 16, // safe area + tab bar height (56) + spacing
+        right: 24,
+        width: 60,
+        height: 60,
+        backgroundColor: theme.colors.primary,
+        borderRadius: 16,
+        borderWidth: 4,
+        borderColor: theme.colors.text.high,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: theme.colors.text.high,
+        shadowOffset: { width: 6, height: 6 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 8,
+        zIndex: 1001,
+      }}
     >
-      {icon || (
-        <Text variant="h2" color="#ffffff">
-          +
-        </Text>
-      )}
-    </Container>
+      <View style={{ transform: [{ scale: 1.2 }] }}>
+        {icon}
+      </View>
+    </TouchableOpacity>
   );
 }
-

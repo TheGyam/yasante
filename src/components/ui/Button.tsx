@@ -104,7 +104,7 @@ const StyledButton = styled(StyledButtonBase)<StyledButtonProps>`
   opacity: ${({ disabled }: { disabled?: boolean }) => (disabled ? 0.5 : 1)};
 `;
 
-export interface ButtonProps extends Omit<TouchableOpacityProps, 'style'> {
+export interface ButtonProps extends TouchableOpacityProps {
   variant?: ButtonVariant;
   loading?: boolean;
   disabled?: boolean;
@@ -127,6 +127,7 @@ export function Button({
   accessibilityRole = 'button',
   accessibilityState,
   onPress,
+  style,
   ...props
 }: ButtonProps) {
   const { theme } = useTheme();
@@ -174,7 +175,7 @@ export function Button({
       onPress={isDisabled ? undefined : onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={animatedStyle}
+      style={[style, animatedStyle]}
       activeOpacity={reduceMotion ? 0.7 : 1}
       {...props}
     >

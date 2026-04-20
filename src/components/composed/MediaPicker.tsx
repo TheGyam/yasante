@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Modal, TouchableOpacity, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
 import { useTheme } from '@/hooks/useTheme';
 import { useImagePicker } from '@/hooks/useImagePicker';
@@ -33,6 +34,7 @@ export interface MediaPickerProps {
 
 export function MediaPicker({ visible, onClose, onImageSelected, testID }: MediaPickerProps) {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { pickFromLibrary, takePicture, loading, error } = useImagePicker();
 
   const handlePickFromLibrary = async () => {
@@ -65,7 +67,7 @@ export function MediaPicker({ visible, onClose, onImageSelected, testID }: Media
     >
       <ModalOverlay>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
-        <ModalContent>
+        <ModalContent style={{ paddingBottom: Math.max(theme.spacing[5], insets.bottom + theme.spacing[2]) }}>
           <Text variant="h3" weight="semibold" style={{ marginBottom: theme.spacing[4] }}>
             Select Photo
           </Text>

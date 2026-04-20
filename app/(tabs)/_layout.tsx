@@ -29,13 +29,7 @@ export default function TabsLayout() {
           href: '/(tabs)/planner',
         }}
       />
-      <Tabs.Screen
-        name="education"
-        options={{
-          title: 'Education',
-          href: '/(tabs)/education',
-        }}
-      />
+
       <Tabs.Screen
         name="profile"
         options={{

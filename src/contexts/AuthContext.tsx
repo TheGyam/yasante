@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useCallback } from 'react'
 import { useAuthStore, AuthTokens } from '@/state/stores/authStore';
 import { User } from '@/types/user';
 import { useRouter, useSegments } from 'expo-router';
-import { queryClient } from '@/App';
+import { queryClient } from '@/queryClient';
 import { api } from '@/api/index';
 
 interface AuthContextType {

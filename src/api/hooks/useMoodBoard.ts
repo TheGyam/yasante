@@ -22,6 +22,23 @@ export function useMoodBoardEntries(userId?: string, month?: string, options?: {
   });
 }
 
+export function useSavedMoodBoardEntries(userId?: string, month?: string, options?: { enabled?: boolean }) {
+  const { user: authUser } = useAuth();
+  const actualUserId = userId || authUser?.id;
+
+  return useQuery({
+    queryKey: ['savedMoodBoard', actualUserId, month],
+    queryFn: async () => {
+      if (!actualUserId) {
+        throw new Error('User ID is required');
+      }
+      const response = await api.moodBoard.getSaved(actualUserId, month);
+      return response.data;
+    },
+    enabled: (options?.enabled !== false) && !!actualUserId,
+  });
+}
+
 export function useMoodBoardEntry(entryId: string) {
   return useQuery({
     queryKey: [MOOD_BOARD_QUERY_KEY, entryId],

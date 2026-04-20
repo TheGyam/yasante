@@ -1,118 +1,122 @@
 import React, { useState } from 'react';
-import { ScrollView, View } from 'react-native';
-import styled from 'styled-components/native';
+import { ScrollView, View, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { useTheme } from '@/hooks/useTheme';
-import { TopBar } from '@/components/composed/TopBar';
 import { Text } from '@/components/ui/Text';
-import { Card } from '@/components/ui/Card';
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
-import type { Theme } from '@/theme/ThemeProvider';
 
-const Container = styled.ScrollView`
-  flex: 1;
-  background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};
-`;
-
-const Content = styled.View`
-  padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-`;
-
-const FAQCard = styled(Card)`
-  margin-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-  padding: 0;
-  overflow: hidden;
-`;
-
-const FAQHeader = styled.TouchableOpacity`
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-`;
-
-const FAQQuestion = styled.View`
-  flex: 1;
-  margin-right: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
-`;
-
-const FAQAnswer = styled.View<{ isOpen: boolean }>`
-  max-height: ${({ isOpen }: { isOpen: boolean }) => (isOpen ? '1000px' : '0px')};
-  overflow: hidden;
-  padding-horizontal: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-  padding-bottom: ${({ isOpen, theme }: { isOpen: boolean; theme: Theme }) => (isOpen ? theme.spacing[4] : 0)}px;
-`;
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const faqs = [
   {
     id: '1',
     question: 'How do I track my hair growth progress?',
-    answer: 'You can track your hair growth by creating goals in the Planner tab. Add progress photos regularly to see your hair transformation over time. The app will help you visualize your growth journey.',
+    answer: 'You can track your hair growth by creating goals in the Planner tab. Add progress photos regularly to see your hair transformation over time.',
   },
   {
     id: '2',
-    question: 'Can I save my favorite hairstyles and tutorials?',
-    answer: 'Yes! You can favorite any content by tapping the heart icon on inspiration posts, DIY tutorials, or educational articles. All your favorites are organized in the Profile tab under Favorites.',
+    question: 'Can I save my favorite hairstyles?',
+    answer: 'Yes! Tap the heart icon on inspiration posts or tutorials. All your favorites are organized in the Profile tab under Favorites.',
   },
   {
     id: '3',
     question: 'How do I update my hair profile?',
-    answer: 'Go to Profile > Settings > Hair Profile to view and edit your hair profile. You can also retake the hair profile quiz from the Profile tab to update your information.',
+    answer: 'Go to Settings > Hair Profile to edit your profile or retake the hair quiz from the main Profile page.',
   },
   {
     id: '4',
-    question: 'What types of content are available?',
-    answer: 'The app offers three main types of content: Inspiration posts for hairstyle ideas, DIY tutorials with step-by-step instructions, and Educational articles about hair care, styling, and health.',
+    question: 'Is my data private and secure?',
+    answer: 'Yes, we take privacy seriously. Your data is stored securely and only accessible to you. Manage your settings in Profile > Privacy.',
   },
   {
     id: '5',
-    question: 'How do I add a monthly hairstyle to my planner?',
-    answer: 'In the Planner tab, tap on any month card and then tap the image area or use the action buttons to add a hairstyle photo. You can add photos, notes, and set goals for each month.',
-  },
-  {
-    id: '6',
-    question: 'Is my data private and secure?',
-    answer: 'Yes, we take your privacy seriously. All your data is stored securely and is only accessible to you. You can manage your privacy settings in Profile > Privacy Settings.',
-  },
+    question: 'How do I add a monthly hairstyle?',
+    answer: 'In the Planner tab, tap on any month card and use the action buttons to add a hairstyle photo and notes.',
+  }
 ];
 
 export default function FAQsScreen() {
   const { theme } = useTheme();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [openFAQ, setOpenFAQ] = useState<string | null>(null);
 
   const toggleFAQ = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setOpenFAQ(openFAQ === id ? null : id);
   };
 
   return (
-    <Container testID="faqs-screen">
-      <TopBar title="FAQs" />
-      <Content>
-        {faqs.map((faq) => {
-          const isOpen = openFAQ === faq.id;
-          return (
-            <FAQCard key={faq.id}>
-              <FAQHeader onPress={() => toggleFAQ(faq.id)} activeOpacity={0.7}>
-                <FAQQuestion>
-                  <Text variant="body" weight="semibold" color={theme.colors.text.high}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }} testID="faqs-screen">
+      {/* Header */}
+      <View style={{ 
+        paddingTop: insets.top + 8, paddingHorizontal: 20, paddingBottom: 12,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        backgroundColor: theme.colors.background, borderBottomWidth: 4, borderBottomColor: theme.colors.border,
+        zIndex: 10,
+      }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={{
+            width: 40, height: 40, borderRadius: 12,
+            backgroundColor: theme.colors.surface, borderWidth: 2, borderColor: theme.colors.border,
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <ArrowLeft size={20} color={theme.colors.text.high} strokeWidth={2.5} />
+          </TouchableOpacity>
+          <Text variant="h3" weight="bold" color={theme.colors.text.high} style={{ fontSize: 20, textTransform: 'uppercase', fontStyle: 'italic' }}>
+            FAQs
+          </Text>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+        <View style={{ gap: 16, marginTop: 10 }}>
+          {faqs.map((faq) => {
+            const isOpen = openFAQ === faq.id;
+            return (
+              <View key={faq.id} style={{
+                backgroundColor: theme.colors.surface,
+                borderWidth: 3, borderColor: theme.colors.text.high, borderRadius: 16,
+                overflow: 'hidden',
+                shadowColor: isOpen ? theme.colors.primary : 'transparent',
+                shadowOffset: { width: 4, height: 4 }, shadowOpacity: 1, shadowRadius: 0, elevation: isOpen ? 4 : 0,
+              }}>
+                <TouchableOpacity 
+                  onPress={() => toggleFAQ(faq.id)} 
+                  activeOpacity={0.8}
+                  style={{ 
+                    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', 
+                    padding: 20, backgroundColor: isOpen ? theme.colors.primary + '10' : theme.colors.surface 
+                  }}
+                >
+                  <Text variant="body" weight="bold" color={theme.colors.text.high} style={{ flex: 1, marginRight: 16, fontSize: 15, textTransform: 'uppercase' }}>
                     {faq.question}
                   </Text>
-                </FAQQuestion>
-                {isOpen ? (
-                  <ChevronUp size={20} color={theme.colors.text.medium} />
-                ) : (
-                  <ChevronDown size={20} color={theme.colors.text.medium} />
+                  {isOpen ? (
+                    <ChevronUp size={20} color={theme.colors.primary} strokeWidth={3} />
+                  ) : (
+                    <ChevronDown size={20} color={theme.colors.text.low} strokeWidth={2.5} />
+                  )}
+                </TouchableOpacity>
+                
+                {isOpen && (
+                  <View style={{ 
+                    paddingHorizontal: 20, paddingBottom: 20, paddingTop: 0,
+                    borderTopWidth: 2, borderTopColor: theme.colors.text.high + '20'
+                  }}>
+                    <Text variant="body" color={theme.colors.text.high} style={{ lineHeight: 22, marginTop: 12 }}>
+                      {faq.answer}
+                    </Text>
+                  </View>
                 )}
-              </FAQHeader>
-              <FAQAnswer isOpen={isOpen}>
-                <Text variant="body" color={theme.colors.text.medium}>
-                  {faq.answer}
-                </Text>
-              </FAQAnswer>
-            </FAQCard>
-          );
-        })}
-      </Content>
-    </Container>
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
-
