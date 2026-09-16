@@ -24,7 +24,7 @@ export function useNetworkStatus() {
     const initNetInfo = async () => {
       try {
         const NetInfo = await import('@react-native-community/netinfo');
-        
+
         // Get initial network state
         NetInfo.default.fetch().then((state: any) => {
           setNetworkStatus({
@@ -77,4 +77,3 @@ export function useNetworkStatus() {
     isOffline: !networkStatus.isConnected || networkStatus.isInternetReachable === false,
   };
 }
-

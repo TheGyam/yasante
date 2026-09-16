@@ -28,7 +28,13 @@ interface DatePickerModalProps {
   minimumDate?: Date;
 }
 
-export function DatePickerModal({ visible, onClose, value, onChange, minimumDate }: DatePickerModalProps) {
+export function DatePickerModal({
+  visible,
+  onClose,
+  value,
+  onChange,
+  minimumDate,
+}: DatePickerModalProps) {
   const { theme } = useTheme();
   const selectedDateString = value.toISOString().split('T')[0];
   const minDateString = minimumDate?.toISOString().split('T')[0];
@@ -40,12 +46,7 @@ export function DatePickerModal({ visible, onClose, value, onChange, minimumDate
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <ModalOverlay>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
         <ModalContent>
@@ -77,7 +78,12 @@ export function DatePickerModal({ visible, onClose, value, onChange, minimumDate
               textDayHeaderFontWeight: '600',
             }}
           />
-          <Button variant="secondary" onPress={onClose} fullWidth style={{ marginTop: theme.spacing[3] }}>
+          <Button
+            variant="secondary"
+            onPress={onClose}
+            fullWidth
+            style={{ marginTop: theme.spacing[3] }}
+          >
             Cancel
           </Button>
         </ModalContent>
@@ -85,11 +91,3 @@ export function DatePickerModal({ visible, onClose, value, onChange, minimumDate
     </Modal>
   );
 }
-
-
-
-
-
-
-
-

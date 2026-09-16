@@ -11,6 +11,4 @@ const Animated = (() => {
   }
 })();
 
-export const AnimatedView: React.ComponentType<ViewProps> =
-  Animated.createAnimatedComponent(View);
-
+export const AnimatedView: React.ComponentType<ViewProps> = Animated.createAnimatedComponent(View);

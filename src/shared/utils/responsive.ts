@@ -69,4 +69,3 @@ export const isTablet = (): boolean => {
 export const getPixelRatio = (): number => {
   return PixelRatio.get();
 };
-

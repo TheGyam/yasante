@@ -16,15 +16,15 @@ export function useNewPosts(options: UseNewPostsOptions = {}) {
   const [hasNewPosts, setHasNewPosts] = useState(false);
   const [newPostsCount, setNewPostsCount] = useState(0);
   const lastCheckedTimestamp = useRef<string | null>(null);
-  
+
   // Get the first page to check for new posts
   const { data: firstPageData, refetch } = useInfiniteContent();
   const { isOffline } = useNetworkStatus();
-  
+
   // Check for new posts using dedicated endpoint if available, or by comparing timestamps
   const checkForNewPosts = async () => {
     if (isOffline) return;
-    
+
     try {
       // Try to use dedicated new-posts endpoint if available
       // For now, we'll check by comparing the first post's timestamp
@@ -36,16 +36,16 @@ export function useNewPosts(options: UseNewPostsOptions = {}) {
         }
         return;
       }
-      
+
       const mostRecentPost = firstPage.data[0];
       const currentTimestamp = mostRecentPost.publishedAt;
-      
+
       // If we haven't checked before, just store the timestamp
       if (!lastCheckedTimestamp.current) {
         lastCheckedTimestamp.current = currentTimestamp;
         return;
       }
-      
+
       // Check if there are posts newer than our last check
       if (currentTimestamp > lastCheckedTimestamp.current) {
         // Fetch new posts from API
@@ -55,7 +55,7 @@ export function useNewPosts(options: UseNewPostsOptions = {}) {
             cursor: lastCheckedTimestamp.current,
             limit: 20,
           });
-          
+
           if (response.data && response.data.length > 0) {
             setNewPosts(response.data);
             setNewPostsCount(response.data.length);
@@ -75,33 +75,33 @@ export function useNewPosts(options: UseNewPostsOptions = {}) {
       }
     }
   };
-  
+
   // Use AppState-aware polling instead of setInterval
   useAppStatePolling(checkForNewPosts, pollInterval, {
     enabled: enabled && !isOffline,
   });
-  
+
   // Also check when feed data changes
   useEffect(() => {
     if (enabled && !isOffline && firstPageData?.pages?.[0]?.data) {
       checkForNewPosts();
     }
   }, [enabled, isOffline, firstPageData?.pages?.[0]?.data?.[0]?.publishedAt]);
-  
+
   const mergeNewPosts = async () => {
     // When user taps banner, merge new posts into feed
     // Refetch the feed to get latest data
     await refetch();
-    
+
     setNewPosts([]);
     setHasNewPosts(false);
     setNewPostsCount(0);
-    
+
     if (firstPageData?.pages?.[0]?.data?.[0]) {
       lastCheckedTimestamp.current = firstPageData.pages[0].data[0].publishedAt;
     }
   };
-  
+
   return {
     newPosts,
     hasNewPosts,
@@ -109,4 +109,3 @@ export function useNewPosts(options: UseNewPostsOptions = {}) {
     mergeNewPosts,
   };
 }
-

@@ -64,11 +64,14 @@ export function EmptyState({
         </Description>
       )}
       {actionLabel && onAction && (
-        <Button variant="primary" onPress={onAction} testID={testID ? `${testID}-action` : undefined}>
+        <Button
+          variant="primary"
+          onPress={onAction}
+          testID={testID ? `${testID}-action` : undefined}
+        >
           {actionLabel}
         </Button>
       )}
     </Container>
   );
 }
-

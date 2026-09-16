@@ -35,7 +35,11 @@ export default function PlannerScreen() {
     return format(currentDate, 'yyyy-MM');
   }, [currentDate]);
 
-  const { data: moodBoardEntries = [], isLoading, refetch } = useMoodBoardEntries(userId, selectedMonth, { enabled: isAuthenticated && !!userId });
+  const {
+    data: moodBoardEntries = [],
+    isLoading,
+    refetch,
+  } = useMoodBoardEntries(userId, selectedMonth, { enabled: isAuthenticated && !!userId });
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(year, month, 1).getDay();
@@ -121,10 +125,10 @@ export default function PlannerScreen() {
         />
       </View>
 
-      <FloatingActionButton 
-        onPress={handleFABPress} 
+      <FloatingActionButton
+        onPress={handleFABPress}
         visible={!(selectedDay ? selectedEntries.length === 0 : moodBoardEntries.length === 0)}
-        icon={<Plus size={28} color={theme.colors.surface} strokeWidth={3} />} 
+        icon={<Plus size={28} color={theme.colors.surface} strokeWidth={3} />}
       />
     </>
   );

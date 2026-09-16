@@ -3,7 +3,11 @@ import { ScrollView, View, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
 import { useTheme } from '@/shared/hooks/useTheme';
-import { useMonthlyHairstyle, useUpdateMonthlyHairstyle, useDeleteMonthlyHairstyle } from '@/features/planner';
+import {
+  useMonthlyHairstyle,
+  useUpdateMonthlyHairstyle,
+  useDeleteMonthlyHairstyle,
+} from '@/features/planner';
 import { TopBar } from '@/shared/components/TopBar';
 import { Input } from '@/shared/ui/Input';
 import { Button } from '@/shared/ui/Button';
@@ -96,26 +100,22 @@ export default function EditHairstyleScreen() {
   const handleDelete = () => {
     if (!id) return;
 
-    Alert.alert(
-      'Delete Hairstyle',
-      'Are you sure you want to delete this hairstyle?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteHairstyle.mutateAsync(id);
-              router.back();
-            } catch (error) {
-              console.error('Failed to delete hairstyle:', error);
-              Alert.alert('Error', 'Failed to delete hairstyle. Please try again.');
-            }
-          },
+    Alert.alert('Delete Hairstyle', 'Are you sure you want to delete this hairstyle?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteHairstyle.mutateAsync(id);
+            router.back();
+          } catch (error) {
+            console.error('Failed to delete hairstyle:', error);
+            Alert.alert('Error', 'Failed to delete hairstyle. Please try again.');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   if (isLoading) {
@@ -145,7 +145,11 @@ export default function EditHairstyleScreen() {
       <TopBar title="Edit Hairstyle" />
       <Content>
         <FormCard>
-          <Text variant="body" color={theme.colors.text.medium} style={{ marginBottom: theme.spacing[3] }}>
+          <Text
+            variant="body"
+            color={theme.colors.text.medium}
+            style={{ marginBottom: theme.spacing[3] }}
+          >
             Update your hairstyle photo and notes
           </Text>
 
@@ -161,11 +165,13 @@ export default function EditHairstyleScreen() {
                 style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                 activeOpacity={0.8}
               >
-                <View style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                  padding: theme.spacing[2],
-                  borderRadius: theme.radii.small,
-                }}>
+                <View
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    padding: theme.spacing[2],
+                    borderRadius: theme.radii.small,
+                  }}
+                >
                   <Text variant="body" weight="medium" color="#fff">
                     Change Photo
                   </Text>
@@ -175,15 +181,17 @@ export default function EditHairstyleScreen() {
           ) : (
             <ImageButton onPress={() => setIsMediaPickerVisible(true)} activeOpacity={0.7}>
               <View style={{ alignItems: 'center' }}>
-                <View style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 32,
-                  backgroundColor: theme.colors.background,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: theme.spacing[2],
-                }}>
+                <View
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                    backgroundColor: theme.colors.background,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: theme.spacing[2],
+                  }}
+                >
                   <Text style={{ fontSize: 32, color: theme.colors.text.low }}>+</Text>
                 </View>
                 <ImageButtonText variant="body" weight="medium">
@@ -225,7 +233,12 @@ export default function EditHairstyleScreen() {
           style={{ marginTop: theme.spacing[3] }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-            <Trash2 size={18} color="#fff" strokeWidth={2.5} style={{ marginRight: theme.spacing[2] }} />
+            <Trash2
+              size={18}
+              color="#fff"
+              strokeWidth={2.5}
+              style={{ marginRight: theme.spacing[2] }}
+            />
             <Text variant="body" weight="semibold" color="#fff">
               Delete Hairstyle
             </Text>
@@ -242,4 +255,3 @@ export default function EditHairstyleScreen() {
     </Container>
   );
 }
-

@@ -10,9 +10,9 @@ interface ThemeState {
 
 export const useThemeStore = create<ThemeState>()(
   persist(
-    (set) => ({
+    set => ({
       colorScheme: 'system',
-      setColorScheme: (scheme) => set({ colorScheme: scheme }),
+      setColorScheme: scheme => set({ colorScheme: scheme }),
     }),
     {
       name: '@yasante:theme',
@@ -20,4 +20,3 @@ export const useThemeStore = create<ThemeState>()(
     }
   )
 );
-

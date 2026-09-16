@@ -33,13 +33,19 @@ export function Avatar({ source, name, size = 40, testID, style }: AvatarProps) 
 
   const initials = name
     ?.split(' ')
-    .map((n) => n[0])
+    .map(n => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
 
   return (
-    <Container size={size} testID={testID} style={style} accessible={true} accessibilityRole="image">
+    <Container
+      size={size}
+      testID={testID}
+      style={style}
+      accessible={true}
+      accessibilityRole="image"
+    >
       {source ? (
         <StyledImage source={source} resizeMode="cover" />
       ) : (
@@ -50,4 +56,3 @@ export function Avatar({ source, name, size = 40, testID, style }: AvatarProps) 
     </Container>
   );
 }
-

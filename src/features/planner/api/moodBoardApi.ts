@@ -4,7 +4,7 @@ import { MoodBoardEntry } from '@/features/planner';
 
 /**
  * Mood Board API Service
- * 
+ *
  * Based on backend API documentation
  * Endpoints:
  * - GET /api/moodboard/moodboard/ - List mood board entries
@@ -36,30 +36,32 @@ export const moodBoardApi = {
   getAll: async (userId?: string, month?: string): Promise<ApiResponse<MoodBoardEntry[]>> => {
     const params = new URLSearchParams();
     if (month) params.append('month', month);
-    
+
     const url = `/api/moodboard/moodboard/${params.toString() ? `?${params.toString()}` : ''}`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'GET', url, userId });
     }
-    
+
     try {
-      const response = await apiClient.get<MoodBoardEntry[] | PaginatedResponse<MoodBoardEntry>>(url);
-      
+      const response = await apiClient.get<MoodBoardEntry[] | PaginatedResponse<MoodBoardEntry>>(
+        url
+      );
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       // Handle both array and paginated response formats
-      let data = Array.isArray(response.data) 
-        ? response.data 
+      let data = Array.isArray(response.data)
+        ? response.data
         : (response.data as any).results || [];
-      
+
       // Handle wrapped response format
       if ((response.data as any).data && Array.isArray((response.data as any).data)) {
         data = (response.data as any).data;
       }
-      
+
       // Transform snake_case to camelCase if needed (backend might return snake_case)
       data = data.map((entry: any) => ({
         ...entry,
@@ -71,15 +73,15 @@ export const moodBoardApi = {
         appointmentTime: entry.appointmentTime || entry.appointment_time,
         monthColor: entry.monthColor || entry.month_color,
       }));
-      
+
       return { data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -94,24 +96,26 @@ export const moodBoardApi = {
   getSaved: async (userId?: string, month?: string): Promise<ApiResponse<MoodBoardEntry[]>> => {
     const params = new URLSearchParams();
     if (month) params.append('month', month);
-    
+
     const url = `/api/moodboard/moodboard/saved/${params.toString() ? `?${params.toString()}` : ''}`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'GET', url, userId });
     }
-    
+
     try {
-      const response = await apiClient.get<MoodBoardEntry[] | PaginatedResponse<MoodBoardEntry>>(url);
-      
-      let data = Array.isArray(response.data) 
-        ? response.data 
+      const response = await apiClient.get<MoodBoardEntry[] | PaginatedResponse<MoodBoardEntry>>(
+        url
+      );
+
+      let data = Array.isArray(response.data)
+        ? response.data
         : (response.data as any).results || [];
-      
+
       if ((response.data as any).data && Array.isArray((response.data as any).data)) {
         data = (response.data as any).data;
       }
-      
+
       data = data.map((entry: any) => ({
         ...entry,
         mainPhotoUri: entry.mainPhotoUri || entry.main_photo_uri,
@@ -121,7 +125,7 @@ export const moodBoardApi = {
         appointmentTime: entry.appointmentTime || entry.appointment_time,
         monthColor: entry.monthColor || entry.month_color,
       }));
-      
+
       return { data };
     } catch (error: any) {
       if (__DEV__) {
@@ -137,21 +141,21 @@ export const moodBoardApi = {
    */
   getById: async (entryId: string): Promise<ApiResponse<MoodBoardEntry>> => {
     const url = `/api/moodboard/moodboard/${entryId}/`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'GET', url, entryId });
     }
-    
+
     try {
       const response = await apiClient.get<any>(url);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       // Handle wrapped response format
       let entry = (response.data as any).data || response.data;
-      
+
       // Transform snake_case to camelCase if needed
       entry = {
         ...entry,
@@ -162,15 +166,15 @@ export const moodBoardApi = {
         appointmentTime: entry.appointmentTime || entry.appointment_time,
         monthColor: entry.monthColor || entry.month_color,
       };
-      
+
       return { data: entry };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -183,16 +187,16 @@ export const moodBoardApi = {
    */
   create: async (entry: MoodBoardEntryCreate): Promise<ApiResponse<MoodBoardEntry>> => {
     const url = '/api/moodboard/moodboard/';
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'POST', url, entryName: entry.name });
     }
-    
+
     try {
       // Clean the entry: ensure photos is always an array and remove undefined values
       // Handle both camelCase (from interface) and snake_case (from mutation hook transform)
       const cleanEntry: any = {};
-      
+
       // TODO: Replace with real image upload. For now, use placeholder URLs for local file URIs.
       const toValidUrl = (uri: string): string => {
         if (uri && uri.startsWith('file://')) {
@@ -201,7 +205,7 @@ export const moodBoardApi = {
         }
         return uri;
       };
-      
+
       // Required fields — accept both camelCase and snake_case keys
       cleanEntry.month = entry.month;
       cleanEntry.name = entry.name;
@@ -211,11 +215,11 @@ export const moodBoardApi = {
       cleanEntry.hair_price = (entry as any).hair_price ?? entry.hairPrice;
       cleanEntry.stylist_location = (entry as any).stylist_location || entry.stylistLocation;
       cleanEntry.appointment_time = (entry as any).appointment_time || entry.appointmentTime;
-      
+
       // Photos must always be an array (even if empty) — convert local URIs to placeholder URLs
       const rawPhotos = Array.isArray(entry.photos) ? entry.photos : [];
       cleanEntry.photos = rawPhotos.map((p: string) => toValidUrl(p));
-      
+
       // Optional fields (only include if they have values)
       const monthColor = (entry as any).month_color || entry.monthColor;
       if (monthColor !== undefined && monthColor !== null) {
@@ -227,31 +231,31 @@ export const moodBoardApi = {
       if (entry.completed !== undefined && entry.completed !== null) {
         cleanEntry.completed = entry.completed;
       }
-      
+
       if (__DEV__) {
         console.log('📤 Sending moodboard entry (cleaned):', {
           original: entry,
           cleaned: cleanEntry,
           photosType: typeof cleanEntry.photos,
           photosIsArray: Array.isArray(cleanEntry.photos),
-          photosLength: cleanEntry.photos.length
+          photosLength: cleanEntry.photos.length,
         });
       }
-      
+
       const response = await apiClient.post<MoodBoardEntry>(url, cleanEntry);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       return { data: response.data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -262,28 +266,31 @@ export const moodBoardApi = {
    * Update mood board entry
    * PATCH /api/moodboard/moodboard/{id}/
    */
-  update: async (entryId: string, updates: Partial<MoodBoardEntryCreate>): Promise<ApiResponse<MoodBoardEntry>> => {
+  update: async (
+    entryId: string,
+    updates: Partial<MoodBoardEntryCreate>
+  ): Promise<ApiResponse<MoodBoardEntry>> => {
     const url = `/api/moodboard/moodboard/${entryId}/`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'PATCH', url, entryId });
     }
-    
+
     try {
       const response = await apiClient.patch<MoodBoardEntry>(url, updates);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       return { data: response.data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -296,24 +303,24 @@ export const moodBoardApi = {
    */
   delete: async (entryId: string): Promise<void> => {
     const url = `/api/moodboard/moodboard/${entryId}/`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'DELETE', url, entryId });
     }
-    
+
     try {
       await apiClient.delete(url);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: 204 });
       }
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -330,30 +337,29 @@ export const moodBoardApi = {
     photoData: { main_photo_uri?: string; photos?: string[] }
   ): Promise<ApiResponse<MoodBoardEntry>> => {
     const url = `/api/hairstyles/moodboard/${entryId}/photos/`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'POST', url, entryId });
     }
-    
+
     try {
       const response = await apiClient.post<MoodBoardEntry>(url, photoData);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       return { data: response.data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
     }
   },
 };
-

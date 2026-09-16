@@ -109,14 +109,13 @@ export async function compressImage(
  */
 export async function uploadImage(uri: string): Promise<string> {
   // Simulate upload delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
   // In production, this would:
   // 1. Get presigned URL from backend
   // 2. Upload to S3/CDN
   // 3. Return the public URL
-  
+
   // For MVP, return a mock URL
   return 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80';
 }
-

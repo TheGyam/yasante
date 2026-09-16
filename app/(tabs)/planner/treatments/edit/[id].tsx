@@ -2,7 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, View, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
-import { Sparkles, RefreshCw, Calendar as CalendarIcon, Clock, Check, ChevronLeft, ChevronRight, Sun, Sunset, Moon, Share2 } from 'lucide-react-native';
+import {
+  Sparkles,
+  RefreshCw,
+  Calendar as CalendarIcon,
+  Clock,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Sun,
+  Sunset,
+  Moon,
+  Share2,
+} from 'lucide-react-native';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useTreatment, useUpdateTreatment } from '@/features/planner';
 import { useAuth } from '@/features/auth';
@@ -13,7 +25,18 @@ import { Card } from '@/shared/ui/Card';
 import { isRequired } from '@/shared/utils/validation';
 import { shareTreatment } from '@/features/planner';
 import type { Theme } from '@/shared/theme/ThemeProvider';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay, isSameMonth, parseISO } from 'date-fns';
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  getDay,
+  addMonths,
+  subMonths,
+  isSameDay,
+  isSameMonth,
+  parseISO,
+} from 'date-fns';
 
 const Container = styled.ScrollView`
   flex: 1;
@@ -70,10 +93,12 @@ const FrequencyButton = styled(TouchableOpacity)<{ selected: boolean }>`
   align-items: center;
   justify-content: space-between;
   padding: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
-  background-color: ${({ selected, theme }: { selected: boolean; theme: Theme }) => selected ? theme.colors.surfaceVariant : theme.colors.surface};
+  background-color: ${({ selected, theme }: { selected: boolean; theme: Theme }) =>
+    selected ? theme.colors.surfaceVariant : theme.colors.surface};
   border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  border-width: ${({ selected }: { selected: boolean }) => selected ? 2 : 1}px;
-  border-color: ${({ selected, theme }: { selected: boolean; theme: Theme }) => selected ? theme.colors.primary : theme.colors.border};
+  border-width: ${({ selected }: { selected: boolean }) => (selected ? 2 : 1)}px;
+  border-color: ${({ selected, theme }: { selected: boolean; theme: Theme }) =>
+    selected ? theme.colors.primary : theme.colors.border};
 `;
 
 const TimeOfDayGrid = styled.View`
@@ -89,10 +114,12 @@ const TimeOfDayButton = styled(TouchableOpacity)<{ selected: boolean }>`
   align-items: center;
   justify-content: center;
   padding: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
-  background-color: ${({ selected, theme }: { selected: boolean; theme: Theme }) => selected ? theme.colors.surfaceVariant : theme.colors.surface};
+  background-color: ${({ selected, theme }: { selected: boolean; theme: Theme }) =>
+    selected ? theme.colors.surfaceVariant : theme.colors.surface};
   border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  border-width: ${({ selected }: { selected: boolean }) => selected ? 2 : 1}px;
-  border-color: ${({ selected, theme }: { selected: boolean; theme: Theme }) => selected ? theme.colors.primary : theme.colors.border};
+  border-width: ${({ selected }: { selected: boolean }) => (selected ? 2 : 1)}px;
+  border-color: ${({ selected, theme }: { selected: boolean; theme: Theme }) =>
+    selected ? theme.colors.primary : theme.colors.border};
 `;
 
 const CalendarContainer = styled(Card)`
@@ -138,8 +165,9 @@ const DayButton = styled(TouchableOpacity)<{ selected: boolean; isCurrentMonth: 
   align-items: center;
   justify-content: center;
   border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  background-color: ${({ selected, theme }: { selected: boolean; theme: Theme }) => selected ? theme.colors.primary : 'transparent'};
-  opacity: ${({ isCurrentMonth }: { isCurrentMonth: boolean }) => isCurrentMonth ? 1 : 0.3};
+  background-color: ${({ selected, theme }: { selected: boolean; theme: Theme }) =>
+    selected ? theme.colors.primary : 'transparent'};
+  opacity: ${({ isCurrentMonth }: { isCurrentMonth: boolean }) => (isCurrentMonth ? 1 : 0.3)};
 `;
 
 const SaveButton = styled(Button)`
@@ -195,7 +223,7 @@ export default function TreatmentEditScreen() {
   }, [treatment]);
 
   const handleMonthChange = (direction: 'prev' | 'next') => {
-    setCurrentMonth((prev) => (direction === 'next' ? addMonths(prev, 1) : subMonths(prev, 1)));
+    setCurrentMonth(prev => (direction === 'next' ? addMonths(prev, 1) : subMonths(prev, 1)));
   };
 
   const handleDateSelect = (date: Date) => {
@@ -208,14 +236,14 @@ export default function TreatmentEditScreen() {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    
+
     const firstDayOfWeek = getDay(monthStart);
-    
+
     const calendarDays: (Date | null)[] = [];
     for (let i = 0; i < firstDayOfWeek; i++) {
       calendarDays.push(null);
     }
-    days.forEach((day) => calendarDays.push(day));
+    days.forEach(day => calendarDays.push(day));
 
     return (
       <CalendarContainer>
@@ -234,7 +262,7 @@ export default function TreatmentEditScreen() {
         </CalendarHeader>
 
         <DaysOfWeek>
-          {daysOfWeek.map((day) => (
+          {daysOfWeek.map(day => (
             <DayLabel key={day}>
               <Text variant="caption" color={theme.colors.text.medium}>
                 {day}
@@ -246,11 +274,13 @@ export default function TreatmentEditScreen() {
         <CalendarGrid>
           {calendarDays.map((day, index) => {
             if (!day) {
-              return <View key={`empty-${index}`} style={{ width: `${100 / 7}%`, aspectRatio: 1 }} />;
+              return (
+                <View key={`empty-${index}`} style={{ width: `${100 / 7}%`, aspectRatio: 1 }} />
+              );
             }
             const isSelected = startDate && isSameDay(day, startDate);
             const isCurrentMonthDay = isSameMonth(day, currentMonth);
-            
+
             return (
               <DayButton
                 key={day.toISOString()}
@@ -262,7 +292,13 @@ export default function TreatmentEditScreen() {
                 <Text
                   variant="body"
                   weight={isSelected ? 'semibold' : 'regular'}
-                  color={isSelected ? '#fff' : (isCurrentMonthDay ? theme.colors.text.high : theme.colors.text.low)}
+                  color={
+                    isSelected
+                      ? '#fff'
+                      : isCurrentMonthDay
+                        ? theme.colors.text.high
+                        : theme.colors.text.low
+                  }
                 >
                   {format(day, 'd')}
                 </Text>
@@ -368,7 +404,7 @@ export default function TreatmentEditScreen() {
             </Text>
           </SectionTitle>
           <FrequencyGrid>
-            {frequencyOptions.map((option) => {
+            {frequencyOptions.map(option => {
               const Icon = option.icon;
               const isSelected = frequency === option.value;
               return (
@@ -378,7 +414,9 @@ export default function TreatmentEditScreen() {
                   onPress={() => setFrequency(option.value)}
                   activeOpacity={0.7}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing[2] }}>
+                  <View
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing[2] }}
+                  >
                     <Icon size={20} color={theme.colors.text.high} strokeWidth={2} />
                     <Text variant="body" color={theme.colors.text.high}>
                       {option.label}
@@ -390,7 +428,11 @@ export default function TreatmentEditScreen() {
             })}
           </FrequencyGrid>
           {errors.frequency && (
-            <Text variant="caption" color={theme.colors.error} style={{ marginTop: theme.spacing[1] }}>
+            <Text
+              variant="caption"
+              color={theme.colors.error}
+              style={{ marginTop: theme.spacing[1] }}
+            >
               {errors.frequency}
             </Text>
           )}
@@ -404,7 +446,7 @@ export default function TreatmentEditScreen() {
             </Text>
           </SectionTitle>
           <TimeOfDayGrid>
-            {timeOfDayOptions.map((option) => {
+            {timeOfDayOptions.map(option => {
               const Icon = option.icon;
               const isSelected = timeOfDay === option.value;
               return (
@@ -414,7 +456,11 @@ export default function TreatmentEditScreen() {
                   onPress={() => setTimeOfDay(option.value)}
                   activeOpacity={0.7}
                 >
-                  <Icon size={24} color={isSelected ? theme.colors.primary : theme.colors.text.medium} strokeWidth={2.5} />
+                  <Icon
+                    size={24}
+                    color={isSelected ? theme.colors.primary : theme.colors.text.medium}
+                    strokeWidth={2.5}
+                  />
                   <Text
                     variant="body"
                     weight={isSelected ? 'semibold' : 'regular'}
@@ -428,7 +474,11 @@ export default function TreatmentEditScreen() {
             })}
           </TimeOfDayGrid>
           {errors.timeOfDay && (
-            <Text variant="caption" color={theme.colors.error} style={{ marginTop: theme.spacing[1] }}>
+            <Text
+              variant="caption"
+              color={theme.colors.error}
+              style={{ marginTop: theme.spacing[1] }}
+            >
               {errors.timeOfDay}
             </Text>
           )}
@@ -443,7 +493,11 @@ export default function TreatmentEditScreen() {
           </SectionTitle>
           {renderCalendar()}
           {errors.startDate && (
-            <Text variant="caption" color={theme.colors.error} style={{ marginTop: theme.spacing[1] }}>
+            <Text
+              variant="caption"
+              color={theme.colors.error}
+              style={{ marginTop: theme.spacing[1] }}
+            >
               {errors.startDate}
             </Text>
           )}
@@ -462,4 +516,3 @@ export default function TreatmentEditScreen() {
     </Container>
   );
 }
-

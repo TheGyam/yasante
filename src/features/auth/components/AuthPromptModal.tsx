@@ -120,7 +120,9 @@ export function AuthPromptModal({ visible, onClose, feature = 'general' }: AuthP
       description: 'Create mood boards and track your hairstyle journey',
     },
     {
-      icon: <Heart size={24} color={theme.colors.primary} strokeWidth={2} fill={theme.colors.primary} />,
+      icon: (
+        <Heart size={24} color={theme.colors.primary} strokeWidth={2} fill={theme.colors.primary} />
+      ),
       title: 'Save Favorites',
       description: 'Save your favorite inspiration and education content',
     },
@@ -177,7 +179,7 @@ export function AuthPromptModal({ visible, onClose, feature = 'general' }: AuthP
             <X size={20} color={theme.colors.text.high} strokeWidth={2.5} />
           </CloseButton>
 
-          <BottomSheetScrollView 
+          <BottomSheetScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingBottom: insets.bottom + 80,
@@ -185,10 +187,19 @@ export function AuthPromptModal({ visible, onClose, feature = 'general' }: AuthP
           >
             <FadeIn delay={100}>
               <Header>
-                <Text variant="h1" weight="bold" color={theme.colors.primary} style={{ marginBottom: theme.spacing[2] }}>
+                <Text
+                  variant="h1"
+                  weight="bold"
+                  color={theme.colors.primary}
+                  style={{ marginBottom: theme.spacing[2] }}
+                >
                   {getTitle()}
                 </Text>
-                <Text variant="body" color={theme.colors.text.medium} style={{ textAlign: 'center' }}>
+                <Text
+                  variant="body"
+                  color={theme.colors.text.medium}
+                  style={{ textAlign: 'center' }}
+                >
                   {getDescription()}
                 </Text>
               </Header>
@@ -201,11 +212,13 @@ export function AuthPromptModal({ visible, onClose, feature = 'general' }: AuthP
 
               {features.map((feat, index) => (
                 <FeatureCard key={index}>
-                  <IconContainer>
-                    {feat.icon}
-                  </IconContainer>
+                  <IconContainer>{feat.icon}</IconContainer>
                   <FeatureContent>
-                    <Text variant="body" weight="semibold" style={{ marginBottom: theme.spacing[1] }}>
+                    <Text
+                      variant="body"
+                      weight="semibold"
+                      style={{ marginBottom: theme.spacing[1] }}
+                    >
                       {feat.title}
                     </Text>
                     <Text variant="caption" color={theme.colors.text.medium}>
@@ -218,11 +231,7 @@ export function AuthPromptModal({ visible, onClose, feature = 'general' }: AuthP
 
             <FadeIn delay={300}>
               <ActionsContainer>
-                <TextLink
-                  onPress={handleSignUp}
-                  activeOpacity={0.7}
-                  testID="signup-button"
-                >
+                <TextLink onPress={handleSignUp} activeOpacity={0.7} testID="signup-button">
                   <Text variant="body" weight="semibold" color={theme.colors.primary}>
                     Sign Up
                   </Text>
@@ -255,4 +264,3 @@ export function AuthPromptModal({ visible, onClose, feature = 'general' }: AuthP
     </>
   );
 }
-

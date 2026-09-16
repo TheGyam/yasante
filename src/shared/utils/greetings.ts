@@ -19,7 +19,7 @@ export async function getNextGreeting(): Promise<string> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     const lastIndex = raw ? parseInt(raw, 10) : -1;
     const nextIndex = (lastIndex + 1) % GREETINGS.length;
-    
+
     await AsyncStorage.setItem(STORAGE_KEY, String(nextIndex));
     return GREETINGS[nextIndex];
   } catch (error) {
@@ -42,4 +42,3 @@ export function getTimeOfDayPrefix(): string {
     return 'Evening, ';
   }
 }
-

@@ -45,13 +45,3 @@ export function useCacheRestored() {
 
   return isRestored;
 }
-
-
-
-
-
-
-
-
-
-

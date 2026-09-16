@@ -133,14 +133,26 @@ export default function GoalDetailScreen() {
             <ProgressBar>
               <ProgressFill style={progressStyle} />
             </ProgressBar>
-            <Text variant="caption" color={theme.colors.text.medium} style={{ marginTop: theme.spacing[2] }}>
+            <Text
+              variant="caption"
+              color={theme.colors.text.medium}
+              style={{ marginTop: theme.spacing[2] }}
+            >
               {goal.progress}% complete
             </Text>
-            <Text variant="body" color={theme.colors.text.medium} style={{ marginTop: theme.spacing[3] }}>
+            <Text
+              variant="body"
+              color={theme.colors.text.medium}
+              style={{ marginTop: theme.spacing[3] }}
+            >
               Target: {formatFriendlyDate(goal.targetDate)} ({daysUntil} days)
             </Text>
             {goal.description && (
-              <Text variant="body" color={theme.colors.text.medium} style={{ marginTop: theme.spacing[2] }}>
+              <Text
+                variant="body"
+                color={theme.colors.text.medium}
+                style={{ marginTop: theme.spacing[2] }}
+              >
                 {goal.description}
               </Text>
             )}
@@ -167,4 +179,3 @@ export default function GoalDetailScreen() {
     </>
   );
 }
-

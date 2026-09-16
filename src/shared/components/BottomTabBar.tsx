@@ -44,7 +44,6 @@ const withTiming = (() => {
   }
 })();
 
-
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion';
 import { TabIcon, type TabIconName } from '@/shared/icons/TabIcon';
@@ -66,7 +65,7 @@ const FloatingContainer = styled(Animated.View)`
   padding-horizontal: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
   padding-top: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
   padding-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
-  shadow-color: #8DA399;
+  shadow-color: #8da399;
   shadow-offset: 0px 4px;
   shadow-opacity: 0.16;
   shadow-radius: 18px;
@@ -155,15 +154,17 @@ const normalizePath = (path: string): string => {
 // Helper to check if pathname belongs to a tab route
 const isTabRoute = (pathname: string, tabRoute: string): boolean => {
   if (!pathname) return false;
-  
+
   // Normalize both paths
   const normalizedPathname = normalizePath(pathname);
   const normalizedTabRoute = normalizePath(tabRoute);
-  
+
   // Check if pathname starts with the tab route
   // This handles cases like /education matching /education/[id]
-  return normalizedPathname === normalizedTabRoute || 
-         normalizedPathname.startsWith(normalizedTabRoute + '/');
+  return (
+    normalizedPathname === normalizedTabRoute ||
+    normalizedPathname.startsWith(normalizedTabRoute + '/')
+  );
 };
 
 export function BottomTabBar() {
@@ -176,14 +177,14 @@ export function BottomTabBar() {
   // Find active index - check if pathname starts with tab route to handle nested routes
   const activeIndex = React.useMemo(() => {
     if (!pathname) return 0;
-    const idx = tabs.findIndex((tab) => isTabRoute(pathname, tab.route));
+    const idx = tabs.findIndex(tab => isTabRoute(pathname, tab.route));
     return idx === -1 ? 0 : idx;
   }, [pathname]);
 
   // Animated values - must be called at top level (Rules of Hooks)
   const opacity = useSharedValue(1);
   const scale = useSharedValue(1);
-  
+
   // Icon scale animations for each tab - must be called at top level
   const iconScale0 = useSharedValue(1.0);
   const iconScale1 = useSharedValue(1.0);
@@ -202,7 +203,6 @@ export function BottomTabBar() {
   // Background animation - single shared value for active background pill
   const backgroundScale = useSharedValue(1);
   const backgroundOpacity = useSharedValue(1);
-
 
   // Keyboard visibility handling
   useEffect(() => {
@@ -235,9 +235,12 @@ export function BottomTabBar() {
     };
   }, [reduceMotion]);
 
-  const handleTabPress = React.useCallback((tab: Tab) => {
-    router.replace(tab.route as any);
-  }, [router]);
+  const handleTabPress = React.useCallback(
+    (tab: Tab) => {
+      router.replace(tab.route as any);
+    },
+    [router]
+  );
 
   // Animated styles
   const containerStyle = useAnimatedStyle
@@ -254,7 +257,7 @@ export function BottomTabBar() {
   useEffect(() => {
     const timers: NodeJS.Timeout[] = [];
     const springConfig = getSpringConfig(ANIMATION_PRESETS.springIn, reduceMotion);
-    
+
     tabs.forEach((_, index) => {
       const isActive = index === activeIndex;
       if (isActive && !reduceMotion) {
@@ -269,7 +272,7 @@ export function BottomTabBar() {
     });
 
     return () => {
-      timers.forEach((timer) => clearTimeout(timer));
+      timers.forEach(timer => clearTimeout(timer));
     };
     // iconScales is stable (memoized with empty deps), so we don't need it in deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -330,19 +333,19 @@ export function BottomTabBar() {
   // Always return the same structure to avoid hooks issues
   // Hide by moving off-screen and removing dimensions
   return (
-    <FloatingContainer 
+    <FloatingContainer
       style={[
         containerStyle,
-        isModalScreen && { 
-          opacity: 0, 
-          pointerEvents: 'none', 
+        isModalScreen && {
+          opacity: 0,
+          pointerEvents: 'none',
           height: 0,
           width: 0,
           bottom: -1000,
           left: -1000,
           right: -1000,
-          overflow: 'hidden'
-        }
+          overflow: 'hidden',
+        },
       ]}
     >
       {tabs.map((tab, index) => {
@@ -362,7 +365,12 @@ export function BottomTabBar() {
               activeOpacity={0.8}
             >
               <IconContainer style={animatedIconStyle}>
-                <TabIcon name={tab.name} active={isActive} size={24} accessibilityLabel={tab.label} />
+                <TabIcon
+                  name={tab.name}
+                  active={isActive}
+                  size={24}
+                  accessibilityLabel={tab.label}
+                />
                 {isActive && (
                   <IndicatorWrapper>
                     <ActiveIndicator style={indicatorAnimatedStyle} />

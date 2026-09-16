@@ -58,7 +58,7 @@ export function useImagePrefetch(
 
     return () => {
       // Cleanup: cancel all pending prefetches
-      cancelRef.current.forEach((cancel) => {
+      cancelRef.current.forEach(cancel => {
         try {
           cancel();
         } catch (error) {
@@ -73,13 +73,3 @@ export function useImagePrefetch(
     prefetchedCount: prefetchedRef.current.size,
   };
 }
-
-
-
-
-
-
-
-
-
-

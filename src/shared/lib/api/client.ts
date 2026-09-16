@@ -12,9 +12,7 @@ export interface AuthBridge {
   getRefreshToken: () => string | undefined;
   getUserId: () => string | undefined;
   setTokens: (tokens: { accessToken: string; expiresAt: number }) => void;
-  refresh: (
-    refreshToken: string
-  ) => Promise<{ accessToken: string; expiresAt: number | string }>;
+  refresh: (refreshToken: string) => Promise<{ accessToken: string; expiresAt: number | string }>;
   logout: () => void;
 }
 
@@ -39,20 +37,20 @@ export const apiClient: AxiosInstance = axios.create({
 
 // Request interceptor
 apiClient.interceptors.request.use(
-  (config) => {
+  config => {
     // Add auth token if available
     const accessToken = authBridge?.getAccessToken();
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
-    
+
     // Ensure Content-Type is set for POST/PUT/PATCH requests with data
     if (config.data && ['post', 'put', 'patch'].includes(config.method?.toLowerCase() || '')) {
       if (!config.headers['Content-Type']) {
         config.headers['Content-Type'] = 'application/json';
       }
     }
-    
+
     // Log request in development
     if (__DEV__ && apiConfig.enableLogging) {
       const fullUrl = `${config.baseURL}${config.url}`;
@@ -66,10 +64,10 @@ apiClient.interceptors.request.use(
         },
       });
     }
-    
+
     return config;
   },
-  (error) => {
+  error => {
     return Promise.reject(error);
   }
 );
@@ -82,7 +80,7 @@ let failedQueue: Array<{
 }> = [];
 
 const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
+  failedQueue.forEach(prom => {
     if (error) {
       prom.reject(error);
     } else {
@@ -93,7 +91,7 @@ const processQueue = (error: any, token: string | null = null) => {
 };
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  response => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as any;
 
@@ -104,11 +102,11 @@ apiClient.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then((token) => {
+          .then(token => {
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return apiClient(originalRequest);
           })
-          .catch((err) => {
+          .catch(err => {
             return Promise.reject(err);
           });
       }
@@ -122,9 +120,8 @@ apiClient.interceptors.response.use(
           const { accessToken, expiresAt } = await authBridge!.refresh(refreshToken);
 
           // Convert expiresAt string to timestamp if needed
-          const expiresAtTimestamp = typeof expiresAt === 'string'
-            ? new Date(expiresAt).getTime()
-            : expiresAt;
+          const expiresAtTimestamp =
+            typeof expiresAt === 'string' ? new Date(expiresAt).getTime() : expiresAt;
 
           authBridge!.setTokens({
             accessToken,
@@ -206,7 +203,7 @@ apiClient.interceptors.response.use(
 
         // Queue the mutation if we identified the type
         if (mutationType !== 'unknown' && params.userId) {
-          offlineQueue.enqueue(mutationType, params).catch((queueError) => {
+          offlineQueue.enqueue(mutationType, params).catch(queueError => {
             if (__DEV__) {
               console.error('Failed to queue mutation:', queueError);
             }
@@ -235,4 +232,3 @@ apiClient.interceptors.response.use(
 // Import from './index' instead of './client' for the api object
 
 export default apiClient;
-

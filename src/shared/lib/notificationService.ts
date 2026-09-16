@@ -108,7 +108,7 @@ export async function scheduleRoutineReminder(
   reminderMinutes: number = 30
 ): Promise<string> {
   const reminderDate = new Date(scheduledDate.getTime() - reminderMinutes * 60 * 1000);
-  
+
   return await scheduleNotification(
     {
       title: 'Routine Reminder',
@@ -118,4 +118,3 @@ export async function scheduleRoutineReminder(
     reminderDate
   );
 }
-

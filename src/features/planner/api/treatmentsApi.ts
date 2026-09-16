@@ -4,7 +4,7 @@ import { Treatment } from '@/features/planner';
 
 /**
  * Treatments API Service
- * 
+ *
  * Based on Swagger spec
  * Endpoints:
  * - GET /api/treatments/treatments/ - List treatments (paginated)
@@ -38,33 +38,33 @@ export const treatmentsApi = {
   getAll: async (userId?: string): Promise<ApiResponse<Treatment[]>> => {
     const params = new URLSearchParams();
     if (userId) params.append('user_id', userId);
-    
+
     const url = `/api/treatments/treatments/${params.toString() ? `?${params.toString()}` : ''}`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'GET', url, userId });
     }
-    
+
     try {
       const response = await apiClient.get<Treatment[] | PaginatedResponse<Treatment>>(url);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       // Handle both array and paginated response formats
-      const data = Array.isArray(response.data) 
-        ? response.data 
+      const data = Array.isArray(response.data)
+        ? response.data
         : (response.data as any).results || [];
-      
+
       return { data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -77,26 +77,26 @@ export const treatmentsApi = {
    */
   getById: async (treatmentId: string): Promise<ApiResponse<Treatment>> => {
     const url = `/api/treatments/treatments/${treatmentId}/`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'GET', url, treatmentId });
     }
-    
+
     try {
       const response = await apiClient.get<Treatment>(url);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       return { data: response.data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -109,26 +109,26 @@ export const treatmentsApi = {
    */
   create: async (treatment: TreatmentCreate): Promise<ApiResponse<Treatment>> => {
     const url = '/api/treatments/treatments/';
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'POST', url, treatmentName: treatment.name });
     }
-    
+
     try {
       const response = await apiClient.post<Treatment>(url, treatment);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       return { data: response.data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -139,28 +139,31 @@ export const treatmentsApi = {
    * Update treatment
    * PATCH /api/treatments/treatments/{id}/
    */
-  update: async (treatmentId: string, updates: Partial<TreatmentCreate>): Promise<ApiResponse<Treatment>> => {
+  update: async (
+    treatmentId: string,
+    updates: Partial<TreatmentCreate>
+  ): Promise<ApiResponse<Treatment>> => {
     const url = `/api/treatments/treatments/${treatmentId}/`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'PATCH', url, treatmentId });
     }
-    
+
     try {
       const response = await apiClient.patch<Treatment>(url, updates);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       return { data: response.data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -173,28 +176,27 @@ export const treatmentsApi = {
    */
   delete: async (treatmentId: string): Promise<void> => {
     const url = `/api/treatments/treatments/${treatmentId}/`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'DELETE', url, treatmentId });
     }
-    
+
     try {
       await apiClient.delete(url);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: 204 });
       }
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
     }
   },
 };
-

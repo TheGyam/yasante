@@ -61,7 +61,8 @@ export function SlideIn({
   const reduceMotion = useReducedMotion();
 
   // Use preset duration if not specified
-  const animationDuration = duration || (useSpring ? undefined : ANIMATION_PRESETS.slideIn.duration);
+  const animationDuration =
+    duration || (useSpring ? undefined : ANIMATION_PRESETS.slideIn.duration);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -114,4 +115,3 @@ export function SlideIn({
 
   return <AnimatedView style={animatedStyle}>{children}</AnimatedView>;
 }
-

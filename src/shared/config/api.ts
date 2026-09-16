@@ -1,18 +1,18 @@
 /**
  * API Configuration
- * 
+ *
  * This module provides centralized API configuration management.
  * It supports environment variables, Expo Constants, and fallback values.
- * 
+ *
  * Priority order:
  * 1. Environment variable (EXPO_PUBLIC_API_BASE_URL)
  * 2. Expo Constants extra.apiBaseUrl
  * 3. Hardcoded fallback based on __DEV__
- * 
+ *
  * @example
  * // Set in .env file:
  * EXPO_PUBLIC_API_BASE_URL=https://your-api.com
- * 
+ *
  * // Or configure in app.json:
  * {
  *   "expo": {
@@ -106,12 +106,12 @@ export const validateApiConfig = (): void => {
 export const getApiUrl = (endpoint: string): string => {
   // Remove leading slash if present to avoid double slashes
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-  
+
   // Ensure baseURL doesn't end with a slash
-  const cleanBaseUrl = apiConfig.baseURL.endsWith('/') 
-    ? apiConfig.baseURL.slice(0, -1) 
+  const cleanBaseUrl = apiConfig.baseURL.endsWith('/')
+    ? apiConfig.baseURL.slice(0, -1)
     : apiConfig.baseURL;
-  
+
   return `${cleanBaseUrl}/${cleanEndpoint}`;
 };
 
@@ -128,4 +128,3 @@ if (__DEV__) {
     console.error('❌ API Configuration error:', error);
   }
 }
-

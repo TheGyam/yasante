@@ -1,11 +1,13 @@
 # API Services Implementation
 
 ## Overview
+
 All API services have been implemented based on the Swagger specification from the backend. All services are now connected to the real backend API instead of mocks.
 
 ## Implemented Services
 
 ### 1. Authentication API (`src/api/services/authApi.ts`)
+
 - ✅ `login()` - POST /api/auth/login/
 - ✅ `signup()` - POST /api/auth/signup/
 - ✅ `refreshToken()` - POST /api/auth/refresh-token/
@@ -13,11 +15,13 @@ All API services have been implemented based on the Swagger specification from t
 - ✅ `resetPassword()` - POST /api/auth/reset-password/
 
 ### 2. User API (`src/api/services/userApi.ts`)
+
 - ✅ `getProfile()` - GET /api/users/{id}/
 - ✅ `updateProfile()` - PATCH /api/users/{id}/
 - ✅ `updateHairProfile()` - PATCH /api/users/{id}/hair-profile/
 
 ### 3. Goals API (`src/api/services/goalsApi.ts`)
+
 - ✅ `getAll()` - GET /api/goals/
 - ✅ `getById()` - GET /api/goals/{id}/
 - ✅ `create()` - POST /api/goals/
@@ -27,6 +31,7 @@ All API services have been implemented based on the Swagger specification from t
 - ✅ `getPhotos()` - GET /api/goals/{id}/photos/
 
 ### 4. Activities API (`src/api/services/activitiesApi.ts`)
+
 - ✅ `getAll()` - GET /api/goals/activities/
 - ✅ `getById()` - GET /api/goals/activities/{id}/
 - ✅ `create()` - POST /api/goals/activities/
@@ -34,6 +39,7 @@ All API services have been implemented based on the Swagger specification from t
 - ✅ `delete()` - DELETE /api/goals/activities/{id}/
 
 ### 5. Photos API (`src/api/services/photosApi.ts`)
+
 - ✅ `getAll()` - GET /api/goals/photos/
 - ✅ `getById()` - GET /api/goals/photos/{id}/
 - ✅ `create()` - POST /api/goals/photos/
@@ -41,6 +47,7 @@ All API services have been implemented based on the Swagger specification from t
 - ✅ `delete()` - DELETE /api/goals/photos/{id}/
 
 ### 6. Routines API (`src/api/services/routinesApi.ts`)
+
 - ✅ `getAll()` - GET /api/routines/routines/
 - ✅ `getById()` - GET /api/routines/routines/{id}/
 - ✅ `create()` - POST /api/routines/routines/
@@ -48,11 +55,13 @@ All API services have been implemented based on the Swagger specification from t
 - ✅ `delete()` - DELETE /api/routines/routines/{id}/
 
 ### 7. Content API (`src/api/services/contentApi.ts`)
+
 - ✅ `getAll()` - GET /api/content/content/
 - ✅ `getById()` - GET /api/content/content/{id}/
 - ✅ `search()` - GET /api/content/content/search/
 
 ### 8. Favorites API (`src/api/services/favoritesApi.ts`)
+
 - ✅ `getAll()` - GET /api/content/favorites/
 - ✅ `isFavorite()` - GET /api/content/favorites/check/
 - ✅ `toggle()` - POST /api/content/favorites/toggle/
@@ -60,6 +69,7 @@ All API services have been implemented based on the Swagger specification from t
 - ✅ `delete()` - DELETE /api/content/favorites/{id}/
 
 ### 9. Monthly Hairstyles API (`src/api/services/monthlyHairstylesApi.ts`)
+
 - ✅ `getAll()` - GET /api/hairstyles/hairstyles/
 - ✅ `getById()` - GET /api/hairstyles/hairstyles/{id}/
 - ✅ `create()` - POST /api/hairstyles/hairstyles/
@@ -67,6 +77,7 @@ All API services have been implemented based on the Swagger specification from t
 - ✅ `delete()` - DELETE /api/hairstyles/hairstyles/{id}/
 
 ### 10. Mood Board API (`src/api/services/moodBoardApi.ts`)
+
 - ✅ `getAll()` - GET /api/hairstyles/moodboard/
 - ✅ `getById()` - GET /api/hairstyles/moodboard/{id}/
 - ✅ `create()` - POST /api/hairstyles/moodboard/
@@ -75,6 +86,7 @@ All API services have been implemented based on the Swagger specification from t
 - ✅ `addPhoto()` - POST /api/hairstyles/moodboard/{id}/photos/
 
 ### 11. Treatments API (`src/api/services/treatmentsApi.ts`)
+
 - ✅ `getAll()` - GET /api/treatments/treatments/
 - ✅ `getById()` - GET /api/treatments/treatments/{id}/
 - ✅ `create()` - POST /api/treatments/treatments/
@@ -84,22 +96,26 @@ All API services have been implemented based on the Swagger specification from t
 ## Features
 
 ### Consistent Implementation
+
 - All services follow the same pattern and structure
 - Type-safe TypeScript interfaces
 - Comprehensive error handling
 - Development logging for debugging
 
 ### Error Handling
+
 - Network errors are caught and logged
 - HTTP errors include status codes and response data
 - Errors are properly typed and thrown for React Query
 
 ### Request/Response Transformation
+
 - Handles paginated responses (DRF format with `count`, `results`, `next`, `previous`)
 - Converts snake_case to camelCase where needed
 - Transforms array responses to cursor-based pagination format for content API
 
 ### Authentication
+
 - Automatic token refresh on 401 errors
 - Token stored in auth store
 - Authorization header automatically added to requests
@@ -134,6 +150,7 @@ const goal = await api.goals.create({
 ## Testing
 
 To test the API integration:
+
 1. Ensure backend is running and accessible
 2. Check console logs for API requests (in development)
 3. Verify responses match expected format
@@ -146,4 +163,3 @@ To test the API integration:
 3. ⏳ Add response transformation for field name mapping if backend doesn't return camelCase
 4. ⏳ Implement retry logic for failed requests
 5. ⏳ Add request/response caching strategies
-

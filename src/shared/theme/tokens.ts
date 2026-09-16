@@ -154,4 +154,3 @@ export type Radii = typeof radii;
 export type FontSizes = typeof fontSizes;
 export type Colors = typeof colors;
 export type Shadows = typeof shadows;
-

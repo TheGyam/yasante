@@ -30,7 +30,7 @@ if (__DEV__) {
 function RootLayoutNav() {
   const { theme, colorScheme } = useTheme();
   const router = useRouter();
-  
+
   // Only use notifications if available (requires dev build)
   try {
     useNotifications();
@@ -45,14 +45,14 @@ function RootLayoutNav() {
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
       const { url } = event;
-      
+
       // Parse moodboard deep link
       const moodboardLink = parseMoodBoardDeepLink(url);
       if (moodboardLink) {
         router.push(`/(tabs)/planner/moodboard/${moodboardLink.entryId}` as any);
         return;
       }
-      
+
       // Parse treatment deep link
       const treatmentLink = parseTreatmentDeepLink(url);
       if (treatmentLink) {
@@ -62,7 +62,7 @@ function RootLayoutNav() {
     };
 
     // Handle initial URL (if app was opened via deep link)
-    Linking.getInitialURL().then((url) => {
+    Linking.getInitialURL().then(url => {
       if (url) {
         handleDeepLink({ url });
       }
@@ -117,4 +117,3 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
-

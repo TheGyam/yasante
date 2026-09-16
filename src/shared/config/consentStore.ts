@@ -10,12 +10,7 @@ import { POLICY_VERSION } from './policies';
  * `research` covers any future dataset or model-training use. It defaults to off
  * and must never be bundled with anything else.
  */
-export type ConsentPurpose =
-  | 'terms'
-  | 'privacy'
-  | 'analytics'
-  | 'personalisation'
-  | 'research';
+export type ConsentPurpose = 'terms' | 'privacy' | 'analytics' | 'personalisation' | 'research';
 
 export interface ConsentRecord {
   granted: boolean;
@@ -55,14 +50,14 @@ export const useConsentStore = create<ConsentState>()(
       consents: DEFAULTS,
 
       setConsent: (purpose, granted) => {
-        set((state) => ({
+        set(state => ({
           consents: { ...state.consents, [purpose]: record(granted) },
         }));
         // ponytail: device-local until the consent endpoint exists; pendingSync() is
         // the hook for posting these, and syncedAt is what marks them done.
       },
 
-      isGranted: (purpose) => get().consents[purpose]?.granted ?? false,
+      isGranted: purpose => get().consents[purpose]?.granted ?? false,
 
       pendingSync: () =>
         (Object.entries(get().consents) as Array<[ConsentPurpose, ConsentRecord]>)

@@ -23,4 +23,3 @@ jest.mock('expo-notifications', () => ({
   cancelScheduledNotificationAsync: jest.fn(),
   getAllScheduledNotificationsAsync: jest.fn(),
 }));
-

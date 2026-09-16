@@ -5,7 +5,9 @@ Welcome! This folder contains comprehensive API documentation for the Yasante mo
 ## Documentation Files
 
 ### 📘 [BACKEND_API_DOCUMENTATION.md](./BACKEND_API_DOCUMENTATION.md)
+
 **Complete API Specification** - This is the main documentation file containing:
+
 - Detailed endpoint specifications
 - Request/response formats
 - Data models and TypeScript interfaces
@@ -18,7 +20,9 @@ Welcome! This folder contains comprehensive API documentation for the Yasante mo
 **Start here for comprehensive understanding.**
 
 ### ⚡ [QUICK_REFERENCE.md](./QUICK_REFERENCE.md)
+
 **Quick Reference Guide** - A condensed version for quick lookups:
+
 - Endpoint summary
 - Key data models
 - Security checklist
@@ -46,6 +50,7 @@ Welcome! This folder contains comprehensive API documentation for the Yasante mo
 ## Questions?
 
 If you have questions or need clarifications:
+
 1. Check the detailed documentation first
 2. Review the TypeScript types in the frontend codebase (`src/types/`)
 3. Contact the frontend development team
@@ -60,4 +65,3 @@ If you have questions or need clarifications:
 ---
 
 Happy coding! 🚀
-

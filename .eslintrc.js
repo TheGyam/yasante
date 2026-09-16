@@ -1,9 +1,5 @@
 module.exports = {
-  extends: [
-    'expo',
-    'prettier',
-    'plugin:prettier/recommended',
-  ],
+  extends: ['expo', 'prettier', 'plugin:prettier/recommended'],
   plugins: ['prettier'],
   rules: {
     'prettier/prettier': 'warn',
@@ -44,7 +40,7 @@ module.exports = {
               {
                 group: ['@/features/*/*'],
                 message:
-                  "Import a feature through its index (@/features/booking), not its internals. Inside a feature, use relative imports.",
+                  'Import a feature through its index (@/features/booking), not its internals. Inside a feature, use relative imports.',
               },
             ],
           },
@@ -53,4 +49,3 @@ module.exports = {
     },
   ],
 };
-

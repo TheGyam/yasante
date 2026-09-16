@@ -28,4 +28,3 @@ export function Icon({
   // This is a placeholder - actual icons should extend this
   return null;
 }
-

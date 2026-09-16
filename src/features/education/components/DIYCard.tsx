@@ -67,5 +67,3 @@ export function DIYCard({ diy }: DIYCardProps) {
     </TouchableOpacity>
   );
 }
-
-

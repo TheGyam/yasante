@@ -28,4 +28,3 @@ export function useResponsive() {
     [width, height]
   );
 }
-

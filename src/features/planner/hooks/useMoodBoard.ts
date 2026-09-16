@@ -5,7 +5,11 @@ import { useAuth } from '@/features/auth';
 
 const MOOD_BOARD_QUERY_KEY = 'moodBoard';
 
-export function useMoodBoardEntries(userId?: string, month?: string, options?: { enabled?: boolean }) {
+export function useMoodBoardEntries(
+  userId?: string,
+  month?: string,
+  options?: { enabled?: boolean }
+) {
   const { user: authUser } = useAuth();
   const actualUserId = userId || authUser?.id;
 
@@ -18,11 +22,15 @@ export function useMoodBoardEntries(userId?: string, month?: string, options?: {
       const response = await api.moodBoard.getAll(actualUserId, month);
       return response.data;
     },
-    enabled: (options?.enabled !== false) && !!actualUserId,
+    enabled: options?.enabled !== false && !!actualUserId,
   });
 }
 
-export function useSavedMoodBoardEntries(userId?: string, month?: string, options?: { enabled?: boolean }) {
+export function useSavedMoodBoardEntries(
+  userId?: string,
+  month?: string,
+  options?: { enabled?: boolean }
+) {
   const { user: authUser } = useAuth();
   const actualUserId = userId || authUser?.id;
 
@@ -35,7 +43,7 @@ export function useSavedMoodBoardEntries(userId?: string, month?: string, option
       const response = await api.moodBoard.getSaved(actualUserId, month);
       return response.data;
     },
-    enabled: (options?.enabled !== false) && !!actualUserId,
+    enabled: options?.enabled !== false && !!actualUserId,
   });
 }
 
@@ -71,24 +79,30 @@ export function useCreateMoodBoardEntry(userId?: string) {
           );
         }
       }
-      
+
       // For local file URIs, we need to upload them first or use a placeholder
       // For now, we'll send the URIs as-is and let the backend handle validation
       // In production, images should be uploaded first via multipart/form-data
       const mainPhotoUri = entry.mainPhotoUri || entry.main_photo_uri;
-      
+
       // Build the API entry, ensuring photos is always an array
       const apiEntry: any = {
         month: entry.month,
         name: entry.name,
         main_photo_uri: mainPhotoUri,
         photos: photosArray, // Always send as array, even if empty
-        stylist_price: typeof entry.stylistPrice === 'number' ? entry.stylistPrice.toString() : (entry.stylistPrice || entry.stylist_price || '0'),
-        hair_price: typeof entry.hairPrice === 'number' ? entry.hairPrice.toString() : (entry.hairPrice || entry.hair_price || '0'),
+        stylist_price:
+          typeof entry.stylistPrice === 'number'
+            ? entry.stylistPrice.toString()
+            : entry.stylistPrice || entry.stylist_price || '0',
+        hair_price:
+          typeof entry.hairPrice === 'number'
+            ? entry.hairPrice.toString()
+            : entry.hairPrice || entry.hair_price || '0',
         stylist_location: entry.stylistLocation || entry.stylist_location || '',
         appointment_time: entry.appointmentTime || entry.appointment_time,
       };
-      
+
       // Only include optional fields if they have values
       if (entry.monthColor || entry.month_color) {
         apiEntry.month_color = entry.monthColor || entry.month_color;
@@ -99,18 +113,18 @@ export function useCreateMoodBoardEntry(userId?: string) {
       if (entry.completed !== undefined) {
         apiEntry.completed = entry.completed;
       }
-      
+
       if (__DEV__) {
         console.log('📤 Creating moodboard entry:', {
           original: entry,
-          transformed: apiEntry
+          transformed: apiEntry,
         });
       }
-      
+
       const response = await api.moodBoard.create(apiEntry);
       return response.data;
     },
-    onSuccess: (newEntry) => {
+    onSuccess: newEntry => {
       if (actualUserId) {
         // Add new entry to list cache for the specific month
         queryClient.setQueryData<MoodBoardEntry[]>(
@@ -139,17 +153,17 @@ export function useUpdateMoodBoardEntry(entryId: string, userId?: string) {
       const response = await api.moodBoard.update(entryId, updates);
       return response.data;
     },
-    onSuccess: (updatedEntry) => {
+    onSuccess: updatedEntry => {
       if (actualUserId) {
         // Update list cache for the specific month
         queryClient.setQueryData<MoodBoardEntry[]>(
           [MOOD_BOARD_QUERY_KEY, actualUserId, updatedEntry.month],
-          (old = []) => old.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
+          (old = []) => old.map(entry => (entry.id === updatedEntry.id ? updatedEntry : entry))
         );
         // Update general list cache (without month filter)
         queryClient.setQueryData<MoodBoardEntry[]>(
           [MOOD_BOARD_QUERY_KEY, actualUserId],
-          (old = []) => old.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
+          (old = []) => old.map(entry => (entry.id === updatedEntry.id ? updatedEntry : entry))
         );
         // Update detail cache
         queryClient.setQueryData([MOOD_BOARD_QUERY_KEY, entryId], updatedEntry);
@@ -208,12 +222,12 @@ export function useAddPhotoToMoodBoardEntry(userId?: string) {
         // Update list cache for the specific month
         queryClient.setQueryData<MoodBoardEntry[]>(
           [MOOD_BOARD_QUERY_KEY, actualUserId, updatedEntry.month],
-          (old = []) => old.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
+          (old = []) => old.map(entry => (entry.id === updatedEntry.id ? updatedEntry : entry))
         );
         // Update general list cache (without month filter)
         queryClient.setQueryData<MoodBoardEntry[]>(
           [MOOD_BOARD_QUERY_KEY, actualUserId],
-          (old = []) => old.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
+          (old = []) => old.map(entry => (entry.id === updatedEntry.id ? updatedEntry : entry))
         );
         // Update detail cache
         queryClient.setQueryData([MOOD_BOARD_QUERY_KEY, entryId], updatedEntry);
@@ -221,4 +235,3 @@ export function useAddPhotoToMoodBoardEntry(userId?: string) {
     },
   });
 }
-

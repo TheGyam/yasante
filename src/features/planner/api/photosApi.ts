@@ -4,7 +4,7 @@ import { ProgressPhoto } from '@/features/planner';
 
 /**
  * Photos API Service
- * 
+ *
  * Based on Swagger spec
  * Endpoints:
  * - GET /api/goals/photos/ - List photos (paginated)
@@ -32,34 +32,36 @@ export const photosApi = {
   getAll: async (goalId?: string): Promise<ApiResponse<ProgressPhoto[]>> => {
     const params = new URLSearchParams();
     if (goalId) params.append('goal_id', goalId);
-    
+
     const url = `/api/goals/photos/${params.toString() ? `?${params.toString()}` : ''}`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'GET', url, goalId });
     }
-    
+
     try {
       // Django REST Framework returns { count, next, previous, results: [...] }
-      const response = await apiClient.get<{ results: ProgressPhoto[]; count?: number } | ProgressPhoto[]>(url);
-      
+      const response = await apiClient.get<
+        { results: ProgressPhoto[]; count?: number } | ProgressPhoto[]
+      >(url);
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       // Handle both Django paginated format and direct array
-      const data = Array.isArray(response.data) 
-        ? response.data 
+      const data = Array.isArray(response.data)
+        ? response.data
         : (response.data as any).results || [];
-      
+
       return { data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -72,26 +74,26 @@ export const photosApi = {
    */
   getById: async (photoId: string): Promise<ApiResponse<ProgressPhoto>> => {
     const url = `/api/goals/photos/${photoId}/`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'GET', url, photoId });
     }
-    
+
     try {
       const response = await apiClient.get<ProgressPhoto>(url);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       return { data: response.data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -104,26 +106,26 @@ export const photosApi = {
    */
   create: async (photo: ProgressPhotoCreate): Promise<ApiResponse<ProgressPhoto>> => {
     const url = '/api/goals/photos/';
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'POST', url, goalId: photo.goal_id });
     }
-    
+
     try {
       const response = await apiClient.post<ProgressPhoto>(url, photo);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       return { data: response.data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -134,28 +136,31 @@ export const photosApi = {
    * Update photo
    * PATCH /api/goals/photos/{id}/
    */
-  update: async (photoId: string, updates: Partial<ProgressPhotoCreate>): Promise<ApiResponse<ProgressPhoto>> => {
+  update: async (
+    photoId: string,
+    updates: Partial<ProgressPhotoCreate>
+  ): Promise<ApiResponse<ProgressPhoto>> => {
     const url = `/api/goals/photos/${photoId}/`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'PATCH', url, photoId });
     }
-    
+
     try {
       const response = await apiClient.patch<ProgressPhoto>(url, updates);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: response.status });
       }
-      
+
       return { data: response.data };
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
@@ -168,28 +173,27 @@ export const photosApi = {
    */
   delete: async (photoId: string): Promise<void> => {
     const url = `/api/goals/photos/${photoId}/`;
-    
+
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'DELETE', url, photoId });
     }
-    
+
     try {
       await apiClient.delete(url);
-      
+
       if (__DEV__) {
         console.log('✅ API Response:', { url, status: 204 });
       }
     } catch (error: any) {
       if (__DEV__) {
-        console.error('❌ API Error:', { 
-          url, 
-          error: error.message, 
+        console.error('❌ API Error:', {
+          url,
+          error: error.message,
           status: error.response?.status,
-          data: error.response?.data 
+          data: error.response?.data,
         });
       }
       throw error;
     }
   },
 };
-

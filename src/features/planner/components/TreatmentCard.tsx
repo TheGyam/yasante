@@ -15,10 +15,12 @@ const CardContainer = styled.View`
   border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
   padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
   shadow-color: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowColor};
-  shadow-offset: ${({ theme }: { theme: Theme }) => `${theme.shadows.small.shadowOffset.width}px ${theme.shadows.small.shadowOffset.height}px`};
+  shadow-offset: ${({ theme }: { theme: Theme }) =>
+    `${theme.shadows.small.shadowOffset.width}px ${theme.shadows.small.shadowOffset.height}px`};
   shadow-opacity: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowOpacity};
   shadow-radius: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowRadius}px;
-  elevation: ${({ theme }: { theme: Theme }) => (Platform.OS === 'android' ? theme.shadows.small.elevation : 0)};
+  elevation: ${({ theme }: { theme: Theme }) =>
+    Platform.OS === 'android' ? theme.shadows.small.elevation : 0};
 `;
 
 const Header = styled(TouchableOpacity)`
@@ -117,7 +119,7 @@ export function TreatmentCard({ treatment, onPress, onEdit, testID }: TreatmentC
         </HeaderLeft>
         <HeaderRight>
           <EditButton
-            onPress={(e) => {
+            onPress={e => {
               e.stopPropagation();
               shareTreatment(treatment);
             }}
@@ -127,7 +129,7 @@ export function TreatmentCard({ treatment, onPress, onEdit, testID }: TreatmentC
           </EditButton>
           {onEdit && (
             <EditButton
-              onPress={(e) => {
+              onPress={e => {
                 e.stopPropagation();
                 onEdit();
               }}
@@ -198,7 +200,8 @@ export function TreatmentCard({ treatment, onPress, onEdit, testID }: TreatmentC
           {treatment.sessions && treatment.sessions.length > 0 && (
             <InfoRow style={{ marginTop: theme.spacing[2] }}>
               <Text variant="caption" color={theme.colors.text.medium}>
-                Completed: {treatment.sessions.filter((s) => s.completed).length} / {treatment.sessions.length}
+                Completed: {treatment.sessions.filter(s => s.completed).length} /{' '}
+                {treatment.sessions.length}
               </Text>
             </InfoRow>
           )}
@@ -207,4 +210,3 @@ export function TreatmentCard({ treatment, onPress, onEdit, testID }: TreatmentC
     </CardContainer>
   );
 }
-

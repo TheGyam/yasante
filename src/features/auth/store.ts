@@ -11,7 +11,7 @@ const saveTokens = (tokens: AuthTokens | null) =>
   (tokens
     ? SecureStore.setItemAsync(TOKEN_KEY, JSON.stringify(tokens))
     : SecureStore.deleteItemAsync(TOKEN_KEY)
-  ).catch((error) => {
+  ).catch(error => {
     if (__DEV__) console.warn('Could not write tokens to secure storage:', error);
   });
 
@@ -39,7 +39,7 @@ interface AuthState {
   tokens: AuthTokens | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  
+
   // Actions
   setAuth: (user: User, tokens: AuthTokens) => void;
   setUser: (user: User) => void;
@@ -50,7 +50,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    set => ({
       user: null,
       tokens: null,
       isAuthenticated: false,
@@ -67,11 +67,11 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      setUser: (user) => {
+      setUser: user => {
         set({ user });
       },
 
-      setTokens: (tokens) => {
+      setTokens: tokens => {
         saveTokens(tokens);
         set({ tokens });
       },
@@ -86,7 +86,7 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      setLoading: (loading) => {
+      setLoading: loading => {
         set({ isLoading: loading });
       },
     }),
@@ -94,11 +94,10 @@ export const useAuthStore = create<AuthState>()(
       name: '@yasante:auth',
       storage: createJSONStorage(() => AsyncStorage),
       // Tokens are deliberately absent here — they go to secure storage instead.
-      partialize: (state) => ({
+      partialize: state => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
     }
   )
 );
-

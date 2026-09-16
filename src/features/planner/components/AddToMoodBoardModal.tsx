@@ -107,12 +107,12 @@ export function AddToMoodBoardModal({
   const bottomSheetRef = React.useRef<BottomSheet>(null);
 
   const userId = user?.id || '';
-  
+
   // Fetch all moodboard entries (not filtered by month)
   const { data: allEntries = [], isLoading } = useMoodBoardEntries(userId, undefined, {
     enabled: isAuthenticated && !!userId && visible,
   });
-  
+
   const addPhotoMutation = useAddPhotoToMoodBoardEntry(userId);
 
   const snapPoints = useMemo(() => ['75%'], []);
@@ -203,7 +203,11 @@ export function AddToMoodBoardModal({
             ) : allEntries.length === 0 ? (
               <EmptyState>
                 <LayoutGrid size={48} color={theme.colors.text.low} strokeWidth={2} />
-                <Text variant="body" color={theme.colors.text.medium} style={{ marginTop: theme.spacing[2], textAlign: 'center' }}>
+                <Text
+                  variant="body"
+                  color={theme.colors.text.medium}
+                  style={{ marginTop: theme.spacing[2], textAlign: 'center' }}
+                >
                   No mood board entries yet
                 </Text>
               </EmptyState>
@@ -212,7 +216,7 @@ export function AddToMoodBoardModal({
                 <Text variant="h3" weight="semibold" style={{ marginBottom: theme.spacing[3] }}>
                   Existing Entries
                 </Text>
-                {allEntries.map((entry) => {
+                {allEntries.map(entry => {
                   const appointmentDate = format(new Date(entry.appointmentTime), 'MMM d, yyyy');
                   const canAddPhoto = entry.photos.length < 3;
 
@@ -232,7 +236,14 @@ export function AddToMoodBoardModal({
                             resizeMode="cover"
                           />
                         ) : (
-                          <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                          <View
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
                             <LayoutGrid size={24} color={theme.colors.text.low} strokeWidth={2} />
                           </View>
                         )}
@@ -241,11 +252,19 @@ export function AddToMoodBoardModal({
                         <Text variant="body" weight="semibold" numberOfLines={1}>
                           {entry.name}
                         </Text>
-                        <Text variant="caption" color={theme.colors.text.medium} style={{ marginTop: theme.spacing[1] }}>
+                        <Text
+                          variant="caption"
+                          color={theme.colors.text.medium}
+                          style={{ marginTop: theme.spacing[1] }}
+                        >
                           {appointmentDate}
                         </Text>
                         {!canAddPhoto && (
-                          <Text variant="caption" color={theme.colors.text.low} style={{ marginTop: theme.spacing[1] }}>
+                          <Text
+                            variant="caption"
+                            color={theme.colors.text.low}
+                            style={{ marginTop: theme.spacing[1] }}
+                          >
                             Maximum photos reached
                           </Text>
                         )}
@@ -274,7 +293,11 @@ export function AddToMoodBoardModal({
                 <Text variant="body" weight="semibold" color={theme.colors.primary}>
                   Create New Entry
                 </Text>
-                <Text variant="caption" color={theme.colors.text.medium} style={{ marginTop: theme.spacing[1], textAlign: 'center' }}>
+                <Text
+                  variant="caption"
+                  color={theme.colors.text.medium}
+                  style={{ marginTop: theme.spacing[1], textAlign: 'center' }}
+                >
                   Start a new mood board entry
                 </Text>
               </CreateNewContent>
@@ -285,4 +308,3 @@ export function AddToMoodBoardModal({
     </>
   );
 }
-

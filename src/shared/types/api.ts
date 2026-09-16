@@ -28,4 +28,3 @@ export interface CursorPaginatedResponse<T> {
     limit: number;
   };
 }
-

@@ -14,10 +14,12 @@ const CardContainer = styled.View`
   border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
   padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
   shadow-color: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowColor};
-  shadow-offset: ${({ theme }: { theme: Theme }) => `${theme.shadows.small.shadowOffset.width}px ${theme.shadows.small.shadowOffset.height}px`};
+  shadow-offset: ${({ theme }: { theme: Theme }) =>
+    `${theme.shadows.small.shadowOffset.width}px ${theme.shadows.small.shadowOffset.height}px`};
   shadow-opacity: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowOpacity};
   shadow-radius: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowRadius}px;
-  elevation: ${({ theme }: { theme: Theme }) => (Platform.OS === 'android' ? theme.shadows.small.elevation : 0)};
+  elevation: ${({ theme }: { theme: Theme }) =>
+    Platform.OS === 'android' ? theme.shadows.small.elevation : 0};
 `;
 
 const Header = styled.View`
@@ -171,11 +173,11 @@ export interface MonthCardProps {
   onViewGoal?: (goalId: string) => void;
 }
 
-export function MonthCard({ 
-  calendar, 
-  onAddHairstyle, 
+export function MonthCard({
+  calendar,
+  onAddHairstyle,
   onEditHairstyle,
-  onViewGoal 
+  onViewGoal,
 }: MonthCardProps) {
   const { theme } = useTheme();
   const hasHairstyle = calendar.hairstyles.length > 0;
@@ -243,18 +245,18 @@ export function MonthCard({
           <Divider />
           <GoalsSection>
             <GoalsList>
-              {calendar.goals.map((goal) => (
-                <GoalItem
-                  key={goal.id}
-                  onPress={() => onViewGoal?.(goal.id)}
-                  activeOpacity={0.7}
-                >
+              {calendar.goals.map(goal => (
+                <GoalItem key={goal.id} onPress={() => onViewGoal?.(goal.id)} activeOpacity={0.7}>
                   <GoalInfo>
                     <GoalName variant="body" weight="medium" color={theme.colors.text.high}>
                       {goal.name}
                     </GoalName>
                     {goal.description && (
-                      <GoalDescription variant="caption" color={theme.colors.text.medium} numberOfLines={1}>
+                      <GoalDescription
+                        variant="caption"
+                        color={theme.colors.text.medium}
+                        numberOfLines={1}
+                      >
                         {goal.description}
                       </GoalDescription>
                     )}

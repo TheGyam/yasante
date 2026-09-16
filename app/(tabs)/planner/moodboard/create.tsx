@@ -1,9 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TouchableOpacity, Alert, Dimensions, Switch, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  Alert,
+  Dimensions,
+  Switch,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { X, ChevronDown, ChevronUp, Plus, Image as ImageIcon, Link2, Calendar as CalendarIcon, Clock, MapPin, User, ArrowLeft, ArrowRight } from 'lucide-react-native';
+import {
+  X,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Image as ImageIcon,
+  Link2,
+  Calendar as CalendarIcon,
+  Clock,
+  MapPin,
+  User,
+  ArrowLeft,
+  ArrowRight,
+} from 'lucide-react-native';
 import { DatePickerModal } from '@/shared/components/DatePickerModal';
 import { TimePicker } from '@/shared/components/TimePicker';
 import { useTheme } from '@/shared/hooks/useTheme';
@@ -42,7 +64,7 @@ export default function MoodBoardCreateScreen() {
   const isDiscarding = useRef(false);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+    const unsubscribe = navigation.addListener('beforeRemove', e => {
       // If manually discarding or finishing, let it go through
       if (isDiscarding.current) return;
 
@@ -115,7 +137,9 @@ export default function MoodBoardCreateScreen() {
 
     try {
       const now = new Date();
-      const appointmentDateTime = showAppointment ? combineDateTime(appointmentDate, appointmentTime) : now;
+      const appointmentDateTime = showAppointment
+        ? combineDateTime(appointmentDate, appointmentTime)
+        : now;
       const month = format(showAppointment ? appointmentDateTime : now, 'yyyy-MM');
 
       isDiscarding.current = true;
@@ -140,19 +164,37 @@ export default function MoodBoardCreateScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }} testID="moodboard-create-screen">
-      <View style={{
-        paddingTop: insets.top + 8, paddingHorizontal: 20, paddingBottom: 12,
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        backgroundColor: theme.colors.background,
-        borderBottomWidth: 4, borderBottomColor: theme.colors.border,
-      }}>
-        <TouchableOpacity onPress={step === 1 ? () => router.back() : () => setStep(1)} activeOpacity={0.7}
+    <View
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      testID="moodboard-create-screen"
+    >
+      <View
+        style={{
+          paddingTop: insets.top + 8,
+          paddingHorizontal: 20,
+          paddingBottom: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: theme.colors.background,
+          borderBottomWidth: 4,
+          borderBottomColor: theme.colors.border,
+        }}
+      >
+        <TouchableOpacity
+          onPress={step === 1 ? () => router.back() : () => setStep(1)}
+          activeOpacity={0.7}
           style={{
-            width: 40, height: 40, borderRadius: 12,
-            backgroundColor: theme.colors.surface, borderWidth: 2, borderColor: theme.colors.border,
-            alignItems: 'center', justifyContent: 'center',
-          }}>
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            backgroundColor: theme.colors.surface,
+            borderWidth: 2,
+            borderColor: theme.colors.border,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           {step === 1 ? (
             <X size={18} color={theme.colors.text.high} strokeWidth={2.5} />
           ) : (
@@ -160,32 +202,57 @@ export default function MoodBoardCreateScreen() {
           )}
         </TouchableOpacity>
 
-        <Text variant="body" weight="bold" color={theme.colors.text.high} style={{ fontSize: 17, textTransform: 'uppercase', fontStyle: 'italic' }}>
+        <Text
+          variant="body"
+          weight="bold"
+          color={theme.colors.text.high}
+          style={{ fontSize: 17, textTransform: 'uppercase', fontStyle: 'italic' }}
+        >
           {step === 1 ? 'Create Board' : 'Add Media'}
         </Text>
 
         <View style={{ flexDirection: 'row', gap: 6 }}>
-          <View style={{
-            width: 10, height: 10, borderRadius: 5,
-            backgroundColor: theme.colors.accent, borderWidth: 2, borderColor: theme.colors.text.high,
-          }} />
-          <View style={{
-            width: 10, height: 10, borderRadius: 5,
-            backgroundColor: step === 2 ? theme.colors.accent : theme.colors.surface,
-            borderWidth: 2, borderColor: theme.colors.text.high,
-          }} />
+          <View
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 5,
+              backgroundColor: theme.colors.accent,
+              borderWidth: 2,
+              borderColor: theme.colors.text.high,
+            }}
+          />
+          <View
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: 5,
+              backgroundColor: step === 2 ? theme.colors.accent : theme.colors.surface,
+              borderWidth: 2,
+              borderColor: theme.colors.text.high,
+            }}
+          />
         </View>
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
         {step === 1 ? (
           <CreateStepOne
-            name={name} setName={setName}
-            isSecret={isSecret} setIsSecret={setIsSecret}
-            showAppointment={showAppointment} setShowAppointment={setShowAppointment}
-            location={location} setLocation={setLocation}
-            stylistName={stylistName} setStylistName={setStylistName}
-            notes={notes} setNotes={setNotes}
+            name={name}
+            setName={setName}
+            isSecret={isSecret}
+            setIsSecret={setIsSecret}
+            showAppointment={showAppointment}
+            setShowAppointment={setShowAppointment}
+            location={location}
+            setLocation={setLocation}
+            stylistName={stylistName}
+            setStylistName={setStylistName}
+            notes={notes}
+            setNotes={setNotes}
             onOpenDatePicker={() => setShowDatePicker(true)}
             onOpenTimePicker={() => setShowTimePicker(true)}
             formattedDate={format(appointmentDate, 'EEEE, MMM d, yyyy')}
@@ -193,26 +260,37 @@ export default function MoodBoardCreateScreen() {
           />
         ) : (
           <CreateStepTwo
-            linkInput={linkInput} setLinkInput={setLinkInput}
+            linkInput={linkInput}
+            setLinkInput={setLinkInput}
             onAddLink={handleAddLink}
             onOpenMediaPicker={() => setIsMediaPickerVisible(true)}
-            photos={photos} onRemovePhoto={handleRemovePhoto}
+            photos={photos}
+            onRemovePhoto={handleRemovePhoto}
           />
         )}
       </KeyboardAvoidingView>
 
-      <BottomActionBar 
-        step={step} 
-        onNext={handleNext} 
-        onSubmit={handleSubmit} 
-        isPending={createEntry.isPending} 
+      <BottomActionBar
+        step={step}
+        onNext={handleNext}
+        onSubmit={handleSubmit}
+        isPending={createEntry.isPending}
         onDiscard={() => {
           isDiscarding.current = true;
-        }} 
+        }}
       />
 
-      <MediaPicker visible={isMediaPickerVisible} onClose={() => setIsMediaPickerVisible(false)} onImageSelected={handleImageSelected} testID="photo-media-picker" />
-      <AuthPromptModal visible={showAuthPrompt} onClose={() => setShowAuthPrompt(false)} feature="moodboard" />
+      <MediaPicker
+        visible={isMediaPickerVisible}
+        onClose={() => setIsMediaPickerVisible(false)}
+        onImageSelected={handleImageSelected}
+        testID="photo-media-picker"
+      />
+      <AuthPromptModal
+        visible={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        feature="moodboard"
+      />
     </View>
   );
 }

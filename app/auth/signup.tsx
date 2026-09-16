@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { ScrollView, View, ActivityIndicator, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+import {
+  ScrollView,
+  View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Linking,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
@@ -11,7 +18,13 @@ import { TopBar } from '@/shared/components/TopBar';
 import { FadeIn } from '@/shared/animations/FadeIn';
 import { SlideIn } from '@/shared/animations/SlideIn';
 import { useSignup } from '@/features/auth';
-import { isValidEmail, isRequired, validatePassword, getPasswordStrength, getPasswordRequirements } from '@/shared/utils/validation';
+import {
+  isValidEmail,
+  isRequired,
+  validatePassword,
+  getPasswordStrength,
+  getPasswordRequirements,
+} from '@/shared/utils/validation';
 import { useConsentStore } from '@/shared/config/consentStore';
 import { TERMS_URL, PRIVACY_URL } from '@/shared/config/policies';
 import type { Theme } from '@/shared/theme/ThemeProvider';
@@ -27,7 +40,8 @@ const ScrollContent = styled.ScrollView`
 
 const Content = styled.View<{ bottomInset: number }>`
   padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-  padding-bottom: ${({ bottomInset, theme }: { bottomInset: number; theme: Theme }) => bottomInset + theme.spacing[4]}px;
+  padding-bottom: ${({ bottomInset, theme }: { bottomInset: number; theme: Theme }) =>
+    bottomInset + theme.spacing[4]}px;
 `;
 
 const FormCard = styled(Card)`
@@ -57,12 +71,18 @@ const StrengthFill = styled.View<{ strength: number; color: string }>`
   height: 100%;
   width: ${({ strength }: { strength: number }) => {
     switch (strength) {
-      case 0: return '0%';
-      case 1: return '25%';
-      case 2: return '50%';
-      case 3: return '75%';
-      case 4: return '100%';
-      default: return '0%';
+      case 0:
+        return '0%';
+      case 1:
+        return '25%';
+      case 2:
+        return '50%';
+      case 3:
+        return '75%';
+      case 4:
+        return '100%';
+      default:
+        return '0%';
     }
   }};
   background-color: ${({ color }: { color: string }) => color};
@@ -94,9 +114,9 @@ const Checkbox = styled.TouchableOpacity<{ checked: boolean }>`
   width: 20px;
   height: 20px;
   border-width: 2px;
-  border-color: ${({ checked, theme }: { checked: boolean; theme: Theme }) => 
+  border-color: ${({ checked, theme }: { checked: boolean; theme: Theme }) =>
     checked ? theme.colors.primary : theme.colors.border};
-  background-color: ${({ checked, theme }: { checked: boolean; theme: Theme }) => 
+  background-color: ${({ checked, theme }: { checked: boolean; theme: Theme }) =>
     checked ? theme.colors.primary : 'transparent'};
   border-radius: 4px;
   align-items: center;
@@ -120,7 +140,7 @@ export default function SignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const signupMutation = useSignup();
-  const setConsent = useConsentStore((state) => state.setConsent);
+  const setConsent = useConsentStore(state => state.setConsent);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -135,27 +155,37 @@ export default function SignupScreen() {
 
   const getStrengthColor = () => {
     switch (passwordStrength) {
-      case 'weak': return theme.colors.error;
-      case 'fair': return '#ea580c';
-      case 'good': return '#2563eb';
-      case 'strong': return theme.colors.success;
-      default: return theme.colors.surfaceVariant;
+      case 'weak':
+        return theme.colors.error;
+      case 'fair':
+        return '#ea580c';
+      case 'good':
+        return '#2563eb';
+      case 'strong':
+        return theme.colors.success;
+      default:
+        return theme.colors.surfaceVariant;
     }
   };
 
   const getStrengthValue = () => {
     switch (passwordStrength) {
-      case 'weak': return 1;
-      case 'fair': return 2;
-      case 'good': return 3;
-      case 'strong': return 4;
-      default: return 0;
+      case 'weak':
+        return 1;
+      case 'fair':
+        return 2;
+      case 'good':
+        return 3;
+      case 'strong':
+        return 4;
+      default:
+        return 0;
     }
   };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!isRequired(name)) {
       newErrors.name = 'Name is required';
     }
@@ -188,7 +218,7 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     setGeneralError('');
-    
+
     if (!validate()) {
       return;
     }
@@ -206,10 +236,11 @@ export default function SignupScreen() {
       // Navigation will be handled by AuthContext
     } catch (error: any) {
       // Handle API error responses
-      const errorMessage = error?.response?.data?.non_field_errors?.[0] 
-        || error?.response?.data?.message
-        || error?.message 
-        || 'Signup failed. Please try again.';
+      const errorMessage =
+        error?.response?.data?.non_field_errors?.[0] ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Signup failed. Please try again.';
       setGeneralError(errorMessage);
     }
   };
@@ -231,13 +262,15 @@ export default function SignupScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollContent
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollContent contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
           <Content bottomInset={insets.bottom}>
             <FadeIn delay={100}>
-              <Text variant="h1" weight="bold" color={theme.colors.primary} style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}>
+              <Text
+                variant="h1"
+                weight="bold"
+                color={theme.colors.primary}
+                style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}
+              >
                 Yasante
               </Text>
             </FadeIn>
@@ -251,7 +284,11 @@ export default function SignupScreen() {
             <SlideIn delay={300} direction="up" distance={30}>
               <FormCard>
                 {generalError ? (
-                  <ErrorText variant="caption" color={theme.colors.error} style={{ marginBottom: theme.spacing[3] }}>
+                  <ErrorText
+                    variant="caption"
+                    color={theme.colors.error}
+                    style={{ marginBottom: theme.spacing[3] }}
+                  >
                     {generalError}
                   </ErrorText>
                 ) : null}
@@ -259,7 +296,7 @@ export default function SignupScreen() {
                 <Input
                   label="Name"
                   value={name}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setName(text);
                     if (errors.name) setErrors({ ...errors, name: '' });
                     setGeneralError('');
@@ -273,7 +310,7 @@ export default function SignupScreen() {
                 <Input
                   label="Email"
                   value={email}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setEmail(text);
                     if (errors.email) setErrors({ ...errors, email: '' });
                     setGeneralError('');
@@ -289,7 +326,7 @@ export default function SignupScreen() {
                 <Input
                   label="Password"
                   value={password}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setPassword(text);
                     if (errors.password) setErrors({ ...errors, password: '' });
                     setGeneralError('');
@@ -304,7 +341,13 @@ export default function SignupScreen() {
 
                 {password.length > 0 && (
                   <PasswordStrengthContainer>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
                       <Text variant="caption" color={theme.colors.text.medium}>
                         Password strength
                       </Text>
@@ -328,18 +371,14 @@ export default function SignupScreen() {
                       passwordChecks.special,
                     ];
                     const isMet = checks[index];
-                    
+
                     return (
                       <RequirementItem key={index}>
-                        <Checkbox
-                          checked={isMet}
-                          onPress={() => {}}
-                          disabled
-                        >
+                        <Checkbox checked={isMet} onPress={() => {}} disabled>
                           {isMet && <Text style={{ color: '#fff', fontSize: 12 }}>✓</Text>}
                         </Checkbox>
-                        <Text 
-                          variant="caption" 
+                        <Text
+                          variant="caption"
                           color={isMet ? theme.colors.success : theme.colors.text.medium}
                         >
                           {req}
@@ -352,7 +391,7 @@ export default function SignupScreen() {
                 <Input
                   label="Confirm Password"
                   value={confirmPassword}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setConfirmPassword(text);
                     if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: '' });
                     setGeneralError('');
@@ -385,8 +424,8 @@ export default function SignupScreen() {
                         onPress={() => Linking.openURL(TERMS_URL)}
                       >
                         Terms of Service
-                      </Text>
-                      {' '}and{' '}
+                      </Text>{' '}
+                      and{' '}
                       <Text
                         variant="caption"
                         weight="medium"
@@ -441,4 +480,3 @@ export default function SignupScreen() {
     </Container>
   );
 }
-

@@ -31,12 +31,12 @@ export function useUploadPhoto(goalId: string) {
       });
       return response.data;
     },
-    onSuccess: (newPhoto) => {
+    onSuccess: newPhoto => {
       // Add new photo to list cache
-      queryClient.setQueryData<ProgressPhoto[]>(
-        [PHOTOS_QUERY_KEY, goalId],
-        (old = []) => [...old, newPhoto]
-      );
+      queryClient.setQueryData<ProgressPhoto[]>([PHOTOS_QUERY_KEY, goalId], (old = []) => [
+        ...old,
+        newPhoto,
+      ]);
     },
   });
 }
@@ -49,13 +49,11 @@ export function useDeletePhoto(goalId: string) {
       await api.photos.delete(photoId);
       return photoId;
     },
-    onSuccess: (photoId) => {
+    onSuccess: photoId => {
       // Remove from list cache
-      queryClient.setQueryData<ProgressPhoto[]>(
-        [PHOTOS_QUERY_KEY, goalId],
-        (old = []) => old.filter(photo => photo.id !== photoId)
+      queryClient.setQueryData<ProgressPhoto[]>([PHOTOS_QUERY_KEY, goalId], (old = []) =>
+        old.filter(photo => photo.id !== photoId)
       );
     },
   });
 }
-

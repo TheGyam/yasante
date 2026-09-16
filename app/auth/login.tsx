@@ -26,7 +26,8 @@ const ScrollContent = styled.ScrollView`
 
 const Content = styled.View<{ bottomInset: number }>`
   padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-  padding-bottom: ${({ bottomInset, theme }: { bottomInset: number; theme: Theme }) => bottomInset + theme.spacing[4]}px;
+  padding-bottom: ${({ bottomInset, theme }: { bottomInset: number; theme: Theme }) =>
+    bottomInset + theme.spacing[4]}px;
 `;
 
 const FormCard = styled(Card)`
@@ -77,7 +78,7 @@ export default function LoginScreen() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!isRequired(email)) {
       newErrors.email = 'Email is required';
     } else if (!isValidEmail(email)) {
@@ -94,7 +95,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     setGeneralError('');
-    
+
     if (!validate()) {
       return;
     }
@@ -115,13 +116,15 @@ export default function LoginScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollContent
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollContent contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
           <Content bottomInset={insets.bottom}>
             <FadeIn delay={100}>
-              <Text variant="h1" weight="bold" color={theme.colors.primary} style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}>
+              <Text
+                variant="h1"
+                weight="bold"
+                color={theme.colors.primary}
+                style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}
+              >
                 Yasante
               </Text>
             </FadeIn>
@@ -135,7 +138,11 @@ export default function LoginScreen() {
             <SlideIn delay={300} direction="up" distance={30}>
               <FormCard>
                 {generalError ? (
-                  <ErrorText variant="caption" color={theme.colors.error} style={{ marginBottom: theme.spacing[3] }}>
+                  <ErrorText
+                    variant="caption"
+                    color={theme.colors.error}
+                    style={{ marginBottom: theme.spacing[3] }}
+                  >
                     {generalError}
                   </ErrorText>
                 ) : null}
@@ -143,7 +150,7 @@ export default function LoginScreen() {
                 <Input
                   label="Email"
                   value={email}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setEmail(text);
                     if (errors.email) setErrors({ ...errors, email: '' });
                     setGeneralError('');
@@ -159,7 +166,7 @@ export default function LoginScreen() {
                 <Input
                   label="Password"
                   value={password}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setPassword(text);
                     if (errors.password) setErrors({ ...errors, password: '' });
                     setGeneralError('');
@@ -178,10 +185,7 @@ export default function LoginScreen() {
                       Remember me
                     </Text>
                   </RememberMeText>
-                  <Switch
-                    value={rememberMe}
-                    onValueChange={setRememberMe}
-                  />
+                  <Switch value={rememberMe} onValueChange={setRememberMe} />
                 </RememberMeRow>
 
                 <TextLink
@@ -233,4 +237,3 @@ export default function LoginScreen() {
     </Container>
   );
 }
-

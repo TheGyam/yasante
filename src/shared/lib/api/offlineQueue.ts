@@ -76,7 +76,7 @@ class OfflineQueue {
 
     // Check for duplicates (same type + params) - update existing instead
     const duplicateIndex = this.queue.findIndex(
-      (m) => m.type === type && JSON.stringify(m.params) === JSON.stringify(params)
+      m => m.type === type && JSON.stringify(m.params) === JSON.stringify(params)
     );
     if (duplicateIndex >= 0) {
       // Update existing mutation timestamp (move to end of queue)
@@ -107,9 +107,7 @@ class OfflineQueue {
   /**
    * Process queue when online
    */
-  async processQueue(
-    apiCall: (type: string, params: any) => Promise<any>
-  ): Promise<void> {
+  async processQueue(apiCall: (type: string, params: any) => Promise<any>): Promise<void> {
     if (this.processing) {
       if (__DEV__) {
         console.log('Queue processing already in progress');
@@ -122,7 +120,7 @@ class OfflineQueue {
       // Remove expired mutations
       const now = Date.now();
       const expiredCount = this.queue.length;
-      this.queue = this.queue.filter((m) => m.ttl > now);
+      this.queue = this.queue.filter(m => m.ttl > now);
       if (__DEV__ && this.queue.length < expiredCount) {
         console.log(`Removed ${expiredCount - this.queue.length} expired mutations`);
       }
@@ -162,7 +160,7 @@ class OfflineQueue {
 
           // Exponential backoff before next retry
           const backoff = Math.min(1000 * Math.pow(2, mutation.retryCount), 30000);
-          await new Promise((resolve) => setTimeout(resolve, backoff));
+          await new Promise(resolve => setTimeout(resolve, backoff));
         }
       }
     } finally {
@@ -194,7 +192,7 @@ class OfflineQueue {
         // Remove expired mutations
         const now = Date.now();
         const beforeCount = this.queue.length;
-        this.queue = this.queue.filter((m) => m.ttl > now);
+        this.queue = this.queue.filter(m => m.ttl > now);
         if (this.queue.length < beforeCount) {
           await this.persist();
         }
@@ -215,9 +213,7 @@ class OfflineQueue {
    */
   private alertFailedMutation(mutation: QueuedMutation): void {
     if (__DEV__) {
-      console.warn(
-        `Failed to sync ${mutation.type} after ${mutation.maxRetries} attempts`
-      );
+      console.warn(`Failed to sync ${mutation.type} after ${mutation.maxRetries} attempts`);
     }
     // Call alert callback if set
     if (this.alertCallback) {
@@ -247,7 +243,7 @@ class OfflineQueue {
     return {
       size: this.queue.length,
       processing: this.processing,
-      mutations: this.queue.map((m) => ({
+      mutations: this.queue.map(m => ({
         type: m.type,
         retryCount: m.retryCount,
         maxRetries: m.maxRetries,
@@ -257,13 +253,3 @@ class OfflineQueue {
 }
 
 export const offlineQueue = new OfflineQueue();
-
-
-
-
-
-
-
-
-
-

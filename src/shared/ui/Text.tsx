@@ -17,12 +17,12 @@ const StyledText = styled.Text<StyledTextProps>`
   text-align: ${({ align }) => align || 'left'};
   font-family: ${({ weight, variant, theme }) => {
     // Use custom font if available, otherwise fallback to system font
-    const fontName = weight 
-      ? theme.fontFamily[weight] 
-      : variant === 'h1' || variant === 'h2' || variant === 'h3' 
-        ? theme.fontFamily.bold 
-        : variant === 'label' 
-          ? theme.fontFamily.semibold 
+    const fontName = weight
+      ? theme.fontFamily[weight]
+      : variant === 'h1' || variant === 'h2' || variant === 'h3'
+        ? theme.fontFamily.bold
+        : variant === 'label'
+          ? theme.fontFamily.semibold
           : theme.fontFamily.regular;
     // React Native will fallback to system font if font doesn't exist
     return fontName || 'System';
@@ -100,7 +100,9 @@ export function Text({
       weight={weight}
       testID={testID}
       accessible={accessible}
-      accessibilityLabel={accessibilityLabel || (typeof children === 'string' ? children : undefined)}
+      accessibilityLabel={
+        accessibilityLabel || (typeof children === 'string' ? children : undefined)
+      }
       allowFontScaling={allowFontScaling}
       {...props}
     >
@@ -108,4 +110,3 @@ export function Text({
     </StyledText>
   );
 }
-

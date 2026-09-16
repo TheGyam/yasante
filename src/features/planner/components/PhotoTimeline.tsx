@@ -62,7 +62,11 @@ export function PhotoTimeline({ photos, onPhotoPress, testID }: PhotoTimelinePro
                   {formatFriendlyDate(photo.date)}
                 </Text>
                 {photo.caption && (
-                  <Text variant="caption" color={theme.colors.text.medium} style={{ marginTop: theme.spacing[1] }}>
+                  <Text
+                    variant="caption"
+                    color={theme.colors.text.medium}
+                    style={{ marginTop: theme.spacing[1] }}
+                  >
                     {photo.caption}
                   </Text>
                 )}
@@ -74,4 +78,3 @@ export function PhotoTimeline({ photos, onPhotoPress, testID }: PhotoTimelinePro
     </Container>
   );
 }
-

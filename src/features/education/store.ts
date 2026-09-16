@@ -16,11 +16,11 @@ interface EducationState {
 
 export const useEducationStore = create<EducationState>()(
   persist(
-    (set) => ({
+    set => ({
       selectedFilters: {},
-      setFilters: (filters) => set({ selectedFilters: filters }),
+      setFilters: filters => set({ selectedFilters: filters }),
       searchQuery: '',
-      setSearchQuery: (query) => set({ searchQuery: query }),
+      setSearchQuery: query => set({ searchQuery: query }),
     }),
     {
       name: '@yasante:education',
@@ -28,4 +28,3 @@ export const useEducationStore = create<EducationState>()(
     }
   )
 );
-

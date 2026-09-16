@@ -9,15 +9,10 @@ interface DaySelectorProps {
   setSelectedDate: (date: Date) => void;
 }
 
-const DaySelector: React.FC<DaySelectorProps> = ({
-  selectedDate,
-  setSelectedDate,
-}) => {
+const DaySelector: React.FC<DaySelectorProps> = ({ selectedDate, setSelectedDate }) => {
   const { theme } = useTheme();
   const today = new Date().toISOString().split('T')[0];
-  const [selected, setSelected] = useState(
-    selectedDate.toISOString().split('T')[0]
-  );
+  const [selected, setSelected] = useState(selectedDate.toISOString().split('T')[0]);
 
   useEffect(() => {
     setSelected(selectedDate.toISOString().split('T')[0]);
@@ -34,12 +29,12 @@ const DaySelector: React.FC<DaySelectorProps> = ({
   return (
     <View style={styles.container}>
       <Calendar
-        onDayPress={(day) => {
+        onDayPress={day => {
           const date = new Date(day.timestamp);
           setSelectedDate(date);
           setSelected(day.dateString);
         }}
-        onMonthChange={(month) => {
+        onMonthChange={month => {
           // Update selectedDate when month changes to trigger mood board update
           const newDate = new Date(month.year, month.month - 1, selectedDate.getDate());
           // If the day doesn't exist in the new month (e.g., Feb 30), use the last day of the month
@@ -57,25 +52,27 @@ const DaySelector: React.FC<DaySelectorProps> = ({
             selectedColor: theme.colors.background,
             selectedTextColor: theme.colors.primary,
           },
-          ...(selected !== today ? {
-            [today]: {
-              marked: true,
-              dotColor: '#ffffff',
-              selected: false,
-              selectedColor: 'transparent',
-              customStyles: {
-                container: {
-                  borderWidth: 2,
-                  borderColor: '#ffffff',
-                  borderRadius: 16,
+          ...(selected !== today
+            ? {
+                [today]: {
+                  marked: true,
+                  dotColor: '#ffffff',
+                  selected: false,
+                  selectedColor: 'transparent',
+                  customStyles: {
+                    container: {
+                      borderWidth: 2,
+                      borderColor: '#ffffff',
+                      borderRadius: 16,
+                    },
+                    text: {
+                      color: '#ffffff',
+                      fontWeight: 'bold',
+                    },
+                  },
                 },
-                text: {
-                  color: '#ffffff',
-                  fontWeight: 'bold',
-                },
-              },
-            },
-          } : {}),
+              }
+            : {}),
         }}
         theme={{
           backgroundColor: theme.colors.primary,
@@ -99,4 +96,3 @@ const DaySelector: React.FC<DaySelectorProps> = ({
 };
 
 export default memo(DaySelector);
-

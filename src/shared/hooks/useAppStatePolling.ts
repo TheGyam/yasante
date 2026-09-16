@@ -92,13 +92,3 @@ export function useAppStatePolling(
 
   return { resetBackoff, increaseBackoff };
 }
-
-
-
-
-
-
-
-
-
-

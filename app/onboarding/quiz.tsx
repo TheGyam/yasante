@@ -46,10 +46,19 @@ const ProgressFill = styled.View<{ progress: number }>`
 `;
 
 const steps = [
-  { key: 'texture', question: 'What is your hair texture?', options: ['straight', 'wavy', 'curly', 'coily', 'kinky'] },
+  {
+    key: 'texture',
+    question: 'What is your hair texture?',
+    options: ['straight', 'wavy', 'curly', 'coily', 'kinky'],
+  },
   { key: 'density', question: 'What is your hair density?', options: ['fine', 'medium', 'thick'] },
   { key: 'porosity', question: 'What is your hair porosity?', options: ['low', 'medium', 'high'] },
-  { key: 'goals', question: 'What are your hair goals? (Select all that apply)', options: ['growth', 'health', 'moisture', 'strength', 'color', 'style'], multiple: true },
+  {
+    key: 'goals',
+    question: 'What are your hair goals? (Select all that apply)',
+    options: ['growth', 'health', 'moisture', 'strength', 'color', 'style'],
+    multiple: true,
+  },
 ];
 
 export default function QuizScreen() {
@@ -119,7 +128,7 @@ export default function QuizScreen() {
               {currentStepData.question}
             </Text>
 
-            {currentStepData.options.map((option) => {
+            {currentStepData.options.map(option => {
               const isSelected = currentStepData.multiple
                 ? (answers[currentStepData.key] || []).includes(option)
                 : answers[currentStepData.key] === option;
@@ -161,5 +170,3 @@ export default function QuizScreen() {
     </Container>
   );
 }
-
-

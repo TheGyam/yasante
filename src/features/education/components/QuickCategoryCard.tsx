@@ -47,4 +47,3 @@ export function QuickCategoryCard({ icon, label, onPress, testID }: QuickCategor
     </CategoryContainer>
   );
 }
-

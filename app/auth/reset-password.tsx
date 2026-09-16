@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import {
+  ScrollView,
+  View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
@@ -11,7 +18,11 @@ import { TopBar } from '@/shared/components/TopBar';
 import { FadeIn } from '@/shared/animations/FadeIn';
 import { SlideIn } from '@/shared/animations/SlideIn';
 import { useResetPassword } from '@/features/auth';
-import { validatePassword, getPasswordStrength, getPasswordRequirements } from '@/shared/utils/validation';
+import {
+  validatePassword,
+  getPasswordStrength,
+  getPasswordRequirements,
+} from '@/shared/utils/validation';
 import { CheckCircle2 } from 'lucide-react-native';
 import type { Theme } from '@/shared/theme/ThemeProvider';
 
@@ -26,7 +37,8 @@ const ScrollContent = styled.ScrollView`
 
 const Content = styled.View<{ bottomInset: number }>`
   padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-  padding-bottom: ${({ bottomInset, theme }: { bottomInset: number; theme: Theme }) => bottomInset + theme.spacing[4]}px;
+  padding-bottom: ${({ bottomInset, theme }: { bottomInset: number; theme: Theme }) =>
+    bottomInset + theme.spacing[4]}px;
 `;
 
 const FormCard = styled(Card)`
@@ -56,12 +68,18 @@ const StrengthFill = styled.View<{ strength: number; color: string }>`
   height: 100%;
   width: ${({ strength }: { strength: number }) => {
     switch (strength) {
-      case 0: return '0%';
-      case 1: return '25%';
-      case 2: return '50%';
-      case 3: return '75%';
-      case 4: return '100%';
-      default: return '0%';
+      case 0:
+        return '0%';
+      case 1:
+        return '25%';
+      case 2:
+        return '50%';
+      case 3:
+        return '75%';
+      case 4:
+        return '100%';
+      default:
+        return '0%';
     }
   }};
   background-color: ${({ color }: { color: string }) => color};
@@ -81,9 +99,9 @@ const Checkbox = styled.View<{ checked: boolean }>`
   width: 20px;
   height: 20px;
   border-width: 2px;
-  border-color: ${({ checked, theme }: { checked: boolean; theme: Theme }) => 
+  border-color: ${({ checked, theme }: { checked: boolean; theme: Theme }) =>
     checked ? theme.colors.success : theme.colors.border};
-  background-color: ${({ checked, theme }: { checked: boolean; theme: Theme }) => 
+  background-color: ${({ checked, theme }: { checked: boolean; theme: Theme }) =>
     checked ? theme.colors.success : 'transparent'};
   border-radius: 4px;
   align-items: center;
@@ -138,27 +156,37 @@ export default function ResetPasswordScreen() {
 
   const getStrengthColor = () => {
     switch (passwordStrength) {
-      case 'weak': return theme.colors.error;
-      case 'fair': return '#ea580c';
-      case 'good': return '#2563eb';
-      case 'strong': return theme.colors.success;
-      default: return theme.colors.surfaceVariant;
+      case 'weak':
+        return theme.colors.error;
+      case 'fair':
+        return '#ea580c';
+      case 'good':
+        return '#2563eb';
+      case 'strong':
+        return theme.colors.success;
+      default:
+        return theme.colors.surfaceVariant;
     }
   };
 
   const getStrengthValue = () => {
     switch (passwordStrength) {
-      case 'weak': return 1;
-      case 'fair': return 2;
-      case 'good': return 3;
-      case 'strong': return 4;
-      default: return 0;
+      case 'weak':
+        return 1;
+      case 'fair':
+        return 2;
+      case 'good':
+        return 3;
+      case 'strong':
+        return 4;
+      default:
+        return 0;
     }
   };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!passwordValidation.isValid) {
       newErrors.password = passwordValidation.errors[0];
     }
@@ -182,7 +210,10 @@ export default function ResetPasswordScreen() {
       await resetPasswordMutation.mutateAsync({ token, password });
       setSuccess(true);
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to reset password. The link may have expired.');
+      Alert.alert(
+        'Error',
+        error?.message || 'Failed to reset password. The link may have expired.'
+      );
     }
   };
 
@@ -196,13 +227,27 @@ export default function ResetPasswordScreen() {
               <FormCard>
                 <SuccessContainer>
                   <IconContainer>
-                    <CheckCircle2 size={40} color={theme.colors.success} strokeWidth={2} fill={theme.colors.success} />
+                    <CheckCircle2
+                      size={40}
+                      color={theme.colors.success}
+                      strokeWidth={2}
+                      fill={theme.colors.success}
+                    />
                   </IconContainer>
-                  <Text variant="h2" weight="semibold" style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}>
+                  <Text
+                    variant="h2"
+                    weight="semibold"
+                    style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}
+                  >
                     Password Reset Successful
                   </Text>
-                  <Text variant="body" color={theme.colors.text.medium} style={{ textAlign: 'center', marginBottom: theme.spacing[4] }}>
-                    Your password has been reset successfully. You can now sign in with your new password.
+                  <Text
+                    variant="body"
+                    color={theme.colors.text.medium}
+                    style={{ textAlign: 'center', marginBottom: theme.spacing[4] }}
+                  >
+                    Your password has been reset successfully. You can now sign in with your new
+                    password.
                   </Text>
                 </SuccessContainer>
               </FormCard>
@@ -246,10 +291,7 @@ export default function ResetPasswordScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollContent
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollContent contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
           <Content bottomInset={insets.bottom}>
             <FadeIn delay={100}>
               <Text variant="h2" style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}>
@@ -258,7 +300,11 @@ export default function ResetPasswordScreen() {
             </FadeIn>
 
             <SlideIn delay={200} direction="up" distance={30}>
-              <Text variant="body" color={theme.colors.text.medium} style={{ marginBottom: theme.spacing[6], textAlign: 'center' }}>
+              <Text
+                variant="body"
+                color={theme.colors.text.medium}
+                style={{ marginBottom: theme.spacing[6], textAlign: 'center' }}
+              >
                 Please enter your new password below.
               </Text>
             </SlideIn>
@@ -268,7 +314,7 @@ export default function ResetPasswordScreen() {
                 <Input
                   label="New Password"
                   value={password}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setPassword(text);
                     if (errors.password) setErrors({ ...errors, password: '' });
                   }}
@@ -282,7 +328,13 @@ export default function ResetPasswordScreen() {
 
                 {password.length > 0 && (
                   <PasswordStrengthContainer>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
                       <Text variant="caption" color={theme.colors.text.medium}>
                         Password strength
                       </Text>
@@ -306,14 +358,14 @@ export default function ResetPasswordScreen() {
                       passwordChecks.special,
                     ];
                     const isMet = checks[index];
-                    
+
                     return (
                       <RequirementItem key={index}>
                         <Checkbox checked={isMet}>
                           {isMet && <Text style={{ color: '#fff', fontSize: 12 }}>✓</Text>}
                         </Checkbox>
-                        <Text 
-                          variant="caption" 
+                        <Text
+                          variant="caption"
                           color={isMet ? theme.colors.success : theme.colors.text.medium}
                         >
                           {req}
@@ -326,7 +378,7 @@ export default function ResetPasswordScreen() {
                 <Input
                   label="Confirm New Password"
                   value={confirmPassword}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setConfirmPassword(text);
                     if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: '' });
                   }}
@@ -360,4 +412,3 @@ export default function ResetPasswordScreen() {
     </Container>
   );
 }
-

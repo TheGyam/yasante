@@ -1,4 +1,4 @@
- import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { ScrollView, View, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
@@ -15,7 +15,12 @@ import { SharedElement } from '@/shared/components/SharedElement';
 import { VideoPlayer } from '@/shared/ui/VideoPlayer';
 import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
 import { Text } from '@/shared/ui/Text';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+} from 'react-native-reanimated';
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion';
 import { ANIMATION_PRESETS, getAnimationConfig } from '@/shared/utils/animations';
 import type { Theme } from '@/shared/theme/ThemeProvider';
@@ -33,7 +38,8 @@ const Header = styled(Animated.View)<{ topInset: number }>`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding-top: ${({ topInset, theme }: { topInset: number; theme: Theme }) => topInset + theme.spacing[2]}px;
+  padding-top: ${({ topInset, theme }: { topInset: number; theme: Theme }) =>
+    topInset + theme.spacing[2]}px;
   padding-horizontal: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
   padding-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
   z-index: 10;
@@ -105,11 +111,12 @@ const SaveButton = styled(TouchableOpacity)<{ isSaved: boolean }>`
   flex-direction: row;
   align-items: center;
   gap: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
-  background-color: ${({ theme, isSaved }: { theme: Theme; isSaved: boolean }) => isSaved ? theme.colors.primary : theme.colors.surface};
+  background-color: ${({ theme, isSaved }: { theme: Theme; isSaved: boolean }) =>
+    isSaved ? theme.colors.primary : theme.colors.surface};
   padding-horizontal: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
   padding-vertical: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
   border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  border-width: ${({ isSaved }: { isSaved: boolean }) => isSaved ? 0 : 1}px;
+  border-width: ${({ isSaved }: { isSaved: boolean }) => (isSaved ? 0 : 1)}px;
   border-color: ${({ theme }: { theme: Theme }) => theme.colors.border};
 `;
 
@@ -147,19 +154,22 @@ const SimilarPostCard = styled(TouchableOpacity)`
   background-color: ${({ theme }: { theme: Theme }) => theme.colors.surfaceVariant};
 `;
 
-
 export default function InspoPostDetailScreen() {
-  const params = useLocalSearchParams<{ id: string | string[]; returnTo?: string; query?: string }>();
+  const params = useLocalSearchParams<{
+    id: string | string[];
+    returnTo?: string;
+    query?: string;
+  }>();
   const { returnTo, query } = params;
   const { theme } = useTheme();
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  
+
   // Handle id as string or array (Expo Router can return either)
   const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
-  
+
   // Extract original ID (remove the -0, -1, -2 suffix)
   // IDs are in format: content-1-0, content-1-1, etc.
   // We want to extract: content-1
@@ -173,30 +183,30 @@ export default function InspoPostDetailScreen() {
     }
     return idParam;
   }, [idParam]);
-  
+
   // Debug logging
   React.useEffect(() => {
     console.log('InspoPostDetailScreen - id param:', idParam);
     console.log('InspoPostDetailScreen - originalId:', originalId);
   }, [idParam, originalId]);
-  
+
   const { data: content, isLoading, error } = useContentItem(originalId);
   // Only enable related content query when we have both content and topic
   const hasValidTopic = !!(content && content.topic);
   // Pass topic (hook will handle empty string by disabling the query)
-  const { data: relatedContentData } = useRelatedContent(
-    originalId,
-    content?.topic || '',
-    { enabled: hasValidTopic }
-  );
+  const { data: relatedContentData } = useRelatedContent(originalId, content?.topic || '', {
+    enabled: hasValidTopic,
+  });
   const { isAuthenticated, user } = useAuth();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showAddToMoodBoard, setShowAddToMoodBoard] = useState(false);
   const reduceMotion = useReducedMotion();
-  
+
   const userId = user?.id;
   const { data: favorites } = useFavorites(userId || '', { enabled: !!userId });
-  const { data: isFavorite = false } = useIsFavorite(userId || '', originalId, { enabled: !!userId });
+  const { data: isFavorite = false } = useIsFavorite(userId || '', originalId, {
+    enabled: !!userId,
+  });
   const toggleFavorite = useToggleFavorite(userId || '');
 
   // Animation values for fade-in effects
@@ -207,23 +217,17 @@ export default function InspoPostDetailScreen() {
   useEffect(() => {
     // Only animate if not coming from search (shared element transition)
     const shouldAnimate = returnTo !== 'search';
-    
+
     if (shouldAnimate && content) {
       // Delay animations to start after shared element transition (300-400ms)
       const headerDelay = 350;
       const contentDelay = 400;
-      
+
       const fadeInConfig = getAnimationConfig(ANIMATION_PRESETS.fadeIn, reduceMotion);
-      
-      headerOpacity.value = withDelay(
-        headerDelay,
-        withTiming(1, fadeInConfig)
-      );
-      
-      contentOpacity.value = withDelay(
-        contentDelay,
-        withTiming(1, fadeInConfig)
-      );
+
+      headerOpacity.value = withDelay(headerDelay, withTiming(1, fadeInConfig));
+
+      contentOpacity.value = withDelay(contentDelay, withTiming(1, fadeInConfig));
     } else {
       // If coming from search, show immediately
       headerOpacity.value = 1;
@@ -239,7 +243,7 @@ export default function InspoPostDetailScreen() {
   const contentAnimatedStyle = useAnimatedStyle(() => ({
     opacity: contentOpacity.value,
   }));
-  
+
   // Calculate saves count (mock - in real app, this would come from API)
   // For now, we'll use a mock number based on content ID
   const savesCount = React.useMemo(() => {
@@ -248,7 +252,7 @@ export default function InspoPostDetailScreen() {
     const hash = originalId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return 100 + (hash % 500); // Random number between 100-600
   }, [originalId]);
-  
+
   // Debug logging for content
   React.useEffect(() => {
     if (content) {
@@ -261,7 +265,11 @@ export default function InspoPostDetailScreen() {
 
   // Get similar posts (same topic, exclude current) - using cursor-based pagination
   const similarPosts = useMemo(() => {
-    if (!relatedContentData?.pages || !Array.isArray(relatedContentData.pages) || relatedContentData.pages.length === 0) {
+    if (
+      !relatedContentData?.pages ||
+      !Array.isArray(relatedContentData.pages) ||
+      relatedContentData.pages.length === 0
+    ) {
       return [];
     }
     // Flatten all pages and take first 2 items
@@ -292,7 +300,7 @@ export default function InspoPostDetailScreen() {
 
   // Intercept gesture navigation (swipe back) to ensure proper navigation
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+    const unsubscribe = navigation.addListener('beforeRemove', e => {
       // Only intercept if we came from search and we're not already navigating
       if (returnTo === 'search' && !isNavigatingRef.current) {
         // Only intercept actual back actions (POP, not our own navigation)
@@ -316,7 +324,7 @@ export default function InspoPostDetailScreen() {
       setShowAuthPrompt(true);
       return;
     }
-    
+
     if (originalId && userId) {
       toggleFavorite.mutate(originalId);
     }
@@ -348,12 +356,30 @@ export default function InspoPostDetailScreen() {
   if (error || !content) {
     return (
       <Container>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing[4] }}>
-          <Text variant="h3" weight="semibold" color={theme.colors.text.high} style={{ marginBottom: theme.spacing[2] }}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: theme.spacing[4],
+          }}
+        >
+          <Text
+            variant="h3"
+            weight="semibold"
+            color={theme.colors.text.high}
+            style={{ marginBottom: theme.spacing[2] }}
+          >
             Post not found
           </Text>
-          <Text variant="body" color={theme.colors.text.medium} style={{ marginBottom: theme.spacing[4], textAlign: 'center' }}>
-            {error ? 'Unable to load this post. Please try again.' : 'The post you\'re looking for doesn\'t exist.'}
+          <Text
+            variant="body"
+            color={theme.colors.text.medium}
+            style={{ marginBottom: theme.spacing[4], textAlign: 'center' }}
+          >
+            {error
+              ? 'Unable to load this post. Please try again.'
+              : "The post you're looking for doesn't exist."}
           </Text>
           <TouchableOpacity
             onPress={handleBack}
@@ -390,7 +416,11 @@ export default function InspoPostDetailScreen() {
                 />
               ) : (
                 <ImageWithPlaceholder
-                  source={{ uri: content.thumbnailUri || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80' }}
+                  source={{
+                    uri:
+                      content.thumbnailUri ||
+                      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80',
+                  }}
                   style={{ width: '100%', height: '100%' }}
                   resizeMode="cover"
                 />
@@ -406,7 +436,11 @@ export default function InspoPostDetailScreen() {
                 />
               ) : (
                 <ImageWithPlaceholder
-                  source={{ uri: content.thumbnailUri || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80' }}
+                  source={{
+                    uri:
+                      content.thumbnailUri ||
+                      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80',
+                  }}
                   style={{ width: '100%', height: '100%' }}
                   resizeMode="cover"
                 />
@@ -421,13 +455,16 @@ export default function InspoPostDetailScreen() {
             <ArrowLeft size={20} color="#000000" strokeWidth={2.5} />
           </BackButton>
           <HeaderRight>
-            <HeaderButton onPress={() => {
-              if (!isAuthenticated) {
-                setShowAuthPrompt(true);
-              } else {
-                setShowAddToMoodBoard(true);
-              }
-            }} activeOpacity={0.7}>
+            <HeaderButton
+              onPress={() => {
+                if (!isAuthenticated) {
+                  setShowAuthPrompt(true);
+                } else {
+                  setShowAddToMoodBoard(true);
+                }
+              }}
+              activeOpacity={0.7}
+            >
               <LayoutGrid size={18} color="#fff" strokeWidth={2.5} />
             </HeaderButton>
             <HeaderButton onPress={handleShare} activeOpacity={0.7}>
@@ -443,9 +480,15 @@ export default function InspoPostDetailScreen() {
         <ContentSection style={contentAnimatedStyle}>
           {/* Saves count */}
           <SavesCount>
-            <Bookmark size={18} color={theme.colors.primary} fill={theme.colors.primary} strokeWidth={2} />
+            <Bookmark
+              size={18}
+              color={theme.colors.primary}
+              fill={theme.colors.primary}
+              strokeWidth={2}
+            />
             <Text variant="body" weight="semibold" color={theme.colors.text.high}>
-              {savesCount.toLocaleString()} {savesCount === 1 ? 'person has' : 'people have'} saved this inspiration
+              {savesCount.toLocaleString()} {savesCount === 1 ? 'person has' : 'people have'} saved
+              this inspiration
             </Text>
           </SavesCount>
 
@@ -459,20 +502,16 @@ export default function InspoPostDetailScreen() {
                 <MoreHorizontal size={22} color={theme.colors.text.high} strokeWidth={2.5} />
               </ActionButton>
             </LeftActions>
-            <SaveButton 
-              onPress={handleSave} 
-              activeOpacity={0.8}
-              isSaved={isFavorite}
-            >
-              <Bookmark 
-                size={18} 
-                color={isFavorite ? '#fff' : theme.colors.text.high} 
-                fill={isFavorite ? '#fff' : 'none'} 
-                strokeWidth={2.5} 
+            <SaveButton onPress={handleSave} activeOpacity={0.8} isSaved={isFavorite}>
+              <Bookmark
+                size={18}
+                color={isFavorite ? '#fff' : theme.colors.text.high}
+                fill={isFavorite ? '#fff' : 'none'}
+                strokeWidth={2.5}
               />
-              <Text 
-                variant="body" 
-                weight="semibold" 
+              <Text
+                variant="body"
+                weight="semibold"
                 color={isFavorite ? '#fff' : theme.colors.text.high}
               >
                 {isFavorite ? 'Saved' : 'Save'}
@@ -487,14 +526,18 @@ export default function InspoPostDetailScreen() {
                 More to explore
               </SectionTitle>
               <SimilarPostsGrid>
-                {similarPosts.map((post) => (
+                {similarPosts.map(post => (
                   <SimilarPostCard
                     key={post.id}
                     onPress={() => handleSimilarPostPress(`${post.id}-0`)}
                     activeOpacity={0.9}
                   >
                     <ImageWithPlaceholder
-                      source={{ uri: post.thumbnailUri || 'https://images.unsplash.com/photo-1492106087820-71f1a00d2b11?w=400&h=600&fit=crop&q=80' }}
+                      source={{
+                        uri:
+                          post.thumbnailUri ||
+                          'https://images.unsplash.com/photo-1492106087820-71f1a00d2b11?w=400&h=600&fit=crop&q=80',
+                      }}
                       style={{ width: '100%', height: '100%' }}
                       resizeMode="cover"
                     />
@@ -502,8 +545,8 @@ export default function InspoPostDetailScreen() {
                 ))}
               </SimilarPostsGrid>
             </MoreToExploreSection>
-        )}
-      </ContentSection>
+          )}
+        </ContentSection>
       </ScrollView>
       <AuthPromptModal
         visible={showAuthPrompt}
@@ -521,4 +564,3 @@ export default function InspoPostDetailScreen() {
     </Container>
   );
 }
-
