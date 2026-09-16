@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useAuth } from '@/features/auth';
-import { Text } from '@/shared/ui/Text';
+import { Text } from '@/shared/legacy/ui/Text';
 import { getNextGreeting } from '@/shared/utils/greetings';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { ANIMATION_PRESETS, getAnimationConfig } from '@/shared/utils/animations';
-import { useReducedMotion } from '@/shared/hooks/useReducedMotion';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import { useReducedMotion } from '@/shared/legacy/hooks/useReducedMotion';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const BannerContainer = styled.View`
   justify-content: flex-start;

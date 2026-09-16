@@ -13,10 +13,10 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useAuth } from '@/features/auth';
-import { Text } from '@/shared/ui/Text';
-import { Switch } from '@/shared/ui/Switch';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Switch } from '@/shared/legacy/ui/Switch';
 
 export default function SettingsScreen() {
   const { theme, colorScheme, setColorScheme } = useTheme();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Home, Calendar, User } from 'lucide-react-native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 
 export type TabIconName = 'home' | 'planner' | 'profile';
 

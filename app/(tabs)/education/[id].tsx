@@ -5,17 +5,17 @@ import { useNavigation } from '@react-navigation/native';
 import styled from 'styled-components/native';
 import { X, Heart, ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useContentItem } from '@/features/education';
 import { useToggleFavorite, useIsFavorite } from '@/features/education';
 import { useAuth } from '@/features/auth';
 import { AuthPromptModal } from '@/features/auth';
-import { SharedElement } from '@/shared/components/SharedElement';
-import { VideoPlayer } from '@/shared/ui/VideoPlayer';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
-import { Text } from '@/shared/ui/Text';
-import { Avatar } from '@/shared/ui/Avatar';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import { SharedElement } from '@/shared/legacy/components/SharedElement';
+import { VideoPlayer } from '@/shared/legacy/ui/VideoPlayer';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Avatar } from '@/shared/legacy/ui/Avatar';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const ScreenContainer = styled.View`
   flex: 1;

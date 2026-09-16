@@ -14,15 +14,15 @@ import {
   Sunset,
   Moon,
 } from 'lucide-react-native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useCreateTreatment } from '@/features/planner';
 import { useAuth } from '@/features/auth';
-import { Input } from '@/shared/ui/Input';
-import { Button } from '@/shared/ui/Button';
-import { Text } from '@/shared/ui/Text';
-import { Card } from '@/shared/ui/Card';
+import { Input } from '@/shared/legacy/ui/Input';
+import { Button } from '@/shared/legacy/ui/Button';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Card } from '@/shared/legacy/ui/Card';
 import { isRequired } from '@/shared/utils/validation';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 import {
   format,
   startOfMonth,

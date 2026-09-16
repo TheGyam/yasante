@@ -10,7 +10,7 @@ import { GreetingBanner } from '../GreetingBanner';
 // No useTheme mock: styled components read the theme from context, so the tests
 // render inside the real provider via renderWithTheme.
 
-jest.mock('@/shared/hooks/useReducedMotion', () => ({
+jest.mock('@/shared/legacy/hooks/useReducedMotion', () => ({
   useReducedMotion: () => false,
 }));
 

@@ -1,16 +1,16 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
-import { SharedElement } from '@/shared/components/SharedElement';
+import { SharedElement } from '@/shared/legacy/components/SharedElement';
 import { Play, Heart } from 'lucide-react-native';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Text } from '@/shared/ui/Text';
-import { Badge } from '@/shared/ui/Badge';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Badge } from '@/shared/legacy/ui/Badge';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
 import { Content } from '@/features/education';
 import { useToggleFavorite, useIsFavorite } from '@/features/education';
 import { useAuth } from '@/features/auth';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const CardContainer = styled(TouchableOpacity)`
   width: 220px;

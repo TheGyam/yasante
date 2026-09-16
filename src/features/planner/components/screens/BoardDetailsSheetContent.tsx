@@ -4,8 +4,8 @@ import { Lock, Globe, MapPin, Calendar, FileText } from 'lucide-react-native';
 import { format } from 'date-fns';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { Text } from '@/shared/ui/Text';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { MoodBoardEntry } from '@/features/planner';
 
 interface BoardDetailsSheetContentProps {

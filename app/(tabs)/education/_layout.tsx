@@ -1,12 +1,11 @@
 import { Stack } from 'expo-router';
+import { useStackOptions } from '@/shared/ui/stackOptions';
 
 export default function EducationLayout() {
+  const screenOptions = useStackOptions();
   return (
     <Stack
-      screenOptions={{
-        headerShown: false,
-        animation: 'slide_from_right',
-      }}
+      screenOptions={screenOptions}
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="[id]" />

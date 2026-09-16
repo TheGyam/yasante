@@ -1,12 +1,12 @@
 import React from 'react';
 import { ScrollView, View, TouchableOpacity, Image } from 'react-native';
 import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { ProgressPhoto } from '@/features/planner';
-import { Text } from '@/shared/ui/Text';
+import { Text } from '@/shared/legacy/ui/Text';
 import { formatFriendlyDate } from '@/shared/utils/date';
-import { FadeIn } from '@/shared/animations/FadeIn';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import { FadeIn } from '@/shared/legacy/animations/FadeIn';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const Container = styled.ScrollView`
   flex: 1;

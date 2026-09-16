@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yasante.app"
+      "bundleIdentifier": "com.yasante.app",
+      "infoPlist": {
+        "CADisableMinimumFrameDurationOnPhone": true
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +30,8 @@
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA"
-      ]
+      ],
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -66,6 +70,10 @@
         "projectId": "9dbcb957-3709-4ef6-b6e0-1f5800eb2c43"
       }
     },
-    "owner": "mandey"
+    "owner": "mandey",
+    "experiments": {
+      "reactCompiler": true,
+      "typedRoutes": false
+    }
   }
 }

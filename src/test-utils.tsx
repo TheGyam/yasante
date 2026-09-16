@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, RenderOptions, waitFor } from '@testing-library/react-native';
-import { ThemeProvider } from '@/shared/theme/ThemeProvider';
+import { ThemeProvider } from '@/shared/legacy/theme/ThemeProvider';
 
 /**
  * Render with the app's providers in place.

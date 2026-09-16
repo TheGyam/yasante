@@ -1,208 +1,107 @@
-import React from 'react';
-import { ActivityIndicator, TouchableOpacity, TouchableOpacityProps } from 'react-native';
-import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { ActivityIndicator, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import type { LucideIcon } from 'lucide-react-native';
+import { fonts, makeStyles, radius, space, useTheme, type Theme } from '@/shared/theme';
+import { PressableScale, type PressableScaleProps } from './PressableScale';
 import { Text } from './Text';
-import { useReducedMotion } from '@/shared/hooks/useReducedMotion';
-import type { Theme } from '@/shared/theme/ThemeProvider';
 
-// Conditionally import Reanimated
-const Animated = (() => {
-  try {
-    return require('react-native-reanimated').default;
-  } catch {
-    return require('react-native').Animated;
-  }
-})();
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonSize = 'lg' | 'md' | 'sm';
 
-const useSharedValue = (() => {
-  try {
-    return require('react-native-reanimated').useSharedValue;
-  } catch {
-    return (value: number) => ({ value });
-  }
-})();
-
-const useAnimatedStyle = (() => {
-  try {
-    return require('react-native-reanimated').useAnimatedStyle;
-  } catch {
-    return (fn: () => any) => fn();
-  }
-})();
-
-const withSpring = (() => {
-  try {
-    return require('react-native-reanimated').withSpring;
-  } catch {
-    return (value: number) => value;
-  }
-})();
-
-const withTiming = (() => {
-  try {
-    return require('react-native-reanimated').withTiming;
-  } catch {
-    return (value: number) => value;
-  }
-})();
-
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
-
-interface StyledButtonProps {
-  variant: ButtonVariant;
-  disabled?: boolean;
+export interface ButtonProps extends Omit<PressableScaleProps, 'children' | 'style'> {
+  label: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  icon?: LucideIcon;
+  trailingIcon?: LucideIcon;
+  loading?: boolean;
   fullWidth?: boolean;
-  size?: 'small' | 'medium' | 'large';
+  style?: StyleProp<ViewStyle>;
 }
 
-const StyledButtonBase = Animated?.createAnimatedComponent(TouchableOpacity) || TouchableOpacity;
-const StyledButton = styled(StyledButtonBase)<StyledButtonProps>`
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  padding: ${({ size, theme }: { size?: 'small' | 'medium' | 'large'; theme: Theme }) => {
-    switch (size) {
-      case 'small':
-        return `${theme.spacing[2]}px ${theme.spacing[4]}px`;
-      case 'large':
-        return `${theme.spacing[4]}px ${theme.spacing[6]}px`;
-      default:
-        return `${theme.spacing[3]}px ${theme.spacing[5]}px`;
-    }
-  }};
-  min-height: ${({ size }: { size?: 'small' | 'medium' | 'large' }) => {
-    switch (size) {
-      case 'small':
-        return '36px';
-      case 'large':
-        return '56px';
-      default:
-        return '44px';
-    }
-  }};
-  width: ${({ fullWidth }: { fullWidth?: boolean }) => (fullWidth ? '100%' : 'auto')};
-  background-color: ${({
-    variant,
-    theme,
-    disabled,
-  }: {
-    variant: ButtonVariant;
-    theme: Theme;
-    disabled?: boolean;
-  }) => {
-    if (disabled) return theme.colors.surfaceVariant;
-    switch (variant) {
-      case 'primary':
-        return theme.colors.primary;
-      case 'secondary':
-        return theme.colors.accent;
-      case 'outline':
-        return 'transparent';
-      case 'ghost':
-        return 'transparent';
-      default:
-        return theme.colors.primary;
-    }
-  }};
-  border-width: ${({ variant }: { variant: ButtonVariant }) =>
-    variant === 'outline' ? '1px' : '0px'};
-  border-color: ${({ theme, disabled }: { theme: Theme; disabled?: boolean }) =>
-    disabled ? theme.colors.border : theme.colors.primary};
-  opacity: ${({ disabled }: { disabled?: boolean }) => (disabled ? 0.5 : 1)};
-`;
+const sizes = StyleSheet.create({
+  lg: { height: 56, paddingHorizontal: space.xxl },
+  md: { height: 48, paddingHorizontal: space.xl },
+  sm: { height: 36, paddingHorizontal: space.md + 2 },
+});
 
-export interface ButtonProps extends TouchableOpacityProps {
-  variant?: ButtonVariant;
-  loading?: boolean;
-  disabled?: boolean;
-  fullWidth?: boolean;
-  size?: 'small' | 'medium' | 'large';
-  children: React.ReactNode;
-  testID?: string;
+const labels = StyleSheet.create({
+  lg: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 20 },
+  md: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 20 },
+  sm: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 18 },
+});
+
+const ICON_SIZE: Record<ButtonSize, number> = { lg: 20, md: 18, sm: 16 };
+
+const useStyles = makeStyles(t => ({
+  base: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+    borderRadius: radius.pill,
+  },
+  fullWidth: { alignSelf: 'stretch' },
+  primary: { backgroundColor: t.colors.accent },
+  secondary: {
+    backgroundColor: t.colors.glass.fillStrong,
+    borderWidth: 1,
+    borderColor: t.colors.glass.border,
+    borderTopColor: t.colors.glass.highlight,
+  },
+  ghost: { backgroundColor: 'transparent' },
+  danger: { backgroundColor: t.colors.dangerSoft },
+}));
+
+function contentColor(theme: Theme, variant: ButtonVariant) {
+  switch (variant) {
+    case 'primary':
+      return theme.colors.text.onAccent;
+    case 'secondary':
+      return theme.colors.text.primary;
+    case 'ghost':
+      return theme.colors.accent;
+    case 'danger':
+      return theme.colors.danger;
+  }
 }
 
 export function Button({
+  label,
   variant = 'primary',
+  size = 'lg',
+  icon: Icon,
+  trailingIcon: TrailingIcon,
   loading = false,
-  disabled = false,
   fullWidth = false,
-  size = 'medium',
-  children,
-  testID,
-  accessible = true,
-  accessibilityLabel,
-  accessibilityRole = 'button',
-  accessibilityState,
-  onPress,
+  disabled,
   style,
-  ...props
+  ...rest
 }: ButtonProps) {
-  const { theme } = useTheme();
-  const reduceMotion = useReducedMotion();
-  const scale = useSharedValue(1);
-
-  const textColor =
-    variant === 'primary'
-      ? '#ffffff'
-      : variant === 'secondary'
-        ? theme.colors.text.high
-        : theme.colors.primary;
-
-  const isDisabled = disabled || loading;
-
-  const handlePressIn = () => {
-    if (!isDisabled && !reduceMotion) {
-      scale.value = withSpring(0.96, { damping: 12, stiffness: 200 });
-    }
-  };
-
-  const handlePressOut = () => {
-    if (!isDisabled && !reduceMotion) {
-      scale.value = withSpring(1, { damping: 12, stiffness: 200 });
-    }
-  };
-
-  const animatedStyle = useAnimatedStyle
-    ? useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-      }))
-    : {};
+  const styles = useStyles();
+  const theme = useTheme();
+  const color = contentColor(theme, variant);
+  const iconSize = ICON_SIZE[size];
 
   return (
-    <StyledButton
-      variant={variant}
-      disabled={isDisabled}
-      fullWidth={fullWidth}
-      size={size}
-      testID={testID}
-      accessible={accessible}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole={accessibilityRole}
-      accessibilityState={{ ...accessibilityState, disabled: isDisabled, busy: loading }}
-      onPress={isDisabled ? undefined : onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[style, animatedStyle]}
-      activeOpacity={reduceMotion ? 0.7 : 1}
-      {...props}
+    <PressableScale
+      {...rest}
+      disabled={disabled || loading}
+      accessibilityLabel={rest.accessibilityLabel ?? label}
+      accessibilityState={{ busy: loading }}
+      containerStyle={fullWidth && styles.fullWidth}
+      style={[styles.base, sizes[size], styles[variant], style]}
     >
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'primary' ? '#ffffff' : theme.colors.primary}
-          testID={testID ? `${testID}-loading` : undefined}
-        />
+        <ActivityIndicator color={color} />
       ) : (
-        <Text
-          variant={size === 'small' ? 'label' : 'body'}
-          weight={size === 'large' ? 'semibold' : 'medium'}
-          color={isDisabled ? theme.colors.text.disabled : textColor}
-        >
-          {children}
-        </Text>
+        <>
+          {Icon && <Icon size={iconSize} color={color} strokeWidth={2.2} />}
+          <Text style={[labels[size], { color }]} numberOfLines={1}>
+            {label}
+          </Text>
+          {TrailingIcon && <TrailingIcon size={iconSize} color={color} strokeWidth={2.2} />}
+        </>
       )}
-    </StyledButton>
+    </PressableScale>
   );
 }

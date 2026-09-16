@@ -2,11 +2,11 @@ import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Text } from '@/shared/ui/Text';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
 import { SwipeableFlashcard, FlashcardStep } from './SwipeableFlashcard';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const DIYCardContainer = styled.View`
   margin-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[6]}px;

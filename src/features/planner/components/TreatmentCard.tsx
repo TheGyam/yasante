@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { TouchableOpacity, Platform } from 'react-native';
 import styled from 'styled-components/native';
 import { ChevronDown, ChevronUp, Clock, Calendar, Edit, Share2 } from 'lucide-react-native';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Text } from '@/shared/ui/Text';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
 import { Treatment } from '@/features/planner';
 import { shareTreatment } from '@/features/planner';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 import { format } from 'date-fns';
 
 const CardContainer = styled.View`

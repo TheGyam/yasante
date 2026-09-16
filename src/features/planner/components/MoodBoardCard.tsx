@@ -2,11 +2,11 @@ import React from 'react';
 import { TouchableOpacity, Platform, Dimensions, View } from 'react-native';
 import styled from 'styled-components/native';
 import { MapPin, DollarSign, Calendar } from 'lucide-react-native';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Text } from '@/shared/ui/Text';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
 import { MoodBoardEntry } from '@/features/planner';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 import { format } from 'date-fns';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

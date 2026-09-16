@@ -4,16 +4,16 @@ import { useRouter } from 'expo-router';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Text } from '@/shared/ui/Text';
-import { Card } from '@/shared/ui/Card';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Card } from '@/shared/legacy/ui/Card';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
 import { useMoodBoardEntries, useAddPhotoToMoodBoardEntry } from '@/features/planner';
 import { useAuth } from '@/features/auth';
 import { LayoutGrid, Plus, X } from 'lucide-react-native';
 import { format } from 'date-fns';
 import { Alert } from 'react-native';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const Overlay = styled.View`
   position: absolute;

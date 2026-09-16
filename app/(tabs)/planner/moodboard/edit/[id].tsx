@@ -25,16 +25,16 @@ import {
   ArrowLeft,
   Trash2,
 } from 'lucide-react-native';
-import { DatePickerModal } from '@/shared/components/DatePickerModal';
-import { TimePicker } from '@/shared/components/TimePicker';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { DatePickerModal } from '@/shared/legacy/components/DatePickerModal';
+import { TimePicker } from '@/shared/legacy/components/TimePicker';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import {
   useMoodBoardEntry,
   useUpdateMoodBoardEntry,
   useDeleteMoodBoardEntry,
 } from '@/features/planner';
-import { Text } from '@/shared/ui/Text';
-import { MediaPicker } from '@/shared/components/MediaPicker';
+import { Text } from '@/shared/legacy/ui/Text';
+import { MediaPicker } from '@/shared/legacy/components/MediaPicker';
 import { useAuth } from '@/features/auth';
 import { format } from 'date-fns';
 import { BrutalistInput } from '@/features/planner';

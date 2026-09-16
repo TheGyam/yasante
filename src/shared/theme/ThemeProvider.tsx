@@ -1,176 +1,61 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
-import { ThemeProvider as StyledThemeProvider } from 'styled-components/native';
+import { createContext, useContext, type ReactNode } from 'react';
+import { useColorScheme, StyleSheet } from 'react-native';
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  colors,
-  spacing,
-  radii,
-  fontSizes,
-  lineHeights,
-  fontWeights,
-  fontFamily,
-  iconSizes,
-  shadows,
-  breakpoints,
-} from './tokens';
+import { darkTheme, lightTheme, type Theme } from './themes';
 
-export type ColorScheme = 'light' | 'dark' | 'system';
+export type ThemePreference = 'system' | 'light' | 'dark';
 
-export interface Theme {
-  colors: {
-    primary: string;
-    primaryVariant: string;
-    primaryLight: string;
-    accent: string;
-    accentLight: string;
-    accentDark: string;
-    accentSecondary: string;
-    background: string;
-    surface: string;
-    surfaceVariant: string;
-    border: string;
-    borderLight: string;
-    text: {
-      high: string;
-      medium: string;
-      low: string;
-      disabled: string;
-    };
-    error: string;
-    success: string;
-    warning: string;
-    info: string;
-  };
-  spacing: typeof spacing;
-  radii: typeof radii;
-  fontSizes: typeof fontSizes;
-  lineHeights: typeof lineHeights;
-  fontWeights: typeof fontWeights;
-  fontFamily: typeof fontFamily;
-  iconSizes: typeof iconSizes;
-  shadows: typeof shadows;
-  breakpoints: typeof breakpoints;
-  isDark: boolean;
+interface ThemePreferenceState {
+  preference: ThemePreference;
+  setPreference: (preference: ThemePreference) => void;
 }
 
-interface ThemeContextValue {
-  theme: Theme;
-  colorScheme: ColorScheme;
-  setColorScheme: (scheme: ColorScheme) => void;
-  toggleTheme: () => void;
-}
-
-const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
-
-const THEME_STORAGE_KEY = '@yasante:theme';
-
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemColorScheme = useColorScheme();
-  const [colorScheme, setColorSchemeState] = useState<ColorScheme>('system');
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Load saved theme preference
-  useEffect(() => {
-    const loadTheme = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-        if (saved && (saved === 'light' || saved === 'dark' || saved === 'system')) {
-          setColorSchemeState(saved as ColorScheme);
-        }
-      } catch (error) {
-        console.warn('Failed to load theme preference:', error);
-      } finally {
-        setIsInitialized(true);
-      }
-    };
-    loadTheme();
-  }, []);
-
-  // Save theme preference
-  const setColorScheme = async (scheme: ColorScheme) => {
-    try {
-      await AsyncStorage.setItem(THEME_STORAGE_KEY, scheme);
-      setColorSchemeState(scheme);
-    } catch (error) {
-      console.warn('Failed to save theme preference:', error);
-    }
-  };
-
-  // Determine actual theme (light or dark)
-  const actualScheme = useMemo(() => {
-    if (colorScheme === 'system') {
-      return systemColorScheme || 'light';
-    }
-    return colorScheme;
-  }, [colorScheme, systemColorScheme]);
-
-  const isDark = actualScheme === 'dark';
-
-  // Create theme object
-  const theme: Theme = useMemo(
-    () => ({
-      colors: {
-        primary: colors.primary,
-        primaryVariant: colors.primaryVariant,
-        primaryLight: colors.primaryLight,
-        accent: colors.accent,
-        accentLight: colors.accentLight,
-        accentDark: colors.accentDark,
-        accentSecondary: colors.accentSecondary,
-        background: isDark ? colors.dark.background : colors.light.background,
-        surface: isDark ? colors.dark.surface : colors.light.surface,
-        surfaceVariant: isDark ? colors.dark.surfaceVariant : colors.light.surfaceVariant,
-        border: isDark ? colors.dark.border : colors.light.border,
-        borderLight: isDark ? colors.dark.borderLight : colors.light.borderLight,
-        text: isDark ? colors.dark.text : colors.light.text,
-        error: isDark ? colors.dark.error : colors.light.error,
-        success: isDark ? colors.dark.success : colors.light.success,
-        warning: isDark ? colors.dark.warning : colors.light.warning,
-        info: isDark ? colors.dark.info : colors.light.info,
-      },
-      spacing,
-      radii,
-      fontSizes,
-      lineHeights,
-      fontWeights,
-      fontFamily,
-      iconSizes,
-      shadows,
-      breakpoints,
-      isDark,
+/** The user's choice. The only place the colour scheme is persisted. */
+export const useThemePreference = create<ThemePreferenceState>()(
+  persist(
+    set => ({
+      preference: 'system',
+      setPreference: preference => set({ preference }),
     }),
-    [isDark]
-  );
+    { name: '@yasante:theme-preference', storage: createJSONStorage(() => AsyncStorage) }
+  )
+);
 
-  const toggleTheme = () => {
-    const newScheme = isDark ? 'light' : 'dark';
-    setColorScheme(newScheme);
-  };
+const ThemeContext = createContext<Theme>(darkTheme);
 
-  const value: ThemeContextValue = {
-    theme,
-    colorScheme,
-    setColorScheme,
-    toggleTheme,
-  };
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const preference = useThemePreference(s => s.preference);
+  const system = useColorScheme();
+  const scheme = preference === 'system' ? (system ?? 'dark') : preference;
 
-  // Don't render until theme is loaded to avoid flash
-  if (!isInitialized) {
-    return null;
-  }
+  // Always one of two module-level objects, so consumers only re-render when the
+  // scheme genuinely flips.
+  const theme = scheme === 'dark' ? darkTheme : lightTheme;
 
-  return (
-    <ThemeContext.Provider value={value}>
-      <StyledThemeProvider theme={theme}>{children}</StyledThemeProvider>
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }
 
-export function useTheme(): ThemeContextValue {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within ThemeProvider');
-  }
-  return context;
+export function useTheme(): Theme {
+  return useContext(ThemeContext);
+}
+
+/**
+ * Define a component's styles once per theme, outside render.
+ *
+ * Both variants are created at module load, so the hook is a context read and a
+ * ternary — no allocation, no StyleSheet work, and a stable reference per scheme.
+ *
+ *   const useStyles = makeStyles(t => ({ card: { backgroundColor: t.colors.glass.fill } }));
+ *   const styles = useStyles();
+ */
+export function makeStyles<T extends StyleSheet.NamedStyles<T> | StyleSheet.NamedStyles<any>>(
+  factory: (theme: Theme) => T & StyleSheet.NamedStyles<any>
+): () => T {
+  const light = StyleSheet.create(factory(lightTheme));
+  const dark = StyleSheet.create(factory(darkTheme));
+  return function useStyles() {
+    return useTheme().scheme === 'dark' ? dark : light;
+  };
 }

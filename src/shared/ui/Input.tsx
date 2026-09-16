@@ -1,127 +1,141 @@
-import React, { useState } from 'react';
-import { TextInput, TextInputProps, View, TouchableOpacity } from 'react-native';
-import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useState, type Ref } from 'react';
+import {
+  Pressable,
+  TextInput,
+  View,
+  type StyleProp,
+  type TextInputProps,
+  type ViewStyle,
+} from 'react-native';
+import Animated, {
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { Eye, EyeOff, type LucideIcon } from 'lucide-react-native';
+import { fonts, makeStyles, radius, space, timing, useTheme } from '@/shared/theme';
 import { Text } from './Text';
-import type { Theme } from '@/shared/theme/ThemeProvider';
-
-const Container = styled.View<{ error?: boolean; focused?: boolean }>`
-  margin-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
-`;
-
-const Label = styled(Text)`
-  margin-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[1]}px;
-`;
-
-const InputContainer = styled.View<{ error?: boolean; focused?: boolean }>`
-  flex-direction: row;
-  align-items: center;
-  border-width: 1px;
-  border-color: ${({
-    theme,
-    error,
-    focused,
-  }: {
-    theme: Theme;
-    error?: boolean;
-    focused?: boolean;
-  }) => {
-    if (error) return theme.colors.error;
-    if (focused) return theme.colors.primary;
-    return theme.colors.border;
-  }};
-  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  background-color: ${({ theme }: { theme: Theme }) => theme.colors.surface};
-  padding: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
-  min-height: 44px;
-`;
-
-const StyledInput = styled(TextInput)`
-  flex: 1;
-  color: ${({ theme }: { theme: Theme }) => theme.colors.text.high};
-  font-size: ${({ theme }: { theme: Theme }) => theme.fontSizes[2]}px;
-  padding: 0;
-`;
-
-const ClearButton = styled(TouchableOpacity)`
-  padding: ${({ theme }: { theme: Theme }) => theme.spacing[1]}px;
-  margin-left: ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
-`;
-
-const ErrorText = styled(Text)`
-  margin-top: ${({ theme }: { theme: Theme }) => theme.spacing[1]}px;
-  color: ${({ theme }: { theme: Theme }) => theme.colors.error};
-`;
 
 export interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
-  clearable?: boolean;
-  leftIcon?: React.ReactNode;
-  testID?: string;
+  hint?: string;
+  icon?: LucideIcon;
+  containerStyle?: StyleProp<ViewStyle>;
+  ref?: Ref<TextInput>;
 }
 
+const useStyles = makeStyles(t => ({
+  container: { gap: space.xs + 2 },
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 56,
+    paddingHorizontal: space.lg,
+    gap: space.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    backgroundColor: t.colors.glass.fill,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: space.md,
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    color: t.colors.text.primary,
+  },
+  label: { marginLeft: space.xs },
+  message: { marginLeft: space.xs },
+}));
+
+/**
+ * The focus ring animates on the UI thread from a shared value, so focusing and
+ * blurring a field never re-renders the form around it.
+ */
 export function Input({
   label,
   error,
-  clearable = false,
-  leftIcon,
-  testID,
-  value,
-  onChangeText,
-  placeholderTextColor,
-  multiline,
-  ...props
+  hint,
+  icon: Icon,
+  containerStyle,
+  secureTextEntry,
+  onFocus,
+  onBlur,
+  editable = true,
+  ref,
+  ...rest
 }: InputProps) {
-  const { theme } = useTheme();
-  const [focused, setFocused] = useState(false);
+  const styles = useStyles();
+  const theme = useTheme();
+  const focus = useSharedValue(0);
+  const [concealed, setConcealed] = useState(!!secureTextEntry);
 
-  const handleClear = () => {
-    onChangeText?.('');
+  const idle = error ? theme.colors.danger : theme.colors.glass.border;
+  const active = error ? theme.colors.danger : theme.colors.accent;
+
+  const fieldStyle = useAnimatedStyle(() => ({
+    borderColor: interpolateColor(focus.get(), [0, 1], [idle, active]),
+  }));
+
+  const handleFocus: TextInputProps['onFocus'] = e => {
+    focus.set(withTiming(1, timing.state));
+    onFocus?.(e);
+  };
+  const handleBlur: TextInputProps['onBlur'] = e => {
+    focus.set(withTiming(0, timing.state));
+    onBlur?.(e);
   };
 
   return (
-    <Container error={!!error} focused={focused}>
+    <View style={[styles.container, containerStyle]}>
       {label && (
-        <Label variant="label" color={theme.colors.text.medium}>
+        <Text variant="footnote" tone="secondary" style={styles.label}>
           {label}
-        </Label>
+        </Text>
       )}
-      <InputContainer error={!!error} focused={focused}>
-        {leftIcon && <View style={{ marginRight: 8 }}>{leftIcon}</View>}
-        <StyledInput
-          value={value}
-          onChangeText={onChangeText}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          placeholderTextColor={placeholderTextColor || theme.colors.text.low}
-          multiline={multiline}
-          testID={testID}
-          accessible={true}
-          accessibilityLabel={label}
-          accessibilityRole="text"
-          allowFontScaling={true}
-          {...props}
+      <Animated.View style={[styles.field, fieldStyle, !editable && { opacity: 0.6 }]}>
+        {Icon && <Icon size={18} color={theme.colors.text.tertiary} strokeWidth={2} />}
+        <TextInput
+          ref={ref}
+          {...rest}
+          editable={editable}
+          secureTextEntry={concealed}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          placeholderTextColor={theme.colors.text.tertiary}
+          selectionColor={theme.colors.accent}
+          cursorColor={theme.colors.accent}
+          keyboardAppearance={theme.scheme}
+          maxFontSizeMultiplier={1.4}
+          accessibilityLabel={rest.accessibilityLabel ?? label}
+          style={[styles.input, rest.style]}
         />
-        {clearable && value && value.length > 0 && (
-          <ClearButton
-            onPress={handleClear}
-            testID={testID ? `${testID}-clear` : undefined}
-            accessible={true}
-            accessibilityLabel="Clear input"
+        {secureTextEntry && (
+          <Pressable
+            onPress={() => setConcealed(c => !c)}
+            hitSlop={12}
             accessibilityRole="button"
+            accessibilityLabel={concealed ? 'Show password' : 'Hide password'}
           >
-            <Text variant="caption" color={theme.colors.text.low}>
-              ✕
-            </Text>
-          </ClearButton>
+            {concealed ? (
+              <Eye size={18} color={theme.colors.text.secondary} strokeWidth={2} />
+            ) : (
+              <EyeOff size={18} color={theme.colors.text.secondary} strokeWidth={2} />
+            )}
+          </Pressable>
         )}
-      </InputContainer>
-      {error && (
-        <ErrorText variant="caption" testID={testID ? `${testID}-error` : undefined}>
-          {error}
-        </ErrorText>
+      </Animated.View>
+      {(error || hint) && (
+        <Text
+          variant="footnote"
+          tone={error ? 'danger' : 'tertiary'}
+          style={styles.message}
+          accessibilityLiveRegion={error ? 'polite' : 'none'}
+        >
+          {error || hint}
+        </Text>
       )}
-    </Container>
+    </View>
   );
 }

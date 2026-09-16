@@ -1,14 +1,14 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Card } from '@/shared/ui/Card';
-import { Text } from '@/shared/ui/Text';
-import { Badge } from '@/shared/ui/Badge';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Card } from '@/shared/legacy/ui/Card';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Badge } from '@/shared/legacy/ui/Badge';
 import { Goal } from '@/features/planner';
 import { formatFriendlyDate, getDaysUntil } from '@/shared/utils/date';
 import { useEffect } from 'react';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 // Conditionally import Reanimated
 const Animated = (() => {

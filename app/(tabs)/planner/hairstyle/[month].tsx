@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { ScrollView, View, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useCreateMonthlyHairstyle } from '@/features/planner';
 import { useAuth } from '@/features/auth';
-import { TopBar } from '@/shared/components/TopBar';
-import { Input } from '@/shared/ui/Input';
-import { Button } from '@/shared/ui/Button';
-import { Text } from '@/shared/ui/Text';
-import { Card } from '@/shared/ui/Card';
-import { MediaPicker } from '@/shared/components/MediaPicker';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { TopBar } from '@/shared/legacy/components/TopBar';
+import { Input } from '@/shared/legacy/ui/Input';
+import { Button } from '@/shared/legacy/ui/Button';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Card } from '@/shared/legacy/ui/Card';
+import { MediaPicker } from '@/shared/legacy/components/MediaPicker';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
 import { isRequired } from '@/shared/utils/validation';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const Container = styled.ScrollView`
   flex: 1;

@@ -4,12 +4,12 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useContent } from '@/features/education';
-import { Text } from '@/shared/ui/Text';
-import { Input } from '@/shared/ui/Input';
-import { Badge } from '@/shared/ui/Badge';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Input } from '@/shared/legacy/ui/Input';
+import { Badge } from '@/shared/legacy/ui/Badge';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
 import { Search, ArrowLeft, Clock, TrendingUp, Play } from 'lucide-react-native';
 import {
   getRecentSearches,
@@ -20,7 +20,7 @@ import {
 import { smartSearch, getSearchSuggestions, SearchResult } from '@/shared/utils/smartSearch';
 import { Content } from '@/features/education';
 import { AuthPromptModal } from '@/features/auth';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const Container = styled.View`
   flex: 1;

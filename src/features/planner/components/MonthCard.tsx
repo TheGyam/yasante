@@ -2,11 +2,11 @@ import React from 'react';
 import { TouchableOpacity, View, Platform } from 'react-native';
 import styled from 'styled-components/native';
 import { Droplets, Scissors, Image as ImageIcon } from 'lucide-react-native';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Text } from '@/shared/ui/Text';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
 import { MonthlyCalendar, Goal } from '@/features/planner';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const CardContainer = styled.View`
   margin-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;

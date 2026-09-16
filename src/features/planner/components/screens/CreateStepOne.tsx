@@ -10,8 +10,8 @@ import {
   User,
   Plus,
 } from 'lucide-react-native';
-import { Text } from '@/shared/ui/Text';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { BrutalistInput } from '../ui/BrutalistInput';
 
 interface CreateStepOneProps {

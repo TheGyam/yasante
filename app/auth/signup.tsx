@@ -10,13 +10,13 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Input } from '@/shared/ui/Input';
-import { Text } from '@/shared/ui/Text';
-import { Card } from '@/shared/ui/Card';
-import { TopBar } from '@/shared/components/TopBar';
-import { FadeIn } from '@/shared/animations/FadeIn';
-import { SlideIn } from '@/shared/animations/SlideIn';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Input } from '@/shared/legacy/ui/Input';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Card } from '@/shared/legacy/ui/Card';
+import { TopBar } from '@/shared/legacy/components/TopBar';
+import { FadeIn } from '@/shared/legacy/animations/FadeIn';
+import { SlideIn } from '@/shared/legacy/animations/SlideIn';
 import { useSignup } from '@/features/auth';
 import {
   isValidEmail,
@@ -27,7 +27,7 @@ import {
 } from '@/shared/utils/validation';
 import { useConsentStore } from '@/shared/config/consentStore';
 import { TERMS_URL, PRIVACY_URL } from '@/shared/config/policies';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const Container = styled.View`
   flex: 1;
