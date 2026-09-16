@@ -3,10 +3,10 @@ import { ScrollView, View, Alert, TouchableOpacity, KeyboardAvoidingView, Platfo
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { Text } from '@/components/ui/Text';
-import { BrutalistInput } from '@/components/moodboard/ui/BrutalistInput';
-import { isRequired } from '@/utils/validation';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { Text } from '@/shared/ui/Text';
+import { BrutalistInput } from '@/features/planner';
+import { isRequired } from '@/shared/utils/validation';
 
 export default function ReportProblemScreen() {
   const { theme } = useTheme();

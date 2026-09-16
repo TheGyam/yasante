@@ -3,15 +3,15 @@ import { ScrollView, View, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
 import { Sparkles, RefreshCw, Calendar as CalendarIcon, Clock, Check, ChevronLeft, ChevronRight, Sun, Sunset, Moon } from 'lucide-react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { useCreateTreatment } from '@/api/hooks/useTreatments';
-import { useAuth } from '@/contexts/AuthContext';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { Text } from '@/components/ui/Text';
-import { Card } from '@/components/ui/Card';
-import { isRequired } from '@/utils/validation';
-import type { Theme } from '@/theme/ThemeProvider';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useCreateTreatment } from '@/features/planner';
+import { useAuth } from '@/features/auth';
+import { Input } from '@/shared/ui/Input';
+import { Button } from '@/shared/ui/Button';
+import { Text } from '@/shared/ui/Text';
+import { Card } from '@/shared/ui/Card';
+import { isRequired } from '@/shared/utils/validation';
+import type { Theme } from '@/shared/theme/ThemeProvider';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay, isSameMonth } from 'date-fns';
 
 const Container = styled.ScrollView`

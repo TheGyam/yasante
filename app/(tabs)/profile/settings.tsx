@@ -4,10 +4,10 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Moon, Sun, LogOut, FileText, Shield, AlertTriangle, ChevronRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { useTheme } from '@/hooks/useTheme';
-import { useAuth } from '@/contexts/AuthContext';
-import { Text } from '@/components/ui/Text';
-import { Switch } from '@/components/ui/Switch';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useAuth } from '@/features/auth';
+import { Text } from '@/shared/ui/Text';
+import { Switch } from '@/shared/ui/Switch';
 
 export default function SettingsScreen() {
   const { theme, colorScheme, setColorScheme } = useTheme();

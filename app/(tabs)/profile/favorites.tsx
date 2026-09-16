@@ -3,12 +3,12 @@ import { ScrollView, View, TouchableOpacity, useWindowDimensions, ActivityIndica
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Heart, Play, BookOpen, Image as ImageIcon } from 'lucide-react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { useFavorites, useContent, useToggleFavorite, useIsFavorite } from '@/api/hooks/useContent';
-import { useAuth } from '@/contexts/AuthContext';
-import { Text } from '@/components/ui/Text';
-import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
-import { formatRelativeTime } from '@/utils/date';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useFavorites, useContent, useToggleFavorite, useIsFavorite } from '@/features/education';
+import { useAuth } from '@/features/auth';
+import { Text } from '@/shared/ui/Text';
+import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { formatRelativeTime } from '@/shared/utils/date';
 
 const tabs = [
   { id: 'inspiration', label: 'Inspiration', icon: <ImageIcon size={14} /> },

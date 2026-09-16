@@ -5,17 +5,17 @@ import { useNavigation } from '@react-navigation/native';
 import styled from 'styled-components/native';
 import { X, Heart, ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/hooks/useTheme';
-import { useContentItem } from '@/api/hooks/useContent';
-import { useToggleFavorite, useIsFavorite } from '@/api/hooks/useContent';
-import { useAuth } from '@/contexts/AuthContext';
-import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
-import { SharedElement } from 'react-native-shared-element';
-import { VideoPlayer } from '@/components/ui/VideoPlayer';
-import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
-import { Text } from '@/components/ui/Text';
-import { Avatar } from '@/components/ui/Avatar';
-import type { Theme } from '@/theme/ThemeProvider';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useContentItem } from '@/features/education';
+import { useToggleFavorite, useIsFavorite } from '@/features/education';
+import { useAuth } from '@/features/auth';
+import { AuthPromptModal } from '@/features/auth';
+import { SharedElement } from '@/shared/components/SharedElement';
+import { VideoPlayer } from '@/shared/ui/VideoPlayer';
+import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { Text } from '@/shared/ui/Text';
+import { Avatar } from '@/shared/ui/Avatar';
+import type { Theme } from '@/shared/theme/ThemeProvider';
 
 const ScreenContainer = styled.View`
   flex: 1;

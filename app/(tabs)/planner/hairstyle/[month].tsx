@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { ScrollView, View, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
-import { useTheme } from '@/hooks/useTheme';
-import { useCreateMonthlyHairstyle } from '@/api/hooks/useMonthlyHairstyles';
-import { useAuth } from '@/contexts/AuthContext';
-import { TopBar } from '@/components/composed/TopBar';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { Text } from '@/components/ui/Text';
-import { Card } from '@/components/ui/Card';
-import { MediaPicker } from '@/components/composed/MediaPicker';
-import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
-import { isRequired } from '@/utils/validation';
-import type { Theme } from '@/theme/ThemeProvider';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useCreateMonthlyHairstyle } from '@/features/planner';
+import { useAuth } from '@/features/auth';
+import { TopBar } from '@/shared/components/TopBar';
+import { Input } from '@/shared/ui/Input';
+import { Button } from '@/shared/ui/Button';
+import { Text } from '@/shared/ui/Text';
+import { Card } from '@/shared/ui/Card';
+import { MediaPicker } from '@/shared/components/MediaPicker';
+import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { isRequired } from '@/shared/utils/validation';
+import type { Theme } from '@/shared/theme/ThemeProvider';
 
 const Container = styled.ScrollView`
   flex: 1;
@@ -99,6 +99,7 @@ export default function AddHairstyleScreen() {
       }
       await createHairstyle.mutateAsync({
         month,
+        userId: user.id,
         photoUri,
         thumbnailUri: photoUri, // In a real app, generate thumbnail
         notes: notes || undefined,

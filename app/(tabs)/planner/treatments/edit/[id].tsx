@@ -3,16 +3,16 @@ import { ScrollView, View, TouchableOpacity, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
 import { Sparkles, RefreshCw, Calendar as CalendarIcon, Clock, Check, ChevronLeft, ChevronRight, Sun, Sunset, Moon, Share2 } from 'lucide-react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { useTreatment, useUpdateTreatment } from '@/api/hooks/useTreatments';
-import { useAuth } from '@/contexts/AuthContext';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { Text } from '@/components/ui/Text';
-import { Card } from '@/components/ui/Card';
-import { isRequired } from '@/utils/validation';
-import { shareTreatment } from '@/utils/share';
-import type { Theme } from '@/theme/ThemeProvider';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useTreatment, useUpdateTreatment } from '@/features/planner';
+import { useAuth } from '@/features/auth';
+import { Input } from '@/shared/ui/Input';
+import { Button } from '@/shared/ui/Button';
+import { Text } from '@/shared/ui/Text';
+import { Card } from '@/shared/ui/Card';
+import { isRequired } from '@/shared/utils/validation';
+import { shareTreatment } from '@/features/planner';
+import type { Theme } from '@/shared/theme/ThemeProvider';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay, isSameMonth, parseISO } from 'date-fns';
 
 const Container = styled.ScrollView`

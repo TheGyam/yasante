@@ -2,17 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
-import { useTheme } from '@/hooks/useTheme';
-import { useMonthlyHairstyle, useUpdateMonthlyHairstyle, useDeleteMonthlyHairstyle } from '@/api/hooks/useMonthlyHairstyles';
-import { TopBar } from '@/components/composed/TopBar';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { Text } from '@/components/ui/Text';
-import { Card } from '@/components/ui/Card';
-import { MediaPicker } from '@/components/composed/MediaPicker';
-import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useMonthlyHairstyle, useUpdateMonthlyHairstyle, useDeleteMonthlyHairstyle } from '@/features/planner';
+import { TopBar } from '@/shared/components/TopBar';
+import { Input } from '@/shared/ui/Input';
+import { Button } from '@/shared/ui/Button';
+import { Text } from '@/shared/ui/Text';
+import { Card } from '@/shared/ui/Card';
+import { MediaPicker } from '@/shared/components/MediaPicker';
+import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
 import { Trash2 } from 'lucide-react-native';
-import type { Theme } from '@/theme/ThemeProvider';
+import type { Theme } from '@/shared/theme/ThemeProvider';
 
 const Container = styled.ScrollView`
   flex: 1;

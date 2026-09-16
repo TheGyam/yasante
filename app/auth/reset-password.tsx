@@ -3,17 +3,17 @@ import { ScrollView, View, ActivityIndicator, KeyboardAvoidingView, Platform, Al
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
-import { useTheme } from '@/hooks/useTheme';
-import { Input } from '@/components/ui/Input';
-import { Text } from '@/components/ui/Text';
-import { Card } from '@/components/ui/Card';
-import { TopBar } from '@/components/composed/TopBar';
-import { FadeIn } from '@/components/animations/FadeIn';
-import { SlideIn } from '@/components/animations/SlideIn';
-import { useResetPassword } from '@/api/hooks/useAuth';
-import { validatePassword, getPasswordStrength, getPasswordRequirements } from '@/utils/validation';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { Input } from '@/shared/ui/Input';
+import { Text } from '@/shared/ui/Text';
+import { Card } from '@/shared/ui/Card';
+import { TopBar } from '@/shared/components/TopBar';
+import { FadeIn } from '@/shared/animations/FadeIn';
+import { SlideIn } from '@/shared/animations/SlideIn';
+import { useResetPassword } from '@/features/auth';
+import { validatePassword, getPasswordStrength, getPasswordRequirements } from '@/shared/utils/validation';
 import { CheckCircle2 } from 'lucide-react-native';
-import type { Theme } from '@/theme/ThemeProvider';
+import type { Theme } from '@/shared/theme/ThemeProvider';
 
 const Container = styled.View`
   flex: 1;
@@ -24,7 +24,7 @@ const ScrollContent = styled.ScrollView`
   flex: 1;
 `;
 
-const Content = styled.View`
+const Content = styled.View<{ bottomInset: number }>`
   padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
   padding-bottom: ${({ bottomInset, theme }: { bottomInset: number; theme: Theme }) => bottomInset + theme.spacing[4]}px;
 `;
