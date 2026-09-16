@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { ScrollView, View, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView, View, ActivityIndicator, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
-import { useTheme } from '@/hooks/useTheme';
-import { Input } from '@/components/ui/Input';
-import { Text } from '@/components/ui/Text';
-import { Card } from '@/components/ui/Card';
-import { TopBar } from '@/components/composed/TopBar';
-import { FadeIn } from '@/components/animations/FadeIn';
-import { SlideIn } from '@/components/animations/SlideIn';
-import { useSignup } from '@/api/hooks/useAuth';
-import { isValidEmail, isRequired, validatePassword, getPasswordStrength, getPasswordRequirements } from '@/utils/validation';
-import type { Theme } from '@/theme/ThemeProvider';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { Input } from '@/shared/ui/Input';
+import { Text } from '@/shared/ui/Text';
+import { Card } from '@/shared/ui/Card';
+import { TopBar } from '@/shared/components/TopBar';
+import { FadeIn } from '@/shared/animations/FadeIn';
+import { SlideIn } from '@/shared/animations/SlideIn';
+import { useSignup } from '@/features/auth';
+import { isValidEmail, isRequired, validatePassword, getPasswordStrength, getPasswordRequirements } from '@/shared/utils/validation';
+import { useConsentStore } from '@/shared/config/consentStore';
+import { TERMS_URL, PRIVACY_URL } from '@/shared/config/policies';
+import type { Theme } from '@/shared/theme/ThemeProvider';
 
 const Container = styled.View`
   flex: 1;
@@ -23,7 +25,7 @@ const ScrollContent = styled.ScrollView`
   flex: 1;
 `;
 
-const Content = styled.View`
+const Content = styled.View<{ bottomInset: number }>`
   padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
   padding-bottom: ${({ bottomInset, theme }: { bottomInset: number; theme: Theme }) => bottomInset + theme.spacing[4]}px;
 `;
@@ -118,6 +120,7 @@ export default function SignupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const signupMutation = useSignup();
+  const setConsent = useConsentStore((state) => state.setConsent);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -191,12 +194,15 @@ export default function SignupScreen() {
     }
 
     try {
-      await signupMutation.mutateAsync({ 
-        name, 
-        email, 
+      await signupMutation.mutateAsync({
+        name,
+        email,
         password,
         password_confirm: confirmPassword,
       });
+      // Record what they agreed to, against the version they saw.
+      setConsent('terms', true);
+      setConsent('privacy', true);
       // Navigation will be handled by AuthContext
     } catch (error: any) {
       // Handle API error responses
@@ -232,7 +238,7 @@ export default function SignupScreen() {
           <Content bottomInset={insets.bottom}>
             <FadeIn delay={100}>
               <Text variant="h1" weight="bold" color={theme.colors.primary} style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}>
-                Kalon
+                Yasante
               </Text>
             </FadeIn>
 
@@ -372,11 +378,21 @@ export default function SignupScreen() {
                   <View style={{ flex: 1 }}>
                     <Text variant="caption" color={theme.colors.text.medium}>
                       I agree to the{' '}
-                      <Text variant="caption" weight="medium" color={theme.colors.primary}>
+                      <Text
+                        variant="caption"
+                        weight="medium"
+                        color={theme.colors.primary}
+                        onPress={() => Linking.openURL(TERMS_URL)}
+                      >
                         Terms of Service
                       </Text>
                       {' '}and{' '}
-                      <Text variant="caption" weight="medium" color={theme.colors.primary}>
+                      <Text
+                        variant="caption"
+                        weight="medium"
+                        color={theme.colors.primary}
+                        onPress={() => Linking.openURL(PRIVACY_URL)}
+                      >
                         Privacy Policy
                       </Text>
                     </Text>

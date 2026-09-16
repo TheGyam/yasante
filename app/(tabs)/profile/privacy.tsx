@@ -1,20 +1,62 @@
 import React from 'react';
-import { ScrollView, View, TouchableOpacity } from 'react-native';
+import { ScrollView, View, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { Text } from '@/components/ui/Text';
-import { Switch } from '@/components/ui/Switch';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { Text } from '@/shared/ui/Text';
+import { Switch } from '@/shared/ui/Switch';
+import { useConsentStore } from '@/shared/config/consentStore';
+import { useAuth } from '@/features/auth';
+import { api } from '@/api';
 
 export default function PrivacySettingsScreen() {
   const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  
-  const [analyticsEnabled, setAnalyticsEnabled] = React.useState(true);
-  const [personalizationEnabled, setPersonalizationEnabled] = React.useState(true);
-  const [dataSharingEnabled, setDataSharingEnabled] = React.useState(false);
+
+  const { consents, setConsent } = useConsentStore();
+  const { user, logout } = useAuth();
+  const [busy, setBusy] = React.useState(false);
+
+  const handleExport = async () => {
+    if (!user?.id || busy) return;
+    setBusy(true);
+    try {
+      await api.user.requestDataExport(user.id);
+      Alert.alert('Request sent', 'We will email you a download link when your data is ready.');
+    } catch {
+      Alert.alert('Could not send request', 'Please check your connection and try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!user?.id || busy) return;
+    Alert.alert(
+      'Delete account',
+      'This removes your profile, photos and posts. It cannot be undone.',
+      [
+        { text: 'Keep my account', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setBusy(true);
+            try {
+              await api.user.deleteAccount(user.id);
+              await logout();
+            } catch {
+              Alert.alert('Could not delete account', 'Please check your connection and try again.');
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }} testID="privacy-settings-screen">
@@ -46,26 +88,26 @@ export default function PrivacySettingsScreen() {
           </Text>
           
           <View style={{ gap: 16 }}>
-            <PrivacyRow 
-              title="Analytics" 
-              description="Help us improve the app by sharing anonymous usage data" 
-              value={analyticsEnabled} 
-              onValueChange={setAnalyticsEnabled} 
-              theme={theme} 
+            <PrivacyRow
+              title="Analytics"
+              description="Help us improve the app by sharing anonymous usage data"
+              value={consents.analytics.granted}
+              onValueChange={(v: boolean) => setConsent('analytics', v)}
+              theme={theme}
             />
-            <PrivacyRow 
-              title="Personalization" 
-              description="Allow us to personalize content based on your preferences" 
-              value={personalizationEnabled} 
-              onValueChange={setPersonalizationEnabled} 
-              theme={theme} 
+            <PrivacyRow
+              title="Personalization"
+              description="Match what you see to your hair profile"
+              value={consents.personalisation.granted}
+              onValueChange={(v: boolean) => setConsent('personalisation', v)}
+              theme={theme}
             />
-            <PrivacyRow 
-              title="Data Sharing" 
-              description="Share anonymized data with research partners for hair science" 
-              value={dataSharingEnabled} 
-              onValueChange={setDataSharingEnabled} 
-              theme={theme} 
+            <PrivacyRow
+              title="Research"
+              description="Allow anonymised data to be used in hair research. Off unless you turn it on, and you can withdraw at any time"
+              value={consents.research.granted}
+              onValueChange={(v: boolean) => setConsent('research', v)}
+              theme={theme}
             />
           </View>
         </View>
@@ -83,8 +125,8 @@ export default function PrivacySettingsScreen() {
           </Text>
           
           <View style={{ gap: 12 }}>
-            <AdminAction label="Download My Data" onPress={() => {}} theme={theme} />
-            <AdminAction label="Delete Account" onPress={() => {}} theme={theme} isDestructive />
+            <AdminAction label="Download My Data" onPress={handleExport} theme={theme} />
+            <AdminAction label="Delete Account" onPress={handleDelete} theme={theme} isDestructive />
           </View>
         </View>
       </ScrollView>
