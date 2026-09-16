@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, View, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { useUpdateHairProfile } from '@/features/profile';
 import { useUserStore } from '@/features/profile';
+import { useAuth } from '@/features/auth';
 import { TopBar } from '@/shared/components/TopBar';
 import { Card } from '@/shared/ui/Card';
 import { Text } from '@/shared/ui/Text';
@@ -64,7 +65,8 @@ const steps = [
 export default function QuizScreen() {
   const { theme } = useTheme();
   const router = useRouter();
-  const { setOnboardingCompleted } = useUserStore();
+  const { setOnboardingCompleted, setHairProfile } = useUserStore();
+  const { isAuthenticated } = useAuth();
   const updateHairProfile = useUpdateHairProfile();
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -94,19 +96,36 @@ export default function QuizScreen() {
   };
 
   const handleComplete = async () => {
-    try {
-      await updateHairProfile.mutateAsync({
-        texture: answers.texture as HairTexture,
-        density: answers.density as HairDensity,
-        porosity: answers.porosity as HairPorosity,
-        goals: answers.goals as HairGoal[],
-        completedAt: new Date().toISOString(),
-      });
-      setOnboardingCompleted(true);
-      router.replace('/(tabs)/home');
-    } catch (error) {
-      console.error('Failed to save hair profile:', error);
+    const profile = {
+      texture: answers.texture as HairTexture,
+      density: answers.density as HairDensity,
+      porosity: answers.porosity as HairPorosity,
+      goals: answers.goals as HairGoal[],
+      completedAt: new Date().toISOString(),
+    };
+
+    // This quiz runs before signup, so there is usually no account to save
+    // against yet. Keep the answers on the device either way — they drive
+    // personalisation, and losing them would mean asking all over again.
+    setHairProfile(profile);
+    setOnboardingCompleted(true);
+
+    // ponytail: pushes to the server only if already signed in. Syncing a
+    // locally-answered profile after signup lands with the progressive profile
+    // in M0, which rebuilds this screen anyway.
+    if (isAuthenticated) {
+      try {
+        await updateHairProfile.mutateAsync(profile);
+      } catch (error) {
+        console.error('Failed to save hair profile:', error);
+        Alert.alert(
+          'Saved on this device',
+          "We couldn't reach the server, so your answers are saved here for now."
+        );
+      }
     }
+
+    router.replace('/(tabs)/home');
   };
 
   const currentStepData = steps[currentStep];

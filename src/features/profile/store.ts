@@ -10,6 +10,12 @@ interface UserState {
   setOnboardingCompleted: (completed: boolean) => void;
   hasSeenPlannerTour: boolean;
   setHasSeenPlannerTour: (seen: boolean) => void;
+  /**
+   * The hair profile as answered on this device. The onboarding quiz runs before
+   * signup, so it has to live somewhere local or the answers are lost.
+   */
+  hairProfile: HairProfile | null;
+  setHairProfile: (profile: HairProfile) => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -21,6 +27,8 @@ export const useUserStore = create<UserState>()(
       setOnboardingCompleted: completed => set({ onboardingCompleted: completed }),
       hasSeenPlannerTour: false,
       setHasSeenPlannerTour: seen => set({ hasSeenPlannerTour: seen }),
+      hairProfile: null,
+      setHairProfile: profile => set({ hairProfile: profile }),
     }),
     {
       name: '@yasante:user',
