@@ -1,101 +1,152 @@
-import React, { useState } from 'react';
-import { ScrollView, View, Alert } from 'react-native';
+import { useState } from 'react';
+import { Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import styled from 'styled-components/native';
-import { useTheme } from '@/shared/legacy/hooks/useTheme';
-import { useUpdateHairProfile } from '@/features/profile';
-import { useUserStore } from '@/features/profile';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { Check } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
-import { TopBar } from '@/shared/legacy/components/TopBar';
-import { Card } from '@/shared/legacy/ui/Card';
-import { Text } from '@/shared/legacy/ui/Text';
-import { Button } from '@/shared/legacy/ui/Button';
-import { HairTexture, HairDensity, HairPorosity, HairGoal } from '@/features/profile';
-import { FadeIn } from '@/shared/legacy/animations/FadeIn';
+import {
+  useUpdateHairProfile,
+  useUserStore,
+  type HairDensity,
+  type HairGoal,
+  type HairPorosity,
+  type HairTexture,
+} from '@/features/profile';
+import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
+import { haptics } from '@/shared/lib/haptics';
+import { Button } from '@/shared/ui/Button';
+import { PressableScale } from '@/shared/ui/PressableScale';
+import { ProgressBar } from '@/shared/ui/ProgressBar';
+import { Screen } from '@/shared/ui/Screen';
+import { Text } from '@/shared/ui/Text';
 
-const Container = styled.ScrollView`
-  flex: 1;
-  background-color: ${({ theme }) => theme.colors.background};
-`;
+interface Option {
+  value: string;
+  label: string;
+  hint?: string;
+}
 
-const Content = styled.View`
-  padding: ${({ theme }) => theme.spacing[4]}px;
-`;
+interface Step {
+  key: 'texture' | 'density' | 'porosity' | 'goals';
+  question: string;
+  help: string;
+  multiple?: boolean;
+  options: Option[];
+}
 
-const QuestionCard = styled(Card)`
-  margin-bottom: ${({ theme }) => theme.spacing[4]}px;
-`;
-
-const OptionButton = styled(Button)<{ selected: boolean }>`
-  margin-bottom: ${({ theme }) => theme.spacing[2]}px;
-  background-color: ${({ theme, selected }) =>
-    selected ? theme.colors.primary : theme.colors.surface};
-`;
-
-const ProgressBar = styled.View`
-  height: 4px;
-  background-color: ${({ theme }) => theme.colors.surfaceVariant};
-  border-radius: 2px;
-  margin-bottom: ${({ theme }) => theme.spacing[4]}px;
-`;
-
-const ProgressFill = styled.View<{ progress: number }>`
-  height: 100%;
-  width: ${({ progress }) => progress}%;
-  background-color: ${({ theme }) => theme.colors.primary};
-  border-radius: 2px;
-`;
-
-const steps = [
+const STEPS: readonly Step[] = [
   {
     key: 'texture',
-    question: 'What is your hair texture?',
-    options: ['straight', 'wavy', 'curly', 'coily', 'kinky'],
+    question: 'What’s your hair texture?',
+    help: 'Go by how it dries without products or heat.',
+    options: [
+      { value: 'straight', label: 'Straight', hint: 'Falls flat from root to tip' },
+      { value: 'wavy', label: 'Wavy', hint: 'Loose S-shaped bends' },
+      { value: 'curly', label: 'Curly', hint: 'Defined, springy loops' },
+      { value: 'coily', label: 'Coily', hint: 'Tight coils, pencil-width or smaller' },
+      { value: 'kinky', label: 'Kinky', hint: 'Tight zig-zags with a lot of shrinkage' },
+    ],
   },
-  { key: 'density', question: 'What is your hair density?', options: ['fine', 'medium', 'thick'] },
-  { key: 'porosity', question: 'What is your hair porosity?', options: ['low', 'medium', 'high'] },
+  {
+    key: 'density',
+    question: 'How dense is it?',
+    help: 'Part your hair at the crown and look at how much scalp shows.',
+    options: [
+      { value: 'fine', label: 'Low', hint: 'Scalp easy to see' },
+      { value: 'medium', label: 'Medium', hint: 'Some scalp shows' },
+      { value: 'thick', label: 'High', hint: 'Hard to see your scalp' },
+    ],
+  },
+  {
+    key: 'porosity',
+    question: 'How does it take moisture?',
+    help: 'Not sure? Think about how quickly it gets wet and dries.',
+    options: [
+      { value: 'low', label: 'Slowly', hint: 'Water beads up; products sit on top' },
+      { value: 'medium', label: 'Easily', hint: 'Absorbs and holds moisture well' },
+      { value: 'high', label: 'Quickly, then dries out', hint: 'Soaks up fast, loses it fast' },
+    ],
+  },
   {
     key: 'goals',
-    question: 'What are your hair goals? (Select all that apply)',
-    options: ['growth', 'health', 'moisture', 'strength', 'color', 'style'],
+    question: 'What are you working towards?',
+    help: 'Choose as many as you like.',
     multiple: true,
+    options: [
+      { value: 'growth', label: 'Growth' },
+      { value: 'health', label: 'Healthier hair' },
+      { value: 'moisture', label: 'Moisture' },
+      { value: 'strength', label: 'Less breakage' },
+      { value: 'color', label: 'Colour care' },
+      { value: 'style', label: 'New styles' },
+    ],
   },
 ];
 
+const STEP_ENTER = FadeIn.duration(250).easing(EASE_OUT);
+
+type Answers = Partial<Record<Step['key'], string | string[]>>;
+
+const useStyles = makeStyles(t => ({
+  progress: { gap: space.sm, marginTop: space.sm, marginBottom: space.xxxl },
+  heading: { gap: space.sm, marginBottom: space.xxl },
+  options: { gap: space.sm },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    minHeight: 60,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+  },
+  idle: {
+    backgroundColor: t.colors.glass.fill,
+    borderColor: t.colors.glass.border,
+    borderTopColor: t.colors.glass.highlight,
+  },
+  selected: { backgroundColor: t.colors.accentSoft, borderColor: t.colors.accent },
+  optionText: { flex: 1, gap: 2 },
+  mark: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+  },
+  actions: { flexDirection: 'row', gap: space.sm, marginTop: space.xxxl },
+  action: { flex: 1 },
+}));
+
 export default function QuizScreen() {
-  const { theme } = useTheme();
+  const styles = useStyles();
+  const theme = useTheme();
   const router = useRouter();
-  const { setOnboardingCompleted, setHairProfile } = useUserStore();
-  const { isAuthenticated } = useAuth();
+  const isAuthenticated = useAuth().isAuthenticated;
+  const setOnboardingCompleted = useUserStore(s => s.setOnboardingCompleted);
+  const setHairProfile = useUserStore(s => s.setHairProfile);
   const updateHairProfile = useUpdateHairProfile();
 
-  const [currentStep, setCurrentStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState<Answers>({});
 
-  const progress = ((currentStep + 1) / steps.length) * 100;
+  const step = STEPS[index];
+  const answer = answers[step.key];
+  const isLast = index === STEPS.length - 1;
+  const canContinue = Array.isArray(answer) ? answer.length > 0 : !!answer;
 
-  const handleOptionSelect = (option: string) => {
-    const step = steps[currentStep];
-    if (step.multiple) {
-      const current = answers[step.key] || [];
-      const updated = current.includes(option)
-        ? current.filter((o: string) => o !== option)
-        : [...current, option];
-      setAnswers({ ...answers, [step.key]: updated });
-    } else {
-      setAnswers({ ...answers, [step.key]: option });
-    }
+  const toggle = (value: string) => {
+    setAnswers(prev => {
+      if (!step.multiple) return { ...prev, [step.key]: value };
+      const current = (prev[step.key] as string[] | undefined) ?? [];
+      const next = current.includes(value) ? current.filter(v => v !== value) : [...current, value];
+      return { ...prev, [step.key]: next };
+    });
   };
 
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      handleComplete();
-    }
-  };
-
-  const handleComplete = async () => {
+  const finish = async () => {
     const profile = {
       texture: answers.texture as HairTexture,
       density: answers.density as HairDensity,
@@ -104,88 +155,102 @@ export default function QuizScreen() {
       completedAt: new Date().toISOString(),
     };
 
-    // This quiz runs before signup, so there is usually no account to save
-    // against yet. Keep the answers on the device either way — they drive
-    // personalisation, and losing them would mean asking all over again.
+    // The quiz runs before signup, so there's usually no account to save against yet.
+    // Keep the answers on the device either way — they drive personalisation.
     setHairProfile(profile);
     setOnboardingCompleted(true);
 
     // ponytail: pushes to the server only if already signed in. Syncing a
-    // locally-answered profile after signup lands with the progressive profile
-    // in M0, which rebuilds this screen anyway.
+    // locally-answered profile after signup lands with the progressive profile in M0.
     if (isAuthenticated) {
       try {
         await updateHairProfile.mutateAsync(profile);
-      } catch (error) {
-        console.error('Failed to save hair profile:', error);
+      } catch {
         Alert.alert(
           'Saved on this device',
-          "We couldn't reach the server, so your answers are saved here for now."
+          'We couldn’t reach the server, so your answers are saved here for now.'
         );
       }
     }
 
+    haptics.success();
     router.replace('/(tabs)/home');
   };
 
-  const currentStepData = steps[currentStep];
-  const canProceed = currentStepData.multiple
-    ? (answers[currentStepData.key] || []).length > 0
-    : !!answers[currentStepData.key];
+  const goBack = () => (index === 0 ? router.back() : setIndex(i => i - 1));
 
   return (
-    <Container testID="quiz-screen">
-      <TopBar title="Hair Profile Quiz" />
-      <Content>
-        <ProgressBar>
-          <ProgressFill progress={progress} />
-        </ProgressBar>
+    <Screen back onBack={goBack} testID="quiz-screen">
+      <View style={styles.progress}>
+        <Text variant="overline" tone="tertiary">
+          Step {index + 1} of {STEPS.length}
+        </Text>
+        <ProgressBar progress={(index + 1) / STEPS.length} height={4} />
+      </View>
 
-        <FadeIn>
-          <QuestionCard>
-            <Text variant="h3" weight="semibold" style={{ marginBottom: theme.spacing[4] }}>
-              {currentStepData.question}
-            </Text>
+      <Animated.View key={step.key} entering={STEP_ENTER}>
+        <View style={styles.heading}>
+          <Text variant="title1" accessibilityRole="header">
+            {step.question}
+          </Text>
+          <Text variant="subhead" tone="secondary">
+            {step.help}
+          </Text>
+        </View>
 
-            {currentStepData.options.map(option => {
-              const isSelected = currentStepData.multiple
-                ? (answers[currentStepData.key] || []).includes(option)
-                : answers[currentStepData.key] === option;
-
-              return (
-                <OptionButton
-                  key={option}
-                  variant={isSelected ? 'primary' : 'outline'}
-                  onPress={() => handleOptionSelect(option)}
-                  selected={isSelected}
-                >
-                  {option.charAt(0).toUpperCase() + option.slice(1)}
-                </OptionButton>
-              );
-            })}
-          </QuestionCard>
-
-          <View style={{ flexDirection: 'row', gap: theme.spacing[3] }}>
-            {currentStep > 0 && (
-              <Button
-                variant="ghost"
-                onPress={() => setCurrentStep(currentStep - 1)}
-                style={{ flex: 1 }}
+        <View style={styles.options} accessibilityRole={step.multiple ? undefined : 'radiogroup'}>
+          {step.options.map(option => {
+            const selected = Array.isArray(answer)
+              ? answer.includes(option.value)
+              : answer === option.value;
+            return (
+              <PressableScale
+                key={option.value}
+                scaleTo={0.98}
+                haptic="selection"
+                accessibilityRole={step.multiple ? 'checkbox' : 'radio'}
+                accessibilityState={{ checked: selected }}
+                accessibilityLabel={option.hint ? `${option.label}. ${option.hint}` : option.label}
+                onPress={() => toggle(option.value)}
+                style={[styles.option, selected ? styles.selected : styles.idle]}
               >
-                Back
-              </Button>
-            )}
-            <Button
-              variant="primary"
-              onPress={handleNext}
-              disabled={!canProceed}
-              style={{ flex: 1 }}
-            >
-              {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
-            </Button>
-          </View>
-        </FadeIn>
-      </Content>
-    </Container>
+                <View style={styles.optionText}>
+                  <Text variant="callout">{option.label}</Text>
+                  {option.hint && (
+                    <Text variant="footnote" tone="secondary">
+                      {option.hint}
+                    </Text>
+                  )}
+                </View>
+                <View
+                  style={[
+                    styles.mark,
+                    {
+                      borderColor: selected ? theme.colors.accent : theme.colors.text.tertiary,
+                      backgroundColor: selected ? theme.colors.accent : 'transparent',
+                    },
+                  ]}
+                >
+                  {selected && <Check size={14} color={theme.colors.text.onAccent} strokeWidth={3} />}
+                </View>
+              </PressableScale>
+            );
+          })}
+        </View>
+      </Animated.View>
+
+      <View style={styles.actions}>
+        <View style={styles.action}>
+          <Button
+            label={isLast ? 'Finish' : 'Continue'}
+            onPress={isLast ? finish : () => setIndex(i => i + 1)}
+            disabled={!canContinue}
+            loading={updateHairProfile.isPending}
+            fullWidth
+            testID="quiz-next"
+          />
+        </View>
+      </View>
+    </Screen>
   );
 }

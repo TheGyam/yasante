@@ -3,7 +3,8 @@ module.exports = function (api) {
   return {
     // babel-preset-expo already adds the worklets plugin for Reanimated, and the React
     // Compiler when experiments.reactCompiler is on. Adding either here runs it twice.
-    presets: ['babel-preset-expo'],
+    // import.meta: zustand's ESM build uses it, and web bundles aren't modules.
+    presets: [['babel-preset-expo', { unstable_transformImportMeta: true }]],
     plugins: [['module-resolver', { root: ['./'], alias: { '@': './src' } }]],
   };
 };
