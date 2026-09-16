@@ -1,6 +1,6 @@
-# Kalon App - Backend API Documentation
+# Yasante App - Backend API Documentation
 
-Welcome! This folder contains comprehensive API documentation for the Kalon mobile app backend implementation.
+Welcome! This folder contains comprehensive API documentation for the Yasante mobile app backend implementation.
 
 ## Documentation Files
 
@@ -52,9 +52,9 @@ If you have questions or need clarifications:
 
 ## App Information
 
-- **App Name**: Kalon
-- **Package**: com.kalon.app
-- **Deep Link Scheme**: kalon://
+- **App Name**: Yasante
+- **Package**: com.yasante.app
+- **Deep Link Scheme**: yasante://
 - **Framework**: React Native with Expo
 
 ---

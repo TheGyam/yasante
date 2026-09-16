@@ -1,4 +1,4 @@
-# Kalon App - Backend API Documentation
+# Yasante App - Backend API Documentation
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -16,7 +16,7 @@
 
 ## Overview
 
-Kalon is a React Native mobile application built with Expo for hair care management. This document provides comprehensive API specifications for the backend engineer to implement a fully functional REST API.
+Yasante is a React Native mobile application built with Expo for hair care management. This document provides comprehensive API specifications for the backend engineer to implement a fully functional REST API.
 
 ### Key Features
 - User authentication and profile management
@@ -35,7 +35,7 @@ Kalon is a React Native mobile application built with Expo for hair care managem
 - **State Management**: Zustand
 - **API Client**: Axios
 - **Data Fetching**: React Query (TanStack Query)
-- **Deep Linking**: Custom URI scheme `kalon://`
+- **Deep Linking**: Custom URI scheme `yasante://`
 
 ---
 
@@ -540,13 +540,13 @@ Authorization: Bearer {accessToken}
     "id": "user-123",
     "name": "John Doe",
     "email": "user@example.com",
-    "avatarUri": "https://cdn.kalon.app/avatars/user-123.jpg",
+    "avatarUri": "https://cdn.yasante.app/avatars/user-123.jpg",
     "hairProfile": {
       "texture": "curly",
       "density": "medium",
       "porosity": "high",
       "goals": ["growth", "moisture"],
-      "photoUri": "https://cdn.kalon.app/hair/user-123.jpg",
+      "photoUri": "https://cdn.yasante.app/hair/user-123.jpg",
       "completedAt": "2024-01-01T00:00:00Z"
     },
     "createdAt": "2024-01-01T00:00:00Z",
@@ -574,7 +574,7 @@ Authorization: Bearer {accessToken}
 {
   "name": "Jane Doe",
   "email": "jane@example.com",
-  "avatarUri": "https://cdn.kalon.app/avatars/user-123.jpg"
+  "avatarUri": "https://cdn.yasante.app/avatars/user-123.jpg"
 }
 ```
 
@@ -585,7 +585,7 @@ Authorization: Bearer {accessToken}
     "id": "user-123",
     "name": "Jane Doe",
     "email": "jane@example.com",
-    "avatarUri": "https://cdn.kalon.app/avatars/user-123.jpg",
+    "avatarUri": "https://cdn.yasante.app/avatars/user-123.jpg",
     "hairProfile": {...},
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-15T12:00:00Z"
@@ -616,7 +616,7 @@ Authorization: Bearer {accessToken}
   "density": "medium",
   "porosity": "high",
   "goals": ["growth", "moisture"],
-  "photoUri": "https://cdn.kalon.app/hair/user-123.jpg"
+  "photoUri": "https://cdn.yasante.app/hair/user-123.jpg"
 }
 ```
 
@@ -632,7 +632,7 @@ Authorization: Bearer {accessToken}
       "density": "medium",
       "porosity": "high",
       "goals": ["growth", "moisture"],
-      "photoUri": "https://cdn.kalon.app/hair/user-123.jpg",
+      "photoUri": "https://cdn.yasante.app/hair/user-123.jpg",
       "completedAt": "2024-01-15T12:00:00Z"
     },
     "createdAt": "2024-01-01T00:00:00Z",
@@ -858,8 +858,8 @@ Authorization: Bearer {accessToken}
     {
       "id": "photo-123",
       "goalId": "goal-123",
-      "uri": "https://cdn.kalon.app/photos/photo-123.jpg",
-      "thumbnailUri": "https://cdn.kalon.app/photos/thumbnails/photo-123.jpg",
+      "uri": "https://cdn.yasante.app/photos/photo-123.jpg",
+      "thumbnailUri": "https://cdn.yasante.app/photos/thumbnails/photo-123.jpg",
       "date": "2024-01-15",
       "caption": "Progress after 2 weeks",
       "location": "Home",
@@ -898,8 +898,8 @@ location: "Home"
   "data": {
     "id": "photo-123",
     "goalId": "goal-123",
-    "uri": "https://cdn.kalon.app/photos/photo-123.jpg",
-    "thumbnailUri": "https://cdn.kalon.app/photos/thumbnails/photo-123.jpg",
+    "uri": "https://cdn.yasante.app/photos/photo-123.jpg",
+    "thumbnailUri": "https://cdn.yasante.app/photos/thumbnails/photo-123.jpg",
     "date": "2024-01-15",
     "caption": "Progress after 2 weeks",
     "location": "Home",
@@ -1250,8 +1250,8 @@ Authorization: Bearer {accessToken}
       "id": "hairstyle-123",
       "month": "2024-01",
       "userId": "user-123",
-      "photoUri": "https://cdn.kalon.app/hairstyles/hairstyle-123.jpg",
-      "thumbnailUri": "https://cdn.kalon.app/hairstyles/thumbnails/hairstyle-123.jpg",
+      "photoUri": "https://cdn.yasante.app/hairstyles/hairstyle-123.jpg",
+      "thumbnailUri": "https://cdn.yasante.app/hairstyles/thumbnails/hairstyle-123.jpg",
       "notes": "January hairstyle",
       "createdAt": "2024-01-15T12:00:00Z",
       "updatedAt": "2024-01-15T12:00:00Z"
@@ -1277,8 +1277,8 @@ Authorization: Bearer {accessToken}
     "id": "hairstyle-123",
     "month": "2024-01",
     "userId": "user-123",
-    "photoUri": "https://cdn.kalon.app/hairstyles/hairstyle-123.jpg",
-    "thumbnailUri": "https://cdn.kalon.app/hairstyles/thumbnails/hairstyle-123.jpg",
+    "photoUri": "https://cdn.yasante.app/hairstyles/hairstyle-123.jpg",
+    "thumbnailUri": "https://cdn.yasante.app/hairstyles/thumbnails/hairstyle-123.jpg",
     "notes": "January hairstyle",
     "createdAt": "2024-01-15T12:00:00Z",
     "updatedAt": "2024-01-15T12:00:00Z"
@@ -1312,8 +1312,8 @@ notes: "January hairstyle"
     "id": "hairstyle-123",
     "month": "2024-01",
     "userId": "user-123",
-    "photoUri": "https://cdn.kalon.app/hairstyles/hairstyle-123.jpg",
-    "thumbnailUri": "https://cdn.kalon.app/hairstyles/thumbnails/hairstyle-123.jpg",
+    "photoUri": "https://cdn.yasante.app/hairstyles/hairstyle-123.jpg",
+    "thumbnailUri": "https://cdn.yasante.app/hairstyles/thumbnails/hairstyle-123.jpg",
     "notes": "January hairstyle",
     "createdAt": "2024-01-15T12:00:00Z",
     "updatedAt": "2024-01-15T12:00:00Z"
@@ -1355,8 +1355,8 @@ notes: "Updated notes"
     "id": "hairstyle-123",
     "month": "2024-01",
     "userId": "user-123",
-    "photoUri": "https://cdn.kalon.app/hairstyles/hairstyle-123.jpg",
-    "thumbnailUri": "https://cdn.kalon.app/hairstyles/thumbnails/hairstyle-123.jpg",
+    "photoUri": "https://cdn.yasante.app/hairstyles/hairstyle-123.jpg",
+    "thumbnailUri": "https://cdn.yasante.app/hairstyles/thumbnails/hairstyle-123.jpg",
     "notes": "Updated notes",
     "createdAt": "2024-01-15T12:00:00Z",
     "updatedAt": "2024-01-15T13:00:00Z"
@@ -1405,11 +1405,11 @@ Authorization: Bearer {accessToken}
       "userId": "user-123",
       "month": "2024-01",
       "name": "Curly Bob",
-      "mainPhotoUri": "https://cdn.kalon.app/moodboard/moodboard-123-main.jpg",
+      "mainPhotoUri": "https://cdn.yasante.app/moodboard/moodboard-123-main.jpg",
       "photos": [
-        "https://cdn.kalon.app/moodboard/moodboard-123-1.jpg",
-        "https://cdn.kalon.app/moodboard/moodboard-123-2.jpg",
-        "https://cdn.kalon.app/moodboard/moodboard-123-3.jpg"
+        "https://cdn.yasante.app/moodboard/moodboard-123-1.jpg",
+        "https://cdn.yasante.app/moodboard/moodboard-123-2.jpg",
+        "https://cdn.yasante.app/moodboard/moodboard-123-3.jpg"
       ],
       "stylistPrice": 150.00,
       "hairPrice": 200.00,
@@ -1447,7 +1447,7 @@ Authorization: Bearer {accessToken}
     "userId": "user-123",
     "month": "2024-01",
     "name": "Curly Bob",
-    "mainPhotoUri": "https://cdn.kalon.app/moodboard/moodboard-123-main.jpg",
+    "mainPhotoUri": "https://cdn.yasante.app/moodboard/moodboard-123-main.jpg",
     "photos": [...],
     "stylistPrice": 150.00,
     "hairPrice": 200.00,
@@ -1495,10 +1495,10 @@ notes: "Love this style!"
     "userId": "user-123",
     "month": "2024-01",
     "name": "Curly Bob",
-    "mainPhotoUri": "https://cdn.kalon.app/moodboard/moodboard-123-main.jpg",
+    "mainPhotoUri": "https://cdn.yasante.app/moodboard/moodboard-123-main.jpg",
     "photos": [
-      "https://cdn.kalon.app/moodboard/moodboard-123-1.jpg",
-      "https://cdn.kalon.app/moodboard/moodboard-123-2.jpg"
+      "https://cdn.yasante.app/moodboard/moodboard-123-1.jpg",
+      "https://cdn.yasante.app/moodboard/moodboard-123-2.jpg"
     ],
     "stylistPrice": 150.00,
     "hairPrice": 200.00,
@@ -1557,7 +1557,7 @@ completed: "true"
     "userId": "user-123",
     "month": "2024-01",
     "name": "Updated Name",
-    "mainPhotoUri": "https://cdn.kalon.app/moodboard/moodboard-123-main.jpg",
+    "mainPhotoUri": "https://cdn.yasante.app/moodboard/moodboard-123-main.jpg",
     "photos": [...],
     "stylistPrice": 160.00,
     "hairPrice": 210.00,
@@ -1596,11 +1596,11 @@ photo: <file>
     "userId": "user-123",
     "month": "2024-01",
     "name": "Curly Bob",
-    "mainPhotoUri": "https://cdn.kalon.app/moodboard/moodboard-123-main.jpg",
+    "mainPhotoUri": "https://cdn.yasante.app/moodboard/moodboard-123-main.jpg",
     "photos": [
-      "https://cdn.kalon.app/moodboard/moodboard-123-1.jpg",
-      "https://cdn.kalon.app/moodboard/moodboard-123-2.jpg",
-      "https://cdn.kalon.app/moodboard/moodboard-123-3.jpg"
+      "https://cdn.yasante.app/moodboard/moodboard-123-1.jpg",
+      "https://cdn.yasante.app/moodboard/moodboard-123-2.jpg",
+      "https://cdn.yasante.app/moodboard/moodboard-123-3.jpg"
     ],
     "stylistPrice": 150.00,
     "hairPrice": 200.00,
@@ -1888,7 +1888,7 @@ Authorization: Bearer {accessToken} (optional - content is public)
       "type": "article",
       "topic": "care",
       "hairTypes": ["curly", "coily"],
-      "thumbnailUri": "https://cdn.kalon.app/content/content-123-thumb.jpg",
+      "thumbnailUri": "https://cdn.yasante.app/content/content-123-thumb.jpg",
       "videoUri": null,
       "articleContent": "<p>Article content in HTML...</p>",
       "duration": null,
@@ -1932,7 +1932,7 @@ Authorization: Bearer {accessToken} (optional)
     "type": "article",
     "topic": "care",
     "hairTypes": ["curly", "coily"],
-    "thumbnailUri": "https://cdn.kalon.app/content/content-123-thumb.jpg",
+    "thumbnailUri": "https://cdn.yasante.app/content/content-123-thumb.jpg",
     "videoUri": null,
     "articleContent": "<p>Article content in HTML...</p>",
     "duration": null,
@@ -1971,7 +1971,7 @@ Authorization: Bearer {accessToken} (optional)
       "type": "article",
       "topic": "care",
       "hairTypes": ["curly", "coily"],
-      "thumbnailUri": "https://cdn.kalon.app/content/content-123-thumb.jpg",
+      "thumbnailUri": "https://cdn.yasante.app/content/content-123-thumb.jpg",
       "videoUri": null,
       "articleContent": "<p>Article content in HTML...</p>",
       "duration": null,
@@ -2100,7 +2100,7 @@ Authorization: Bearer {accessToken} (optional)
       "name": "Deep Conditioner",
       "brand": "Hair Care Co",
       "description": "Intensive deep conditioning treatment",
-      "imageUri": "https://cdn.kalon.app/products/product-123.jpg",
+      "imageUri": "https://cdn.yasante.app/products/product-123.jpg",
       "link": "https://example.com/product",
       "category": "treatment"
     }
@@ -2155,14 +2155,14 @@ When validation fails, return `422` status with detailed field errors:
 
 ## Deep Linking
 
-The app uses a custom URI scheme `kalon://` for deep linking.
+The app uses a custom URI scheme `yasante://` for deep linking.
 
 ### Mood Board Deep Links
-**Format:** `kalon://moodboard/{entryId}?name={name}&location={location}&appointmentTime={time}&stylistPrice={price}&hairPrice={price}`
+**Format:** `yasante://moodboard/{entryId}?name={name}&location={location}&appointmentTime={time}&stylistPrice={price}&hairPrice={price}`
 
 **Example:**
 ```
-kalon://moodboard/moodboard-123?name=Curly%20Bob&location=123%20Main%20St&appointmentTime=2024-01-20T14:00:00Z&stylistPrice=150&hairPrice=200
+yasante://moodboard/moodboard-123?name=Curly%20Bob&location=123%20Main%20St&appointmentTime=2024-01-20T14:00:00Z&stylistPrice=150&hairPrice=200
 ```
 
 **Query Parameters:**
@@ -2181,11 +2181,11 @@ kalon://moodboard/moodboard-123?name=Curly%20Bob&location=123%20Main%20St&appoin
 - If the entry doesn't exist, the app should handle gracefully
 
 ### Treatment Deep Links
-**Format:** `kalon://treatment/{treatmentId}?name={name}&frequency={frequency}&timeOfDay={timeOfDay}`
+**Format:** `yasante://treatment/{treatmentId}?name={name}&frequency={frequency}&timeOfDay={timeOfDay}`
 
 **Example:**
 ```
-kalon://treatment/treatment-123?name=Deep%20Conditioning&frequency=weekly&timeOfDay=evening&duration=30
+yasante://treatment/treatment-123?name=Deep%20Conditioning&frequency=weekly&timeOfDay=evening&duration=30
 ```
 
 **Query Parameters:**
@@ -2332,9 +2332,9 @@ Configure CORS appropriately:
 
 For questions or clarifications about this API specification, please contact the frontend development team.
 
-**App Name**: Kalon  
-**Package Name**: com.kalon.app  
-**Deep Link Scheme**: kalon://
+**App Name**: Yasante  
+**Package Name**: com.yasante.app  
+**Deep Link Scheme**: yasante://
 
 ---
 

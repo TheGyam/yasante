@@ -1,4 +1,4 @@
-package com.kalon.app
+package com.yasante.app
 
 import android.os.Build
 import android.os.Bundle

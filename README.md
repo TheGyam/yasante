@@ -1,4 +1,4 @@
-# Kalon - Hair Wellness Planning App
+# Yasante - Hair Wellness Planning App
 
 A beautiful, modern mobile app for hairstyle planning and education built with Expo, React Native, and TypeScript.
 
@@ -42,8 +42,8 @@ A beautiful, modern mobile app for hairstyle planning and education built with E
 
 1. Clone the repository
 ```bash
-git clone https://github.com/ElPrinceD/Kalon.git
-cd Kalon
+git clone https://github.com/ElPrinceD/Yasante.git
+cd Yasante
 ```
 
 2. Install dependencies
