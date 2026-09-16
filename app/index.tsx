@@ -1,62 +1,101 @@
-import React, { useEffect } from 'react';
-import { View, ScrollView } from 'react-native';
+import { useEffect } from 'react';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { CalendarHeart, Sparkles, TrendingUp, type LucideIcon } from 'lucide-react-native';
 import { useUserStore } from '@/features/profile';
-import { Button } from '@/shared/legacy/ui/Button';
-import { Text } from '@/shared/legacy/ui/Text';
-import { FadeIn } from '@/shared/legacy/animations/FadeIn';
-import { SlideIn } from '@/shared/legacy/animations/SlideIn';
+import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
+import { BrandMark } from '@/shared/ui/BrandMark';
+import { Button } from '@/shared/ui/Button';
+import { Glass } from '@/shared/ui/Glass';
+import { Screen } from '@/shared/ui/Screen';
+import { Text } from '@/shared/ui/Text';
 
-export default function OnboardingScreen() {
-  const { theme } = useTheme();
+const PROMISES: readonly { icon: LucideIcon; title: string; body: string }[] = [
+  { icon: Sparkles, title: 'Made for your texture', body: 'Care and styles matched to your hair.' },
+  { icon: CalendarHeart, title: 'Plan every style', body: 'Appointments, costs and wash days in one place.' },
+  { icon: TrendingUp, title: 'See your growth', body: 'Track length and health, month by month.' },
+];
+
+// First-run only, so it can afford a considered entrance. Built once, outside render.
+const enter = (i: number) => FadeInDown.duration(420).delay(120 + i * 70).easing(EASE_OUT);
+const ENTER = [enter(0), enter(1), enter(2), enter(3), enter(4)];
+
+const useStyles = makeStyles(() => ({
+  fill: { flex: 1, justifyContent: 'space-between' },
+  top: { gap: space.huge, marginTop: space.xxl },
+  heading: { gap: space.md },
+  promises: { gap: space.sm },
+  promise: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  icon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  promiseText: { flex: 1, gap: 2 },
+  actions: { gap: space.sm, marginTop: space.xxl },
+}));
+
+export default function WelcomeScreen() {
+  const styles = useStyles();
+  const theme = useTheme();
   const router = useRouter();
-  const { onboardingCompleted, setOnboardingCompleted } = useUserStore();
+  const onboardingCompleted = useUserStore(s => s.onboardingCompleted);
 
   useEffect(() => {
-    if (onboardingCompleted) {
-      router.replace('/(tabs)/home');
-    }
-  }, [onboardingCompleted]);
-
-  const handleGetStarted = () => {
-    router.push('/onboarding/quiz');
-  };
+    if (onboardingCompleted) router.replace('/(tabs)/home');
+  }, [onboardingCompleted, router]);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.background,
-        paddingHorizontal: theme.spacing[6],
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
-      <FadeIn delay={100}>
-        <Text variant="h1" color={theme.colors.primary} style={{ marginBottom: theme.spacing[4] }}>
-          Yasante
-        </Text>
-      </FadeIn>
+    <Screen scroll={false} testID="welcome-screen">
+      <View style={styles.fill}>
+        <View style={styles.top}>
+          <Animated.View entering={ENTER[0]}>
+            <BrandMark />
+          </Animated.View>
+          <Animated.View entering={ENTER[1]} style={styles.heading}>
+            <Text variant="display">Your hair,{'\n'}planned beautifully.</Text>
+            <Text variant="body" tone="secondary">
+              Everything you do for your hair, and everyone who helps — in one place.
+            </Text>
+          </Animated.View>
+          <View style={styles.promises}>
+            {PROMISES.map((p, i) => (
+              <Animated.View key={p.title} entering={ENTER[i + 2]}>
+                <Glass radius={radius.lg} style={[styles.promise, { padding: space.md }]}>
+                  <View style={[styles.icon, { backgroundColor: theme.colors.accentSoft }]}>
+                    <p.icon size={19} color={theme.colors.accent} strokeWidth={2.2} />
+                  </View>
+                  <View style={styles.promiseText}>
+                    <Text variant="callout">{p.title}</Text>
+                    <Text variant="footnote" tone="secondary">
+                      {p.body}
+                    </Text>
+                  </View>
+                </Glass>
+              </Animated.View>
+            ))}
+          </View>
+        </View>
 
-      <SlideIn delay={200} direction="up" distance={30}>
-        <Text variant="h2" style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}>
-          Your Personal Hair Care Journey
-        </Text>
-        <Text
-          variant="body"
-          color={theme.colors.text.medium}
-          style={{ marginBottom: theme.spacing[6], textAlign: 'center' }}
-        >
-          Plan your hair goals, track your progress, and learn personalized care tips
-        </Text>
-      </SlideIn>
-
-      <SlideIn delay={400} direction="up" distance={30}>
-        <Button variant="primary" onPress={handleGetStarted} fullWidth>
-          Get Started
-        </Button>
-      </SlideIn>
-    </View>
+        <View style={styles.actions}>
+          <Button
+            label="Get started"
+            haptic="light"
+            onPress={() => router.push('/onboarding/quiz')}
+            fullWidth
+            testID="get-started"
+          />
+          <Button
+            label="I already have an account"
+            variant="ghost"
+            onPress={() => router.push('/auth/login')}
+            fullWidth
+          />
+        </View>
+      </View>
+    </Screen>
   );
 }

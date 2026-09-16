@@ -7,7 +7,7 @@ export interface ProgressBarProps {
   /** 0 to 1. */
   progress: number;
   height?: number;
-  tone?: 'accent' | 'success' | 'gold';
+  tone?: 'accent' | 'success' | 'gold' | 'danger';
 }
 
 const useStyles = makeStyles(t => ({
@@ -16,6 +16,7 @@ const useStyles = makeStyles(t => ({
   accent: { backgroundColor: t.colors.accent },
   success: { backgroundColor: t.colors.success },
   gold: { backgroundColor: t.colors.gold },
+  danger: { backgroundColor: t.colors.danger },
 }));
 
 /**
