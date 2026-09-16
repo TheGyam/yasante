@@ -55,8 +55,18 @@ const getMonthName = (monthKey: string): string => {
   const [yearStr, monthStr] = monthKey.split('-');
   const monthIndex = parseInt(monthStr, 10) - 1;
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
   return `${months[monthIndex]} ${yearStr}`;
 };
@@ -86,7 +96,7 @@ export default function AddHairstyleScreen() {
 
   const handleImageSelected = (uri: string) => {
     setPhotoUri(uri);
-    setErrors((prev) => ({ ...prev, photo: '' }));
+    setErrors(prev => ({ ...prev, photo: '' }));
   };
 
   const handleSubmit = async () => {
@@ -116,7 +126,11 @@ export default function AddHairstyleScreen() {
       <TopBar title={`Add Hairstyle - ${month ? getMonthName(month) : ''}`} />
       <Content>
         <FormCard>
-          <Text variant="body" color={theme.colors.text.medium} style={{ marginBottom: theme.spacing[3] }}>
+          <Text
+            variant="body"
+            color={theme.colors.text.medium}
+            style={{ marginBottom: theme.spacing[3] }}
+          >
             Add a photo of the hairstyle you want for this month
           </Text>
 
@@ -132,11 +146,13 @@ export default function AddHairstyleScreen() {
                 style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
                 activeOpacity={0.8}
               >
-                <View style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                  padding: theme.spacing[2],
-                  borderRadius: theme.radii.small,
-                }}>
+                <View
+                  style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    padding: theme.spacing[2],
+                    borderRadius: theme.radii.small,
+                  }}
+                >
                   <Text variant="body" weight="medium" color="#fff">
                     Change Photo
                   </Text>
@@ -146,22 +162,28 @@ export default function AddHairstyleScreen() {
           ) : (
             <ImageButton onPress={() => setIsMediaPickerVisible(true)} activeOpacity={0.7}>
               <View style={{ alignItems: 'center' }}>
-                <View style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 32,
-                  backgroundColor: theme.colors.background,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: theme.spacing[2],
-                }}>
+                <View
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                    backgroundColor: theme.colors.background,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: theme.spacing[2],
+                  }}
+                >
                   <Text style={{ fontSize: 32, color: theme.colors.text.low }}>+</Text>
                 </View>
                 <ImageButtonText variant="body" weight="medium">
                   Tap to add photo
                 </ImageButtonText>
                 {errors.photo && (
-                  <Text variant="caption" color={theme.colors.error} style={{ marginTop: theme.spacing[1] }}>
+                  <Text
+                    variant="caption"
+                    color={theme.colors.error}
+                    style={{ marginTop: theme.spacing[1] }}
+                  >
                     {errors.photo}
                   </Text>
                 )}
@@ -202,4 +224,3 @@ export default function AddHairstyleScreen() {
     </Container>
   );
 }
-

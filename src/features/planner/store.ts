@@ -14,13 +14,13 @@ interface PlannerState {
 
 export const usePlannerStore = create<PlannerState>()(
   persist(
-    (set) => ({
+    set => ({
       selectedGoalId: null,
-      setSelectedGoalId: (goalId) => set({ selectedGoalId: goalId }),
+      setSelectedGoalId: goalId => set({ selectedGoalId: goalId }),
       draftGoal: null,
-      setDraftGoal: (goal) => set({ draftGoal: goal }),
+      setDraftGoal: goal => set({ draftGoal: goal }),
       draftActivity: null,
-      setDraftActivity: (activity) => set({ draftActivity: activity }),
+      setDraftActivity: activity => set({ draftActivity: activity }),
     }),
     {
       name: '@yasante:planner',
@@ -28,4 +28,3 @@ export const usePlannerStore = create<PlannerState>()(
     }
   )
 );
-

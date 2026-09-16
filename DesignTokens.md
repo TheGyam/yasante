@@ -101,11 +101,11 @@ import { useTheme } from '@/hooks/useTheme';
 
 function MyComponent() {
   const { theme } = useTheme();
-  
+
   return (
-    <View style={{ 
+    <View style={{
       padding: theme.spacing[4],
-      backgroundColor: theme.colors.primary 
+      backgroundColor: theme.colors.primary
     }}>
       {/* ... */}
     </View>
@@ -137,4 +137,3 @@ The `ThemeProvider` wraps the app and provides theme context. It supports:
 - Manual override
 
 Users can toggle themes in Settings, and the preference is persisted.
-

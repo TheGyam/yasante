@@ -41,4 +41,3 @@ export function TabIcon({ name, size = 22, active = false, accessibilityLabel }:
     />
   );
 }
-

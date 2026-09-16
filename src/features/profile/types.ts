@@ -35,4 +35,3 @@ export interface UserSettings {
     fontSize: 'default' | 'large' | 'extraLarge';
   };
 }
-

@@ -43,4 +43,3 @@ export function ProtectedRoute({ children, feature = 'general', redirectTo }: Pr
 
   return <>{children}</>;
 }
-

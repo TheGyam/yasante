@@ -1,5 +1,5 @@
 export type ContentType = 'article' | 'video';
-export type ContentTopic = 
+export type ContentTopic =
   | 'care'
   | 'styling'
   | 'products'
@@ -42,4 +42,3 @@ export interface Favorite {
   contentId: string;
   createdAt: string;
 }
-

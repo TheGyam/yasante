@@ -1,5 +1,11 @@
 import React from 'react';
-import { Image, ImageProps as RNImageProps, ActivityIndicator, View, StyleSheet } from 'react-native';
+import {
+  Image,
+  ImageProps as RNImageProps,
+  ActivityIndicator,
+  View,
+  StyleSheet,
+} from 'react-native';
 import { Image as ExpoImage, ImageContentFit } from 'expo-image';
 import styled from 'styled-components/native';
 import { useTheme } from '@/shared/hooks/useTheme';
@@ -127,9 +133,7 @@ export function ImageWithPlaceholder({
     return (
       <Container testID={testID} accessible={true} accessibilityRole="image" style={style}>
         <Placeholder>
-          {placeholder || (
-            <ActivityIndicator size="small" color={theme.colors.text.low} />
-          )}
+          {placeholder || <ActivityIndicator size="small" color={theme.colors.text.low} />}
         </Placeholder>
       </Container>
     );
@@ -139,9 +143,7 @@ export function ImageWithPlaceholder({
     <Container testID={testID} accessible={true} accessibilityRole="image" style={style}>
       {isLoading && !hasLoaded && (
         <Placeholder>
-          {placeholder || (
-            <ActivityIndicator size="small" color={theme.colors.primary} />
-          )}
+          {placeholder || <ActivityIndicator size="small" color={theme.colors.primary} />}
         </Placeholder>
       )}
       <ExpoImage
@@ -160,4 +162,3 @@ export function ImageWithPlaceholder({
     </Container>
   );
 }
-

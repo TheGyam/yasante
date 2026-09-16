@@ -22,11 +22,13 @@ The API base URL is determined in the following order (highest to lowest priorit
 ### Option 1: Environment Variable (Recommended for Development)
 
 1. Copy `.env.example` to `.env`:
+
    ```bash
    cp .env.example .env
    ```
 
 2. Update `.env` with your API URL:
+
    ```env
    EXPO_PUBLIC_API_BASE_URL=https://yasante.com
    ```
@@ -36,6 +38,7 @@ The API base URL is determined in the following order (highest to lowest priorit
 ### Option 2: app.json Configuration
 
 Update `app.json`:
+
 ```json
 {
   "expo": {
@@ -80,4 +83,3 @@ Update `.env` or `app.json` with your API base URL (e.g. `https://yasante.com`),
 - Environment variables prefixed with `EXPO_PUBLIC_` are embedded at build time
 - Configuration is validated on module load in development mode
 - All API requests use the centralized configuration
-

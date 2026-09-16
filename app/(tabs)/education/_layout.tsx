@@ -10,8 +10,8 @@ export default function EducationLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="[id]" />
-      <Stack.Screen 
-        name="diy/[id]" 
+      <Stack.Screen
+        name="diy/[id]"
         options={{
           animation: 'fade',
           presentation: 'transparentModal',
@@ -21,4 +21,3 @@ export default function EducationLayout() {
     </Stack>
   );
 }
-

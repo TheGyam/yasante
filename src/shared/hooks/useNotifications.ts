@@ -31,17 +31,21 @@ export function useNotifications() {
 
     try {
       // Handle notifications received while app is foregrounded
-      notificationListener.current = Notifications.addNotificationReceivedListener((notification: any) => {
-        console.log('Notification received:', notification);
-      });
+      notificationListener.current = Notifications.addNotificationReceivedListener(
+        (notification: any) => {
+          console.log('Notification received:', notification);
+        }
+      );
 
       // Handle user tapping on notification
-      responseListener.current = Notifications.addNotificationResponseReceivedListener((response: any) => {
-        console.log('Notification response:', response);
-        // Handle navigation based on notification data
-        const data = response.notification.request.content.data;
-        // Navigate based on data.type, data.id, etc.
-      });
+      responseListener.current = Notifications.addNotificationResponseReceivedListener(
+        (response: any) => {
+          console.log('Notification response:', response);
+          // Handle navigation based on notification data
+          const data = response.notification.request.content.data;
+          // Navigate based on data.type, data.id, etc.
+        }
+      );
     } catch (e) {
       // Notifications not available
     }
@@ -68,4 +72,3 @@ export function useNotifications() {
     // Expose any notification-related functions if needed
   };
 }
-

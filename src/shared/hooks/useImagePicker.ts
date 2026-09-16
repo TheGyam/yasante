@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { pickImageFromLibrary, takePhoto, compressImage, ImagePickerResult } from '@/shared/lib/imageService';
+import {
+  pickImageFromLibrary,
+  takePhoto,
+  compressImage,
+  ImagePickerResult,
+} from '@/shared/lib/imageService';
 
 export function useImagePicker() {
   const [loading, setLoading] = useState(false);
@@ -52,4 +57,3 @@ export function useImagePicker() {
     error,
   };
 }
-

@@ -31,7 +31,8 @@ const Header = styled.View<{ topInset: number }>`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding-top: ${({ topInset, theme }: { topInset: number; theme: Theme }) => topInset + theme.spacing[3]}px;
+  padding-top: ${({ topInset, theme }: { topInset: number; theme: Theme }) =>
+    topInset + theme.spacing[3]}px;
   padding-horizontal: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
   padding-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
   background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};
@@ -52,7 +53,6 @@ const CloseButton = styled(TouchableOpacity)`
   border-width: 1px;
   border-color: rgba(0, 0, 0, 0.05);
 `;
-
 
 const FavoriteButton = styled(TouchableOpacity)`
   width: 40px;
@@ -143,44 +143,44 @@ export default function ContentDetailScreen() {
   const { isAuthenticated, user } = useAuth();
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const { data: content, isLoading } = useContentItem(id || '');
-  
+
   const userId = user?.id;
   const { data: isFavorite = false } = useIsFavorite(userId || '', id || '', { enabled: !!userId });
   const toggleFavorite = useToggleFavorite(userId || '');
 
   // Parse article content - must be before early return (Rules of Hooks)
   const articleText = content?.articleContent || content?.description || 'No content available.';
-  
+
   const articleParts = React.useMemo(() => {
     if (!articleText) return [];
-    
+
     const parts: Array<{ type: 'paragraph' | 'subheading'; content: string }> = [];
     // Split by double newlines to get paragraphs
-    const paragraphs = articleText.split(/\n\s*\n/).filter((p) => p.trim());
-    
-    paragraphs.forEach((para) => {
+    const paragraphs = articleText.split(/\n\s*\n/).filter(p => p.trim());
+
+    paragraphs.forEach(para => {
       const trimmed = para.trim();
       // Check if this looks like a subheading (short, title case, no punctuation)
-      const isSubHeading = 
-        trimmed.length < 80 && 
+      const isSubHeading =
+        trimmed.length < 80 &&
         trimmed.length > 0 &&
         /^[A-Z][a-z]+(\s+[A-Z][a-z]+)*$/.test(trimmed) &&
         !trimmed.endsWith('.') &&
         !trimmed.endsWith('?') &&
         !trimmed.endsWith('!');
-      
+
       if (isSubHeading) {
         parts.push({ type: 'subheading', content: trimmed });
       } else {
         parts.push({ type: 'paragraph', content: trimmed });
       }
     });
-    
+
     // If no parts were created, add the whole text as a paragraph
     if (parts.length === 0 && articleText) {
       parts.push({ type: 'paragraph', content: articleText });
     }
-    
+
     return parts;
   }, [articleText]);
 
@@ -195,7 +195,7 @@ export default function ContentDetailScreen() {
       });
     }
   }, [content?.id, content?.articleContent]);
-  
+
   // Debug: Log parsing results (must be before early return)
   React.useEffect(() => {
     if (content && articleText) {
@@ -213,7 +213,7 @@ export default function ContentDetailScreen() {
       setShowAuthPrompt(true);
       return;
     }
-    
+
     if (id && userId) {
       toggleFavorite.mutate(id);
     }
@@ -235,7 +235,7 @@ export default function ContentDetailScreen() {
 
   // Intercept gesture navigation (swipe back) to ensure proper navigation
   useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+    const unsubscribe = navigation.addListener('beforeRemove', e => {
       // Only intercept if we came from search and we're not already navigating
       if (returnTo === 'search' && !isNavigatingRef.current) {
         // Only intercept actual back actions (POP, not our own navigation)
@@ -265,7 +265,8 @@ export default function ContentDetailScreen() {
   // Mock reviewer data - in real app this would come from content.author
   const reviewer = {
     name: 'Dr. Anna Targonskaya',
-    credentials: 'Obstetrician and gynecologist, 5+ years in obstetrics, gynecology, and digital health',
+    credentials:
+      'Obstetrician and gynecologist, 5+ years in obstetrics, gynecology, and digital health',
     avatar: null,
   };
 
@@ -301,7 +302,13 @@ export default function ContentDetailScreen() {
 
           <ReviewedBySection>
             <AvatarContainer>
-              <Avatar size={48} name={reviewer.name.split(' ').map((n) => n[0]).join('')} />
+              <Avatar
+                size={48}
+                name={reviewer.name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')}
+              />
               <VerifiedBadge>
                 <Text variant="caption" color="#fff" style={{ fontSize: 10 }}>
                   ✓
@@ -315,7 +322,11 @@ export default function ContentDetailScreen() {
               <ReviewerName variant="body" weight="semibold">
                 {reviewer.name}
               </ReviewerName>
-              <ReviewerCredentials variant="caption" color={theme.colors.text.medium} numberOfLines={2}>
+              <ReviewerCredentials
+                variant="caption"
+                color={theme.colors.text.medium}
+                numberOfLines={2}
+              >
                 {reviewer.credentials}
               </ReviewerCredentials>
             </ReviewerInfo>
@@ -341,7 +352,14 @@ export default function ContentDetailScreen() {
                 </SharedElement>
               </View>
             ) : (
-              <View style={{ width: '100%', height: 280, alignItems: 'center', justifyContent: 'center' }}>
+              <View
+                style={{
+                  width: '100%',
+                  height: 280,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
                 <Text variant="body" color={theme.colors.text.low}>
                   Illustration
                 </Text>
@@ -360,9 +378,13 @@ export default function ContentDetailScreen() {
                       </SubHeading>
                     );
                   }
-                  
+
                   return (
-                    <Paragraph key={`paragraph-${index}`} variant="body" color={theme.colors.text.high}>
+                    <Paragraph
+                      key={`paragraph-${index}`}
+                      variant="body"
+                      color={theme.colors.text.high}
+                    >
                       {part.content}
                     </Paragraph>
                   );
@@ -373,8 +395,13 @@ export default function ContentDetailScreen() {
                 <Paragraph variant="body" color={theme.colors.text.medium}>
                   {content.description || 'No content available.'}
                 </Paragraph>
-                <Paragraph variant="caption" color={theme.colors.text.low} style={{ marginTop: theme.spacing[2] }}>
-                  Debug: articleParts.length = {articleParts.length}, articleText length = {articleText.length}
+                <Paragraph
+                  variant="caption"
+                  color={theme.colors.text.low}
+                  style={{ marginTop: theme.spacing[2] }}
+                >
+                  Debug: articleParts.length = {articleParts.length}, articleText length ={' '}
+                  {articleText.length}
                 </Paragraph>
               </View>
             )}

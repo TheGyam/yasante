@@ -109,13 +109,3 @@ export function useBackgroundSync(options: UseBackgroundSyncOptions = {}) {
     isSyncing: syncInProgressRef.current,
   };
 }
-
-
-
-
-
-
-
-
-
-

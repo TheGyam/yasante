@@ -18,7 +18,7 @@ export function useRoutines(userId?: string, options?: { enabled?: boolean }) {
       const response = await api.routines.getAll(actualUserId);
       return response.data;
     },
-    enabled: (options?.enabled !== false) && !!actualUserId,
+    enabled: options?.enabled !== false && !!actualUserId,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
@@ -44,13 +44,13 @@ export function useCreateRoutine(userId?: string) {
       const response = await api.routines.create(routine);
       return response.data;
     },
-    onSuccess: (newRoutine) => {
+    onSuccess: newRoutine => {
       if (actualUserId) {
         // Add new routine to list cache
-        queryClient.setQueryData<Routine[]>(
-          [ROUTINES_QUERY_KEY, actualUserId],
-          (old = []) => [...old, newRoutine]
-        );
+        queryClient.setQueryData<Routine[]>([ROUTINES_QUERY_KEY, actualUserId], (old = []) => [
+          ...old,
+          newRoutine,
+        ]);
         // Set detail cache
         queryClient.setQueryData([ROUTINES_QUERY_KEY, newRoutine.id], newRoutine);
       }
@@ -68,12 +68,11 @@ export function useUpdateRoutine(routineId: string, userId?: string) {
       const response = await api.routines.update(routineId, updates);
       return response.data;
     },
-    onSuccess: (updatedRoutine) => {
+    onSuccess: updatedRoutine => {
       if (actualUserId) {
         // Update list cache
-        queryClient.setQueryData<Routine[]>(
-          [ROUTINES_QUERY_KEY, actualUserId],
-          (old = []) => old.map(routine => routine.id === updatedRoutine.id ? updatedRoutine : routine)
+        queryClient.setQueryData<Routine[]>([ROUTINES_QUERY_KEY, actualUserId], (old = []) =>
+          old.map(routine => (routine.id === updatedRoutine.id ? updatedRoutine : routine))
         );
         // Update detail cache
         queryClient.setQueryData([ROUTINES_QUERY_KEY, routineId], updatedRoutine);
@@ -92,12 +91,11 @@ export function useDeleteRoutine(userId?: string) {
       await api.routines.delete(routineId);
       return routineId;
     },
-    onSuccess: (routineId) => {
+    onSuccess: routineId => {
       if (actualUserId) {
         // Remove from list cache
-        queryClient.setQueryData<Routine[]>(
-          [ROUTINES_QUERY_KEY, actualUserId],
-          (old = []) => old.filter(routine => routine.id !== routineId)
+        queryClient.setQueryData<Routine[]>([ROUTINES_QUERY_KEY, actualUserId], (old = []) =>
+          old.filter(routine => routine.id !== routineId)
         );
         // Remove detail cache
         queryClient.removeQueries({ queryKey: [ROUTINES_QUERY_KEY, routineId] });
@@ -105,4 +103,3 @@ export function useDeleteRoutine(userId?: string) {
     },
   });
 }
-

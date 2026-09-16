@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!current) return;
         useAuthStore.getState().setTokens({ ...current, accessToken, expiresAt });
       },
-      refresh: async (refreshToken) => {
+      refresh: async refreshToken => {
         const response = await api.auth.refreshToken(refreshToken);
         return response.data;
       },
@@ -90,9 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { accessToken, expiresAt } = response.data;
 
       // Convert expiresAt to timestamp if needed
-      const expiresAtTimestamp = typeof expiresAt === 'string' 
-        ? new Date(expiresAt).getTime() 
-        : expiresAt;
+      const expiresAtTimestamp =
+        typeof expiresAt === 'string' ? new Date(expiresAt).getTime() : expiresAt;
 
       // Update tokens in store
       useAuthStore.getState().setTokens({
@@ -145,7 +144,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === 'auth';
-    const isOnboarding = segments[0] === undefined || segments[0] === 'index' || segments[0] === 'onboarding';
+    const isOnboarding =
+      segments[0] === undefined || segments[0] === 'index' || segments[0] === 'onboarding';
 
     // Don't redirect if on onboarding or index - let those screens handle their own navigation
     if (isOnboarding) return;
@@ -158,15 +158,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, isLoading, segments, router]);
 
-  const login = useCallback((user: User, tokens: AuthTokens) => {
-    setAuth(user, tokens);
-  }, [setAuth]);
+  const login = useCallback(
+    (user: User, tokens: AuthTokens) => {
+      setAuth(user, tokens);
+    },
+    [setAuth]
+  );
 
   const logout = useCallback(async () => {
     try {
       // Clear React Query cache to remove all user-specific data
       await queryClient.clear();
-      
+
       // Clear persisted cache storage
       try {
         const { asyncStoragePersister } = await import('@/shared/utils/cachePersistence');
@@ -180,13 +183,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.warn('Failed to clear persisted cache:', storageError);
         }
       }
-      
+
       // Logout from auth store (clears tokens and user)
       logoutStore();
-      
+
       // Navigate to login screen
       router.replace('/auth/login');
-      
+
       if (__DEV__) {
         console.log('✅ Logout successful - cache cleared');
       }
@@ -198,9 +201,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [logoutStore, router]);
 
-  const updateUser = useCallback((user: User) => {
-    setUser(user);
-  }, [setUser]);
+  const updateUser = useCallback(
+    (user: User) => {
+      setUser(user);
+    },
+    [setUser]
+  );
 
   const value: AuthContextType = {
     user,
@@ -222,4 +228,3 @@ export function useAuth() {
   }
   return context;
 }
-

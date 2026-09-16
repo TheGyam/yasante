@@ -6,7 +6,7 @@ export const queryClient = new QueryClient({
     queries: {
       retry: 2,
       // Dynamic staleTime based on query type
-      staleTime: (query) => {
+      staleTime: query => {
         const key = query.queryKey[0];
         if (key === 'content' && query.queryKey[1] === 'infinite') {
           return 30 * 1000; // 30 seconds for feed
@@ -20,7 +20,7 @@ export const queryClient = new QueryClient({
       // Don't use refetchOnWindowFocus on React Native - use AppState hook instead
       refetchOnWindowFocus: false,
       // Always refetch feed on mount, use default for others
-      refetchOnMount: (query) => {
+      refetchOnMount: query => {
         if (query.queryKey[0] === 'content' && query.queryKey[1] === 'infinite') {
           return 'always';
         }

@@ -87,16 +87,16 @@ export function SwipeableFlashcard({
 }: SwipeableFlashcardProps) {
   const { theme } = useTheme();
   const { width } = useWindowDimensions();
-  
+
   // Safety: ensure steps array exists and has items
   const safeSteps = steps || [];
   const maxIndex = Math.max(0, safeSteps.length - 1);
-  
+
   // Clamp initial index
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const indexRef = useRef(0);
   indexRef.current = currentStepIndex;
-  
+
   // Track if component is mounted to prevent state updates after unmount
   const mounted = useRef(true);
   useEffect(() => {
@@ -104,7 +104,7 @@ export function SwipeableFlashcard({
       mounted.current = false;
     };
   }, []);
-  
+
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(1);
   const cardScale = useSharedValue(1);
@@ -130,13 +130,13 @@ export function SwipeableFlashcard({
   // Function to animate card transition (called from JS thread)
   const animateTransition = (direction: 'next' | 'prev', newIndex: number) => {
     if (!mounted.current) return;
-    
+
     // Update shared value immediately
     currentIndex.value = newIndex;
-    
+
     // Update React state
     setIndexOnJS(newIndex);
-    
+
     // Start new card from opposite side and animate in quickly
     const fastSpring = { stiffness: 500, damping: 65 };
     if (direction === 'next') {
@@ -145,7 +145,7 @@ export function SwipeableFlashcard({
       translateX.value = -width;
     }
     opacity.value = 0.95; // Less dramatic fade
-    
+
     // Animate new card in quickly
     translateX.value = withSpring(0, fastSpring);
     opacity.value = withSpring(1, { duration: 100 });
@@ -159,12 +159,12 @@ export function SwipeableFlashcard({
       // Minimal scale effect
       cardScale.value = withSpring(0.99, { stiffness: 400, damping: 60 });
     })
-    .onUpdate((event) => {
+    .onUpdate(event => {
       translateX.value = event.translationX;
       // Very subtle opacity change - no glaring fade
       opacity.value = Math.max(0.85, 1 - Math.abs(event.translationX) / (width * 1.5));
     })
-    .onEnd((event) => {
+    .onEnd(event => {
       const threshold = 60; // Lower threshold for quicker response
       const velocity = event.velocityX;
 
@@ -267,10 +267,7 @@ export function SwipeableFlashcard({
   }, [safeSteps.length, currentStepIndex, maxIndex]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { scale: cardScale.value },
-    ],
+    transform: [{ translateX: translateX.value }, { scale: cardScale.value }],
     opacity: opacity.value,
   }));
 
@@ -294,39 +291,43 @@ export function SwipeableFlashcard({
       <GestureDetector gesture={panGesture}>
         <Animated.View style={[{ width: '100%' }, animatedStyle]}>
           <CardContainer>
-          <CardContent>
-            <View>
-              <StepNumber>
-                <Text variant="caption" weight="semibold" color="#fff">
-                  Step {currentStep.stepNumber} of {safeSteps.length}
+            <CardContent>
+              <View>
+                <StepNumber>
+                  <Text variant="caption" weight="semibold" color="#fff">
+                    Step {currentStep.stepNumber} of {safeSteps.length}
+                  </Text>
+                </StepNumber>
+                <Text
+                  variant="h3"
+                  weight="bold"
+                  color={theme.colors.text.high}
+                  style={{ marginBottom: theme.spacing[2] }}
+                >
+                  {currentStep.title}
                 </Text>
-              </StepNumber>
-              <Text variant="h3" weight="bold" color={theme.colors.text.high} style={{ marginBottom: theme.spacing[2] }}>
-                {currentStep.title}
-              </Text>
-              {currentStep.imageUri && (
-                <ImageContainer>
-                  <ImageWithPlaceholder
-                    source={{ uri: currentStep.imageUri }}
-                    style={{ width: '100%', height: '100%' }}
-                    resizeMode="cover"
-                  />
-                </ImageContainer>
-              )}
-              <Text variant="body" color={theme.colors.text.high}>
-                {currentStep.description}
-              </Text>
-            </View>
-            <StepIndicator>
-              {safeSteps.map((_, index) => (
-                <Dot key={index} active={index === safeIndex} />
-              ))}
-            </StepIndicator>
-          </CardContent>
-        </CardContainer>
+                {currentStep.imageUri && (
+                  <ImageContainer>
+                    <ImageWithPlaceholder
+                      source={{ uri: currentStep.imageUri }}
+                      style={{ width: '100%', height: '100%' }}
+                      resizeMode="cover"
+                    />
+                  </ImageContainer>
+                )}
+                <Text variant="body" color={theme.colors.text.high}>
+                  {currentStep.description}
+                </Text>
+              </View>
+              <StepIndicator>
+                {safeSteps.map((_, index) => (
+                  <Dot key={index} active={index === safeIndex} />
+                ))}
+              </StepIndicator>
+            </CardContent>
+          </CardContainer>
         </Animated.View>
       </GestureDetector>
     </View>
   );
 }
-

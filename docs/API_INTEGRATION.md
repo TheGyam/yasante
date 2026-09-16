@@ -1,6 +1,7 @@
 # API Integration Documentation
 
 ## Overview
+
 This document describes the integration with the backend API based on the Swagger specification.
 
 **Swagger URL**: https://yasante.com/swagger/  
@@ -10,6 +11,7 @@ This document describes the integration with the backend API based on the Swagge
 ## Configuration
 
 ### Base URL
+
 - **Base URL**: `https://yasante.com`
 
 The base URL does NOT include `/api` as it's handled by the basePath in Swagger.
@@ -17,6 +19,7 @@ The base URL does NOT include `/api` as it's handled by the basePath in Swagger.
 ## Content API Endpoints
 
 ### List Content
+
 - **Endpoint**: `GET /api/content/content/`
 - **Query Parameters**:
   - `topic` (optional): Filter by topic (enum: care, styling, products, treatments, color, growth, health, tips)
@@ -27,12 +30,14 @@ The base URL does NOT include `/api` as it's handled by the basePath in Swagger.
 - **Response**: Array of Content objects (direct array, not wrapped)
 
 ### Get Content by ID
+
 - **Endpoint**: `GET /api/content/content/{id}/`
 - **Path Parameters**:
   - `id` (required): UUID string
 - **Response**: Content object
 
 ### Search Content
+
 - **Endpoint**: `GET /api/content/content/search/`
 - **Query Parameters**:
   - `search` (required): Search term
@@ -53,6 +58,7 @@ The backend returns direct arrays for list/search endpoints, but the frontend ex
 The backend uses snake_case while the frontend uses camelCase. The API client handles this automatically through Axios response interceptors if needed, or the backend may return camelCase directly.
 
 **Backend Fields** (from Swagger):
+
 - `article_content` → `articleContent`
 - `published_at` → `publishedAt`
 - `thumbnail_uri` → `thumbnailUri`
@@ -62,6 +68,7 @@ The backend uses snake_case while the frontend uses camelCase. The API client ha
 ## Authentication
 
 Most endpoints require JWT authentication via Bearer token:
+
 ```
 Authorization: Bearer {accessToken}
 ```
@@ -71,6 +78,7 @@ The API client automatically adds the authorization header from the auth store.
 ## Error Handling
 
 The API client includes comprehensive error handling:
+
 - Network errors are logged with full details
 - HTTP errors include status codes and response data
 - All errors are properly typed and thrown for React Query to handle
@@ -78,6 +86,7 @@ The API client includes comprehensive error handling:
 ## Debugging
 
 In development mode, all API requests and responses are logged to the console:
+
 - 📤 Request logs show method, URL, and headers
 - ✅ Response logs show status and data length
 - ❌ Error logs show full error details
@@ -85,6 +94,7 @@ In development mode, all API requests and responses are logged to the console:
 ## Testing
 
 To test the API integration:
+
 1. Ensure the backend is running and accessible
 2. Check console logs for API requests
 3. Verify responses match expected format
@@ -97,4 +107,3 @@ To test the API integration:
 3. ⏳ Add response transformation for field name mapping if needed
 4. ⏳ Add retry logic for failed requests
 5. ⏳ Implement request/response caching strategies
-

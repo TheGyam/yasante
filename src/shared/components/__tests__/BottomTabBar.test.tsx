@@ -69,4 +69,3 @@ describe('BottomTabBar', () => {
     expect(getAllByLabelText('Planner')[0]).toBeTruthy();
   });
 });
-

@@ -1,6 +1,7 @@
 # Yasante App - Backend API Documentation
 
 ## Table of Contents
+
 1. [Overview](#overview)
 2. [Base Configuration](#base-configuration)
 3. [Authentication & Authorization](#authentication--authorization)
@@ -19,6 +20,7 @@
 Yasante is a React Native mobile application built with Expo for hair care management. This document provides comprehensive API specifications for the backend engineer to implement a fully functional REST API.
 
 ### Key Features
+
 - User authentication and profile management
 - Hair profile tracking (texture, density, porosity, goals)
 - Goal setting and progress tracking with photos
@@ -30,6 +32,7 @@ Yasante is a React Native mobile application built with Expo for hair care manag
 - Monthly hairstyle tracking
 
 ### Technology Stack (Frontend)
+
 - **Framework**: React Native with Expo
 - **Routing**: Expo Router
 - **State Management**: Zustand
@@ -42,15 +45,19 @@ Yasante is a React Native mobile application built with Expo for hair care manag
 ## Base Configuration
 
 ### API Base URLs
+
 - **Base URL**: `https://yasante.com`
 
 ### API Versioning
+
 All endpoints should be prefixed with `/api/v1` (or your preferred versioning strategy).
 
 ### Content-Type
+
 All requests and responses use `application/json` unless specified otherwise (e.g., file uploads).
 
 ### Timeout
+
 Request timeout: **10 seconds**
 
 ---
@@ -58,29 +65,35 @@ Request timeout: **10 seconds**
 ## Authentication & Authorization
 
 ### Authentication Flow
+
 The app uses a **JWT-based authentication** system with access tokens and refresh tokens.
 
 ### Token Structure
 
 #### Access Token
+
 - **Lifetime**: 15 minutes
 - **Format**: JWT
 - **Claims**: User ID, email, expiration time
 - **Usage**: Included in `Authorization` header for all authenticated requests
 
 #### Refresh Token
+
 - **Lifetime**: 7-30 days (configurable)
 - **Format**: JWT or opaque token
 - **Usage**: Used to obtain new access tokens when the current one expires
 
 ### Request Headers
+
 All authenticated requests must include:
+
 ```
 Authorization: Bearer {accessToken}
 Content-Type: application/json
 ```
 
 ### Token Refresh Flow
+
 1. Client receives 401 Unauthorized response
 2. Client automatically calls refresh token endpoint with refresh token
 3. Server validates refresh token and returns new access token
@@ -94,6 +107,7 @@ Content-Type: application/json
 ### Standard Response Format
 
 #### Success Response
+
 ```json
 {
   "data": <response_data>,
@@ -102,6 +116,7 @@ Content-Type: application/json
 ```
 
 #### Error Response
+
 ```json
 {
   "message": "Error message",
@@ -111,6 +126,7 @@ Content-Type: application/json
 ```
 
 ### Paginated Response
+
 ```json
 {
   "data": [<array_of_items>],
@@ -124,6 +140,7 @@ Content-Type: application/json
 ```
 
 ### HTTP Status Codes
+
 - `200` - Success
 - `201` - Created
 - `400` - Bad Request
@@ -139,206 +156,218 @@ Content-Type: application/json
 ## Data Models
 
 ### User
+
 ```typescript
 interface User {
-  id: string;                    // UUID
-  name: string;                  // User's full name
-  email?: string;                // Email address (optional)
-  avatarUri?: string;            // URL to avatar image
-  hairProfile?: HairProfile;     // User's hair profile
-  createdAt: string;             // ISO 8601 datetime
-  updatedAt: string;             // ISO 8601 datetime
+  id: string; // UUID
+  name: string; // User's full name
+  email?: string; // Email address (optional)
+  avatarUri?: string; // URL to avatar image
+  hairProfile?: HairProfile; // User's hair profile
+  createdAt: string; // ISO 8601 datetime
+  updatedAt: string; // ISO 8601 datetime
 }
 ```
 
 ### HairProfile
+
 ```typescript
 interface HairProfile {
   texture?: 'straight' | 'wavy' | 'curly' | 'coily' | 'kinky';
   density?: 'fine' | 'medium' | 'thick';
   porosity?: 'low' | 'medium' | 'high';
   goals?: ('growth' | 'health' | 'moisture' | 'strength' | 'color' | 'style')[];
-  photoUri?: string;             // URL to hair photo
-  completedAt?: string;          // ISO 8601 datetime when profile was completed
+  photoUri?: string; // URL to hair photo
+  completedAt?: string; // ISO 8601 datetime when profile was completed
 }
 ```
 
 ### Goal
+
 ```typescript
 interface Goal {
-  id: string;                    // UUID
-  userId: string;                // Foreign key to User
-  name: string;                  // Goal name
-  description?: string;          // Optional description
-  targetDate: string;            // ISO 8601 date
-  successMetric?: string;        // How success is measured
+  id: string; // UUID
+  userId: string; // Foreign key to User
+  name: string; // Goal name
+  description?: string; // Optional description
+  targetDate: string; // ISO 8601 date
+  successMetric?: string; // How success is measured
   status: 'active' | 'completed' | 'archived';
-  progress: number;              // 0-100
-  createdAt: string;             // ISO 8601 datetime
-  updatedAt: string;             // ISO 8601 datetime
+  progress: number; // 0-100
+  createdAt: string; // ISO 8601 datetime
+  updatedAt: string; // ISO 8601 datetime
 }
 ```
 
 ### ProgressPhoto
+
 ```typescript
 interface ProgressPhoto {
-  id: string;                    // UUID
-  goalId: string;                // Foreign key to Goal
-  uri: string;                   // URL to full-size photo
-  thumbnailUri?: string;         // URL to thumbnail
-  date: string;                  // ISO 8601 date
-  caption?: string;              // Optional caption
-  location?: string;             // Optional location
-  createdAt: string;             // ISO 8601 datetime
+  id: string; // UUID
+  goalId: string; // Foreign key to Goal
+  uri: string; // URL to full-size photo
+  thumbnailUri?: string; // URL to thumbnail
+  date: string; // ISO 8601 date
+  caption?: string; // Optional caption
+  location?: string; // Optional location
+  createdAt: string; // ISO 8601 datetime
 }
 ```
 
 ### Activity
+
 ```typescript
 interface Activity {
-  id: string;                    // UUID
-  goalId: string;                // Foreign key to Goal
+  id: string; // UUID
+  goalId: string; // Foreign key to Goal
   type: 'trim' | 'color' | 'treatment' | 'wash' | 'style' | 'other';
-  date: string;                  // ISO 8601 date
-  notes?: string;                // Optional notes
-  createdAt: string;             // ISO 8601 datetime
+  date: string; // ISO 8601 date
+  notes?: string; // Optional notes
+  createdAt: string; // ISO 8601 datetime
 }
 ```
 
 ### Routine
+
 ```typescript
 interface Routine {
-  id: string;                    // UUID
-  userId: string;                // Foreign key to User
-  name: string;                  // Routine name
-  description?: string;          // Optional description
+  id: string; // UUID
+  userId: string; // Foreign key to User
+  name: string; // Routine name
+  description?: string; // Optional description
   frequency: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'custom';
-  steps: RoutineStep[];          // Array of routine steps
-  scheduledTime?: string;        // HH:mm format (24-hour)
-  daysOfWeek?: number[];         // 0-6, Sunday = 0
-  reminderEnabled: boolean;      // Whether reminders are enabled
-  reminderTime?: number;         // Minutes before scheduled time
-  createdAt: string;             // ISO 8601 datetime
-  updatedAt: string;             // ISO 8601 datetime
+  steps: RoutineStep[]; // Array of routine steps
+  scheduledTime?: string; // HH:mm format (24-hour)
+  daysOfWeek?: number[]; // 0-6, Sunday = 0
+  reminderEnabled: boolean; // Whether reminders are enabled
+  reminderTime?: number; // Minutes before scheduled time
+  createdAt: string; // ISO 8601 datetime
+  updatedAt: string; // ISO 8601 datetime
 }
 
 interface RoutineStep {
-  id: string;                    // UUID
-  name: string;                  // Step name
-  duration: number;              // Duration in minutes
-  order: number;                 // Order in routine (0-based)
+  id: string; // UUID
+  name: string; // Step name
+  duration: number; // Duration in minutes
+  order: number; // Order in routine (0-based)
 }
 ```
 
 ### MonthlyHairstyle
+
 ```typescript
 interface MonthlyHairstyle {
-  id: string;                    // UUID
-  month: string;                 // Format: "YYYY-MM" (e.g., "2024-01")
-  userId: string;                // Foreign key to User
-  photoUri: string;              // URL to photo
-  thumbnailUri?: string;         // URL to thumbnail
-  notes?: string;                // Optional notes
-  createdAt: string;             // ISO 8601 datetime
-  updatedAt: string;             // ISO 8601 datetime
+  id: string; // UUID
+  month: string; // Format: "YYYY-MM" (e.g., "2024-01")
+  userId: string; // Foreign key to User
+  photoUri: string; // URL to photo
+  thumbnailUri?: string; // URL to thumbnail
+  notes?: string; // Optional notes
+  createdAt: string; // ISO 8601 datetime
+  updatedAt: string; // ISO 8601 datetime
 }
 ```
 
 ### MoodBoardEntry
+
 ```typescript
 interface MoodBoardEntry {
-  id: string;                    // UUID
-  userId: string;                // Foreign key to User
-  month: string;                 // Format: "YYYY-MM" (e.g., "2024-01")
-  name: string;                  // Hairstyle name
-  mainPhotoUri: string;          // URL to thumbnail/main photo
-  photos: string[];              // Array of up to 3 photo URLs
-  stylistPrice: number;          // Stylist service fee
-  hairPrice: number;             // Cost of hair extensions/materials
-  stylistLocation: string;       // Location of stylist
-  appointmentTime: string;       // ISO 8601 datetime
-  monthColor?: string;           // Hex color code (e.g., "#FF5733")
-  notes?: string;                // Optional notes
-  completed?: boolean;           // Whether the style has been done
-  createdAt: string;             // ISO 8601 datetime
-  updatedAt: string;             // ISO 8601 datetime
+  id: string; // UUID
+  userId: string; // Foreign key to User
+  month: string; // Format: "YYYY-MM" (e.g., "2024-01")
+  name: string; // Hairstyle name
+  mainPhotoUri: string; // URL to thumbnail/main photo
+  photos: string[]; // Array of up to 3 photo URLs
+  stylistPrice: number; // Stylist service fee
+  hairPrice: number; // Cost of hair extensions/materials
+  stylistLocation: string; // Location of stylist
+  appointmentTime: string; // ISO 8601 datetime
+  monthColor?: string; // Hex color code (e.g., "#FF5733")
+  notes?: string; // Optional notes
+  completed?: boolean; // Whether the style has been done
+  createdAt: string; // ISO 8601 datetime
+  updatedAt: string; // ISO 8601 datetime
 }
 ```
 
 ### Treatment
+
 ```typescript
 interface Treatment {
-  id: string;                    // UUID
-  userId: string;                // Foreign key to User
-  name: string;                  // Treatment name
+  id: string; // UUID
+  userId: string; // Foreign key to User
+  name: string; // Treatment name
   frequency: 'daily' | 'every-2-days' | 'weekly' | 'specific-days' | 'custom';
   timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night';
-  startDate: string;             // ISO 8601 date
-  endDate?: string;              // ISO 8601 date (optional)
-  numberOfSessions?: number;     // Optional, alternative to endDate
-  duration?: number;             // Minutes per session
-  specificDays?: number[];       // For specific-days frequency, 0-6, Sunday=0
-  customFrequency?: string;      // For custom frequency
-  reminderEnabled: boolean;      // Whether reminders are enabled
-  reminderTime?: number;         // Minutes before scheduled time
-  notes?: string;                // Optional notes
+  startDate: string; // ISO 8601 date
+  endDate?: string; // ISO 8601 date (optional)
+  numberOfSessions?: number; // Optional, alternative to endDate
+  duration?: number; // Minutes per session
+  specificDays?: number[]; // For specific-days frequency, 0-6, Sunday=0
+  customFrequency?: string; // For custom frequency
+  reminderEnabled: boolean; // Whether reminders are enabled
+  reminderTime?: number; // Minutes before scheduled time
+  notes?: string; // Optional notes
   sessions?: TreatmentSession[]; // Track completed sessions
-  createdAt: string;             // ISO 8601 datetime
-  updatedAt: string;             // ISO 8601 datetime
+  createdAt: string; // ISO 8601 datetime
+  updatedAt: string; // ISO 8601 datetime
 }
 
 interface TreatmentSession {
-  id: string;                    // UUID
-  treatmentId: string;           // Foreign key to Treatment
-  scheduledDate: string;         // ISO 8601 date
-  completed: boolean;            // Whether session was completed
-  completedAt?: string;          // ISO 8601 datetime
-  notes?: string;                // Session-specific notes
-  createdAt: string;             // ISO 8601 datetime
-  updatedAt: string;             // ISO 8601 datetime
+  id: string; // UUID
+  treatmentId: string; // Foreign key to Treatment
+  scheduledDate: string; // ISO 8601 date
+  completed: boolean; // Whether session was completed
+  completedAt?: string; // ISO 8601 datetime
+  notes?: string; // Session-specific notes
+  createdAt: string; // ISO 8601 datetime
+  updatedAt: string; // ISO 8601 datetime
 }
 ```
 
 ### Content
+
 ```typescript
 interface Content {
-  id: string;                    // UUID
-  title: string;                 // Content title
-  description: string;           // Content description
-  type: 'article' | 'video';     // Content type
+  id: string; // UUID
+  title: string; // Content title
+  description: string; // Content description
+  type: 'article' | 'video'; // Content type
   topic: 'care' | 'styling' | 'products' | 'treatments' | 'color' | 'growth' | 'health' | 'tips';
-  hairTypes: string[];           // Array of hair type identifiers
-  thumbnailUri?: string;         // URL to thumbnail
-  videoUri?: string;             // URL to video (for video type)
-  articleContent?: string;       // HTML or markdown content (for article type)
-  duration?: number;             // Duration in minutes (for videos)
-  author?: string;               // Author name
-  publishedAt: string;           // ISO 8601 datetime
-  views?: number;                // View count
-  likes?: number;                // Like count
+  hairTypes: string[]; // Array of hair type identifiers
+  thumbnailUri?: string; // URL to thumbnail
+  videoUri?: string; // URL to video (for video type)
+  articleContent?: string; // HTML or markdown content (for article type)
+  duration?: number; // Duration in minutes (for videos)
+  author?: string; // Author name
+  publishedAt: string; // ISO 8601 datetime
+  views?: number; // View count
+  likes?: number; // Like count
 }
 ```
 
 ### ProductRecommendation
+
 ```typescript
 interface ProductRecommendation {
-  id: string;                    // UUID
-  name: string;                  // Product name
-  brand?: string;                // Brand name
-  description: string;           // Product description
-  imageUri?: string;             // URL to product image
-  link?: string;                 // External link to product
+  id: string; // UUID
+  name: string; // Product name
+  brand?: string; // Brand name
+  description: string; // Product description
+  imageUri?: string; // URL to product image
+  link?: string; // External link to product
   category: 'shampoo' | 'conditioner' | 'treatment' | 'styling' | 'tool' | 'other';
 }
 ```
 
 ### Favorite
+
 ```typescript
 interface Favorite {
-  id: string;                    // UUID
-  userId: string;                // Foreign key to User
-  contentId: string;             // Foreign key to Content
-  createdAt: string;             // ISO 8601 datetime
+  id: string; // UUID
+  userId: string; // Foreign key to User
+  contentId: string; // Foreign key to Content
+  createdAt: string; // ISO 8601 datetime
 }
 ```
 
@@ -349,9 +378,11 @@ interface Favorite {
 ### Authentication Endpoints
 
 #### POST /api/auth/login
+
 Authenticate user and return access/refresh tokens.
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -360,6 +391,7 @@ Authenticate user and return access/refresh tokens.
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -380,10 +412,12 @@ Authenticate user and return access/refresh tokens.
 ```
 
 **Error Responses:**
+
 - `400` - Invalid email or password
 - `422` - Validation error
 
 **Notes:**
+
 - `expiresAt` is a Unix timestamp in milliseconds
 - Passwords should be hashed using bcrypt or similar
 - Email comparison should be case-insensitive
@@ -391,9 +425,11 @@ Authenticate user and return access/refresh tokens.
 ---
 
 #### POST /api/auth/signup
+
 Register a new user account.
 
 **Request Body:**
+
 ```json
 {
   "name": "John Doe",
@@ -403,6 +439,7 @@ Register a new user account.
 ```
 
 **Password Requirements:**
+
 - Minimum 8 characters
 - At least one uppercase letter
 - At least one lowercase letter
@@ -410,6 +447,7 @@ Register a new user account.
 - At least one special character
 
 **Response (201):**
+
 ```json
 {
   "data": {
@@ -430,15 +468,18 @@ Register a new user account.
 ```
 
 **Error Responses:**
+
 - `409` - Email already registered
 - `422` - Validation error (password strength, email format)
 
 ---
 
 #### POST /api/auth/forgot-password
+
 Request a password reset email.
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com"
@@ -446,6 +487,7 @@ Request a password reset email.
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -455,6 +497,7 @@ Request a password reset email.
 ```
 
 **Notes:**
+
 - Always return the same message regardless of whether email exists (security best practice)
 - Generate a secure reset token (UUID or cryptographically random string)
 - Store token with expiration (e.g., 1 hour)
@@ -463,9 +506,11 @@ Request a password reset email.
 ---
 
 #### POST /api/auth/reset-password
+
 Reset password using a reset token.
 
 **Request Body:**
+
 ```json
 {
   "token": "reset-token-uuid",
@@ -474,6 +519,7 @@ Reset password using a reset token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -483,10 +529,12 @@ Reset password using a reset token.
 ```
 
 **Error Responses:**
+
 - `400` - Invalid or expired reset token
 - `422` - Validation error (password strength)
 
 **Notes:**
+
 - Validate token exists and hasn't expired
 - Delete token after successful reset (one-time use)
 - Hash new password before storing
@@ -494,9 +542,11 @@ Reset password using a reset token.
 ---
 
 #### POST /api/auth/refresh-token
+
 Refresh access token using refresh token.
 
 **Request Body:**
+
 ```json
 {
   "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -504,6 +554,7 @@ Refresh access token using refresh token.
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -514,9 +565,11 @@ Refresh access token using refresh token.
 ```
 
 **Error Responses:**
+
 - `401` - Invalid or expired refresh token
 
 **Notes:**
+
 - Validate refresh token
 - Optionally implement refresh token rotation for security
 - Return new access token with same expiration time (15 minutes)
@@ -526,14 +579,17 @@ Refresh access token using refresh token.
 ### User Endpoints
 
 #### GET /api/users/:userId
+
 Get user profile by ID.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -556,20 +612,24 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `404` - User not found
 
 ---
 
 #### PATCH /api/users/:userId
+
 Update user profile.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Request Body:**
+
 ```json
 {
   "name": "Jane Doe",
@@ -579,6 +639,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -594,6 +655,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden (user can only update their own profile)
 - `404` - User not found
@@ -602,14 +664,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### PATCH /api/users/:userId/hair-profile
+
 Update user's hair profile.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Request Body:**
+
 ```json
 {
   "texture": "curly",
@@ -621,6 +686,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -642,12 +708,14 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 - `404` - User not found
 - `422` - Validation error
 
 **Notes:**
+
 - Set `completedAt` timestamp when hair profile is first completed
 - All fields are optional (partial update)
 
@@ -656,14 +724,17 @@ Authorization: Bearer {accessToken}
 ### Goals Endpoints
 
 #### GET /api/users/:userId/goals
+
 Get all goals for a user.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": [
@@ -684,20 +755,24 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 
 ---
 
 #### GET /api/goals/:goalId
+
 Get a specific goal by ID.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -716,6 +791,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 - `404` - Goal not found
@@ -723,14 +799,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### POST /api/goals
+
 Create a new goal.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Request Body:**
+
 ```json
 {
   "userId": "user-123",
@@ -744,6 +823,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Response (201):**
+
 ```json
 {
   "data": {
@@ -762,11 +842,13 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden (userId must match authenticated user)
 - `422` - Validation error
 
 **Notes:**
+
 - `userId` should be extracted from JWT token, not from request body (security)
 - Validate `targetDate` is in the future
 - Validate `progress` is between 0-100
@@ -774,14 +856,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### PATCH /api/goals/:goalId
+
 Update a goal.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Request Body:**
+
 ```json
 {
   "name": "Grow hair 8 inches",
@@ -791,6 +876,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -809,6 +895,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 - `404` - Goal not found
@@ -817,14 +904,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### DELETE /api/goals/:goalId
+
 Delete a goal.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": null
@@ -832,11 +922,13 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 - `404` - Goal not found
 
 **Notes:**
+
 - Cascade delete related photos and activities (or handle soft delete)
 
 ---
@@ -844,14 +936,17 @@ Authorization: Bearer {accessToken}
 ### Progress Photos Endpoints
 
 #### GET /api/goals/:goalId/photos
+
 Get all photos for a specific goal.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": [
@@ -870,20 +965,24 @@ Authorization: Bearer {accessToken}
 ```
 
 **Notes:**
+
 - Sort by date descending (newest first)
 
 ---
 
 #### POST /api/photos
+
 Upload a progress photo.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 Content-Type: multipart/form-data
 ```
 
 **Request Body (Form Data):**
+
 ```
 goalId: "goal-123"
 photo: <file>
@@ -893,6 +992,7 @@ location: "Home"
 ```
 
 **Response (201):**
+
 ```json
 {
   "data": {
@@ -909,12 +1009,14 @@ location: "Home"
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 - `404` - Goal not found
 - `422` - Validation error
 
 **Notes:**
+
 - Accept image formats: JPEG, PNG, WebP
 - Generate thumbnail automatically (recommended size: 300x300px)
 - Store full-size image and thumbnail in CDN/storage
@@ -923,14 +1025,17 @@ location: "Home"
 ---
 
 #### DELETE /api/photos/:photoId
+
 Delete a progress photo.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": null
@@ -938,11 +1043,13 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 - `404` - Photo not found
 
 **Notes:**
+
 - Delete both full-size image and thumbnail from storage
 
 ---
@@ -950,14 +1057,17 @@ Authorization: Bearer {accessToken}
 ### Activities Endpoints
 
 #### GET /api/goals/:goalId/activities
+
 Get all activities for a specific goal.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": [
@@ -974,19 +1084,23 @@ Authorization: Bearer {accessToken}
 ```
 
 **Notes:**
+
 - Sort by date descending (newest first)
 
 ---
 
 #### POST /api/activities
+
 Create a new activity.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Request Body:**
+
 ```json
 {
   "goalId": "goal-123",
@@ -997,6 +1111,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Response (201):**
+
 ```json
 {
   "data": {
@@ -1011,6 +1126,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 - `404` - Goal not found
@@ -1021,14 +1137,17 @@ Authorization: Bearer {accessToken}
 ### Routines Endpoints
 
 #### GET /api/users/:userId/routines
+
 Get all routines for a user.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": [
@@ -1066,14 +1185,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### GET /api/routines/:routineId
+
 Get a specific routine by ID.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -1096,14 +1218,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### POST /api/routines
+
 Create a new routine.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Request Body:**
+
 ```json
 {
   "userId": "user-123",
@@ -1130,6 +1255,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Response (201):**
+
 ```json
 {
   "data": {
@@ -1163,11 +1289,13 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 - `422` - Validation error
 
 **Notes:**
+
 - Generate IDs for steps automatically
 - Validate `scheduledTime` format (HH:mm)
 - Validate `daysOfWeek` values (0-6)
@@ -1175,14 +1303,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### PATCH /api/routines/:routineId
+
 Update a routine.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Request Body:**
+
 ```json
 {
   "name": "Updated Routine Name",
@@ -1191,6 +1322,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -1213,14 +1345,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### DELETE /api/routines/:routineId
+
 Delete a routine.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": null
@@ -1232,17 +1367,21 @@ Authorization: Bearer {accessToken}
 ### Monthly Hairstyles Endpoints
 
 #### GET /api/users/:userId/hairstyles
+
 Get monthly hairstyles for a user, optionally filtered by month.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Query Parameters:**
+
 - `month` (optional): Format "YYYY-MM" (e.g., "2024-01")
 
 **Response (200):**
+
 ```json
 {
   "data": [
@@ -1263,14 +1402,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### GET /api/hairstyles/:hairstyleId
+
 Get a specific monthly hairstyle by ID.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -1289,15 +1431,18 @@ Authorization: Bearer {accessToken}
 ---
 
 #### POST /api/hairstyles
+
 Create a new monthly hairstyle.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 Content-Type: multipart/form-data
 ```
 
 **Request Body (Form Data):**
+
 ```
 userId: "user-123"
 month: "2024-01"
@@ -1306,6 +1451,7 @@ notes: "January hairstyle"
 ```
 
 **Response (201):**
+
 ```json
 {
   "data": {
@@ -1322,11 +1468,13 @@ notes: "January hairstyle"
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 - `422` - Validation error
 
 **Notes:**
+
 - Validate `month` format (YYYY-MM)
 - Generate thumbnail automatically
 - Only one hairstyle per user per month (enforce uniqueness)
@@ -1334,21 +1482,25 @@ notes: "January hairstyle"
 ---
 
 #### PATCH /api/hairstyles/:hairstyleId
+
 Update a monthly hairstyle.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 Content-Type: multipart/form-data (if updating photo)
 ```
 
 **Request Body (Form Data, all optional):**
+
 ```
 photo: <file>
 notes: "Updated notes"
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -1367,14 +1519,17 @@ notes: "Updated notes"
 ---
 
 #### DELETE /api/hairstyles/:hairstyleId
+
 Delete a monthly hairstyle.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": null
@@ -1386,17 +1541,21 @@ Authorization: Bearer {accessToken}
 ### Mood Board Endpoints
 
 #### GET /api/users/:userId/moodboard
+
 Get all mood board entries for a user, optionally filtered by month.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Query Parameters:**
+
 - `month` (optional): Format "YYYY-MM" (e.g., "2024-01")
 
 **Response (200):**
+
 ```json
 {
   "data": [
@@ -1411,8 +1570,8 @@ Authorization: Bearer {accessToken}
         "https://cdn.yasante.app/moodboard/moodboard-123-2.jpg",
         "https://cdn.yasante.app/moodboard/moodboard-123-3.jpg"
       ],
-      "stylistPrice": 150.00,
-      "hairPrice": 200.00,
+      "stylistPrice": 150.0,
+      "hairPrice": 200.0,
       "stylistLocation": "123 Main St, New York, NY",
       "appointmentTime": "2024-01-20T14:00:00Z",
       "monthColor": "#FF5733",
@@ -1426,20 +1585,24 @@ Authorization: Bearer {accessToken}
 ```
 
 **Notes:**
+
 - Sort by `createdAt` descending (newest first)
 - `photos` array should contain maximum 3 URLs
 
 ---
 
 #### GET /api/moodboard/:entryId
+
 Get a specific mood board entry by ID.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -1465,15 +1628,18 @@ Authorization: Bearer {accessToken}
 ---
 
 #### POST /api/moodboard
+
 Create a new mood board entry.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 Content-Type: multipart/form-data
 ```
 
 **Request Body (Form Data):**
+
 ```
 userId: "user-123"
 month: "2024-01"
@@ -1488,6 +1654,7 @@ notes: "Love this style!"
 ```
 
 **Response (201):**
+
 ```json
 {
   "data": {
@@ -1500,8 +1667,8 @@ notes: "Love this style!"
       "https://cdn.yasante.app/moodboard/moodboard-123-1.jpg",
       "https://cdn.yasante.app/moodboard/moodboard-123-2.jpg"
     ],
-    "stylistPrice": 150.00,
-    "hairPrice": 200.00,
+    "stylistPrice": 150.0,
+    "hairPrice": 200.0,
     "stylistLocation": "123 Main St, New York, NY",
     "appointmentTime": "2024-01-20T14:00:00Z",
     "monthColor": "#FF5733",
@@ -1514,11 +1681,13 @@ notes: "Love this style!"
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 - `422` - Validation error
 
 **Notes:**
+
 - First photo becomes `mainPhotoUri`
 - Maximum 3 photos per entry
 - Validate `month` format (YYYY-MM)
@@ -1528,15 +1697,18 @@ notes: "Love this style!"
 ---
 
 #### PATCH /api/moodboard/:entryId
+
 Update a mood board entry.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 Content-Type: multipart/form-data (if updating photos)
 ```
 
 **Request Body (Form Data, all optional):**
+
 ```
 name: "Updated Name"
 photos: <file1>, <file2> (replaces existing photos)
@@ -1550,6 +1722,7 @@ completed: "true"
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -1575,20 +1748,24 @@ completed: "true"
 ---
 
 #### POST /api/moodboard/:entryId/photos
+
 Add a photo to an existing mood board entry.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 Content-Type: multipart/form-data
 ```
 
 **Request Body (Form Data):**
+
 ```
 photo: <file>
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -1602,8 +1779,8 @@ photo: <file>
       "https://cdn.yasante.app/moodboard/moodboard-123-2.jpg",
       "https://cdn.yasante.app/moodboard/moodboard-123-3.jpg"
     ],
-    "stylistPrice": 150.00,
-    "hairPrice": 200.00,
+    "stylistPrice": 150.0,
+    "hairPrice": 200.0,
     "stylistLocation": "123 Main St, New York, NY",
     "appointmentTime": "2024-01-20T14:00:00Z",
     "monthColor": "#FF5733",
@@ -1616,26 +1793,31 @@ photo: <file>
 ```
 
 **Error Responses:**
+
 - `400` - Maximum 3 photos already reached
 - `401` - Unauthorized
 - `403` - Forbidden
 - `404` - Entry not found
 
 **Notes:**
+
 - If entry already has 3 photos, replace the last one
 - Update `mainPhotoUri` if this is the first photo
 
 ---
 
 #### DELETE /api/moodboard/:entryId
+
 Delete a mood board entry.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": null
@@ -1643,6 +1825,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Notes:**
+
 - Delete all associated photos from storage
 
 ---
@@ -1650,14 +1833,17 @@ Authorization: Bearer {accessToken}
 ### Treatments Endpoints
 
 #### GET /api/users/:userId/treatments
+
 Get all treatments for a user.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": [
@@ -1696,19 +1882,23 @@ Authorization: Bearer {accessToken}
 ```
 
 **Notes:**
+
 - Sort by `createdAt` descending (newest first)
 
 ---
 
 #### GET /api/treatments/:treatmentId
+
 Get a specific treatment by ID.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -1736,14 +1926,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### POST /api/treatments
+
 Create a new treatment.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Request Body:**
+
 ```json
 {
   "userId": "user-123",
@@ -1760,6 +1953,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Response (201):**
+
 ```json
 {
   "data": {
@@ -1785,11 +1979,13 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `403` - Forbidden
 - `422` - Validation error
 
 **Notes:**
+
 - If `frequency` is "specific-days", `specificDays` array is required
 - If `frequency` is "custom", `customFrequency` string is required
 - Validate `startDate` and `endDate` are valid dates
@@ -1798,14 +1994,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### PATCH /api/treatments/:treatmentId
+
 Update a treatment.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Request Body:**
+
 ```json
 {
   "name": "Updated Treatment Name",
@@ -1814,6 +2013,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -1841,14 +2041,17 @@ Authorization: Bearer {accessToken}
 ---
 
 #### DELETE /api/treatments/:treatmentId
+
 Delete a treatment.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": null
@@ -1856,6 +2059,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Notes:**
+
 - Cascade delete related sessions
 
 ---
@@ -1863,14 +2067,17 @@ Authorization: Bearer {accessToken}
 ### Content Endpoints
 
 #### GET /api/content
+
 Get all content items with optional filtering and pagination.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken} (optional - content is public)
 ```
 
 **Query Parameters:**
+
 - `hairType` (optional): Filter by hair type
 - `topic` (optional): Filter by topic ('care', 'styling', 'products', 'treatments', 'color', 'growth', 'health', 'tips')
 - `type` (optional): Filter by type ('article', 'video')
@@ -1878,6 +2085,7 @@ Authorization: Bearer {accessToken} (optional - content is public)
 - `limit` (optional): Items per page (default: 20)
 
 **Response (200):**
+
 ```json
 {
   "data": [
@@ -1908,6 +2116,7 @@ Authorization: Bearer {accessToken} (optional - content is public)
 ```
 
 **Notes:**
+
 - Content is public (no authentication required)
 - Support multiple filters (AND logic)
 - Sort by `publishedAt` descending (newest first)
@@ -1915,14 +2124,17 @@ Authorization: Bearer {accessToken} (optional - content is public)
 ---
 
 #### GET /api/content/:contentId
+
 Get a specific content item by ID.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken} (optional)
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -1945,22 +2157,27 @@ Authorization: Bearer {accessToken} (optional)
 ```
 
 **Notes:**
+
 - Increment `views` count when content is viewed
 
 ---
 
 #### GET /api/content/search
+
 Search content by query string.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken} (optional)
 ```
 
 **Query Parameters:**
+
 - `q` (required): Search query string
 
 **Response (200):**
+
 ```json
 {
   "data": [
@@ -1985,6 +2202,7 @@ Authorization: Bearer {accessToken} (optional)
 ```
 
 **Notes:**
+
 - Search in `title` and `description` fields
 - Case-insensitive search
 - Return results sorted by relevance or date
@@ -1994,14 +2212,17 @@ Authorization: Bearer {accessToken} (optional)
 ### Favorites Endpoints
 
 #### GET /api/users/:userId/favorites
+
 Get all favorites for a user.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": [
@@ -2016,20 +2237,24 @@ Authorization: Bearer {accessToken}
 ```
 
 **Notes:**
+
 - Sort by `createdAt` descending (newest first)
 - Optionally include full content objects in response (populate)
 
 ---
 
 #### POST /api/favorites/toggle
+
 Toggle favorite status for a content item.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Request Body:**
+
 ```json
 {
   "userId": "user-123",
@@ -2038,6 +2263,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": {
@@ -2047,10 +2273,12 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 - `404` - Content not found
 
 **Notes:**
+
 - If favorite exists, remove it and return `isFavorite: false`
 - If favorite doesn't exist, create it and return `isFavorite: true`
 - This is an idempotent operation
@@ -2058,18 +2286,22 @@ Authorization: Bearer {accessToken}
 ---
 
 #### GET /api/favorites/check
+
 Check if a content item is favorited by a user.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken}
 ```
 
 **Query Parameters:**
+
 - `userId` (required): User ID
 - `contentId` (required): Content ID
 
 **Response (200):**
+
 ```json
 {
   "data": true
@@ -2077,6 +2309,7 @@ Authorization: Bearer {accessToken}
 ```
 
 **Error Responses:**
+
 - `401` - Unauthorized
 
 ---
@@ -2084,14 +2317,17 @@ Authorization: Bearer {accessToken}
 ### Products Endpoints
 
 #### GET /api/content/:contentId/products
+
 Get product recommendations for a content item.
 
 **Headers:**
+
 ```
 Authorization: Bearer {accessToken} (optional)
 ```
 
 **Response (200):**
+
 ```json
 {
   "data": [
@@ -2109,6 +2345,7 @@ Authorization: Bearer {accessToken} (optional)
 ```
 
 **Notes:**
+
 - Products are public (no authentication required)
 - Products are associated with content items
 
@@ -2117,6 +2354,7 @@ Authorization: Bearer {accessToken} (optional)
 ## Error Handling
 
 ### Standard Error Response Format
+
 ```json
 {
   "message": "Human-readable error message",
@@ -2129,6 +2367,7 @@ Authorization: Bearer {accessToken} (optional)
 ```
 
 ### Common Error Codes
+
 - `VALIDATION_ERROR` - Request validation failed
 - `UNAUTHORIZED` - Authentication required
 - `FORBIDDEN` - Insufficient permissions
@@ -2138,7 +2377,9 @@ Authorization: Bearer {accessToken} (optional)
 - `INTERNAL_ERROR` - Server error
 
 ### Validation Errors
+
 When validation fails, return `422` status with detailed field errors:
+
 ```json
 {
   "message": "Validation failed",
@@ -2158,14 +2399,17 @@ When validation fails, return `422` status with detailed field errors:
 The app uses a custom URI scheme `yasante://` for deep linking.
 
 ### Mood Board Deep Links
+
 **Format:** `yasante://moodboard/{entryId}?name={name}&location={location}&appointmentTime={time}&stylistPrice={price}&hairPrice={price}`
 
 **Example:**
+
 ```
 yasante://moodboard/moodboard-123?name=Curly%20Bob&location=123%20Main%20St&appointmentTime=2024-01-20T14:00:00Z&stylistPrice=150&hairPrice=200
 ```
 
 **Query Parameters:**
+
 - `name` - Mood board entry name
 - `location` - Stylist location
 - `appointmentTime` - ISO 8601 datetime
@@ -2175,20 +2419,24 @@ yasante://moodboard/moodboard-123?name=Curly%20Bob&location=123%20Main%20St&appo
 - `notes` - Notes (optional)
 
 **Backend Requirements:**
+
 - No backend action required for deep links
 - Deep links are handled entirely by the mobile app
 - The app will parse the link and navigate to the appropriate screen
 - If the entry doesn't exist, the app should handle gracefully
 
 ### Treatment Deep Links
+
 **Format:** `yasante://treatment/{treatmentId}?name={name}&frequency={frequency}&timeOfDay={timeOfDay}`
 
 **Example:**
+
 ```
 yasante://treatment/treatment-123?name=Deep%20Conditioning&frequency=weekly&timeOfDay=evening&duration=30
 ```
 
 **Query Parameters:**
+
 - `name` - Treatment name
 - `frequency` - Treatment frequency
 - `timeOfDay` - Time of day
@@ -2198,6 +2446,7 @@ yasante://treatment/treatment-123?name=Deep%20Conditioning&frequency=weekly&time
 - `notes` - Notes (optional)
 
 **Backend Requirements:**
+
 - No backend action required for deep links
 - Deep links are handled entirely by the mobile app
 
@@ -2206,17 +2455,20 @@ yasante://treatment/treatment-123?name=Deep%20Conditioning&frequency=weekly&time
 ## File Upload Requirements
 
 ### Supported Image Formats
+
 - JPEG (.jpg, .jpeg)
 - PNG (.png)
 - WebP (.webp)
 
 ### Image Size Limits
+
 - **Maximum file size**: 10 MB per image
-- **Recommended dimensions**: 
+- **Recommended dimensions**:
   - Full-size: 1920x1920px (square) or 1920x1080px (landscape)
   - Thumbnail: 300x300px (square)
 
 ### Upload Endpoints
+
 1. **Progress Photos**: `POST /api/photos`
 2. **Monthly Hairstyles**: `POST /api/hairstyles`
 3. **Mood Board Photos**: `POST /api/moodboard` and `POST /api/moodboard/:entryId/photos`
@@ -2224,12 +2476,14 @@ yasante://treatment/treatment-123?name=Deep%20Conditioning&frequency=weekly&time
 5. **Hair Profile Photo**: `PATCH /api/users/:userId/hair-profile` (photoUri field)
 
 ### Image Processing Requirements
+
 1. **Automatic Thumbnail Generation**: Generate thumbnails for all uploaded images
 2. **Image Optimization**: Compress images to reduce file size while maintaining quality
 3. **CDN Storage**: Store images in a CDN (e.g., AWS S3 + CloudFront, Cloudinary, etc.)
 4. **URL Format**: Return full URLs to both original and thumbnail images
 
 ### Example Upload Flow
+
 1. Client sends `multipart/form-data` request with image file
 2. Server validates file type and size
 3. Server processes image (resize, optimize, generate thumbnail)
@@ -2241,8 +2495,9 @@ yasante://treatment/treatment-123?name=Deep%20Conditioning&frequency=weekly&time
 ## Security Considerations
 
 ### Authentication Security
+
 1. **Password Hashing**: Use bcrypt with salt rounds (minimum 10)
-2. **JWT Security**: 
+2. **JWT Security**:
    - Use strong secret key
    - Set appropriate expiration times
    - Include user ID and email in claims
@@ -2251,39 +2506,47 @@ yasante://treatment/treatment-123?name=Deep%20Conditioning&frequency=weekly&time
 4. **Token Storage**: Store refresh tokens securely (hashed in database)
 
 ### Authorization
+
 1. **User Isolation**: Users can only access their own data
 2. **Resource Ownership**: Validate user ownership on all update/delete operations
 3. **JWT Validation**: Validate JWT on every authenticated request
 
 ### Input Validation
+
 1. **Email Validation**: Validate email format
 2. **Password Strength**: Enforce password requirements
 3. **SQL Injection Prevention**: Use parameterized queries
 4. **XSS Prevention**: Sanitize user input
-5. **File Upload Security**: 
+5. **File Upload Security**:
    - Validate file types
    - Scan for malware
    - Limit file sizes
    - Store files outside web root
 
 ### Rate Limiting
+
 Implement rate limiting to prevent abuse:
+
 - **Authentication endpoints**: 5 requests per minute per IP
 - **General API**: 100 requests per minute per user
 - **File uploads**: 10 uploads per minute per user
 
 ### CORS
+
 Configure CORS appropriately:
+
 - Allow requests from mobile app domains
 - Restrict to necessary HTTP methods
 - Set appropriate headers
 
 ### Data Privacy
+
 1. **PII Protection**: Encrypt sensitive user data
 2. **GDPR Compliance**: Implement data deletion and export features
 3. **Data Retention**: Define data retention policies
 
 ### HTTPS
+
 - **Require HTTPS**: All API endpoints must use HTTPS in production
 - **Certificate Validation**: Use valid SSL certificates
 
@@ -2292,36 +2555,43 @@ Configure CORS appropriately:
 ## Additional Notes
 
 ### Date/Time Formats
+
 - **ISO 8601**: Use ISO 8601 format for all datetime fields (e.g., "2024-01-15T12:00:00Z")
 - **Date Only**: Use ISO 8601 date format (e.g., "2024-01-15")
 - **Time Only**: Use 24-hour format (e.g., "20:00")
 
 ### Pagination
+
 - Default page size: 20 items
 - Maximum page size: 100 items
 - Include pagination metadata in response
 
 ### Sorting
+
 - Default sort: `createdAt` descending (newest first)
 - Allow custom sorting where applicable
 
 ### Filtering
+
 - Support filtering by user ID, date ranges, status, etc.
 - Use query parameters for filters
 - Support multiple filters (AND logic)
 
 ### Caching
+
 - Consider caching public content (articles, videos)
 - Cache user profiles and frequently accessed data
 - Implement cache invalidation strategies
 
 ### Database Recommendations
+
 - Use UUIDs for all IDs (not auto-incrementing integers)
 - Index frequently queried fields (userId, createdAt, etc.)
 - Use soft deletes where appropriate (for audit trails)
 - Implement database migrations for schema changes
 
 ### Testing
+
 - Provide test credentials for development
 - Include API documentation for testing tools (Postman, Insomnia)
 - Document expected test data
@@ -2338,5 +2608,4 @@ For questions or clarifications about this API specification, please contact the
 
 ---
 
-*Last Updated: November 2025*
-
+_Last Updated: November 2025_

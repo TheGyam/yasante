@@ -14,13 +14,13 @@ interface UserState {
 
 export const useUserStore = create<UserState>()(
   persist(
-    (set) => ({
+    set => ({
       currentUserId: '', // No default - will be set from auth context
-      setCurrentUserId: (userId) => set({ currentUserId: userId }),
+      setCurrentUserId: userId => set({ currentUserId: userId }),
       onboardingCompleted: false,
-      setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
+      setOnboardingCompleted: completed => set({ onboardingCompleted: completed }),
       hasSeenPlannerTour: false,
-      setHasSeenPlannerTour: (seen) => set({ hasSeenPlannerTour: seen }),
+      setHasSeenPlannerTour: seen => set({ hasSeenPlannerTour: seen }),
     }),
     {
       name: '@yasante:user',
@@ -28,4 +28,3 @@ export const useUserStore = create<UserState>()(
     }
   )
 );
-

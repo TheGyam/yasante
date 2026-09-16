@@ -5,11 +5,7 @@ import { useTheme } from '@/shared/hooks/useTheme';
 import { useAuth } from '@/features/auth';
 import { Text } from '@/shared/ui/Text';
 import { getNextGreeting } from '@/shared/utils/greetings';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { ANIMATION_PRESETS, getAnimationConfig } from '@/shared/utils/animations';
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion';
 import type { Theme } from '@/shared/theme/ThemeProvider';
@@ -77,14 +73,14 @@ export function GreetingBanner({ topInset, firstName }: GreetingBannerProps) {
 
   useEffect(() => {
     // Get pop culture greeting
-    getNextGreeting().then((text) => {
+    getNextGreeting().then(text => {
       setGreeting(text);
     });
 
     // Animate entrance with professional timing (less bouncy, faster)
     const fadeConfig = getAnimationConfig(ANIMATION_PRESETS.fadeIn, reduceMotion);
     const slideConfig = getAnimationConfig(ANIMATION_PRESETS.slideIn, reduceMotion);
-    
+
     opacity.value = withTiming(1, fadeConfig);
     translateY.value = withTiming(0, slideConfig);
 
@@ -114,9 +110,9 @@ export function GreetingBanner({ topInset, firstName }: GreetingBannerProps) {
           <MainGreeting variant="h1" weight="bold" color={theme.colors.text.high}>
             Hey {isAuthenticated && firstName ? firstName : 'there'}
           </MainGreeting>
-          <SubGreeting 
-            variant="body" 
-            weight="regular" 
+          <SubGreeting
+            variant="body"
+            weight="regular"
             color={theme.colors.text.medium}
             style={{ marginTop: 4 }}
           >

@@ -96,13 +96,23 @@ export function GoalCard({ goal, onPress, testID }: GoalCardProps) {
           {goal.name}
         </Text>
         <StatusBadge
-          variant={goal.status === 'completed' ? 'success' : goal.status === 'active' ? 'primary' : 'default'}
+          variant={
+            goal.status === 'completed'
+              ? 'success'
+              : goal.status === 'active'
+                ? 'primary'
+                : 'default'
+          }
         >
           {goal.status}
         </StatusBadge>
       </Header>
       {goal.description && (
-        <Text variant="body" color={theme.colors.text.medium} style={{ marginBottom: theme.spacing[2] }}>
+        <Text
+          variant="body"
+          color={theme.colors.text.medium}
+          style={{ marginBottom: theme.spacing[2] }}
+        >
           {goal.description}
         </Text>
       )}
@@ -112,10 +122,13 @@ export function GoalCard({ goal, onPress, testID }: GoalCardProps) {
       <ProgressBar>
         <ProgressFill style={progressStyle} />
       </ProgressBar>
-      <Text variant="caption" color={theme.colors.text.medium} style={{ marginTop: theme.spacing[1] }}>
+      <Text
+        variant="caption"
+        color={theme.colors.text.medium}
+        style={{ marginTop: theme.spacing[1] }}
+      >
         {goal.progress}% complete
       </Text>
     </Card>
   );
 }
-

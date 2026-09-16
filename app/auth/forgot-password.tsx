@@ -26,7 +26,8 @@ const ScrollContent = styled.ScrollView`
 
 const Content = styled.View<{ bottomInset: number }>`
   padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-  padding-bottom: ${({ bottomInset, theme }: { bottomInset: number; theme: Theme }) => bottomInset + theme.spacing[4]}px;
+  padding-bottom: ${({ bottomInset, theme }: { bottomInset: number; theme: Theme }) =>
+    bottomInset + theme.spacing[4]}px;
 `;
 
 const FormCard = styled(Card)`
@@ -72,7 +73,7 @@ export default function ForgotPasswordScreen() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!isRequired(email)) {
       newErrors.email = 'Email is required';
     } else if (!isValidEmail(email)) {
@@ -109,13 +110,25 @@ export default function ForgotPasswordScreen() {
                   <IconContainer>
                     <Mail size={40} color={theme.colors.primary} strokeWidth={2} />
                   </IconContainer>
-                  <Text variant="h2" weight="semibold" style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}>
+                  <Text
+                    variant="h2"
+                    weight="semibold"
+                    style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}
+                  >
                     Check your email
                   </Text>
-                  <Text variant="body" color={theme.colors.text.medium} style={{ textAlign: 'center', marginBottom: theme.spacing[4] }}>
+                  <Text
+                    variant="body"
+                    color={theme.colors.text.medium}
+                    style={{ textAlign: 'center', marginBottom: theme.spacing[4] }}
+                  >
                     If an account exists with {email}, we've sent you a password reset link.
                   </Text>
-                  <Text variant="caption" color={theme.colors.text.low} style={{ textAlign: 'center' }}>
+                  <Text
+                    variant="caption"
+                    color={theme.colors.text.low}
+                    style={{ textAlign: 'center' }}
+                  >
                     Please check your inbox and follow the instructions to reset your password.
                   </Text>
                 </SuccessContainer>
@@ -147,10 +160,7 @@ export default function ForgotPasswordScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <ScrollContent
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-        >
+        <ScrollContent contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
           <Content bottomInset={insets.bottom}>
             <FadeIn delay={100}>
               <Text variant="h2" style={{ marginBottom: theme.spacing[2], textAlign: 'center' }}>
@@ -159,7 +169,11 @@ export default function ForgotPasswordScreen() {
             </FadeIn>
 
             <SlideIn delay={200} direction="up" distance={30}>
-              <Text variant="body" color={theme.colors.text.medium} style={{ marginBottom: theme.spacing[6], textAlign: 'center' }}>
+              <Text
+                variant="body"
+                color={theme.colors.text.medium}
+                style={{ marginBottom: theme.spacing[6], textAlign: 'center' }}
+              >
                 Enter your email address and we'll send you a link to reset your password.
               </Text>
             </SlideIn>
@@ -169,7 +183,7 @@ export default function ForgotPasswordScreen() {
                 <Input
                   label="Email"
                   value={email}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setEmail(text);
                     if (errors.email) setErrors({ ...errors, email: '' });
                   }}
@@ -215,4 +229,3 @@ export default function ForgotPasswordScreen() {
     </Container>
   );
 }
-

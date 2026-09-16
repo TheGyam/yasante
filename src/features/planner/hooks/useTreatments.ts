@@ -18,7 +18,7 @@ export function useTreatments(userId?: string, options?: { enabled?: boolean }) 
       const response = await api.treatments.getAll(actualUserId);
       return response.data;
     },
-    enabled: (options?.enabled !== false) && !!actualUserId,
+    enabled: options?.enabled !== false && !!actualUserId,
   });
 }
 
@@ -57,13 +57,13 @@ export function useCreateTreatment(userId?: string) {
       });
       return response.data;
     },
-    onSuccess: (newTreatment) => {
+    onSuccess: newTreatment => {
       if (actualUserId) {
         // Add new treatment to list cache
-        queryClient.setQueryData<Treatment[]>(
-          [TREATMENTS_QUERY_KEY, actualUserId],
-          (old = []) => [...old, newTreatment]
-        );
+        queryClient.setQueryData<Treatment[]>([TREATMENTS_QUERY_KEY, actualUserId], (old = []) => [
+          ...old,
+          newTreatment,
+        ]);
         // Set detail cache
         queryClient.setQueryData([TREATMENTS_QUERY_KEY, newTreatment.id], newTreatment);
       }
@@ -81,12 +81,13 @@ export function useUpdateTreatment(treatmentId: string, userId?: string) {
       const response = await api.treatments.update(treatmentId, updates);
       return response.data;
     },
-    onSuccess: (updatedTreatment) => {
+    onSuccess: updatedTreatment => {
       if (actualUserId) {
         // Update list cache
-        queryClient.setQueryData<Treatment[]>(
-          [TREATMENTS_QUERY_KEY, actualUserId],
-          (old = []) => old.map(treatment => treatment.id === updatedTreatment.id ? updatedTreatment : treatment)
+        queryClient.setQueryData<Treatment[]>([TREATMENTS_QUERY_KEY, actualUserId], (old = []) =>
+          old.map(treatment =>
+            treatment.id === updatedTreatment.id ? updatedTreatment : treatment
+          )
         );
         // Update detail cache
         queryClient.setQueryData([TREATMENTS_QUERY_KEY, treatmentId], updatedTreatment);
@@ -105,12 +106,11 @@ export function useDeleteTreatment(treatmentId: string, userId?: string) {
       await api.treatments.delete(treatmentId);
       return treatmentId;
     },
-    onSuccess: (treatmentId) => {
+    onSuccess: treatmentId => {
       if (actualUserId) {
         // Remove from list cache
-        queryClient.setQueryData<Treatment[]>(
-          [TREATMENTS_QUERY_KEY, actualUserId],
-          (old = []) => old.filter(treatment => treatment.id !== treatmentId)
+        queryClient.setQueryData<Treatment[]>([TREATMENTS_QUERY_KEY, actualUserId], (old = []) =>
+          old.filter(treatment => treatment.id !== treatmentId)
         );
         // Remove detail cache
         queryClient.removeQueries({ queryKey: [TREATMENTS_QUERY_KEY, treatmentId] });
@@ -118,4 +118,3 @@ export function useDeleteTreatment(treatmentId: string, userId?: string) {
     },
   });
 }
-

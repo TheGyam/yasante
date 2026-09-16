@@ -11,7 +11,7 @@ export function useReducedMotion(): boolean {
   useEffect(() => {
     // Check if reduce motion is enabled
     AccessibilityInfo.isReduceMotionEnabled()
-      .then((isEnabled) => {
+      .then(isEnabled => {
         setReduceMotion(isEnabled);
       })
       .catch(() => {
@@ -20,7 +20,7 @@ export function useReducedMotion(): boolean {
       });
 
     // Listen for changes
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (isEnabled) => {
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', isEnabled => {
       setReduceMotion(isEnabled);
     });
 
@@ -31,4 +31,3 @@ export function useReducedMotion(): boolean {
 
   return reduceMotion;
 }
-

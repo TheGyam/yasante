@@ -3,11 +3,7 @@ import { TouchableOpacity, View, LayoutChangeEvent } from 'react-native';
 import styled from 'styled-components/native';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { Text } from '@/shared/ui/Text';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import type { Theme } from '@/shared/theme/ThemeProvider';
 
 const TabsContainer = styled.View`
@@ -65,7 +61,7 @@ export function TopTabs({ tabs, activeTab, onTabChange }: TopTabsProps) {
   };
 
   const updateIndicator = () => {
-    const activeIndex = tabs.findIndex((tab) => tab.id === activeTab);
+    const activeIndex = tabs.findIndex(tab => tab.id === activeTab);
     if (activeIndex >= 0 && tabLayouts.current[activeIndex] && containerWidth.current > 0) {
       const tabLayout = tabLayouts.current[activeIndex];
       // Calculate position and width in pixels relative to container
@@ -108,4 +104,3 @@ export function TopTabs({ tabs, activeTab, onTabChange }: TopTabsProps) {
     </TabsContainer>
   );
 }
-

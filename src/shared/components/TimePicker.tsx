@@ -123,10 +123,10 @@ export function TimePicker({ visible, onClose, value, onChange }: TimePickerProp
     const x = locationX - CLOCK_RADIUS;
     const y = locationY - CLOCK_RADIUS;
     const distance = Math.sqrt(x * x + y * y);
-    
+
     // Only process if touch is within clock radius
     if (distance > CLOCK_RADIUS) return;
-    
+
     const angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
     const normalizedAngle = angle < 0 ? angle + 360 : angle;
 
@@ -167,12 +167,7 @@ export function TimePicker({ visible, onClose, value, onChange }: TimePickerProp
   }));
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <ModalOverlay>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
         <ModalContent>
@@ -180,13 +175,17 @@ export function TimePicker({ visible, onClose, value, onChange }: TimePickerProp
             Select Time
           </Text>
 
-          <View style={{ flexDirection: 'row', gap: theme.spacing[3], marginBottom: theme.spacing[3] }}>
+          <View
+            style={{ flexDirection: 'row', gap: theme.spacing[3], marginBottom: theme.spacing[3] }}
+          >
             <TouchableOpacity
               onPress={() => setIsSelectingHour(true)}
               style={{
                 flex: 1,
                 padding: theme.spacing[2],
-                backgroundColor: isSelectingHour ? theme.colors.primary : theme.colors.surfaceVariant,
+                backgroundColor: isSelectingHour
+                  ? theme.colors.primary
+                  : theme.colors.surfaceVariant,
                 borderRadius: theme.radii.medium,
                 alignItems: 'center',
               }}
@@ -205,7 +204,9 @@ export function TimePicker({ visible, onClose, value, onChange }: TimePickerProp
               style={{
                 flex: 1,
                 padding: theme.spacing[2],
-                backgroundColor: !isSelectingHour ? theme.colors.primary : theme.colors.surfaceVariant,
+                backgroundColor: !isSelectingHour
+                  ? theme.colors.primary
+                  : theme.colors.surfaceVariant,
                 borderRadius: theme.radii.medium,
                 alignItems: 'center',
               }}
@@ -223,8 +224,8 @@ export function TimePicker({ visible, onClose, value, onChange }: TimePickerProp
 
           <ClockContainer>
             <View style={{ position: 'relative' }}>
-              <TouchableOpacity 
-                onPress={handleClockPress} 
+              <TouchableOpacity
+                onPress={handleClockPress}
                 activeOpacity={1}
                 style={{ width: CLOCK_SIZE, height: CLOCK_SIZE }}
               >
@@ -232,7 +233,11 @@ export function TimePicker({ visible, onClose, value, onChange }: TimePickerProp
                   <Svg width={CLOCK_SIZE} height={CLOCK_SIZE} style={{ position: 'absolute' }}>
                     {/* Hour marks */}
                     {hourMarks.map((mark, i) => {
-                      const coords = getMarkCoordinates(mark.angle, CLOCK_RADIUS - 8, mark.isMajor ? 12 : 6);
+                      const coords = getMarkCoordinates(
+                        mark.angle,
+                        CLOCK_RADIUS - 8,
+                        mark.isMajor ? 12 : 6
+                      );
                       return (
                         <Line
                           key={`hour-${i}`}
@@ -282,40 +287,27 @@ export function TimePicker({ visible, onClose, value, onChange }: TimePickerProp
 
           <TimeDisplay>
             <Text variant="h1" weight="bold" color={theme.colors.text.high}>
-              {selectedHour.toString().padStart(2, '0')}:{selectedMinute.toString().padStart(2, '0')}
+              {selectedHour.toString().padStart(2, '0')}:
+              {selectedMinute.toString().padStart(2, '0')}
             </Text>
           </TimeDisplay>
 
           <PeriodSelector>
-            <PeriodButton
-              selected={isAM}
-              onPress={() => setIsAM(true)}
-              activeOpacity={0.7}
-            >
-              <Text
-                variant="body"
-                weight="medium"
-                color={isAM ? '#fff' : theme.colors.text.high}
-              >
+            <PeriodButton selected={isAM} onPress={() => setIsAM(true)} activeOpacity={0.7}>
+              <Text variant="body" weight="medium" color={isAM ? '#fff' : theme.colors.text.high}>
                 AM
               </Text>
             </PeriodButton>
-            <PeriodButton
-              selected={!isAM}
-              onPress={() => setIsAM(false)}
-              activeOpacity={0.7}
-            >
-              <Text
-                variant="body"
-                weight="medium"
-                color={!isAM ? '#fff' : theme.colors.text.high}
-              >
+            <PeriodButton selected={!isAM} onPress={() => setIsAM(false)} activeOpacity={0.7}>
+              <Text variant="body" weight="medium" color={!isAM ? '#fff' : theme.colors.text.high}>
                 PM
               </Text>
             </PeriodButton>
           </PeriodSelector>
 
-          <View style={{ flexDirection: 'row', gap: theme.spacing[2], marginTop: theme.spacing[4] }}>
+          <View
+            style={{ flexDirection: 'row', gap: theme.spacing[2], marginTop: theme.spacing[4] }}
+          >
             <Button variant="secondary" onPress={onClose} style={{ flex: 1 }}>
               Cancel
             </Button>

@@ -23,11 +23,7 @@ export function Switch({ label, value, onValueChange, testID, ...props }: Switch
 
   return (
     <Container testID={testID} accessible={true} accessibilityRole="switch">
-      {label && (
-        <Label>
-          {/* Label would be rendered here if needed */}
-        </Label>
-      )}
+      {label && <Label>{/* Label would be rendered here if needed */}</Label>}
       <RNSwitch
         value={value}
         onValueChange={onValueChange}
@@ -42,4 +38,3 @@ export function Switch({ label, value, onValueChange, testID, ...props }: Switch
     </Container>
   );
 }
-

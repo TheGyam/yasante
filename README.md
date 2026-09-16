@@ -6,7 +6,7 @@ A beautiful, modern mobile app for hairstyle planning and education built with E
 
 - **Hair Wellness Planner**: Goal setting, progress tracking with photos, routine scheduling, and activity logging
 - **Personalized Education Hub**: Hair profile quiz, filtered content library (articles + videos), favorites
-- **Modern UI**: 
+- **Modern UI**:
   - Floating animated tab bar with SVG icons
   - Rotating pop-culture greetings
   - Shared element transitions for media
@@ -33,7 +33,7 @@ A beautiful, modern mobile app for hairstyle planning and education built with E
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - Expo CLI (`npm install -g expo-cli`)
 - iOS Simulator (Mac) or Android Emulator
@@ -41,22 +41,26 @@ A beautiful, modern mobile app for hairstyle planning and education built with E
 ### Installation
 
 1. Clone the repository
+
 ```bash
 git clone https://github.com/ElPrinceD/Yasante.git
 cd Yasante
 ```
 
 2. Install dependencies
+
 ```bash
 npm install
 ```
 
 3. Start the development server
+
 ```bash
 npm start
 ```
 
 4. Run on iOS/Android
+
 ```bash
 npm run ios
 # or
@@ -115,11 +119,13 @@ The app supports light, dark, and system themes. Users can toggle themes in Sett
 ## Testing
 
 Run tests:
+
 ```bash
 npm test
 ```
 
 Run tests in watch mode:
+
 ```bash
 npm run test:watch
 ```
@@ -133,22 +139,26 @@ npm run test:watch
 ## Key Features
 
 ### Floating Tab Bar
+
 - Full-width pill container with animated highlight
 - SVG icons from lucide-react-native
 - Spring animations with haptic feedback
 - Keyboard-aware hiding
 
 ### Rotating Greetings
+
 - Pop-culture inspired greetings that rotate each session
 - Time-of-day contextual prefixes
 - Animated entrance with gradient underline
 
 ### Shared Element Transitions
+
 - Smooth thumbnail → fullscreen transitions for images and videos
 - Poster-to-video crossfade for video content
 - Drag-to-dismiss gesture support
 
 ### Enhanced Profile
+
 - Quick stats dashboard (growth, goals, last photo, routines)
 - Active goals list
 - Favorites carousel with horizontal scroll
@@ -156,6 +166,7 @@ npm run test:watch
 - Settings pages (Edit Profile, FAQs, Privacy, Report a Problem)
 
 ### DIY Story View
+
 - Full-screen story-like experience for DIY tutorials
 - Tap zones for navigation (left 40% = previous, right 60% = next)
 - Progress indicators showing current step
@@ -164,11 +175,13 @@ npm run test:watch
 ## Building for Production
 
 ### iOS
+
 ```bash
 eas build --platform ios
 ```
 
 ### Android
+
 ```bash
 eas build --platform android
 ```

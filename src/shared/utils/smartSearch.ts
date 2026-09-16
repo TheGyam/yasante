@@ -29,8 +29,8 @@ function levenshteinDistance(str1: string, str2: string): number {
     for (let j = 1; j <= len2; j++) {
       const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
       matrix[i][j] = Math.min(
-        matrix[i - 1][j] + 1,      // deletion
-        matrix[i][j - 1] + 1,      // insertion
+        matrix[i - 1][j] + 1, // deletion
+        matrix[i][j - 1] + 1, // insertion
         matrix[i - 1][j - 1] + cost // substitution
       );
     }
@@ -54,23 +54,23 @@ function similarityScore(str1: string, str2: string): number {
  * Maps search terms to related concepts
  */
 const RELATED_TERMS: Record<string, string[]> = {
-  'ice': ['water', 'moisture', 'hydration', 'hydrating'],
-  'water': ['moisture', 'hydration', 'hydrating', 'liquid'],
-  'moisture': ['hydration', 'hydrating', 'water', 'moisturizing'],
-  'dry': ['moisture', 'hydration', 'hydrating', 'moisturizing'],
-  'growth': ['length', 'long', 'grow', 'longer'],
-  'long': ['growth', 'length', 'grow', 'longer'],
-  'short': ['trim', 'cut', 'cutting'],
-  'color': ['dye', 'dying', 'coloring', 'tint'],
-  'dye': ['color', 'coloring', 'tint'],
-  'curl': ['curly', 'curls', 'curling', 'texture'],
-  'straight': ['straighten', 'straightening', 'flat'],
-  'damage': ['repair', 'repairing', 'treatment', 'healthy'],
-  'repair': ['damage', 'treatment', 'healthy', 'restore'],
-  'oil': ['oils', 'oily', 'grease', 'greasy'],
-  'product': ['products', 'item', 'items'],
-  'style': ['styling', 'styled', 'look', 'looks'],
-  'tip': ['tips', 'advice', 'trick', 'tricks'],
+  ice: ['water', 'moisture', 'hydration', 'hydrating'],
+  water: ['moisture', 'hydration', 'hydrating', 'liquid'],
+  moisture: ['hydration', 'hydrating', 'water', 'moisturizing'],
+  dry: ['moisture', 'hydration', 'hydrating', 'moisturizing'],
+  growth: ['length', 'long', 'grow', 'longer'],
+  long: ['growth', 'length', 'grow', 'longer'],
+  short: ['trim', 'cut', 'cutting'],
+  color: ['dye', 'dying', 'coloring', 'tint'],
+  dye: ['color', 'coloring', 'tint'],
+  curl: ['curly', 'curls', 'curling', 'texture'],
+  straight: ['straighten', 'straightening', 'flat'],
+  damage: ['repair', 'repairing', 'treatment', 'healthy'],
+  repair: ['damage', 'treatment', 'healthy', 'restore'],
+  oil: ['oils', 'oily', 'grease', 'greasy'],
+  product: ['products', 'item', 'items'],
+  style: ['styling', 'styled', 'look', 'looks'],
+  tip: ['tips', 'advice', 'trick', 'tricks'],
 };
 
 /**
@@ -79,12 +79,12 @@ const RELATED_TERMS: Record<string, string[]> = {
 function getRelatedTerms(query: string): string[] {
   const lowerQuery = query.toLowerCase().trim();
   const related: string[] = [];
-  
+
   // Check direct matches
   if (RELATED_TERMS[lowerQuery]) {
     related.push(...RELATED_TERMS[lowerQuery]);
   }
-  
+
   // Check partial matches (e.g., "moisturizing" contains "moisture")
   Object.entries(RELATED_TERMS).forEach(([key, values]) => {
     if (lowerQuery.includes(key) || key.includes(lowerQuery)) {
@@ -96,7 +96,7 @@ function getRelatedTerms(query: string): string[] {
       }
     });
   });
-  
+
   return [...new Set(related)]; // Remove duplicates
 }
 
@@ -126,30 +126,33 @@ function calculateRelevanceScore(
 ): number {
   const lowerQuery = query.toLowerCase();
   const words = lowerQuery.split(/\s+/).filter(w => w.length > 0);
-  
+
   let score = 0;
-  
+
   // Exact match gets highest score
   if (searchableText.includes(lowerQuery)) {
     score += 100;
   }
-  
+
   // Word matches
   words.forEach(word => {
     if (searchableText.includes(word)) {
       score += 50;
     }
   });
-  
+
   // Starts with query gets bonus
   if (searchableText.startsWith(lowerQuery)) {
     score += 30;
   }
-  
+
   // Fuzzy matching score
-  const fuzzyScore = similarityScore(lowerQuery, searchableText.substring(0, lowerQuery.length + 10));
+  const fuzzyScore = similarityScore(
+    lowerQuery,
+    searchableText.substring(0, lowerQuery.length + 10)
+  );
   score += fuzzyScore * 20;
-  
+
   // Field priority (title matches are more important)
   if (matchedFields.includes('title')) {
     score += 40;
@@ -157,7 +160,7 @@ function calculateRelevanceScore(
   if (matchedFields.includes('description')) {
     score += 20;
   }
-  
+
   return score;
 }
 
@@ -177,32 +180,32 @@ export function smartSearch<T extends Record<string, any>>(
   if (!query.trim() || items.length === 0) {
     return [];
   }
-  
+
   const lowerQuery = query.toLowerCase().trim();
   const relatedTerms = getRelatedTerms(lowerQuery);
   const allSearchTerms = [lowerQuery, ...relatedTerms];
-  
+
   const results: SearchResult<T>[] = [];
   const seenItems = new Set<string>();
-  
+
   items.forEach(item => {
     const searchableText = extractSearchableText(item, searchFields);
     const matchedFields: string[] = [];
-    
+
     // Check if any search term matches
     let bestScore = 0;
     let matched = false;
-    
+
     allSearchTerms.forEach(term => {
       // Check each field
       searchFields.forEach(field => {
         const fieldValue = item[field];
         if (!fieldValue) return;
-        
+
         const fieldText = Array.isArray(fieldValue)
           ? fieldValue.join(' ').toLowerCase()
           : String(fieldValue).toLowerCase();
-        
+
         // Exact match
         if (fieldText.includes(term)) {
           matched = true;
@@ -210,10 +213,11 @@ export function smartSearch<T extends Record<string, any>>(
             matchedFields.push(field);
           }
         }
-        
+
         // Fuzzy match (for typos)
         const similarity = similarityScore(term, fieldText);
-        if (similarity > 0.6) { // 60% similarity threshold
+        if (similarity > 0.6) {
+          // 60% similarity threshold
           matched = true;
           if (!matchedFields.includes(field)) {
             matchedFields.push(field);
@@ -221,11 +225,11 @@ export function smartSearch<T extends Record<string, any>>(
         }
       });
     });
-    
+
     if (matched) {
       const score = calculateRelevanceScore(lowerQuery, searchableText, matchedFields);
       bestScore = Math.max(bestScore, score);
-      
+
       // Use item id or index as unique identifier
       const itemId = item.id || JSON.stringify(item);
       if (!seenItems.has(itemId)) {
@@ -238,11 +242,9 @@ export function smartSearch<T extends Record<string, any>>(
       }
     }
   });
-  
+
   // Sort by score (highest first) and limit results
-  return results
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
+  return results.sort((a, b) => b.score - a.score).slice(0, limit);
 }
 
 /**
@@ -256,18 +258,18 @@ export function getSearchSuggestions(
   if (!query.trim() || items.length === 0) {
     return [];
   }
-  
+
   const lowerQuery = query.toLowerCase().trim();
   const suggestions = new Set<string>();
-  
+
   items.forEach(item => {
     const title = item.title?.toLowerCase() || '';
-    
+
     // Check if title starts with or contains query
     if (title.startsWith(lowerQuery) || title.includes(lowerQuery)) {
       suggestions.add(item.title);
     }
-    
+
     // Check for word matches
     const words = title.split(/\s+/);
     words.forEach(word => {
@@ -276,7 +278,6 @@ export function getSearchSuggestions(
       }
     });
   });
-  
+
   return Array.from(suggestions).slice(0, limit);
 }
-

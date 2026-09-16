@@ -18,7 +18,7 @@ export function useGoals(userId?: string, options?: { enabled?: boolean }) {
       const response = await api.goals.getAll(actualUserId);
       return response.data;
     },
-    enabled: (options?.enabled !== false) && !!actualUserId,
+    enabled: options?.enabled !== false && !!actualUserId,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }
@@ -52,13 +52,13 @@ export function useCreateGoal(userId?: string) {
       });
       return response.data;
     },
-    onSuccess: (newGoal) => {
+    onSuccess: newGoal => {
       if (actualUserId) {
         // Add new goal to list cache
-        queryClient.setQueryData<Goal[]>(
-          [GOALS_QUERY_KEY, actualUserId],
-          (old = []) => [...old, newGoal]
-        );
+        queryClient.setQueryData<Goal[]>([GOALS_QUERY_KEY, actualUserId], (old = []) => [
+          ...old,
+          newGoal,
+        ]);
         // Set detail cache
         queryClient.setQueryData([GOALS_QUERY_KEY, newGoal.id], newGoal);
       }
@@ -76,12 +76,11 @@ export function useUpdateGoal(goalId: string, userId?: string) {
       const response = await api.goals.update(goalId, updates);
       return response.data;
     },
-    onSuccess: (updatedGoal) => {
+    onSuccess: updatedGoal => {
       if (actualUserId) {
         // Update list cache
-        queryClient.setQueryData<Goal[]>(
-          [GOALS_QUERY_KEY, actualUserId],
-          (old = []) => old.map(goal => goal.id === updatedGoal.id ? updatedGoal : goal)
+        queryClient.setQueryData<Goal[]>([GOALS_QUERY_KEY, actualUserId], (old = []) =>
+          old.map(goal => (goal.id === updatedGoal.id ? updatedGoal : goal))
         );
         // Update detail cache
         queryClient.setQueryData([GOALS_QUERY_KEY, goalId], updatedGoal);
@@ -100,12 +99,11 @@ export function useDeleteGoal(userId?: string) {
       await api.goals.delete(goalId);
       return goalId;
     },
-    onSuccess: (goalId) => {
+    onSuccess: goalId => {
       if (actualUserId) {
         // Remove from list cache
-        queryClient.setQueryData<Goal[]>(
-          [GOALS_QUERY_KEY, actualUserId],
-          (old = []) => old.filter(goal => goal.id !== goalId)
+        queryClient.setQueryData<Goal[]>([GOALS_QUERY_KEY, actualUserId], (old = []) =>
+          old.filter(goal => goal.id !== goalId)
         );
         // Remove detail cache
         queryClient.removeQueries({ queryKey: [GOALS_QUERY_KEY, goalId] });
@@ -113,4 +111,3 @@ export function useDeleteGoal(userId?: string) {
     },
   });
 }
-

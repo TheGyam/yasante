@@ -71,10 +71,15 @@ export interface HorizontalContentCardProps {
   testID?: string;
 }
 
-export function HorizontalContentCard({ content, onPress, onFavoritePress, testID }: HorizontalContentCardProps) {
+export function HorizontalContentCard({
+  content,
+  onPress,
+  onFavoritePress,
+  testID,
+}: HorizontalContentCardProps) {
   const { theme } = useTheme();
   const { isAuthenticated, user } = useAuth();
-  
+
   const userId = user?.id;
   const { data: isFavorite = false } = useIsFavorite(userId || '', content.id, {
     enabled: !!userId,
@@ -83,14 +88,14 @@ export function HorizontalContentCard({ content, onPress, onFavoritePress, testI
 
   const handleFavoritePress = (e: any) => {
     e.stopPropagation(); // Prevent card press
-    
+
     if (!isAuthenticated) {
       if (onFavoritePress) {
         onFavoritePress();
       }
       return;
     }
-    
+
     if (userId) {
       toggleFavorite.mutate(content.id);
     }
@@ -114,11 +119,11 @@ export function HorizontalContentCard({ content, onPress, onFavoritePress, testI
           </VideoBadge>
         )}
         <FavoriteButton onPress={handleFavoritePress} activeOpacity={0.7}>
-          <Heart 
-            size={18} 
-            color={isFavorite ? theme.colors.primary : "#fff"} 
-            fill={isFavorite ? theme.colors.primary : "transparent"}
-            strokeWidth={2.5} 
+          <Heart
+            size={18}
+            color={isFavorite ? theme.colors.primary : '#fff'}
+            fill={isFavorite ? theme.colors.primary : 'transparent'}
+            strokeWidth={2.5}
           />
         </FavoriteButton>
       </ImageContainer>
@@ -130,4 +135,3 @@ export function HorizontalContentCard({ content, onPress, onFavoritePress, testI
     </CardContainer>
   );
 }
-

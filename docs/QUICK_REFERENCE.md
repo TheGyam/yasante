@@ -5,15 +5,18 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 ## Essential Information
 
 ### Base URLs
+
 - **Base URL**: `https://yasante.com`
 
 ### Authentication
+
 - **Type**: JWT (Bearer tokens)
 - **Access Token Lifetime**: 15 minutes
 - **Refresh Token Lifetime**: 7-30 days
 - **Header Format**: `Authorization: Bearer {accessToken}`
 
 ### Response Format
+
 ```json
 {
   "data": <response_data>,
@@ -24,6 +27,7 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 ## Endpoint Summary
 
 ### Authentication
+
 - `POST /api/auth/login` - Login
 - `POST /api/auth/signup` - Register
 - `POST /api/auth/forgot-password` - Request password reset
@@ -31,11 +35,13 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 - `POST /api/auth/refresh-token` - Refresh access token
 
 ### Users
+
 - `GET /api/users/:userId` - Get user profile
 - `PATCH /api/users/:userId` - Update user profile
 - `PATCH /api/users/:userId/hair-profile` - Update hair profile
 
 ### Goals
+
 - `GET /api/users/:userId/goals` - Get all goals
 - `GET /api/goals/:goalId` - Get goal by ID
 - `POST /api/goals` - Create goal
@@ -43,15 +49,18 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 - `DELETE /api/goals/:goalId` - Delete goal
 
 ### Progress Photos
+
 - `GET /api/goals/:goalId/photos` - Get photos for goal
 - `POST /api/photos` - Upload photo (multipart/form-data)
 - `DELETE /api/photos/:photoId` - Delete photo
 
 ### Activities
+
 - `GET /api/goals/:goalId/activities` - Get activities for goal
 - `POST /api/activities` - Create activity
 
 ### Routines
+
 - `GET /api/users/:userId/routines` - Get all routines
 - `GET /api/routines/:routineId` - Get routine by ID
 - `POST /api/routines` - Create routine
@@ -59,6 +68,7 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 - `DELETE /api/routines/:routineId` - Delete routine
 
 ### Monthly Hairstyles
+
 - `GET /api/users/:userId/hairstyles?month=YYYY-MM` - Get hairstyles
 - `GET /api/hairstyles/:hairstyleId` - Get hairstyle by ID
 - `POST /api/hairstyles` - Create hairstyle (multipart/form-data)
@@ -66,6 +76,7 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 - `DELETE /api/hairstyles/:hairstyleId` - Delete hairstyle
 
 ### Mood Board
+
 - `GET /api/users/:userId/moodboard?month=YYYY-MM` - Get entries
 - `GET /api/moodboard/:entryId` - Get entry by ID
 - `POST /api/moodboard` - Create entry (multipart/form-data, up to 3 photos)
@@ -74,6 +85,7 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 - `DELETE /api/moodboard/:entryId` - Delete entry
 
 ### Treatments
+
 - `GET /api/users/:userId/treatments` - Get all treatments
 - `GET /api/treatments/:treatmentId` - Get treatment by ID
 - `POST /api/treatments` - Create treatment
@@ -81,21 +93,25 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 - `DELETE /api/treatments/:treatmentId` - Delete treatment
 
 ### Content (Public)
+
 - `GET /api/content` - Get content (with filters & pagination)
 - `GET /api/content/:contentId` - Get content by ID
 - `GET /api/content/search?q=query` - Search content
 
 ### Favorites
+
 - `GET /api/users/:userId/favorites` - Get favorites
 - `POST /api/favorites/toggle` - Toggle favorite
 - `GET /api/favorites/check?userId=:userId&contentId=:contentId` - Check favorite
 
 ### Products
+
 - `GET /api/content/:contentId/products` - Get product recommendations
 
 ## Key Data Models
 
 ### User
+
 ```typescript
 {
   id: string;
@@ -109,6 +125,7 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 ```
 
 ### MoodBoardEntry
+
 ```typescript
 {
   id: string;
@@ -130,6 +147,7 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 ```
 
 ### Treatment
+
 ```typescript
 {
   id: string;
@@ -200,4 +218,3 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 ---
 
 For detailed specifications, see [BACKEND_API_DOCUMENTATION.md](./BACKEND_API_DOCUMENTATION.md).
-

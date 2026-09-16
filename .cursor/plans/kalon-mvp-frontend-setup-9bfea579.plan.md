@@ -1,4 +1,5 @@
 <!-- 9bfea579-8efe-40ba-8d48-f3f4b19c6e17 31252f15-7698-49cc-818b-8f27a624fd64 -->
+
 # Yasante MVP Frontend Development Plan
 
 ## Project Structure

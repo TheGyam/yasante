@@ -12,7 +12,8 @@ import type { Theme } from '@/shared/theme/ThemeProvider';
 
 const HeaderContainer = styled.View<{ topInset: number }>`
   background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};
-  padding-top: ${({ topInset, theme }: { topInset: number; theme: Theme }) => topInset + theme.spacing[2]}px;
+  padding-top: ${({ topInset, theme }: { topInset: number; theme: Theme }) =>
+    topInset + theme.spacing[2]}px;
   padding-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[3]}px;
 `;
 
@@ -102,4 +103,3 @@ export function EducationHeader({
     </HeaderContainer>
   );
 }
-

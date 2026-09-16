@@ -10,10 +10,15 @@ export interface FloatingActionButtonProps {
   testID?: string;
 }
 
-export function FloatingActionButton({ onPress, icon, visible = true, testID }: FloatingActionButtonProps) {
+export function FloatingActionButton({
+  onPress,
+  icon,
+  visible = true,
+  testID,
+}: FloatingActionButtonProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  
+
   if (!visible) return null;
 
   return (
@@ -41,9 +46,7 @@ export function FloatingActionButton({ onPress, icon, visible = true, testID }: 
         zIndex: 1001,
       }}
     >
-      <View style={{ transform: [{ scale: 1.2 }] }}>
-        {icon}
-      </View>
+      <View style={{ transform: [{ scale: 1.2 }] }}>{icon}</View>
     </TouchableOpacity>
   );
 }

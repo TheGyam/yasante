@@ -40,7 +40,13 @@ export interface TopicSectionProps {
   testID?: string;
 }
 
-export function TopicSection({ title, content, onContentPress, onFavoritePress, testID }: TopicSectionProps) {
+export function TopicSection({
+  title,
+  content,
+  onContentPress,
+  onFavoritePress,
+  testID,
+}: TopicSectionProps) {
   const { theme } = useTheme();
 
   if (content.length === 0) {
@@ -55,7 +61,7 @@ export function TopicSection({ title, content, onContentPress, onFavoritePress, 
         </SectionTitle>
       </SectionHeader>
       <ContentScroll>
-        {content.map((item) => (
+        {content.map(item => (
           <HorizontalContentCard
             key={item.id}
             content={item}
@@ -68,4 +74,3 @@ export function TopicSection({ title, content, onContentPress, onFavoritePress, 
     </SectionContainer>
   );
 }
-

@@ -138,4 +138,3 @@ export interface Treatment {
   createdAt: string;
   updatedAt: string;
 }
-

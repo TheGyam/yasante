@@ -101,7 +101,7 @@ export function DIYStoryView({ steps, onClose, initialStepIndex = 0 }: DIYStoryV
   const scale = useSharedValue(1);
   const previousOpacity = useSharedValue(1);
   const previousStepIndex = useRef(currentStepIndex);
-  
+
   // Swipe down to close
   const translateY = useSharedValue(0);
 
@@ -114,25 +114,25 @@ export function DIYStoryView({ steps, onClose, initialStepIndex = 0 }: DIYStoryV
     if (previousStepIndex.current !== currentStepIndex && !isClosing.value) {
       // Reset swipe down position if user was swiping
       translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
-  
+
       // Fade out previous image
       previousOpacity.value = withTiming(0, { duration: 200 });
-      
+
       // Start new image slightly visible and fade in smoothly (no blink)
       opacity.value = 0.4;
       scale.value = 0.99;
-      
+
       // Smooth cross-fade - new image fades in while old fades out
       opacity.value = withTiming(1, { duration: 300 });
       scale.value = withTiming(1, { duration: 300 });
-      
+
       // Reset previous opacity after transition completes
       const timer = setTimeout(() => {
         previousOpacity.value = 1;
       }, 300);
-      
+
       previousStepIndex.current = currentStepIndex;
-      
+
       return () => clearTimeout(timer);
     }
   }, [currentStepIndex]);
@@ -164,7 +164,7 @@ export function DIYStoryView({ steps, onClose, initialStepIndex = 0 }: DIYStoryV
       // Reset closing flag when starting a new gesture
       isClosing.value = false;
     })
-    .onUpdate((event) => {
+    .onUpdate(event => {
       // Only allow downward swipes
       if (event.translationY > 0) {
         // Only mark as closing when there's significant downward movement (prevents interference with taps)
@@ -174,7 +174,7 @@ export function DIYStoryView({ steps, onClose, initialStepIndex = 0 }: DIYStoryV
         translateY.value = event.translationY;
       }
     })
-    .onEnd((event) => {
+    .onEnd(event => {
       const threshold = 100; // Minimum swipe distance to close
       const velocity = event.velocityY;
       const shouldClose = event.translationY > threshold || velocity > 800;
@@ -182,20 +182,24 @@ export function DIYStoryView({ steps, onClose, initialStepIndex = 0 }: DIYStoryV
       if (shouldClose) {
         // Keep isClosing true to prevent step changes
         isClosing.value = true;
-        
+
         // Close the modal - smooth animation to bottom
-        translateY.value = withTiming(height, { 
-          duration: 300,
-        }, () => {
-          runOnJS(onClose)();
-        });
+        translateY.value = withTiming(
+          height,
+          {
+            duration: 300,
+          },
+          () => {
+            runOnJS(onClose)();
+          }
+        );
       } else {
         // Snap back smoothly - reset isClosing flag
         isClosing.value = false;
-        translateY.value = withSpring(0, { 
-          damping: 25, 
+        translateY.value = withSpring(0, {
+          damping: 25,
           stiffness: 300,
-          mass: 0.8
+          mass: 0.8,
         });
       }
     });
@@ -204,14 +208,13 @@ export function DIYStoryView({ steps, onClose, initialStepIndex = 0 }: DIYStoryV
     transform: [{ translateY: translateY.value }],
   }));
 
-
   // Define navigation functions with useCallback for stable references in runOnJS
   const goToNextStep = useCallback(() => {
     // Don't navigate if we're closing
     if (isClosing.value) {
       return;
     }
-    setCurrentStepIndex((prev) => {
+    setCurrentStepIndex(prev => {
       if (prev < steps.length - 1) {
         return prev + 1;
       } else {
@@ -227,7 +230,7 @@ export function DIYStoryView({ steps, onClose, initialStepIndex = 0 }: DIYStoryV
     if (isClosing.value) {
       return;
     }
-    setCurrentStepIndex((prev) => {
+    setCurrentStepIndex(prev => {
       if (prev > 0) {
         return prev - 1;
       } else {
@@ -241,7 +244,7 @@ export function DIYStoryView({ steps, onClose, initialStepIndex = 0 }: DIYStoryV
   // Tap gesture that checks position to determine left vs right
   const tapGesture = Gesture.Tap()
     .maxDuration(250)
-    .onEnd((event) => {
+    .onEnd(event => {
       // Don't handle taps if we're closing
       if (isClosing.value) {
         return;
@@ -257,72 +260,66 @@ export function DIYStoryView({ steps, onClose, initialStepIndex = 0 }: DIYStoryV
       }
     });
 
-
   if (!currentStep) {
     return null;
   }
 
   // Compose gestures - use Simultaneous but pan will fail on taps due to thresholds
   // Tap gesture handles quick taps, pan only activates on clear downward swipes
-  const composedGesture = Gesture.Simultaneous(
-    tapGesture,
-    panGesture
-  );
+  const composedGesture = Gesture.Simultaneous(tapGesture, panGesture);
 
   return (
     <GestureDetector gesture={composedGesture}>
       <Container style={containerAnimatedStyle}>
         <StatusBar barStyle="light-content" />
-      <ImageContainer>
-        {/* Previous image - fades out */}
-        {previousStep?.imageUri && previousStepIndex.current !== currentStepIndex && (
-          <AnimatedImageContainer style={animatedPreviousImageStyle}>
-            <ImageWithPlaceholder
-              source={{ uri: previousStep.imageUri }}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
-          </AnimatedImageContainer>
-        )}
-        {/* Current image - fades in */}
-        {currentStep.imageUri && (
-          <AnimatedImageContainer style={animatedImageStyle}>
-            <ImageWithPlaceholder
-              source={{ uri: currentStep.imageUri }}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
-          </AnimatedImageContainer>
-        )}
-      </ImageContainer>
+        <ImageContainer>
+          {/* Previous image - fades out */}
+          {previousStep?.imageUri && previousStepIndex.current !== currentStepIndex && (
+            <AnimatedImageContainer style={animatedPreviousImageStyle}>
+              <ImageWithPlaceholder
+                source={{ uri: previousStep.imageUri }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+            </AnimatedImageContainer>
+          )}
+          {/* Current image - fades in */}
+          {currentStep.imageUri && (
+            <AnimatedImageContainer style={animatedImageStyle}>
+              <ImageWithPlaceholder
+                source={{ uri: currentStep.imageUri }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+            </AnimatedImageContainer>
+          )}
+        </ImageContainer>
 
-      {/* Progress Indicators */}
-      <ProgressContainer topInset={insets.top}>
-        {steps.map((_, index) => (
-          <ProgressBar key={index} active={index === currentStepIndex} />
-        ))}
-      </ProgressContainer>
+        {/* Progress Indicators */}
+        <ProgressContainer topInset={insets.top}>
+          {steps.map((_, index) => (
+            <ProgressBar key={index} active={index === currentStepIndex} />
+          ))}
+        </ProgressContainer>
 
-      {/* Text Overlay */}
-      <TextOverlay bottomInset={insets.bottom} style={animatedTextStyle}>
-        <View
-          style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            padding: theme.spacing[4],
-            borderRadius: theme.radii.medium,
-          }}
-        >
-          <StepTitle variant="h2" weight="bold" color="#fff">
-            {currentStep.title}
-          </StepTitle>
-          <StepDescription variant="body" color="#fff">
-            {currentStep.description}
-          </StepDescription>
-        </View>
-      </TextOverlay>
-
+        {/* Text Overlay */}
+        <TextOverlay bottomInset={insets.bottom} style={animatedTextStyle}>
+          <View
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              padding: theme.spacing[4],
+              borderRadius: theme.radii.medium,
+            }}
+          >
+            <StepTitle variant="h2" weight="bold" color="#fff">
+              {currentStep.title}
+            </StepTitle>
+            <StepDescription variant="body" color="#fff">
+              {currentStep.description}
+            </StepDescription>
+          </View>
+        </TextOverlay>
       </Container>
     </GestureDetector>
   );
 }
-

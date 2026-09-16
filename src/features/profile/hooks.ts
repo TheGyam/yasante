@@ -18,7 +18,7 @@ export function useUser(userId?: string, options?: { enabled?: boolean }) {
       const response = await api.user.getProfile(actualUserId);
       return response.data;
     },
-    enabled: (options?.enabled !== false) && !!actualUserId,
+    enabled: options?.enabled !== false && !!actualUserId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -41,7 +41,7 @@ export function useUpdateUser(userId?: string) {
       });
       return response.data;
     },
-    onSuccess: (updatedUser) => {
+    onSuccess: updatedUser => {
       if (actualUserId) {
         // Update user cache
         queryClient.setQueryData([USER_QUERY_KEY, actualUserId], updatedUser);
@@ -63,15 +63,13 @@ export function useUpdateHairProfile(userId?: string) {
       const response = await api.user.updateHairProfile(actualUserId, hairProfile);
       return response.data;
     },
-    onSuccess: (updatedHairProfile) => {
+    onSuccess: updatedHairProfile => {
       if (actualUserId) {
         // Update user cache - hair profile is part of user data
-        queryClient.setQueryData<User>(
-          [USER_QUERY_KEY, actualUserId],
-          (old) => old ? { ...old, hairProfile: updatedHairProfile } : undefined
+        queryClient.setQueryData<User>([USER_QUERY_KEY, actualUserId], old =>
+          old ? { ...old, hairProfile: updatedHairProfile } : undefined
         );
       }
     },
   });
 }
-

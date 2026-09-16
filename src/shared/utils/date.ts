@@ -13,15 +13,15 @@ export function formatDate(date: Date | string, formatStr: string = 'MMM d, yyyy
  */
 export function formatRelativeTime(date: Date | string | null | undefined): string {
   if (!date) return 'Recently';
-  
+
   try {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
-    
+
     // Check if date is valid
     if (isNaN(dateObj.getTime())) {
       return 'Recently';
     }
-    
+
     return formatDistance(dateObj, new Date(), { addSuffix: true });
   } catch (error) {
     return 'Recently';
@@ -33,7 +33,7 @@ export function formatRelativeTime(date: Date | string | null | undefined): stri
  */
 export function formatFriendlyDate(date: Date | string): string {
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  
+
   if (isToday(dateObj)) {
     return 'Today';
   }
@@ -43,7 +43,7 @@ export function formatFriendlyDate(date: Date | string): string {
   if (isYesterday(dateObj)) {
     return 'Yesterday';
   }
-  
+
   return formatDate(dateObj);
 }
 
@@ -83,4 +83,3 @@ export function isFuture(date: Date | string): boolean {
   const dateObj = typeof date === 'string' ? parseISO(date) : date;
   return dateObj > new Date();
 }
-

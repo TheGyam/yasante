@@ -16,7 +16,9 @@ export function CreatedBoardsTab({ entries, isLoading }: CreatedBoardsTabProps) 
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 48 }}>
+      <View
+        style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 48 }}
+      >
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
@@ -25,17 +27,48 @@ export function CreatedBoardsTab({ entries, isLoading }: CreatedBoardsTabProps) 
   if (entries.length === 0) {
     return (
       <View style={{ alignItems: 'center', paddingVertical: 60 }}>
-        <View style={{
-          width: 80, height: 80, backgroundColor: theme.colors.primary,
-          borderWidth: 4, borderColor: theme.colors.text.high, borderRadius: 20,
-          alignItems: 'center', justifyContent: 'center', marginBottom: 16, transform: [{ rotate: '-10deg' }],
-        }}>
+        <View
+          style={{
+            width: 80,
+            height: 80,
+            backgroundColor: theme.colors.primary,
+            borderWidth: 4,
+            borderColor: theme.colors.text.high,
+            borderRadius: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 16,
+            transform: [{ rotate: '-10deg' }],
+          }}
+        >
           <Camera size={40} color={theme.colors.surface} strokeWidth={2} />
         </View>
-        <Text variant="h3" weight="bold" color={theme.colors.text.high} style={{ textAlign: 'center', marginBottom: 4, textTransform: 'uppercase', fontStyle: 'italic', fontSize: 22 }}>
+        <Text
+          variant="h3"
+          weight="bold"
+          color={theme.colors.text.high}
+          style={{
+            textAlign: 'center',
+            marginBottom: 4,
+            textTransform: 'uppercase',
+            fontStyle: 'italic',
+            fontSize: 22,
+          }}
+        >
           NO BOARDS
         </Text>
-        <Text variant="caption" color={theme.colors.primary} style={{ textAlign: 'center', marginBottom: 24, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', fontSize: 10 }}>
+        <Text
+          variant="caption"
+          color={theme.colors.primary}
+          style={{
+            textAlign: 'center',
+            marginBottom: 24,
+            fontWeight: '700',
+            letterSpacing: 2,
+            textTransform: 'uppercase',
+            fontSize: 10,
+          }}
+        >
           CREATE YOUR FIRST MOODBOARD
         </Text>
       </View>
@@ -49,7 +82,14 @@ export function CreatedBoardsTab({ entries, isLoading }: CreatedBoardsTabProps) 
   });
 
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingHorizontal: 20 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+      }}
+    >
       {sortedEntries.map((entry, index) => (
         <CollectionCard key={entry.id} entry={entry} index={index} />
       ))}

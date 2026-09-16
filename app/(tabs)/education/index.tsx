@@ -12,15 +12,15 @@ import { useEducationStore } from '@/features/education';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/shared/ui/Text';
 import { AuthPromptModal } from '@/features/auth';
-import { 
-  Droplets, 
-  Scissors, 
-  Sparkles, 
+import {
+  Droplets,
+  Scissors,
+  Sparkles,
   Heart,
   TrendingUp,
   Activity,
   Palette,
-  Lightbulb
+  Lightbulb,
 } from 'lucide-react-native';
 import { ContentTopic } from '@/features/education';
 import type { Theme } from '@/shared/theme/ThemeProvider';
@@ -59,7 +59,7 @@ const quickCategoryIcons = {
   'Hair Health': <Activity size={24} color="#8DA399" strokeWidth={2.5} />,
   'Color Care': <Palette size={24} color="#8DA399" strokeWidth={2.5} />,
   'Daily Tips': <Lightbulb size={24} color="#8DA399" strokeWidth={2.5} />,
-  'Favorites': <Heart size={24} color="#8DA399" strokeWidth={2.5} />,
+  Favorites: <Heart size={24} color="#8DA399" strokeWidth={2.5} />,
 };
 
 export default function ContentLibraryScreen() {
@@ -81,8 +81,8 @@ export default function ContentLibraryScreen() {
   // Group content by topic
   const contentByTopic = useMemo(() => {
     const grouped: Partial<Record<ContentTopic, typeof allContent>> = {};
-    
-    allContent.forEach((item) => {
+
+    allContent.forEach(item => {
       if (!grouped[item.topic]) {
         grouped[item.topic] = [];
       }
@@ -103,7 +103,7 @@ export default function ContentLibraryScreen() {
 
     Object.entries(contentByTopic).forEach(([topic, items]) => {
       const matching = items.filter(
-        (item) =>
+        item =>
           item.title.toLowerCase().includes(query) ||
           item.description.toLowerCase().includes(query) ||
           item.topic.toLowerCase().includes(query)
@@ -186,7 +186,11 @@ export default function ContentLibraryScreen() {
         quickCategories={quickCategories}
       />
 
-      <TopTabs tabs={tabs} activeTab={activeTab} onTabChange={(tabId) => setActiveTab(tabId as 'education' | 'diy')} />
+      <TopTabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={tabId => setActiveTab(tabId as 'education' | 'diy')}
+      />
 
       <ScrollableContent
         contentContainerStyle={{
@@ -201,7 +205,7 @@ export default function ContentLibraryScreen() {
                 <Text>Loading content...</Text>
               </View>
             ) : (
-              topicOrder.map((topic) => {
+              topicOrder.map(topic => {
                 const content = filteredContentByTopic[topic];
                 if (!content || content.length === 0) {
                   return null;
@@ -223,7 +227,7 @@ export default function ContentLibraryScreen() {
               <View style={{ padding: theme.spacing[4], alignItems: 'center' }}>
                 <Text variant="body" color={theme.colors.text.medium}>
                   No content found. Try a different search.
-              </Text>
+                </Text>
               </View>
             )}
           </ContentWrapper>

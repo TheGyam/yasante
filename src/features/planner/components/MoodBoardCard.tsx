@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_PADDING = 16;
-const CARD_WIDTH = SCREEN_WIDTH - (CARD_PADDING * 2);
+const CARD_WIDTH = SCREEN_WIDTH - CARD_PADDING * 2;
 const CARD_HEIGHT = CARD_WIDTH * 1.4; // Portrait: height is 40% more than width
 
 const CardContainer = styled(TouchableOpacity)`
@@ -21,10 +21,12 @@ const CardContainer = styled(TouchableOpacity)`
   border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
   overflow: hidden;
   shadow-color: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowColor};
-  shadow-offset: ${({ theme }: { theme: Theme }) => `${theme.shadows.small.shadowOffset.width}px ${theme.shadows.small.shadowOffset.height}px`};
+  shadow-offset: ${({ theme }: { theme: Theme }) =>
+    `${theme.shadows.small.shadowOffset.width}px ${theme.shadows.small.shadowOffset.height}px`};
   shadow-opacity: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowOpacity};
   shadow-radius: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowRadius}px;
-  elevation: ${({ theme }: { theme: Theme }) => (Platform.OS === 'android' ? theme.shadows.small.elevation : 0)};
+  elevation: ${({ theme }: { theme: Theme }) =>
+    Platform.OS === 'android' ? theme.shadows.small.elevation : 0};
 `;
 
 const ImageBackground = styled(ImageWithPlaceholder)`
@@ -136,7 +138,7 @@ export function MoodBoardCard({ entry, onPress, testID }: MoodBoardCardProps) {
         style={{ width: '100%', height: '100%' }}
         resizeMode="cover"
       />
-      
+
       {/* Subtle gradient overlay at bottom */}
       <View
         style={{
@@ -161,29 +163,21 @@ export function MoodBoardCard({ entry, onPress, testID }: MoodBoardCardProps) {
       </View>
 
       <TopOverlay>
-        <MonthText color={entry.monthColor || '#ffffff'}>
-          {monthName}
-        </MonthText>
+        <MonthText color={entry.monthColor || '#ffffff'}>{monthName}</MonthText>
         <YearText>{year}</YearText>
       </TopOverlay>
 
       <ContentOverlay>
-        <HairstyleName>
-          {entry.name}
-        </HairstyleName>
+        <HairstyleName>{entry.name}</HairstyleName>
 
         <PriceRow>
           <PriceItem>
             <DollarSign size={14} color="rgba(255, 255, 255, 0.95)" strokeWidth={2} />
-            <InfoText style={{ fontSize: 14, fontWeight: '500' }}>
-              ${entry.stylistPrice}
-            </InfoText>
+            <InfoText style={{ fontSize: 14, fontWeight: '500' }}>${entry.stylistPrice}</InfoText>
           </PriceItem>
           <PriceItem>
             <DollarSign size={14} color="rgba(255, 255, 255, 0.95)" strokeWidth={2} />
-            <InfoText style={{ fontSize: 14, fontWeight: '500' }}>
-              ${entry.hairPrice}
-            </InfoText>
+            <InfoText style={{ fontSize: 14, fontWeight: '500' }}>${entry.hairPrice}</InfoText>
           </PriceItem>
         </PriceRow>
 
@@ -196,12 +190,9 @@ export function MoodBoardCard({ entry, onPress, testID }: MoodBoardCardProps) {
 
         <InfoRow>
           <Calendar size={14} color="rgba(255, 255, 255, 0.9)" strokeWidth={2} />
-          <InfoText style={{ fontSize: 12 }}>
-            {appointmentDate}
-          </InfoText>
+          <InfoText style={{ fontSize: 12 }}>{appointmentDate}</InfoText>
         </InfoRow>
       </ContentOverlay>
     </CardContainer>
   );
 }
-

@@ -78,4 +78,3 @@ export function FadeIn({ children, duration, delay = 0, useSpring = false }: Fad
 
   return <AnimatedView style={animatedStyle}>{children}</AnimatedView>;
 }
-

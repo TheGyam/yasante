@@ -6,4 +6,3 @@ export const asyncStoragePersister = createAsyncStoragePersister({
   key: 'REACT_QUERY_OFFLINE_CACHE',
   throttleTime: 1000, // Save to storage at most once per second
 });
-

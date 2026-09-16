@@ -57,7 +57,7 @@ export const ANIMATION_PRESETS = {
     duration: 250,
     easing: standardEasing,
   },
-  
+
   // Exit animations (150-200ms - shorter than entry)
   fadeOut: {
     duration: 180,
@@ -71,7 +71,7 @@ export const ANIMATION_PRESETS = {
     duration: 180,
     easing: decelerationEasing,
   },
-  
+
   // Small elements / Desktop (150-200ms)
   icon: {
     duration: 180,
@@ -81,7 +81,7 @@ export const ANIMATION_PRESETS = {
     duration: 200,
     easing: standardEasing,
   },
-  
+
   // Spring animations (physics-based)
   springIn: {
     damping: 20,
@@ -93,7 +93,7 @@ export const ANIMATION_PRESETS = {
     stiffness: 400,
     mass: 0.3,
   },
-  
+
   // Loading indicators
   loading: {
     duration: 1000,
@@ -143,4 +143,3 @@ export function getSpringConfig(
 export function createMomentumEasing(acceleration: number = 0.4, deceleration: number = 0.2) {
   return Easing.bezier(acceleration, 0.0, deceleration, 1.0);
 }
-

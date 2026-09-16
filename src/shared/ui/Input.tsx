@@ -17,7 +17,15 @@ const InputContainer = styled.View<{ error?: boolean; focused?: boolean }>`
   flex-direction: row;
   align-items: center;
   border-width: 1px;
-  border-color: ${({ theme, error, focused }: { theme: Theme; error?: boolean; focused?: boolean }) => {
+  border-color: ${({
+    theme,
+    error,
+    focused,
+  }: {
+    theme: Theme;
+    error?: boolean;
+    focused?: boolean;
+  }) => {
     if (error) return theme.colors.error;
     if (focused) return theme.colors.primary;
     return theme.colors.border;
@@ -117,4 +125,3 @@ export function Input({
     </Container>
   );
 }
-

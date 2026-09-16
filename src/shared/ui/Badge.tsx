@@ -5,11 +5,20 @@ import { useTheme } from '@/shared/hooks/useTheme';
 import { Text } from './Text';
 import type { Theme } from '@/shared/theme/ThemeProvider';
 
-const StyledBadge = styled.View<{ variant: 'default' | 'primary' | 'success' | 'warning' | 'error' }>`
+const StyledBadge = styled.View<{
+  variant: 'default' | 'primary' | 'success' | 'warning' | 'error';
+}>`
   align-self: flex-start;
-  padding: ${({ theme }: { theme: Theme }) => theme.spacing[1]}px ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
+  padding: ${({ theme }: { theme: Theme }) => theme.spacing[1]}px
+    ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
   border-radius: ${({ theme }: { theme: Theme }) => theme.radii.round}px;
-  background-color: ${({ theme, variant }: { theme: Theme; variant: 'default' | 'primary' | 'success' | 'warning' | 'error' }) => {
+  background-color: ${({
+    theme,
+    variant,
+  }: {
+    theme: Theme;
+    variant: 'default' | 'primary' | 'success' | 'warning' | 'error';
+  }) => {
     switch (variant) {
       case 'primary':
         return theme.colors.primary;
@@ -36,18 +45,19 @@ export function Badge({ children, variant = 'default', testID, style }: BadgePro
   const { theme } = useTheme();
 
   const textColor =
-    variant === 'default'
-      ? theme.colors.text.high
-      : variant === 'primary'
-      ? '#ffffff'
-      : '#ffffff';
+    variant === 'default' ? theme.colors.text.high : variant === 'primary' ? '#ffffff' : '#ffffff';
 
   return (
-    <StyledBadge variant={variant} testID={testID} style={style} accessible={true} accessibilityRole="text">
+    <StyledBadge
+      variant={variant}
+      testID={testID}
+      style={style}
+      accessible={true}
+      accessibilityRole="text"
+    >
       <Text variant="caption" color={textColor} weight="medium">
         {children}
       </Text>
     </StyledBadge>
   );
 }
-

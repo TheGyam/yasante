@@ -11,7 +11,12 @@ import { Input } from '@/shared/ui/Input';
 import { Badge } from '@/shared/ui/Badge';
 import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
 import { Search, ArrowLeft, Clock, TrendingUp, Play } from 'lucide-react-native';
-import { getRecentSearches, addToSearchHistory, removeFromSearchHistory, clearSearchHistory } from '@/shared/utils/searchHistory';
+import {
+  getRecentSearches,
+  addToSearchHistory,
+  removeFromSearchHistory,
+  clearSearchHistory,
+} from '@/shared/utils/searchHistory';
 import { smartSearch, getSearchSuggestions, SearchResult } from '@/shared/utils/smartSearch';
 import { Content } from '@/features/education';
 import { AuthPromptModal } from '@/features/auth';
@@ -111,7 +116,8 @@ const SectionTitle = styled(Text)`
 `;
 
 const ClearButton = styled(TouchableOpacity)`
-  padding: ${({ theme }: { theme: Theme }) => theme.spacing[1]}px ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
+  padding: ${({ theme }: { theme: Theme }) => theme.spacing[1]}px
+    ${({ theme }: { theme: Theme }) => theme.spacing[2]}px;
 `;
 
 const RecentSearchesContainer = styled.View`
@@ -272,7 +278,9 @@ export default function SearchScreen() {
   const params = useLocalSearchParams<{ query?: string }>();
   const [searchQuery, setSearchQuery] = useState(params.query || '');
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [recentSearches, setRecentSearches] = useState<Array<{ query: string; timestamp: number }>>([]);
+  const [recentSearches, setRecentSearches] = useState<Array<{ query: string; timestamp: number }>>(
+    []
+  );
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const debouncedQuery = useDebounce(searchQuery, 300);
 
@@ -310,7 +318,7 @@ export default function SearchScreen() {
   // Get suggestions based on current input
   const suggestions = useMemo(() => {
     if (!debouncedQuery.trim()) return [];
-    
+
     const contentSuggestions = getSearchSuggestions(debouncedQuery, allContent, 5);
     return contentSuggestions;
   }, [debouncedQuery, allContent]);
@@ -342,9 +350,9 @@ export default function SearchScreen() {
     // Add content results
     searchResultsWithScores.content.forEach((result: SearchResult<Content>) => {
       const item = result.item;
-      const category: 'inspo' | 'education' = 
+      const category: 'inspo' | 'education' =
         item.topic === 'styling' || item.topic === 'tips' ? 'inspo' : 'education';
-      
+
       results.push({
         id: item.id,
         title: item.title,
@@ -374,10 +382,10 @@ export default function SearchScreen() {
 
   const handleSearch = useCallback(async (query: string) => {
     if (!query.trim()) return;
-    
+
     setSearchQuery(query);
     Keyboard.dismiss();
-    
+
     // Non-blocking: Save to history and reload in background
     InteractionManager.runAfterInteractions(() => {
       addToSearchHistory(query).then(() => {
@@ -386,13 +394,19 @@ export default function SearchScreen() {
     });
   }, []);
 
-  const handleSuggestionPress = useCallback(async (suggestion: string) => {
-    await handleSearch(suggestion);
-  }, [handleSearch]);
+  const handleSuggestionPress = useCallback(
+    async (suggestion: string) => {
+      await handleSearch(suggestion);
+    },
+    [handleSearch]
+  );
 
-  const handleRecentSearchPress = useCallback(async (query: string) => {
-    await handleSearch(query);
-  }, [handleSearch]);
+  const handleRecentSearchPress = useCallback(
+    async (query: string) => {
+      await handleSearch(query);
+    },
+    [handleSearch]
+  );
 
   const handleRemoveRecent = useCallback((query: string, e: any) => {
     e.stopPropagation();
@@ -417,15 +431,18 @@ export default function SearchScreen() {
     setActiveFilter(filter);
   }, []);
 
-  const handleResultPress = useCallback((result: UnifiedSearchResult) => {
-    // Pass returnTo and query parameters to preserve search state
-    const queryParam = searchQuery ? `&query=${encodeURIComponent(searchQuery)}` : '';
-    if (result.category === 'inspo') {
-      router.push(`/(tabs)/home/${result.id}?returnTo=search${queryParam}` as any);
-    } else {
-      router.push(`/(tabs)/education/${result.id}?returnTo=search${queryParam}` as any);
-    }
-  }, [router, searchQuery]);
+  const handleResultPress = useCallback(
+    (result: UnifiedSearchResult) => {
+      // Pass returnTo and query parameters to preserve search state
+      const queryParam = searchQuery ? `&query=${encodeURIComponent(searchQuery)}` : '';
+      if (result.category === 'inspo') {
+        router.push(`/(tabs)/home/${result.id}?returnTo=search${queryParam}` as any);
+      } else {
+        router.push(`/(tabs)/education/${result.id}?returnTo=search${queryParam}` as any);
+      }
+    },
+    [router, searchQuery]
+  );
 
   const renderRecentSearches = () => {
     if (recentSearches.length === 0) return null;
@@ -443,7 +460,7 @@ export default function SearchScreen() {
           </ClearButton>
         </SectionHeader>
         <RecentSearchesContainer>
-          {recentSearches.map((item) => (
+          {recentSearches.map(item => (
             <RecentSearchItem
               key={`${item.query}-${item.timestamp}`}
               onPress={() => handleRecentSearchPress(item.query)}
@@ -455,11 +472,10 @@ export default function SearchScreen() {
               <RecentSearchText variant="body" color={theme.colors.text.high}>
                 {item.query}
               </RecentSearchText>
-              <RemoveButton
-                onPress={(e) => handleRemoveRecent(item.query, e)}
-                activeOpacity={0.7}
-              >
-                <Text variant="caption" color={theme.colors.text.low}>✕</Text>
+              <RemoveButton onPress={e => handleRemoveRecent(item.query, e)} activeOpacity={0.7}>
+                <Text variant="caption" color={theme.colors.text.low}>
+                  ✕
+                </Text>
               </RemoveButton>
             </RecentSearchItem>
           ))}
@@ -498,73 +514,76 @@ export default function SearchScreen() {
     );
   };
 
-  const renderSearchResult = useCallback(({ item }: { item: UnifiedSearchResult }) => {
-    const categoryColors: Record<UnifiedSearchResult['category'], string> = {
-      inspo: theme.colors.primary,
-      education: theme.colors.info,
-      diy: theme.colors.accent,
-    };
+  const renderSearchResult = useCallback(
+    ({ item }: { item: UnifiedSearchResult }) => {
+      const categoryColors: Record<UnifiedSearchResult['category'], string> = {
+        inspo: theme.colors.primary,
+        education: theme.colors.info,
+        diy: theme.colors.accent,
+      };
 
-    const categoryLabels: Record<UnifiedSearchResult['category'], string> = {
-      inspo: 'Inspo',
-      education: 'Education',
-      diy: 'DIY',
-    };
+      const categoryLabels: Record<UnifiedSearchResult['category'], string> = {
+        inspo: 'Inspo',
+        education: 'Education',
+        diy: 'DIY',
+      };
 
-    return (
-      <SearchResultItem onPress={() => handleResultPress(item)} activeOpacity={0.7}>
-        <ThumbnailContainer>
-          {item.thumbnailUri ? (
-            <>
-              <ThumbnailImage
-                source={{ uri: item.thumbnailUri }}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
+      return (
+        <SearchResultItem onPress={() => handleResultPress(item)} activeOpacity={0.7}>
+          <ThumbnailContainer>
+            {item.thumbnailUri ? (
+              <>
+                <ThumbnailImage
+                  source={{ uri: item.thumbnailUri }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                />
+                {item.type === 'content' && item.contentType === 'video' && (
+                  <VideoBadge>
+                    <Play size={12} color="#fff" fill="#fff" />
+                  </VideoBadge>
+                )}
+              </>
+            ) : (
+              <View
+                style={{ width: '100%', height: '100%', backgroundColor: theme.colors.surface }}
               />
-              {item.type === 'content' && item.contentType === 'video' && (
-                <VideoBadge>
-                  <Play size={12} color="#fff" fill="#fff" />
-                </VideoBadge>
-              )}
-            </>
-          ) : (
-            <View style={{ width: '100%', height: '100%', backgroundColor: theme.colors.surface }} />
-          )}
-        </ThumbnailContainer>
-        <ResultContent>
-          <ResultTextContainer>
-            <ResultTitle variant="body" weight="semibold" numberOfLines={1}>
-              {item.title}
-            </ResultTitle>
-            <ResultSubtitle numberOfLines={1}>
-              {item.subtitle}
-            </ResultSubtitle>
-            <CategoryBadge
-              style={{
-                backgroundColor: categoryColors[item.category] + '20',
-                borderColor: categoryColors[item.category],
-                borderWidth: 1,
-                borderRadius: theme.radii.round,
-                paddingHorizontal: theme.spacing[2],
-                paddingVertical: theme.spacing[0.5],
-              }}
-            >
-              <Text
-                variant="caption"
+            )}
+          </ThumbnailContainer>
+          <ResultContent>
+            <ResultTextContainer>
+              <ResultTitle variant="body" weight="semibold" numberOfLines={1}>
+                {item.title}
+              </ResultTitle>
+              <ResultSubtitle numberOfLines={1}>{item.subtitle}</ResultSubtitle>
+              <CategoryBadge
                 style={{
-                  color: categoryColors[item.category],
-                  fontSize: 10,
-                  fontWeight: '600',
+                  backgroundColor: categoryColors[item.category] + '20',
+                  borderColor: categoryColors[item.category],
+                  borderWidth: 1,
+                  borderRadius: theme.radii.round,
+                  paddingHorizontal: theme.spacing[2],
+                  paddingVertical: theme.spacing[0.5],
                 }}
               >
-                {categoryLabels[item.category]}
-              </Text>
-            </CategoryBadge>
-          </ResultTextContainer>
-        </ResultContent>
-      </SearchResultItem>
-    );
-  }, [theme, handleResultPress]);
+                <Text
+                  variant="caption"
+                  style={{
+                    color: categoryColors[item.category],
+                    fontSize: 10,
+                    fontWeight: '600',
+                  }}
+                >
+                  {categoryLabels[item.category]}
+                </Text>
+              </CategoryBadge>
+            </ResultTextContainer>
+          </ResultContent>
+        </SearchResultItem>
+      );
+    },
+    [theme, handleResultPress]
+  );
 
   const renderResults = () => {
     if (filteredResults.length === 0 && debouncedQuery.trim()) {
@@ -587,7 +606,7 @@ export default function SearchScreen() {
         <FlashList
           data={filteredResults}
           renderItem={renderSearchResult}
-          keyExtractor={(item) => `${item.type}-${item.id}`}
+          keyExtractor={item => `${item.type}-${item.id}`}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingBottom: insets.bottom + 100,

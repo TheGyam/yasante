@@ -83,7 +83,15 @@ const StyledButton = styled(StyledButtonBase)<StyledButtonProps>`
     }
   }};
   width: ${({ fullWidth }: { fullWidth?: boolean }) => (fullWidth ? '100%' : 'auto')};
-  background-color: ${({ variant, theme, disabled }: { variant: ButtonVariant; theme: Theme; disabled?: boolean }) => {
+  background-color: ${({
+    variant,
+    theme,
+    disabled,
+  }: {
+    variant: ButtonVariant;
+    theme: Theme;
+    disabled?: boolean;
+  }) => {
     if (disabled) return theme.colors.surfaceVariant;
     switch (variant) {
       case 'primary':
@@ -98,7 +106,8 @@ const StyledButton = styled(StyledButtonBase)<StyledButtonProps>`
         return theme.colors.primary;
     }
   }};
-  border-width: ${({ variant }: { variant: ButtonVariant }) => (variant === 'outline' ? '1px' : '0px')};
+  border-width: ${({ variant }: { variant: ButtonVariant }) =>
+    variant === 'outline' ? '1px' : '0px'};
   border-color: ${({ theme, disabled }: { theme: Theme; disabled?: boolean }) =>
     disabled ? theme.colors.border : theme.colors.primary};
   opacity: ${({ disabled }: { disabled?: boolean }) => (disabled ? 0.5 : 1)};
@@ -138,8 +147,8 @@ export function Button({
     variant === 'primary'
       ? '#ffffff'
       : variant === 'secondary'
-      ? theme.colors.text.high
-      : theme.colors.primary;
+        ? theme.colors.text.high
+        : theme.colors.primary;
 
   const isDisabled = disabled || loading;
 
@@ -197,4 +206,3 @@ export function Button({
     </StyledButton>
   );
 }
-

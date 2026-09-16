@@ -1,10 +1,23 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { TouchableOpacity, RefreshControl, useWindowDimensions, View, GestureResponderEvent, InteractionManager, ActivityIndicator } from 'react-native';
+import {
+  TouchableOpacity,
+  RefreshControl,
+  useWindowDimensions,
+  View,
+  GestureResponderEvent,
+  InteractionManager,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/shared/hooks/useTheme';
-import { useInfiniteContent, prefetchContentItem, prefetchRelatedContent, prefetchNextPage } from '@/features/education';
+import {
+  useInfiniteContent,
+  prefetchContentItem,
+  prefetchRelatedContent,
+  prefetchNextPage,
+} from '@/features/education';
 import { useUser } from '@/features/profile';
 import { useAuth } from '@/features/auth';
 import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
@@ -244,25 +257,28 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const queryClient = useQueryClient();
-  const { 
-    data: contentData, 
-    isLoading, 
+  const {
+    data: contentData,
+    isLoading,
     refetch,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage 
+    isFetchingNextPage,
   } = useInfiniteContent();
   const { user: authUser, isAuthenticated } = useAuth();
   const { data: user } = useUser(authUser?.id, { enabled: !!authUser?.id });
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showAddToMoodBoard, setShowAddToMoodBoard] = useState(false);
-  const [selectedInspoForMoodBoard, setSelectedInspoForMoodBoard] = useState<{ title: string; imageUri?: string } | null>(null);
+  const [selectedInspoForMoodBoard, setSelectedInspoForMoodBoard] = useState<{
+    title: string;
+    imageUri?: string;
+  } | null>(null);
   const [layoutItems, setLayoutItems] = useState<InspoItem[]>([]);
   const layoutComputedRef = useRef(false);
-  
+
   // New posts detection
   const { hasNewPosts, mergeNewPosts } = useNewPosts({ enabled: true });
-  
+
   // Background sync when app becomes active
   useBackgroundSync({ enabled: true });
 
@@ -271,15 +287,17 @@ export default function HomeScreen() {
 
   // Tip of the day - rotate tips daily
   const tipsOfTheDay = [
-    "Protect your hair from heat damage by using a heat protectant spray before styling. Your future self will thank you!",
-    "Deep condition your hair once a week to restore moisture and prevent breakage. Consistency is key to healthy hair.",
-    "Sleep on a silk or satin pillowcase to reduce friction and prevent hair breakage while you sleep. Beauty sleep, literally!",
-    "Trim your hair every 6-8 weeks to prevent split ends from traveling up the hair shaft. Regular trims = healthier hair.",
-    "Avoid brushing wet hair with a regular brush. Use a wide-tooth comb or detangling brush to prevent breakage.",
+    'Protect your hair from heat damage by using a heat protectant spray before styling. Your future self will thank you!',
+    'Deep condition your hair once a week to restore moisture and prevent breakage. Consistency is key to healthy hair.',
+    'Sleep on a silk or satin pillowcase to reduce friction and prevent hair breakage while you sleep. Beauty sleep, literally!',
+    'Trim your hair every 6-8 weeks to prevent split ends from traveling up the hair shaft. Regular trims = healthier hair.',
+    'Avoid brushing wet hair with a regular brush. Use a wide-tooth comb or detangling brush to prevent breakage.',
   ];
-  
+
   // Get tip based on day of year for consistency
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+  );
   const tipOfTheDay = tipsOfTheDay[dayOfYear % tipsOfTheDay.length];
 
   // Small spacing between items (5px for better breathing room)
@@ -298,7 +316,7 @@ export default function HomeScreen() {
     if (!contentData?.pages) return [];
     return contentData.pages.flatMap(page => page.data);
   }, [contentData?.pages]);
-  
+
   // Prefetch images of next page after fetching
   useEffect(() => {
     if (contentData?.pages && contentData.pages.length > 0) {
@@ -319,7 +337,7 @@ export default function HomeScreen() {
   const diyTipsContent = useMemo(() => {
     if (!allContentItems) return [];
     const filtered = allContentItems.filter(
-      (item) => item.topic === 'tips' || item.topic === 'care' || item.topic === 'styling'
+      item => item.topic === 'tips' || item.topic === 'care' || item.topic === 'styling'
     );
 
     return filtered.slice(0, 10); // Limit to 10 items for horizontal scroll
@@ -328,7 +346,7 @@ export default function HomeScreen() {
   // Transform content into inspo items - deferred computation
   useEffect(() => {
     if (!allContentItems || allContentItems.length === 0 || layoutComputedRef.current) return;
-    
+
     // Defer heavy computation
     InteractionManager.runAfterInteractions(() => {
       const items: InspoItem[] = [];
@@ -338,11 +356,13 @@ export default function HomeScreen() {
           const aspectRatio = aspectRatios[aspectRatioIndex];
           const imageHeight = itemWidth * aspectRatio;
           const totalItemHeight = imageHeight + CARD_BOTTOM_HEIGHT;
-          
+
           items.push({
             id: `${item.id}-${i}`,
             originalId: item.id,
-            imageUri: item.thumbnailUri || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80',
+            imageUri:
+              item.thumbnailUri ||
+              'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80',
             isVideo: item.type === 'video',
             videoUri: item.videoUri,
             topic: item.topic,
@@ -351,12 +371,12 @@ export default function HomeScreen() {
           });
         }
       });
-      
+
       setLayoutItems(items);
       layoutComputedRef.current = true;
     });
   }, [allContentItems, itemWidth, aspectRatios]);
-  
+
   // Reset computation flag when content changes significantly
   useEffect(() => {
     layoutComputedRef.current = false;
@@ -370,29 +390,32 @@ export default function HomeScreen() {
     } catch (error) {
       // Haptics not available, continue without it
     }
-    
+
     // Reset infinite query to first page
     queryClient.setQueryData(['content', 'infinite', undefined], {
       pages: [],
       pageParams: [],
     });
-    
+
     // Refetch
     await refetch();
   };
 
-  const handleItemPress = useCallback((item: InspoItem) => {
-    // Prefetch detail data before navigation
-    prefetchContentItem(queryClient, item.originalId);
-    
-    // Prefetch related content if topic is available
-    if (item.topic) {
-      prefetchRelatedContent(queryClient, item.originalId, item.topic);
-    }
-    
-    // Navigate after prefetch starts
-    router.push(`/(tabs)/home/${item.id}` as any);
-  }, [queryClient, router]);
+  const handleItemPress = useCallback(
+    (item: InspoItem) => {
+      // Prefetch detail data before navigation
+      prefetchContentItem(queryClient, item.originalId);
+
+      // Prefetch related content if topic is available
+      if (item.topic) {
+        prefetchRelatedContent(queryClient, item.originalId, item.topic);
+      }
+
+      // Navigate after prefetch starts
+      router.push(`/(tabs)/home/${item.id}` as any);
+    },
+    [queryClient, router]
+  );
 
   const handleShare = (item: InspoItem, e: GestureResponderEvent) => {
     e.stopPropagation();
@@ -407,183 +430,212 @@ export default function HomeScreen() {
   const handleSearchPress = () => {
     router.push('/(tabs)/home/search' as any);
   };
-  
+
   // Smart prefetching - prefetch when reaching 80% of loaded items
-  const handleViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
-    if (!viewableItems || viewableItems.length === 0 || !hasNextPage || isFetchingNextPage) return;
-    
-    if (!layoutItems || layoutItems.length === 0) return;
-    const totalItems = layoutItems.length;
-    
-    // Get the last visible item index
-    const visibleIndices = viewableItems.map((item) => item.index).filter((idx): idx is number => idx !== null);
-    if (visibleIndices.length === 0) return;
-    
-    const lastVisibleIndex = Math.max(...visibleIndices);
-    
-    // Prefetch images for upcoming items (next 5-10 items)
-    const upcomingItems = layoutItems.slice(lastVisibleIndex + 1, lastVisibleIndex + 10);
-    upcomingItems.forEach((item) => {
-      if (item.imageUri) {
-        // Prefetch image using expo-image
-        try {
-          const { prefetch } = require('expo-image');
-          prefetch(item.imageUri, { priority: 'normal' });
-        } catch (error) {
-          // expo-image prefetch not available, skip
+  const handleViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: Array<{ index: number | null }> }) => {
+      if (!viewableItems || viewableItems.length === 0 || !hasNextPage || isFetchingNextPage)
+        return;
+
+      if (!layoutItems || layoutItems.length === 0) return;
+      const totalItems = layoutItems.length;
+
+      // Get the last visible item index
+      const visibleIndices = viewableItems
+        .map(item => item.index)
+        .filter((idx): idx is number => idx !== null);
+      if (visibleIndices.length === 0) return;
+
+      const lastVisibleIndex = Math.max(...visibleIndices);
+
+      // Prefetch images for upcoming items (next 5-10 items)
+      const upcomingItems = layoutItems.slice(lastVisibleIndex + 1, lastVisibleIndex + 10);
+      upcomingItems.forEach(item => {
+        if (item.imageUri) {
+          // Prefetch image using expo-image
+          try {
+            const { prefetch } = require('expo-image');
+            prefetch(item.imageUri, { priority: 'normal' });
+          } catch (error) {
+            // expo-image prefetch not available, skip
+          }
         }
+      });
+
+      // Prefetch content details for items near viewport
+      const nearViewportItems = layoutItems.slice(
+        Math.max(0, lastVisibleIndex - 2),
+        lastVisibleIndex + 5
+      );
+      nearViewportItems.forEach(item => {
+        if (item.originalId) {
+          prefetchContentItem(queryClient, item.originalId);
+        }
+      });
+
+      // Prefetch next page when 80% scrolled
+      const threshold = Math.floor(totalItems * 0.8);
+      if (lastVisibleIndex >= threshold) {
+        fetchNextPage();
+        // Also prefetch the next page content
+        prefetchNextPage(queryClient);
       }
-    });
-    
-    // Prefetch content details for items near viewport
-    const nearViewportItems = layoutItems.slice(Math.max(0, lastVisibleIndex - 2), lastVisibleIndex + 5);
-    nearViewportItems.forEach((item) => {
-      if (item.originalId) {
-        prefetchContentItem(queryClient, item.originalId);
-      }
-    });
-    
-    // Prefetch next page when 80% scrolled
-    const threshold = Math.floor(totalItems * 0.8);
-    if (lastVisibleIndex >= threshold) {
-      fetchNextPage();
-      // Also prefetch the next page content
-      prefetchNextPage(queryClient);
-    }
-  }, [(layoutItems || []).length, hasNextPage, isFetchingNextPage, fetchNextPage, queryClient]);
-  
+    },
+    [(layoutItems || []).length, hasNextPage, isFetchingNextPage, fetchNextPage, queryClient]
+  );
+
   // Render item for FlashList
-  const renderItem = useCallback(({ item }: { item: InspoItem }) => {
-    const imageHeight = item.height - CARD_BOTTOM_HEIGHT;
-    
-    return (
-      <InspoCardContainer>
-        <CardContainer
-          onPress={() => handleItemPress(item)}
-          activeOpacity={0.9}
-        >
-          <ImageWrapper height={imageHeight}>
-            <SharedElement id={`media.${item.id}`} onNode={() => {}}>
-              <ImageWithPlaceholder
-                source={{ uri: item.imageUri }}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
-              />
-            </SharedElement>
-            {item.isVideo && (
-              <VideoBadge>
-                <Play size={14} color="#fff" fill="#fff" strokeWidth={2.5} />
-              </VideoBadge>
-            )}
-          </ImageWrapper>
-          <BottomCard>
-            <BottomCardActions>
-              <ShareButton
-                onPress={(e: GestureResponderEvent) => {
-                  e.stopPropagation();
-                  handleShare(item, e);
-                }}
-                activeOpacity={0.7}
-              >
-                <Share2 size={12} color={theme.colors.text.high} strokeWidth={2} />
-              </ShareButton>
-              <ShareButton
-                onPress={(e: GestureResponderEvent) => {
-                  e.stopPropagation();
-                  if (!isAuthenticated) {
-                    setShowAuthPrompt(true);
-                  } else {
-                    setSelectedInspoForMoodBoard({ title: item.title || '', imageUri: item.imageUri });
-                    setShowAddToMoodBoard(true);
-                  }
-                }}
-                activeOpacity={0.7}
-              >
-                <LayoutGrid size={12} color={theme.colors.text.high} strokeWidth={2} />
-              </ShareButton>
-            </BottomCardActions>
-          </BottomCard>
-        </CardContainer>
-      </InspoCardContainer>
-    );
-  }, [handleItemPress, theme, isAuthenticated]);
-  
+  const renderItem = useCallback(
+    ({ item }: { item: InspoItem }) => {
+      const imageHeight = item.height - CARD_BOTTOM_HEIGHT;
+
+      return (
+        <InspoCardContainer>
+          <CardContainer onPress={() => handleItemPress(item)} activeOpacity={0.9}>
+            <ImageWrapper height={imageHeight}>
+              <SharedElement id={`media.${item.id}`} onNode={() => {}}>
+                <ImageWithPlaceholder
+                  source={{ uri: item.imageUri }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                />
+              </SharedElement>
+              {item.isVideo && (
+                <VideoBadge>
+                  <Play size={14} color="#fff" fill="#fff" strokeWidth={2.5} />
+                </VideoBadge>
+              )}
+            </ImageWrapper>
+            <BottomCard>
+              <BottomCardActions>
+                <ShareButton
+                  onPress={(e: GestureResponderEvent) => {
+                    e.stopPropagation();
+                    handleShare(item, e);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Share2 size={12} color={theme.colors.text.high} strokeWidth={2} />
+                </ShareButton>
+                <ShareButton
+                  onPress={(e: GestureResponderEvent) => {
+                    e.stopPropagation();
+                    if (!isAuthenticated) {
+                      setShowAuthPrompt(true);
+                    } else {
+                      setSelectedInspoForMoodBoard({
+                        title: item.title || '',
+                        imageUri: item.imageUri,
+                      });
+                      setShowAddToMoodBoard(true);
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <LayoutGrid size={12} color={theme.colors.text.high} strokeWidth={2} />
+                </ShareButton>
+              </BottomCardActions>
+            </BottomCard>
+          </CardContainer>
+        </InspoCardContainer>
+      );
+    },
+    [handleItemPress, theme, isAuthenticated]
+  );
+
   // List header component
-  const ListHeaderComponent = useMemo(() => (
-    <View>
-      <GreetingBanner topInset={insets.top} firstName={firstName} />
-      <SearchSection>
-        <SearchInputWrapper>
-          <SearchButton onPress={handleSearchPress} activeOpacity={0.7}>
-            <Search size={18} color={theme.colors.text.low} />
-            <SearchButtonText variant="body">
-              Search for tips, styles, and inspiration...
-            </SearchButtonText>
-          </SearchButton>
-        </SearchInputWrapper>
-      </SearchSection>
-      <DIYTipsSection>
-        <SectionHeader>
-          <SectionTitle variant="h2" weight="semibold" color={theme.colors.text.high}>
-            Hair Tips & Styles We Love
-          </SectionTitle>
-        </SectionHeader>
-        <DIYTipsScroll>
-          {diyTipsContent.map((item) => (
-            <HorizontalContentCard
-              key={item.id}
-              content={item}
-              onPress={() => handleDIYTipPress(item.id)}
-              onFavoritePress={() => setShowAuthPrompt(true)}
-            />
-          ))}
-        </DIYTipsScroll>
-      </DIYTipsSection>
-      <TipOfTheDayCard>
-        <TipHeader>
-          <TipIconContainer>
-            <Sparkles size={20} color={theme.colors.primary} strokeWidth={2.5} />
-          </TipIconContainer>
-          <TipTitleContainer>
-            <TipLabel variant="caption" color={theme.colors.primary} weight="semibold">
-              Tip of the Day
-            </TipLabel>
-            <TipTitle variant="h3" weight="semibold" color={theme.colors.text.high}>
-              Daily Hair Wisdom
-            </TipTitle>
-          </TipTitleContainer>
-        </TipHeader>
-        <TipContent variant="body" color={theme.colors.text.medium}>
-          {tipOfTheDay}
-        </TipContent>
-      </TipOfTheDayCard>
-      <SectionDivider />
-      {hasNewPosts && (
-        <TouchableOpacity
-          onPress={mergeNewPosts}
-          style={{
-            margin: theme.spacing[4],
-            padding: theme.spacing[3],
-            backgroundColor: theme.colors.primary,
-            borderRadius: theme.radii.medium,
-            alignItems: 'center',
-          }}
-        >
-          <Text variant="body" weight="semibold" color="#fff">
-            New posts available - Tap to refresh
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  ), [firstName, insets.top, theme, diyTipsContent, tipOfTheDay, hasNewPosts, mergeNewPosts, handleSearchPress, handleDIYTipPress]);
-  
+  const ListHeaderComponent = useMemo(
+    () => (
+      <View>
+        <GreetingBanner topInset={insets.top} firstName={firstName} />
+        <SearchSection>
+          <SearchInputWrapper>
+            <SearchButton onPress={handleSearchPress} activeOpacity={0.7}>
+              <Search size={18} color={theme.colors.text.low} />
+              <SearchButtonText variant="body">
+                Search for tips, styles, and inspiration...
+              </SearchButtonText>
+            </SearchButton>
+          </SearchInputWrapper>
+        </SearchSection>
+        <DIYTipsSection>
+          <SectionHeader>
+            <SectionTitle variant="h2" weight="semibold" color={theme.colors.text.high}>
+              Hair Tips & Styles We Love
+            </SectionTitle>
+          </SectionHeader>
+          <DIYTipsScroll>
+            {diyTipsContent.map(item => (
+              <HorizontalContentCard
+                key={item.id}
+                content={item}
+                onPress={() => handleDIYTipPress(item.id)}
+                onFavoritePress={() => setShowAuthPrompt(true)}
+              />
+            ))}
+          </DIYTipsScroll>
+        </DIYTipsSection>
+        <TipOfTheDayCard>
+          <TipHeader>
+            <TipIconContainer>
+              <Sparkles size={20} color={theme.colors.primary} strokeWidth={2.5} />
+            </TipIconContainer>
+            <TipTitleContainer>
+              <TipLabel variant="caption" color={theme.colors.primary} weight="semibold">
+                Tip of the Day
+              </TipLabel>
+              <TipTitle variant="h3" weight="semibold" color={theme.colors.text.high}>
+                Daily Hair Wisdom
+              </TipTitle>
+            </TipTitleContainer>
+          </TipHeader>
+          <TipContent variant="body" color={theme.colors.text.medium}>
+            {tipOfTheDay}
+          </TipContent>
+        </TipOfTheDayCard>
+        <SectionDivider />
+        {hasNewPosts && (
+          <TouchableOpacity
+            onPress={mergeNewPosts}
+            style={{
+              margin: theme.spacing[4],
+              padding: theme.spacing[3],
+              backgroundColor: theme.colors.primary,
+              borderRadius: theme.radii.medium,
+              alignItems: 'center',
+            }}
+          >
+            <Text variant="body" weight="semibold" color="#fff">
+              New posts available - Tap to refresh
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    ),
+    [
+      firstName,
+      insets.top,
+      theme,
+      diyTipsContent,
+      tipOfTheDay,
+      hasNewPosts,
+      mergeNewPosts,
+      handleSearchPress,
+      handleDIYTipPress,
+    ]
+  );
+
   // List footer component
   const ListFooterComponent = useMemo(() => {
     if (!isFetchingNextPage) return null;
     return (
       <View style={{ padding: theme.spacing[4], alignItems: 'center' }}>
         <ActivityIndicator size="small" color={theme.colors.primary} />
-        <Text variant="body" color={theme.colors.text.medium} style={{ marginTop: theme.spacing[2] }}>
+        <Text
+          variant="body"
+          color={theme.colors.text.medium}
+          style={{ marginTop: theme.spacing[2] }}
+        >
           Loading more...
         </Text>
       </View>
@@ -603,13 +655,11 @@ export default function HomeScreen() {
         <FlashList
           data={layoutItems || []}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           numColumns={2}
           ListHeaderComponent={ListHeaderComponent}
           ListFooterComponent={ListFooterComponent}
-          refreshControl={
-            <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />}
           onViewableItemsChanged={handleViewableItemsChanged}
           viewabilityConfig={{
             itemVisiblePercentThreshold: 50,

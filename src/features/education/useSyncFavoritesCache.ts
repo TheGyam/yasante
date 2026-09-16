@@ -24,7 +24,7 @@ export function useSyncFavoritesCache() {
 
     if (favoritesList && Array.isArray(favoritesList)) {
       // Map each favorite to a per-item cache entry
-      favoritesList.forEach((favorite) => {
+      favoritesList.forEach(favorite => {
         if (favorite.contentId) {
           queryClient.setQueryData([FAVORITES_QUERY_KEY, userId, favorite.contentId], true);
         }
@@ -36,4 +36,3 @@ export function useSyncFavoritesCache() {
     }
   }, [isRestoring, userId, queryClient]);
 }
-

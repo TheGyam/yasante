@@ -67,8 +67,18 @@ export interface MonthPickerProps {
 // Helper function to get month name
 const getMonthName = (monthIndex: number): string => {
   const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
   return months[monthIndex];
 };
@@ -78,12 +88,12 @@ const generateFutureMonths = (existingMonths: string[]): MonthOption[] => {
   const months: MonthOption[] = [];
   const now = new Date();
   const currentMonthKey = now.toISOString().slice(0, 7); // Current month in YYYY-MM format
-  
+
   // Start from next month (not current month)
   for (let i = 1; i <= 24; i++) {
     const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
     const monthKey = date.toISOString().slice(0, 7);
-    
+
     // Only include months that don't already exist
     if (!existingMonths.includes(monthKey)) {
       months.push({
@@ -93,16 +103,16 @@ const generateFutureMonths = (existingMonths: string[]): MonthOption[] => {
       });
     }
   }
-  
+
   return months;
 };
 
-export function MonthPicker({ 
-  visible, 
-  onClose, 
-  onMonthSelected, 
+export function MonthPicker({
+  visible,
+  onClose,
+  onMonthSelected,
   existingMonths,
-  testID 
+  testID,
 }: MonthPickerProps) {
   const { theme } = useTheme();
   const availableMonths = generateFutureMonths(existingMonths);
@@ -127,12 +137,16 @@ export function MonthPicker({
             Select a Month
           </Title>
           {availableMonths.length === 0 ? (
-            <Text variant="body" color={theme.colors.text.medium} style={{ textAlign: 'center', padding: theme.spacing[4] }}>
+            <Text
+              variant="body"
+              color={theme.colors.text.medium}
+              style={{ textAlign: 'center', padding: theme.spacing[4] }}
+            >
               All available months have been added
             </Text>
           ) : (
             <MonthList>
-              {availableMonths.map((month) => (
+              {availableMonths.map(month => (
                 <MonthOption
                   key={month.monthKey}
                   onPress={() => handleMonthSelect(month)}
@@ -154,4 +168,3 @@ export function MonthPicker({
     </Modal>
   );
 }
-

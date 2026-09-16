@@ -49,7 +49,8 @@ export function ScaleIn({ children, duration, delay = 0, useSpring = false }: Sc
   const reduceMotion = useReducedMotion();
 
   // Use preset duration if not specified
-  const animationDuration = duration || (useSpring ? undefined : ANIMATION_PRESETS.scaleIn.duration);
+  const animationDuration =
+    duration || (useSpring ? undefined : ANIMATION_PRESETS.scaleIn.duration);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -83,4 +84,3 @@ export function ScaleIn({ children, duration, delay = 0, useSpring = false }: Sc
 
   return <AnimatedView style={animatedStyle}>{children}</AnimatedView>;
 }
-

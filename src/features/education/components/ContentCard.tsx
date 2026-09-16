@@ -64,7 +64,7 @@ export interface ContentCardProps {
 export function ContentCard({ content, onPress, onFavoritePress, testID }: ContentCardProps) {
   const { theme } = useTheme();
   const { isAuthenticated, user } = useAuth();
-  
+
   const userId = user?.id;
   const { data: isFavorite = false } = useIsFavorite(userId || '', content.id, {
     enabled: !!userId,
@@ -73,14 +73,14 @@ export function ContentCard({ content, onPress, onFavoritePress, testID }: Conte
 
   const handleFavoritePress = (e: any) => {
     e.stopPropagation(); // Prevent card press
-    
+
     if (!isAuthenticated) {
       if (onFavoritePress) {
         onFavoritePress();
       }
       return;
     }
-    
+
     if (userId) {
       toggleFavorite.mutate(content.id);
     }
@@ -98,11 +98,11 @@ export function ContentCard({ content, onPress, onFavoritePress, testID }: Conte
             />
           </SharedElement>
           <FavoriteButton onPress={handleFavoritePress} activeOpacity={0.7}>
-            <Heart 
-              size={18} 
-              color={isFavorite ? theme.colors.primary : "#fff"} 
-              fill={isFavorite ? theme.colors.primary : "transparent"}
-              strokeWidth={2.5} 
+            <Heart
+              size={18}
+              color={isFavorite ? theme.colors.primary : '#fff'}
+              fill={isFavorite ? theme.colors.primary : 'transparent'}
+              strokeWidth={2.5}
             />
           </FavoriteButton>
         </ImageContainer>
@@ -134,4 +134,3 @@ export function ContentCard({ content, onPress, onFavoritePress, testID }: Conte
     </Card>
   );
 }
-

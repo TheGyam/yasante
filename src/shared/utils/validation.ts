@@ -62,7 +62,7 @@ export function getPasswordStrength(password: string): PasswordStrength {
   if (password.length < 8) return 'weak';
 
   let strength = 0;
-  
+
   // Length check
   if (password.length >= 8) strength++;
   if (password.length >= 12) strength++;

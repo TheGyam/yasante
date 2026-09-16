@@ -67,7 +67,9 @@ export function MediaPicker({ visible, onClose, onImageSelected, testID }: Media
     >
       <ModalOverlay>
         <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
-        <ModalContent style={{ paddingBottom: Math.max(theme.spacing[5], insets.bottom + theme.spacing[2]) }}>
+        <ModalContent
+          style={{ paddingBottom: Math.max(theme.spacing[5], insets.bottom + theme.spacing[2]) }}
+        >
           <Text variant="h3" weight="semibold" style={{ marginBottom: theme.spacing[4] }}>
             Select Photo
           </Text>
@@ -97,4 +99,3 @@ export function MediaPicker({ visible, onClose, onImageSelected, testID }: Media
     </Modal>
   );
 }
-

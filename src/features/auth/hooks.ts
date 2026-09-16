@@ -13,31 +13,30 @@ export function useLogin() {
       const response = await api.auth.login({ email, password });
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       if (__DEV__) {
         console.log('✅ Login successful, setting auth state:', {
           hasUser: !!data?.user,
           hasTokens: !!(data?.accessToken && data?.refreshToken),
-          userId: data?.user?.id
+          userId: data?.user?.id,
         });
       }
-      
+
       if (!data?.user || !data?.accessToken || !data?.refreshToken) {
         console.error('❌ Invalid login response:', data);
         throw new Error('Invalid login response: missing user or tokens');
       }
-      
+
       // Convert expiresAt to timestamp if it's a string
-      const expiresAt = typeof data.expiresAt === 'string' 
-        ? new Date(data.expiresAt).getTime()
-        : data.expiresAt;
-      
+      const expiresAt =
+        typeof data.expiresAt === 'string' ? new Date(data.expiresAt).getTime() : data.expiresAt;
+
       const tokens: AuthTokens = {
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
         expiresAt,
       };
-      
+
       login(data.user, tokens);
       // Invalidate and refetch user-related queries
       queryClient.invalidateQueries({ queryKey: ['user'] });
@@ -50,14 +49,14 @@ export function useSignup() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
-      name, 
-      email, 
+    mutationFn: async ({
+      name,
+      email,
       password,
-      password_confirm
-    }: { 
-      name: string; 
-      email: string; 
+      password_confirm,
+    }: {
+      name: string;
+      email: string;
       password: string;
       password_confirm: string;
     }) => {
@@ -70,31 +69,30 @@ export function useSignup() {
       });
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       if (__DEV__) {
         console.log('✅ Signup successful, setting auth state:', {
           hasUser: !!data?.user,
           hasTokens: !!(data?.accessToken && data?.refreshToken),
-          userId: data?.user?.id
+          userId: data?.user?.id,
         });
       }
-      
+
       if (!data?.user || !data?.accessToken || !data?.refreshToken) {
         console.error('❌ Invalid signup response:', data);
         throw new Error('Invalid signup response: missing user or tokens');
       }
-      
+
       // Convert expiresAt to timestamp if it's a string
-      const expiresAt = typeof data.expiresAt === 'string' 
-        ? new Date(data.expiresAt).getTime()
-        : data.expiresAt;
-      
+      const expiresAt =
+        typeof data.expiresAt === 'string' ? new Date(data.expiresAt).getTime() : data.expiresAt;
+
       const tokens: AuthTokens = {
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
         expiresAt,
       };
-      
+
       login(data.user, tokens);
       // Invalidate and refetch user-related queries
       queryClient.invalidateQueries({ queryKey: ['user'] });
@@ -130,4 +128,3 @@ export function useRefreshToken() {
     },
   });
 }
-

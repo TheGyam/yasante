@@ -12,7 +12,8 @@ const Container = styled.View<{ topInset: number }>`
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding-top: ${({ topInset, theme }: { topInset: number; theme: Theme }) => topInset + theme.spacing[4]}px;
+  padding-top: ${({ topInset, theme }: { topInset: number; theme: Theme }) =>
+    topInset + theme.spacing[4]}px;
   padding-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
   padding-horizontal: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
   background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};
@@ -103,4 +104,3 @@ export function TopBar({ title, showBack = true, onBack, rightActions, testID }:
     </Container>
   );
 }
-
