@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Yasante",
-    "slug": "kalon",
+    "slug": "yasante",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -24,7 +24,10 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.yasante.app",
-      "permissions": ["android.permission.RECORD_AUDIO", "android.permission.CAMERA"]
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -58,10 +61,10 @@
     ],
     "extra": {
       "router": {},
+      "apiBaseUrl": "https://yasante.com",
       "eas": {
-        "projectId": "ff00f530-2102-4b1a-9082-6062375bf281"
-      },
-      "apiBaseUrl": "https://yasante.com"
+        "projectId": "9dbcb957-3709-4ef6-b6e0-1f5800eb2c43"
+      }
     },
     "owner": "mandey"
   }
