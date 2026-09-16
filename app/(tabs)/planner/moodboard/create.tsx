@@ -26,13 +26,13 @@ import {
   ArrowLeft,
   ArrowRight,
 } from 'lucide-react-native';
-import { DatePickerModal } from '@/shared/components/DatePickerModal';
-import { TimePicker } from '@/shared/components/TimePicker';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { DatePickerModal } from '@/shared/legacy/components/DatePickerModal';
+import { TimePicker } from '@/shared/legacy/components/TimePicker';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useCreateMoodBoardEntry } from '@/features/planner';
-import { Text } from '@/shared/ui/Text';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
-import { MediaPicker } from '@/shared/components/MediaPicker';
+import { Text } from '@/shared/legacy/ui/Text';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
+import { MediaPicker } from '@/shared/legacy/components/MediaPicker';
 import { useAuth } from '@/features/auth';
 import { AuthPromptModal } from '@/features/auth';
 import { format } from 'date-fns';

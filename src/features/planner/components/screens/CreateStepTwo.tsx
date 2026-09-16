@@ -8,8 +8,8 @@ import {
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Link2, Image as ImageIcon } from 'lucide-react-native';
-import { Text } from '@/shared/ui/Text';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { CreatePhotoGrid } from '../ui/CreatePhotoGrid';
 
 interface CreateStepTwoProps {

@@ -2,9 +2,9 @@ import React from 'react';
 import { View, TouchableOpacity, Dimensions } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
-import { Text } from '@/shared/ui/Text';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

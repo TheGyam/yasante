@@ -1,119 +1,87 @@
-import { Stack, useRouter, useSegments } from 'expo-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { Linking } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider, useTheme } from '@/shared/theme/ThemeProvider';
-import { AuthProvider } from '@/features/auth';
-import { useNotifications } from '@/shared/hooks/useNotifications';
-import { LogBox, Linking, View, ActivityIndicator } from 'react-native';
-import { useEffect } from 'react';
-import { useFonts } from '@expo-google-fonts/lato/useFonts';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { useStackOptions } from '@/shared/ui/stackOptions';
+import {
+  useFonts,
+  InstrumentSans_400Regular,
+  InstrumentSans_500Medium,
+  InstrumentSans_600SemiBold,
+  InstrumentSans_700Bold,
+} from '@expo-google-fonts/instrument-sans';
 import { Lato_400Regular, Lato_700Bold } from '@expo-google-fonts/lato';
+import { ThemeProvider, useTheme } from '@/shared/theme';
+import { ThemeProvider as LegacyThemeProvider } from '@/shared/legacy/theme/ThemeProvider';
+import { AuthProvider } from '@/features/auth';
 import { parseMoodBoardDeepLink, parseTreatmentDeepLink } from '@/features/planner';
+import { useNotifications } from '@/shared/hooks/useNotifications';
+import { queryClient } from '@/queryClient';
 
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 2,
-      staleTime: 5 * 60 * 1000,
-    },
-  },
-});
-
-// Enable comprehensive logging in dev
-if (__DEV__) {
-  LogBox.ignoreLogs([]);
-  console.log('=== YASANTE APP STARTING ===');
-}
-
-function RootLayoutNav() {
-  const { theme, colorScheme } = useTheme();
+function RootNavigator() {
+  const theme = useTheme();
   const router = useRouter();
+  const screenOptions = useStackOptions();
+  useNotifications();
 
-  // Only use notifications if available (requires dev build)
-  try {
-    useNotifications();
-  } catch (error) {
-    // Notifications not available in Expo Go
-    if (__DEV__) {
-      console.log('Notifications not available (requires dev build)');
-    }
-  }
-
-  // Handle deep links
   useEffect(() => {
-    const handleDeepLink = (event: { url: string }) => {
-      const { url } = event;
-
-      // Parse moodboard deep link
-      const moodboardLink = parseMoodBoardDeepLink(url);
-      if (moodboardLink) {
-        router.push(`/(tabs)/planner/moodboard/${moodboardLink.entryId}` as any);
+    const open = ({ url }: { url: string }) => {
+      const board = parseMoodBoardDeepLink(url);
+      if (board) {
+        router.push(`/(tabs)/planner/moodboard/${board.entryId}` as never);
         return;
       }
-
-      // Parse treatment deep link
-      const treatmentLink = parseTreatmentDeepLink(url);
-      if (treatmentLink) {
-        router.push(`/(tabs)/planner/treatments/edit/${treatmentLink.treatmentId}` as any);
-        return;
+      const treatment = parseTreatmentDeepLink(url);
+      if (treatment) {
+        router.push(`/(tabs)/planner/treatments/edit/${treatment.treatmentId}` as never);
       }
     };
 
-    // Handle initial URL (if app was opened via deep link)
-    Linking.getInitialURL().then(url => {
-      if (url) {
-        handleDeepLink({ url });
-      }
-    });
-
-    // Listen for deep links while app is running
-    const subscription = Linking.addEventListener('url', handleDeepLink);
-
-    return () => {
-      subscription.remove();
-    };
+    Linking.getInitialURL().then(url => url && open({ url }));
+    const subscription = Linking.addEventListener('url', open);
+    return () => subscription.remove();
   }, [router]);
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: theme.colors.background },
-        animation: 'fade', // Use fade animation to work better with shared elements
-      }}
-    />
+    <>
+      <StatusBar style={theme.statusBar} />
+      <Stack screenOptions={screenOptions} />
+    </>
   );
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({
+  const [fontsLoaded] = useFonts({
+    InstrumentSans_400Regular,
+    InstrumentSans_500Medium,
+    InstrumentSans_600SemiBold,
+    InstrumentSans_700Bold,
     Lato_400Regular,
     Lato_700Bold,
   });
 
-  useEffect(() => {
-    if (fontsLoaded && __DEV__) {
-      console.log('Lato font loaded successfully');
-    }
-  }, [fontsLoaded]);
-
-  if (fontError) {
-    console.warn('Font loading error:', fontError);
-  }
+  // A few frames at most; avoids a flash of the system font.
+  if (!fontsLoaded) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <RootLayoutNav />
-            </AuthProvider>
-          </QueryClientProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>
+      <KeyboardProvider>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <LegacyThemeProvider>
+              <QueryClientProvider client={queryClient}>
+                <AuthProvider>
+                  <RootNavigator />
+                </AuthProvider>
+              </QueryClientProvider>
+            </LegacyThemeProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

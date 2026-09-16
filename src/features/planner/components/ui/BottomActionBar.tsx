@@ -2,8 +2,8 @@ import React from 'react';
 import { View, TouchableOpacity, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Text } from '@/shared/ui/Text';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 
 interface BottomActionBarProps {
   onNext?: () => void;

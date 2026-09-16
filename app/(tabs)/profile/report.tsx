@@ -10,8 +10,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Text } from '@/shared/ui/Text';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
 import { BrutalistInput } from '@/features/planner';
 import { isRequired } from '@/shared/utils/validation';
 

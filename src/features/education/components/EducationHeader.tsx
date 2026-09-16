@@ -3,12 +3,12 @@ import { View, TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
 import { Search, Bookmark, Bell } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Text } from '@/shared/ui/Text';
-import { Input } from '@/shared/ui/Input';
-import { Avatar } from '@/shared/ui/Avatar';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Input } from '@/shared/legacy/ui/Input';
+import { Avatar } from '@/shared/legacy/ui/Avatar';
 import { QuickCategoryCard } from './QuickCategoryCard';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const HeaderContainer = styled.View<{ topInset: number }>`
   background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};

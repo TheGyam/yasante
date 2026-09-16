@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import {
   useInfiniteContent,
   prefetchContentItem,
@@ -20,10 +20,10 @@ import {
 } from '@/features/education';
 import { useUser } from '@/features/profile';
 import { useAuth } from '@/features/auth';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
-import { Text } from '@/shared/ui/Text';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
+import { Text } from '@/shared/legacy/ui/Text';
 import { Play, Share2, Search, Lightbulb, Sparkles, LayoutGrid } from 'lucide-react-native';
-import { SharedElement } from '@/shared/components/SharedElement';
+import { SharedElement } from '@/shared/legacy/components/SharedElement';
 import { GreetingBanner } from '@/features/auth';
 import { HorizontalContentCard } from '@/features/education';
 import { AuthPromptModal } from '@/features/auth';
@@ -33,7 +33,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNewPosts } from '@/features/education';
 import { useBackgroundSync } from '@/shared/hooks/useBackgroundSync';
 import { Content } from '@/features/education';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const Container = styled.View`
   flex: 1;

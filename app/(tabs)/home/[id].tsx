@@ -5,25 +5,25 @@ import { useNavigation } from '@react-navigation/native';
 import styled from 'styled-components/native';
 import { ArrowLeft, Bookmark, Share2, MoreHorizontal, LayoutGrid } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useContentItem, useRelatedContent } from '@/features/education';
 import { useToggleFavorite, useIsFavorite, useFavorites } from '@/features/education';
 import { useAuth } from '@/features/auth';
 import { AuthPromptModal } from '@/features/auth';
 import { AddToMoodBoardModal } from '@/features/planner';
-import { SharedElement } from '@/shared/components/SharedElement';
-import { VideoPlayer } from '@/shared/ui/VideoPlayer';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
-import { Text } from '@/shared/ui/Text';
+import { SharedElement } from '@/shared/legacy/components/SharedElement';
+import { VideoPlayer } from '@/shared/legacy/ui/VideoPlayer';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
+import { Text } from '@/shared/legacy/ui/Text';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withDelay,
 } from 'react-native-reanimated';
-import { useReducedMotion } from '@/shared/hooks/useReducedMotion';
+import { useReducedMotion } from '@/shared/legacy/hooks/useReducedMotion';
 import { ANIMATION_PRESETS, getAnimationConfig } from '@/shared/utils/animations';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const Container = styled.View`
   flex: 1;

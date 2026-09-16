@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { View, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useUserStore } from '@/features/profile';
-import { Button } from '@/shared/ui/Button';
-import { Text } from '@/shared/ui/Text';
-import { FadeIn } from '@/shared/animations/FadeIn';
-import { SlideIn } from '@/shared/animations/SlideIn';
+import { Button } from '@/shared/legacy/ui/Button';
+import { Text } from '@/shared/legacy/ui/Text';
+import { FadeIn } from '@/shared/legacy/animations/FadeIn';
+import { SlideIn } from '@/shared/legacy/animations/SlideIn';
 
 export default function OnboardingScreen() {
   const { theme } = useTheme();

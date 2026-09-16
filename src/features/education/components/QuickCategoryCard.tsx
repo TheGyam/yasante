@@ -1,9 +1,9 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Text } from '@/shared/ui/Text';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const CategoryContainer = styled(TouchableOpacity)`
   align-items: center;

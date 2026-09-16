@@ -1,74 +1,52 @@
-import React from 'react';
-import {
-  TouchableOpacity,
-  TouchableOpacityProps,
-  Platform,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
-import styled from 'styled-components/native';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { ReactNode } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
+import { radius, space } from '@/shared/theme';
+import type { HapticKind } from '@/shared/lib/haptics';
+import { Glass } from './Glass';
+import { PressableScale } from './PressableScale';
 
-const StyledCard = styled.View`
-  background-color: ${({ theme }: { theme: Theme }) => theme.colors.surface};
-  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-  shadow-color: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowColor};
-  shadow-offset: ${({ theme }: { theme: Theme }) =>
-    `${theme.shadows.small.shadowOffset.width}px ${theme.shadows.small.shadowOffset.height}px`};
-  shadow-opacity: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowOpacity};
-  shadow-radius: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowRadius}px;
-  elevation: ${({ theme }: { theme: Theme }) =>
-    Platform.OS === 'android' ? theme.shadows.small.elevation : 0};
-`;
-
-const PressableCard = styled(TouchableOpacity)`
-  background-color: ${({ theme }: { theme: Theme }) => theme.colors.surface};
-  border-radius: ${({ theme }: { theme: Theme }) => theme.radii.medium}px;
-  padding: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-  shadow-color: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowColor};
-  shadow-offset: ${({ theme }: { theme: Theme }) =>
-    `${theme.shadows.small.shadowOffset.width}px ${theme.shadows.small.shadowOffset.height}px`};
-  shadow-opacity: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowOpacity};
-  shadow-radius: ${({ theme }: { theme: Theme }) => theme.shadows.small.shadowRadius}px;
-  elevation: ${({ theme }: { theme: Theme }) =>
-    Platform.OS === 'android' ? theme.shadows.small.elevation : 0};
-`;
-
-export interface CardProps extends Omit<TouchableOpacityProps, 'style'> {
-  children: React.ReactNode;
+export interface CardProps {
+  children: ReactNode;
   onPress?: () => void;
-  testID?: string;
+  onLongPress?: () => void;
+  haptic?: HapticKind;
+  padding?: number;
+  radius?: number;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
+  testID?: string;
 }
 
+/** A glass card. Becomes pressable when given `onPress`. */
 export function Card({
   children,
   onPress,
-  testID,
-  accessible,
+  onLongPress,
+  haptic,
+  padding = space.lg,
+  radius: r = radius.lg,
+  style,
   accessibilityLabel,
-  ...props
+  testID,
 }: CardProps) {
-  if (onPress) {
-    return (
-      <PressableCard
-        onPress={onPress}
-        testID={testID}
-        accessible={accessible}
-        accessibilityLabel={accessibilityLabel}
-        accessibilityRole="button"
-        activeOpacity={0.7}
-        {...props}
-      >
-        {children}
-      </PressableCard>
-    );
-  }
+  const surface = (
+    <Glass radius={r} style={[{ padding }, style]} testID={onPress ? undefined : testID}>
+      {children}
+    </Glass>
+  );
+
+  if (!onPress) return surface;
 
   return (
-    <StyledCard testID={testID} accessible={accessible} accessibilityLabel={accessibilityLabel}>
-      {children}
-    </StyledCard>
+    <PressableScale
+      onPress={onPress}
+      onLongPress={onLongPress}
+      haptic={haptic}
+      scaleTo={0.98}
+      accessibilityLabel={accessibilityLabel}
+      testID={testID}
+    >
+      {surface}
+    </PressableScale>
   );
 }

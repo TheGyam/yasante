@@ -1,58 +1,47 @@
-import React from 'react';
-import { Image, ImageSourcePropType, ViewStyle, StyleProp } from 'react-native';
-import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
+import { fonts, makeStyles } from '@/shared/theme';
 import { Text } from './Text';
-import type { Theme } from '@/shared/theme/ThemeProvider';
-
-const Container = styled.View<{ size: number }>`
-  width: ${({ size }: { size: number }) => size}px;
-  height: ${({ size }: { size: number }) => size}px;
-  border-radius: ${({ size }: { size: number }) => size / 2}px;
-  overflow: hidden;
-  background-color: ${({ theme }: { theme: Theme }) => theme.colors.surfaceVariant};
-  align-items: center;
-  justify-content: center;
-`;
-
-const StyledImage = styled(Image)`
-  width: 100%;
-  height: 100%;
-`;
 
 export interface AvatarProps {
-  source?: ImageSourcePropType;
-  name?: string;
+  uri?: string | null;
+  name?: string | null;
   size?: number;
-  testID?: string;
-  style?: StyleProp<ViewStyle>;
 }
 
-export function Avatar({ source, name, size = 40, testID, style }: AvatarProps) {
-  const { theme } = useTheme();
+const useStyles = makeStyles(t => ({
+  base: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: t.colors.accentSoft,
+    borderWidth: 1,
+    borderColor: t.colors.glass.border,
+  },
+}));
 
-  const initials = name
-    ?.split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+function initials(name?: string | null) {
+  if (!name) return '';
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}
+
+export function Avatar({ uri, name, size = 40 }: AvatarProps) {
+  const styles = useStyles();
+  const shape = { width: size, height: size, borderRadius: size / 2 };
 
   return (
-    <Container
-      size={size}
-      testID={testID}
-      style={style}
-      accessible={true}
-      accessibilityRole="image"
-    >
-      {source ? (
-        <StyledImage source={source} resizeMode="cover" />
+    <View style={[styles.base, shape]} accessibilityRole="image" accessibilityLabel={name ?? 'Avatar'}>
+      {uri ? (
+        <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
       ) : (
-        <Text variant="body" weight="semibold" color={theme.colors.text.medium}>
-          {initials || '?'}
+        <Text
+          tone="accent"
+          style={{ fontFamily: fonts.semibold, fontSize: size * 0.38, lineHeight: size * 0.46 }}
+        >
+          {initials(name)}
         </Text>
       )}
-    </Container>
+    </View>
   );
 }

@@ -3,9 +3,9 @@ import { View, TouchableOpacity, Dimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { CheckCircle2, Camera } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { Text } from '@/shared/ui/Text';
-import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { ImageWithPlaceholder } from '@/shared/legacy/ui/ImageWithPlaceholder';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import type { MoodBoardEntry } from '@/features/planner';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

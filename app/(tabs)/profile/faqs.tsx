@@ -10,8 +10,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react-native';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Text } from '@/shared/ui/Text';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);

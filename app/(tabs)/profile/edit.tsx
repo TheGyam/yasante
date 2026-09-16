@@ -10,12 +10,12 @@ import {
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Camera } from 'lucide-react-native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useUser, useUpdateUser } from '@/features/profile';
 import { useAuth } from '@/features/auth';
-import { Text } from '@/shared/ui/Text';
-import { Avatar } from '@/shared/ui/Avatar';
-import { MediaPicker } from '@/shared/components/MediaPicker';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Avatar } from '@/shared/legacy/ui/Avatar';
+import { MediaPicker } from '@/shared/legacy/components/MediaPicker';
 import { BrutalistInput } from '@/features/planner';
 import { isRequired, isValidEmail } from '@/shared/utils/validation';
 

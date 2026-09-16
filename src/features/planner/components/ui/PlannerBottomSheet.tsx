@@ -4,8 +4,8 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Camera, LayoutGrid, Plus } from 'lucide-react-native';
-import { Text } from '@/shared/ui/Text';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { CollectionCard } from './CollectionCard';
 import type { MoodBoardEntry } from '@/features/planner';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TextInput, TextInputProps, StyleProp, ViewStyle, TextStyle } from 'react-native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 
 interface BrutalistInputProps extends Omit<TextInputProps, 'style'> {
   icon?: React.ReactNode;

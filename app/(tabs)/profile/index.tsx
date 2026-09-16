@@ -3,12 +3,12 @@ import { ScrollView, View, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Menu, User as UserIcon, Edit2 } from 'lucide-react-native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useAuth } from '@/features/auth';
 import { useUser } from '@/features/profile';
 import { useMoodBoardEntries, useSavedMoodBoardEntries } from '@/features/planner';
-import { Avatar } from '@/shared/ui/Avatar';
-import { Text } from '@/shared/ui/Text';
+import { Avatar } from '@/shared/legacy/ui/Avatar';
+import { Text } from '@/shared/legacy/ui/Text';
 import { CreatedBoardsTab } from '@/features/profile';
 import { SavedBoardsTab } from '@/features/profile';
 

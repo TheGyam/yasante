@@ -3,17 +3,17 @@ import { ScrollView, View, ActivityIndicator, KeyboardAvoidingView, Platform } f
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
-import { Input } from '@/shared/ui/Input';
-import { Text } from '@/shared/ui/Text';
-import { Card } from '@/shared/ui/Card';
-import { Switch } from '@/shared/ui/Switch';
-import { TopBar } from '@/shared/components/TopBar';
-import { FadeIn } from '@/shared/animations/FadeIn';
-import { SlideIn } from '@/shared/animations/SlideIn';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
+import { Input } from '@/shared/legacy/ui/Input';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Card } from '@/shared/legacy/ui/Card';
+import { Switch } from '@/shared/legacy/ui/Switch';
+import { TopBar } from '@/shared/legacy/components/TopBar';
+import { FadeIn } from '@/shared/legacy/animations/FadeIn';
+import { SlideIn } from '@/shared/legacy/animations/SlideIn';
 import { useLogin } from '@/features/auth';
 import { isValidEmail, isRequired } from '@/shared/utils/validation';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const Container = styled.View`
   flex: 1;

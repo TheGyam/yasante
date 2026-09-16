@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, TouchableOpacity, Dimensions } from 'react-native';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react-native';
-import { Text } from '@/shared/ui/Text';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { Text } from '@/shared/legacy/ui/Text';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import type { MoodBoardEntry } from '@/features/planner';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');

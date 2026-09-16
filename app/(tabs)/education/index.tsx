@@ -2,15 +2,15 @@ import React, { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useContent } from '@/features/education';
 import { EducationHeader } from '@/features/education';
 import { TopicSection } from '@/features/education';
-import { TopTabs } from '@/shared/components/TopTabs';
+import { TopTabs } from '@/shared/legacy/components/TopTabs';
 import { DIYCard, DIY } from '@/features/education';
 import { useEducationStore } from '@/features/education';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '@/shared/ui/Text';
+import { Text } from '@/shared/legacy/ui/Text';
 import { AuthPromptModal } from '@/features/auth';
 import {
   Droplets,
@@ -23,7 +23,7 @@ import {
   Lightbulb,
 } from 'lucide-react-native';
 import { ContentTopic } from '@/features/education';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 const Container = styled.View`
   flex: 1;

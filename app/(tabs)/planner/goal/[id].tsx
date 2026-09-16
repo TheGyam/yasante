@@ -2,20 +2,20 @@ import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
-import { useTheme } from '@/shared/hooks/useTheme';
+import { useTheme } from '@/shared/legacy/hooks/useTheme';
 import { useGoal } from '@/features/planner';
 import { usePhotos, useUploadPhoto } from '@/features/planner';
-import { TopBar } from '@/shared/components/TopBar';
+import { TopBar } from '@/shared/legacy/components/TopBar';
 import { PhotoTimeline } from '@/features/planner';
-import { MediaPicker } from '@/shared/components/MediaPicker';
+import { MediaPicker } from '@/shared/legacy/components/MediaPicker';
 import { Plus } from 'lucide-react-native';
-import { FloatingActionButton } from '@/shared/components/FloatingActionButton';
-import { Card } from '@/shared/ui/Card';
-import { Text } from '@/shared/ui/Text';
-import { Button } from '@/shared/ui/Button';
+import { FloatingActionButton } from '@/shared/legacy/components/FloatingActionButton';
+import { Card } from '@/shared/legacy/ui/Card';
+import { Text } from '@/shared/legacy/ui/Text';
+import { Button } from '@/shared/legacy/ui/Button';
 import { formatFriendlyDate, getDaysUntil } from '@/shared/utils/date';
 import { useEffect } from 'react';
-import type { Theme } from '@/shared/theme/ThemeProvider';
+import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
 
 // Conditionally import Reanimated
 const Animated = (() => {
