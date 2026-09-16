@@ -2,19 +2,20 @@ import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
-import { useTheme } from '@/hooks/useTheme';
-import { useGoal } from '@/api/hooks/useGoals';
-import { usePhotos, useUploadPhoto } from '@/api/hooks/usePhotos';
-import { TopBar } from '@/components/composed/TopBar';
-import { PhotoTimeline } from '@/components/composed/PhotoTimeline';
-import { MediaPicker } from '@/components/composed/MediaPicker';
-import { FloatingActionButton } from '@/components/composed/FloatingActionButton';
-import { Card } from '@/components/ui/Card';
-import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/Button';
-import { formatFriendlyDate, getDaysUntil } from '@/utils/date';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useGoal } from '@/features/planner';
+import { usePhotos, useUploadPhoto } from '@/features/planner';
+import { TopBar } from '@/shared/components/TopBar';
+import { PhotoTimeline } from '@/features/planner';
+import { MediaPicker } from '@/shared/components/MediaPicker';
+import { Plus } from 'lucide-react-native';
+import { FloatingActionButton } from '@/shared/components/FloatingActionButton';
+import { Card } from '@/shared/ui/Card';
+import { Text } from '@/shared/ui/Text';
+import { Button } from '@/shared/ui/Button';
+import { formatFriendlyDate, getDaysUntil } from '@/shared/utils/date';
 import { useEffect } from 'react';
-import type { Theme } from '@/theme/ThemeProvider';
+import type { Theme } from '@/shared/theme/ThemeProvider';
 
 // Conditionally import Reanimated
 const Animated = (() => {
@@ -155,6 +156,7 @@ export default function GoalDetailScreen() {
       </Container>
       <FloatingActionButton
         onPress={() => setShowMediaPicker(true)}
+        icon={<Plus size={28} color={theme.colors.surface} strokeWidth={3} />}
         testID="add-photo-fab"
       />
       <MediaPicker

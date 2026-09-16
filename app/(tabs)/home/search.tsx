@@ -4,18 +4,18 @@ import { FlashList } from '@shopify/flash-list';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styled from 'styled-components/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '@/hooks/useTheme';
-import { useContent } from '@/api/hooks/useContent';
-import { Text } from '@/components/ui/Text';
-import { Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
-import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useContent } from '@/features/education';
+import { Text } from '@/shared/ui/Text';
+import { Input } from '@/shared/ui/Input';
+import { Badge } from '@/shared/ui/Badge';
+import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
 import { Search, ArrowLeft, Clock, TrendingUp, Play } from 'lucide-react-native';
-import { getRecentSearches, addToSearchHistory, removeFromSearchHistory, clearSearchHistory } from '@/utils/searchHistory';
-import { smartSearch, getSearchSuggestions, SearchResult } from '@/utils/smartSearch';
-import { Content } from '@/types/education';
-import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
-import type { Theme } from '@/theme/ThemeProvider';
+import { getRecentSearches, addToSearchHistory, removeFromSearchHistory, clearSearchHistory } from '@/shared/utils/searchHistory';
+import { smartSearch, getSearchSuggestions, SearchResult } from '@/shared/utils/smartSearch';
+import { Content } from '@/features/education';
+import { AuthPromptModal } from '@/features/auth';
+import type { Theme } from '@/shared/theme/ThemeProvider';
 
 const Container = styled.View`
   flex: 1;
@@ -499,14 +499,16 @@ export default function SearchScreen() {
   };
 
   const renderSearchResult = useCallback(({ item }: { item: UnifiedSearchResult }) => {
-    const categoryColors = {
+    const categoryColors: Record<UnifiedSearchResult['category'], string> = {
       inspo: theme.colors.primary,
       education: theme.colors.info,
+      diy: theme.colors.accent,
     };
 
-    const categoryLabels = {
+    const categoryLabels: Record<UnifiedSearchResult['category'], string> = {
       inspo: 'Inspo',
       education: 'Education',
+      diy: 'DIY',
     };
 
     return (
@@ -586,7 +588,6 @@ export default function SearchScreen() {
           data={filteredResults}
           renderItem={renderSearchResult}
           keyExtractor={(item) => `${item.type}-${item.id}`}
-          estimatedItemSize={80}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{
             paddingBottom: insets.bottom + 100,

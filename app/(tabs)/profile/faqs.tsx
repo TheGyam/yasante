@@ -3,8 +3,8 @@ import { ScrollView, View, TouchableOpacity, LayoutAnimation, Platform, UIManage
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { Text } from '@/components/ui/Text';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { Text } from '@/shared/ui/Text';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);

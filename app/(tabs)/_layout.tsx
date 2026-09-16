@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { BottomTabBar } from '@/components/composed/BottomTabBar';
+import { BottomTabBar } from '@/shared/components/BottomTabBar';
 import { View } from 'react-native';
 import { usePathname } from 'expo-router';
 
@@ -10,7 +10,7 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      tabBar={(props) => isModalScreen ? <View style={{ width: 0, height: 0, opacity: 0, pointerEvents: 'none' }} /> : <BottomTabBar {...props} />}
+      tabBar={(props) => isModalScreen ? <View style={{ width: 0, height: 0, opacity: 0, pointerEvents: 'none' }} /> : <BottomTabBar />}
       screenOptions={{
         headerShown: false,
         tabBarStyle: { display: 'none' },

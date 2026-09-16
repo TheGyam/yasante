@@ -4,17 +4,17 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { Plus } from 'lucide-react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { FloatingActionButton } from '@/components/composed/FloatingActionButton';
-import { useMoodBoardEntries } from '@/api/hooks/useMoodBoard';
-import type { MoodBoardEntry } from '@/types/planner';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { FloatingActionButton } from '@/shared/components/FloatingActionButton';
+import { useMoodBoardEntries } from '@/features/planner';
+import type { MoodBoardEntry } from '@/features/planner';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/features/auth';
 import { format } from 'date-fns';
 
-import { CollectionCard } from '@/components/moodboard/ui/CollectionCard';
-import { PlannerBottomSheet } from '@/components/moodboard/ui/PlannerBottomSheet';
-import { PlannerCalendar } from '@/components/moodboard/ui/PlannerCalendar';
+import { CollectionCard } from '@/features/planner';
+import { PlannerBottomSheet } from '@/features/planner';
+import { PlannerCalendar } from '@/features/planner';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

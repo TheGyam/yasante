@@ -4,16 +4,16 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ChevronDown, ChevronUp, Plus, Image as ImageIcon, Link2, Calendar as CalendarIcon, Clock, MapPin, User, ArrowLeft, Trash2 } from 'lucide-react-native';
-import { DatePickerModal } from '@/components/composed/DatePickerModal';
-import { TimePicker } from '@/components/composed/TimePicker';
-import { useTheme } from '@/hooks/useTheme';
-import { useMoodBoardEntry, useUpdateMoodBoardEntry, useDeleteMoodBoardEntry } from '@/api/hooks/useMoodBoard';
-import { Text } from '@/components/ui/Text';
-import { MediaPicker } from '@/components/composed/MediaPicker';
-import { useAuth } from '@/contexts/AuthContext';
+import { DatePickerModal } from '@/shared/components/DatePickerModal';
+import { TimePicker } from '@/shared/components/TimePicker';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useMoodBoardEntry, useUpdateMoodBoardEntry, useDeleteMoodBoardEntry } from '@/features/planner';
+import { Text } from '@/shared/ui/Text';
+import { MediaPicker } from '@/shared/components/MediaPicker';
+import { useAuth } from '@/features/auth';
 import { format } from 'date-fns';
-import { BrutalistInput } from '@/components/moodboard/ui/BrutalistInput';
-import { CreatePhotoGrid } from '@/components/moodboard/ui/CreatePhotoGrid';
+import { BrutalistInput } from '@/features/planner';
+import { CreatePhotoGrid } from '@/features/planner';
 
 export default function MoodBoardEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

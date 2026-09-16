@@ -5,13 +5,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheet from '@gorhom/bottom-sheet';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { ArrowLeft, Share2, Edit, Info, Camera } from 'lucide-react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { useMoodBoardEntry } from '@/api/hooks/useMoodBoard';
-import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
-import { Text } from '@/components/ui/Text';
-import { shareMoodBoardEntry } from '@/utils/share';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useMoodBoardEntry } from '@/features/planner';
+import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { Text } from '@/shared/ui/Text';
+import { shareMoodBoardEntry } from '@/features/planner';
 import { format } from 'date-fns';
-import { BoardDetailsSheetContent } from '@/components/moodboard/screens/BoardDetailsSheetContent';
+import { BoardDetailsSheetContent } from '@/features/planner';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 

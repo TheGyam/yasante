@@ -2,14 +2,14 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { useNotifications } from '@/hooks/useNotifications';
+import { ThemeProvider, useTheme } from '@/shared/theme/ThemeProvider';
+import { AuthProvider } from '@/features/auth';
+import { useNotifications } from '@/shared/hooks/useNotifications';
 import { LogBox, Linking, View, ActivityIndicator } from 'react-native';
 import { useEffect } from 'react';
 import { useFonts } from '@expo-google-fonts/lato/useFonts';
 import { Lato_400Regular, Lato_700Bold } from '@expo-google-fonts/lato';
-import { parseMoodBoardDeepLink, parseTreatmentDeepLink } from '@/utils/deepLinks';
+import { parseMoodBoardDeepLink, parseTreatmentDeepLink } from '@/features/planner';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -24,7 +24,7 @@ const queryClient = new QueryClient({
 // Enable comprehensive logging in dev
 if (__DEV__) {
   LogBox.ignoreLogs([]);
-  console.log('=== KALON APP STARTING ===');
+  console.log('=== YASANTE APP STARTING ===');
 }
 
 function RootLayoutNav() {

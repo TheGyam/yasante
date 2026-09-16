@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { View, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '@/hooks/useTheme';
-import { useUserStore } from '@/state/stores/userStore';
-import { Button } from '@/components/ui/Button';
-import { Text } from '@/components/ui/Text';
-import { FadeIn } from '@/components/animations/FadeIn';
-import { SlideIn } from '@/components/animations/SlideIn';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useUserStore } from '@/features/profile';
+import { Button } from '@/shared/ui/Button';
+import { Text } from '@/shared/ui/Text';
+import { FadeIn } from '@/shared/animations/FadeIn';
+import { SlideIn } from '@/shared/animations/SlideIn';
 
 export default function OnboardingScreen() {
   const { theme } = useTheme();
@@ -35,7 +35,7 @@ export default function OnboardingScreen() {
     >
       <FadeIn delay={100}>
         <Text variant="h1" color={theme.colors.primary} style={{ marginBottom: theme.spacing[4] }}>
-          Kalon
+          Yasante
         </Text>
       </FadeIn>
 
@@ -46,7 +46,7 @@ export default function OnboardingScreen() {
         <Text
           variant="body"
           color={theme.colors.text.medium}
-          style={{ marginBottom: theme.spacing[8], textAlign: 'center' }}
+          style={{ marginBottom: theme.spacing[6], textAlign: 'center' }}
         >
           Plan your hair goals, track your progress, and learn personalized care tips
         </Text>

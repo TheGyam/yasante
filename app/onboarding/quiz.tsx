@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import styled from 'styled-components/native';
-import { useTheme } from '@/hooks/useTheme';
-import { useUpdateHairProfile } from '@/api/hooks/useUser';
-import { useUserStore } from '@/state/stores/userStore';
-import { TopBar } from '@/components/composed/TopBar';
-import { Card } from '@/components/ui/Card';
-import { Text } from '@/components/ui/Text';
-import { Button } from '@/components/ui/Button';
-import { HairTexture, HairDensity, HairPorosity, HairGoal } from '@/types/user';
-import { FadeIn } from '@/components/animations/FadeIn';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useUpdateHairProfile } from '@/features/profile';
+import { useUserStore } from '@/features/profile';
+import { TopBar } from '@/shared/components/TopBar';
+import { Card } from '@/shared/ui/Card';
+import { Text } from '@/shared/ui/Text';
+import { Button } from '@/shared/ui/Button';
+import { HairTexture, HairDensity, HairPorosity, HairGoal } from '@/features/profile';
+import { FadeIn } from '@/shared/animations/FadeIn';
 
 const Container = styled.ScrollView`
   flex: 1;

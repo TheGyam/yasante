@@ -3,14 +3,14 @@ import { ScrollView, View, Alert, TouchableOpacity, KeyboardAvoidingView, Platfo
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Camera } from 'lucide-react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { useUser, useUpdateUser } from '@/api/hooks/useUser';
-import { useAuth } from '@/contexts/AuthContext';
-import { Text } from '@/components/ui/Text';
-import { Avatar } from '@/components/ui/Avatar';
-import { MediaPicker } from '@/components/composed/MediaPicker';
-import { BrutalistInput } from '@/components/moodboard/ui/BrutalistInput';
-import { isRequired, isValidEmail } from '@/utils/validation';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useUser, useUpdateUser } from '@/features/profile';
+import { useAuth } from '@/features/auth';
+import { Text } from '@/shared/ui/Text';
+import { Avatar } from '@/shared/ui/Avatar';
+import { MediaPicker } from '@/shared/components/MediaPicker';
+import { BrutalistInput } from '@/features/planner';
+import { isRequired, isValidEmail } from '@/shared/utils/validation';
 
 export default function EditProfileScreen() {
   const { theme } = useTheme();

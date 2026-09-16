@@ -4,23 +4,23 @@ import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { X, ChevronDown, ChevronUp, Plus, Image as ImageIcon, Link2, Calendar as CalendarIcon, Clock, MapPin, User, ArrowLeft, ArrowRight } from 'lucide-react-native';
-import { DatePickerModal } from '@/components/composed/DatePickerModal';
-import { TimePicker } from '@/components/composed/TimePicker';
-import { useTheme } from '@/hooks/useTheme';
-import { useCreateMoodBoardEntry } from '@/api/hooks/useMoodBoard';
-import { Text } from '@/components/ui/Text';
-import { ImageWithPlaceholder } from '@/components/ui/ImageWithPlaceholder';
-import { MediaPicker } from '@/components/composed/MediaPicker';
-import { useAuth } from '@/contexts/AuthContext';
-import { AuthPromptModal } from '@/components/auth/AuthPromptModal';
+import { DatePickerModal } from '@/shared/components/DatePickerModal';
+import { TimePicker } from '@/shared/components/TimePicker';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { useCreateMoodBoardEntry } from '@/features/planner';
+import { Text } from '@/shared/ui/Text';
+import { ImageWithPlaceholder } from '@/shared/ui/ImageWithPlaceholder';
+import { MediaPicker } from '@/shared/components/MediaPicker';
+import { useAuth } from '@/features/auth';
+import { AuthPromptModal } from '@/features/auth';
 import { format } from 'date-fns';
 import { ScrollView } from 'react-native-gesture-handler';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-import { CreateStepOne } from '@/components/moodboard/screens/CreateStepOne';
-import { CreateStepTwo } from '@/components/moodboard/screens/CreateStepTwo';
-import { BottomActionBar } from '@/components/moodboard/ui/BottomActionBar';
+import { CreateStepOne } from '@/features/planner';
+import { CreateStepTwo } from '@/features/planner';
+import { BottomActionBar } from '@/features/planner';
 
 export default function MoodBoardCreateScreen() {
   const { theme } = useTheme();
