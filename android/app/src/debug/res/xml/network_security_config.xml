@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext (HTTP) traffic to yasante.com for development -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">yasante.com</domain>
+        <trust-anchors>
+            <certificates src="system" overridePins="true" />
+            <certificates src="user" overridePins="true" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>
