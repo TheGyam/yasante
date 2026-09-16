@@ -1,6 +1,6 @@
 # Design Tokens Guide
 
-This document explains how to use and extend the design token system in Kalon.
+This document explains how to use and extend the design token system in Yasante.
 
 ## Overview
 

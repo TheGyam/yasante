@@ -1,4 +1,4 @@
-# Kalon App - Backend API Quick Reference
+# Yasante App - Backend API Quick Reference
 
 This is a quick reference guide for the backend engineer. For detailed specifications, see [BACKEND_API_DOCUMENTATION.md](./BACKEND_API_DOCUMENTATION.md).
 
@@ -182,7 +182,7 @@ This is a quick reference guide for the backend engineer. For detailed specifica
 
 ## Testing Credentials
 
-**Email**: `demo@kalon.app`  
+**Email**: `demo@yasante.app`  
 **Password**: `Demo123!@#`
 
 ## Common HTTP Status Codes

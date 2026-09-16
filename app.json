@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Kalon",
-    "slug": "kalon",
+    "name": "Yasante",
+    "slug": "yasante",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "kalon",
+    "scheme": "yasante",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kalon.app"
+      "bundleIdentifier": "com.yasante.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.kalon.app"
+      "package": "com.yasante.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,14 +33,14 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Kalon to access your photos to track your hair progress.",
-          "cameraPermission": "Allow Kalon to access your camera to take progress photos."
+          "photosPermission": "Allow Yasante to access your photos to track your hair progress.",
+          "cameraPermission": "Allow Yasante to access your camera to take progress photos."
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Kalon to access your camera to take progress photos."
+          "cameraPermission": "Allow Yasante to access your camera to take progress photos."
         }
       ],
       [
@@ -52,7 +52,8 @@
         }
       ],
       "expo-video",
-      "expo-font"
+      "expo-font",
+      "expo-secure-store"
     ],
     "extra": {
       "router": {},
