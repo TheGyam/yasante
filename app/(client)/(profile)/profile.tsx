@@ -5,6 +5,7 @@ import { Bookmark, Droplets, LayoutGrid, Settings, UserRound } from 'lucide-reac
 import { useAuth } from '@/features/auth';
 import { BoardGrid, useMoodBoardEntries, useSavedMoodBoardEntries } from '@/features/planner';
 import { hairTraits, useUser, useUserStore } from '@/features/profile';
+import { ModeSwitchRow, useIsStylist } from '@/features/stylist';
 import { makeStyles, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
@@ -66,6 +67,7 @@ function Profile() {
   const styles = useStyles();
   const router = useRouter();
   const { user: authUser } = useAuth();
+  const isStylist = useIsStylist();
   const { data: user } = useUser(authUser?.id);
   // The quiz can be taken before signing up, so fall back to this device's answers.
   const localHair = useUserStore(s => s.hairProfile);
@@ -98,6 +100,12 @@ function Profile() {
           onPress={() => router.push('/edit-profile')}
         />
       </View>
+
+      {isStylist && (
+        <Section>
+          <ModeSwitchRow />
+        </Section>
+      )}
 
       <Card onPress={() => router.push('/hair-profile')} accessibilityLabel="Hair profile">
         <View style={styles.hair}>

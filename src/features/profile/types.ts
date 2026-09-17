@@ -23,8 +23,12 @@ export interface HairProfile {
   completedAt?: string;
 }
 
+/** One account can hold several roles; stylist mode needs `stylist`. */
+export type AccountRole = 'client' | 'stylist' | 'admin';
+
 export interface User {
   id: string;
+  roles?: AccountRole[];
   name: string;
   email?: string;
   avatarUri?: string;

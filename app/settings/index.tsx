@@ -63,20 +63,20 @@ export default function SettingsScreen() {
             <ListRow
               title="Privacy and data"
               icon={Shield}
-              onPress={() => router.push('/privacy')}
+              onPress={() => router.push('/settings/privacy')}
             />
           )}
           <ListRow
             title="Questions"
             icon={MessageCircleQuestion}
             iconTone="neutral"
-            onPress={() => router.push('/faqs')}
+            onPress={() => router.push('/settings/faqs')}
           />
           <ListRow
             title="Report a problem"
             icon={LifeBuoy}
             iconTone="neutral"
-            onPress={() => router.push('/report')}
+            onPress={() => router.push('/settings/report')}
           />
         </Section>
 

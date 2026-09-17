@@ -10,6 +10,7 @@ export type {
   HairPorosity,
   HairGoal,
   HairLength,
+  AccountRole,
   UserSettings,
 } from './types';
 export * from './format';

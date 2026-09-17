@@ -77,6 +77,26 @@ circular dependency the old lazy `require` existed to work around.
 Phase 1 adds `looks`, `stylist`, `booking`, `products` and later `insights`. Each
 one is a new folder following the same shape — no changes needed elsewhere.
 
+## Modes and navigation
+
+One account can be a client and a stylist. The root layout guards two route groups,
+`app/(client)` and `app/(stylist)`, each with its own tabs; the stored mode in
+`features/stylist/mode.ts` decides which is allowed, and flipping it swaps the tabs
+without pushing anything. Screens both modes need, like settings, live at the root.
+
+Inside a tab, shared routes (`(home,planner,profile)`) keep detail screens in the tab
+you opened them from. See the comments in each `_layout.tsx`.
+
+## Mocks
+
+Until an endpoint exists on the backend, the app answers it from `src/mocks`, an
+in-memory stand-in seeded with two accounts (`client@yasante.dev`, and
+`ama@yasante.dev`, who is also a stylist). Mocks run only in development with
+`EXPO_PUBLIC_API_MOCKS=true`, which `.env.development` sets. Anything without a mock
+goes to the real API. When an endpoint ships, delete its handlers.
+
+In the browser console, `mockSignIn('ama@yasante.dev')` signs in without the form.
+
 ## Design system
 
 The UI is glass over a soft ambient background, in Instrument Sans. Everything a
