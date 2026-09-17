@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { TextInput } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { Lock, Mail } from 'lucide-react-native';
 import { AuthLayout, AuthSwitch, useLogin } from '@/features/auth';
 import { haptics } from '@/shared/lib/haptics';

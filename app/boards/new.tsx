@@ -1,5 +1,5 @@
-import { Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { useAuth } from '@/features/auth';
 import {
   BoardForm,
@@ -7,6 +7,7 @@ import {
   entryFromDraft,
   useCreateMoodBoardEntry,
 } from '@/features/planner';
+import { notify } from '@/shared/ui/dialog';
 import { Screen } from '@/shared/ui/Screen';
 
 export default function CreateBoardScreen() {
@@ -27,7 +28,10 @@ export default function CreateBoardScreen() {
             // The new board shows up in the planner behind the sheet.
             onSuccess: () => router.back(),
             onError: () =>
-              Alert.alert('Couldn’t create the board', 'Check your connection and try again.'),
+              notify({
+                title: 'Couldn’t create the board',
+                message: 'Check your connection and try again.',
+              }),
           })
         }
       />

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { Bookmark, Droplets, LayoutGrid, Settings, UserRound } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { BoardGrid, useMoodBoardEntries, useSavedMoodBoardEntries } from '@/features/planner';

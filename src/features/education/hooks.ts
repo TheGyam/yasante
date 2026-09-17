@@ -1,16 +1,20 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
-import { persistQueryClientSave } from '@tanstack/react-query-persist-client';
 import { api } from '@/api';
 import { Content, Favorite } from '@/features/education';
 import { CursorPaginatedResponse } from '@/shared/types/api';
 import { useAuth } from '@/features/auth';
-import { asyncStoragePersister } from '@/shared/utils/cachePersistence';
 
 const CONTENT_QUERY_KEY = 'content';
 const FAVORITES_QUERY_KEY = 'favorites';
 
-export function useContent(filters?: { hairType?: string; topic?: string; type?: string }) {
+export function useContent(filters?: {
+  hairType?: string;
+  topic?: string;
+  type?: string;
+  /** Always pass one: a screen should read a page, never the whole catalogue. */
+  limit?: number;
+}) {
   return useQuery({
     queryKey: [CONTENT_QUERY_KEY, filters],
     queryFn: async () => {
@@ -195,9 +199,6 @@ export function useToggleFavorite(userId?: string) {
   const { user: authUser } = useAuth();
   const actualUserId = userId || authUser?.id;
 
-  // Get persister for saving cache
-  const persister = asyncStoragePersister;
-
   return useMutation({
     mutationFn: async (contentId: string) => {
       if (!actualUserId) {
@@ -281,14 +282,6 @@ export function useToggleFavorite(userId?: string) {
         } else {
           // Remove favorite
           return old.filter(f => f.contentId !== contentId);
-        }
-      });
-
-      // Immediately persist the server-confirmed state
-      // Type assertion needed due to QueryClient version mismatch between packages
-      persistQueryClientSave({ queryClient: queryClient as any, persister }).catch(error => {
-        if (__DEV__) {
-          console.warn('Failed to persist cache after favorite toggle:', error);
         }
       });
     },

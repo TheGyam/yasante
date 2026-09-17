@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Alert, Linking, Platform, View } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 import Constants from 'expo-constants';
 import { SUPPORT_EMAIL } from '@/shared/config/policies';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
+import { notify } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/Input';
 import { Screen } from '@/shared/ui/Screen';
 import { Text } from '@/shared/ui/Text';
@@ -36,7 +37,10 @@ export default function ReportScreen() {
     try {
       await Linking.openURL(url);
     } catch {
-      Alert.alert('No mail app found', `Email us at ${SUPPORT_EMAIL} and we’ll take a look.`);
+      notify({
+        title: 'No mail app found',
+        message: `Email us at ${SUPPORT_EMAIL} and we’ll take a look.`,
+      });
     }
   };
 

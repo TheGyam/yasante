@@ -1,3 +1,11 @@
+// Every screen navigates through @/shared/lib/navigation, which ignores the second
+// of two taps that would otherwise open the same screen twice.
+const ROUTER = {
+  name: 'expo-router',
+  importNames: ['useRouter'],
+  message: 'Use useRouter from @/shared/lib/navigation, which ignores double taps.',
+};
+
 module.exports = {
   extends: ['expo', 'prettier', 'plugin:prettier/recommended'],
   plugins: ['prettier'],
@@ -19,6 +27,7 @@ module.exports = {
         'no-restricted-imports': [
           'error',
           {
+            paths: [ROUTER],
             patterns: [
               {
                 group: ['@/features/*', '**/features/*'],
@@ -36,6 +45,7 @@ module.exports = {
         'no-restricted-imports': [
           'error',
           {
+            paths: [ROUTER],
             patterns: [
               {
                 group: ['@/features/*/*'],

@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { Bookmark, CalendarHeart, Sparkles, UserRound, type LucideIcon } from 'lucide-react-native';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';

@@ -1,5 +1,5 @@
-import { Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { useAuth } from '@/features/auth';
 import {
   BoardForm,
@@ -8,6 +8,7 @@ import {
   useMoodBoardEntry,
   useUpdateMoodBoardEntry,
 } from '@/features/planner';
+import { notify } from '@/shared/ui/dialog';
 import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 
@@ -29,7 +30,8 @@ export default function EditBoardScreen() {
           onSubmit={draft =>
             update.mutate(entryFromDraft(draft), {
               onSuccess: () => router.back(),
-              onError: () => Alert.alert('Couldn’t save', 'Check your connection and try again.'),
+              onError: () =>
+                notify({ title: 'Couldn’t save', message: 'Check your connection and try again.' }),
             })
           }
         />

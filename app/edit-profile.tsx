@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { useRouter } from '@/shared/lib/navigation';
 import { Camera } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { useUpdateUser, useUser, type User } from '@/features/profile';
@@ -8,6 +8,7 @@ import { makeStyles, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { IconButton } from '@/shared/ui/IconButton';
+import { notify } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/Input';
 import { PhotoSourceSheet } from '@/shared/ui/PhotoSourceSheet';
 import { Screen } from '@/shared/ui/Screen';
@@ -54,7 +55,8 @@ function ProfileForm({ user }: { user: User }) {
       { name: name.trim(), email: email.trim() || undefined, avatarUri: avatarUri || undefined },
       {
         onSuccess: () => router.back(),
-        onError: () => Alert.alert('Couldn’t save', 'Check your connection and try again.'),
+        onError: () =>
+          notify({ title: 'Couldn’t save', message: 'Check your connection and try again.' }),
       }
     );
   };

@@ -124,11 +124,29 @@ screen draws comes from `src/shared/ui` and `src/shared/theme`.
 - **Show only real data.** No placeholder counts, reviewers or success messages for
   things that didn't happen.
 
+## Built for growth
+
+The catalogue, the feed and one person's saved items all grow without limit. These
+rules keep the app the same speed at ten thousand items as at ten.
+
+- **Every list of unknown length is virtualised.** FlashList, never a `map` inside a
+  ScrollView. Fixed, short lists (a stylist's four menu rows) may map.
+- **A screen reads a page, never a table.** Pass a `limit`, or use an infinite query
+  with `onEndReached`. Anything that fetches everything to filter or join on the phone
+  is a stop-gap and is written down below.
+- **Images go through `RemoteImage`**, which caches to memory and disk and takes a
+  `recyclingKey` so a reused row never shows the previous picture.
+- **Nothing writes the query cache to storage.** Persisting it on every interaction
+  grows with the feed; offline support, when it comes, persists chosen queries only.
+- **Motion runs on the UI thread** and lists never re-render to animate.
+- **One tap, one navigation** — `@/shared/lib/navigation` drops the second.
+
 ## Known issues worth fixing
 
 - **Mood board field names.** Create maps fields to snake_case; update sends
   camelCase. Confirm with the backend which one it accepts and make both match.
-- **Search and saved items only see the first page of content.** Both filter what
-  `useContent()` returns. A server-side search endpoint would remove the ceiling.
+- **Search, the library and saved items read one page of content.** Each filters or
+  joins what `useContent({ limit })` returns, so results are capped. They need
+  server-side search, topic paging, and saved items returned with their content.
 - **Formatting drift.** `npm run format` rewrites a large number of files. Do it
   as its own commit, never mixed with a change.

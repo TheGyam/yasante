@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import {
   BarChart3,
   Download,
@@ -12,6 +12,7 @@ import { api } from '@/api';
 import { useAuth } from '@/features/auth';
 import { useConsentStore, type ConsentPurpose } from '@/shared/config/consentStore';
 import { makeStyles, space } from '@/shared/theme';
+import { confirm, notify } from '@/shared/ui/dialog';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
@@ -55,7 +56,7 @@ export default function PrivacyScreen() {
     try {
       await task(user.id);
     } catch {
-      Alert.alert(failure, 'Check your connection and try again.');
+      notify({ title: failure, message: 'Check your connection and try again.' });
     } finally {
       setBusy(false);
     }
@@ -64,26 +65,26 @@ export default function PrivacyScreen() {
   const exportData = () =>
     run(async userId => {
       await api.user.requestDataExport(userId);
-      Alert.alert('Request sent', 'We’ll email you a download link when your data is ready.');
+      notify({
+        title: 'Request sent',
+        message: 'We’ll email you a download link when your data is ready.',
+      });
     }, 'Couldn’t send the request');
 
-  const deleteAccount = () =>
-    Alert.alert(
-      'Delete your account?',
-      'This removes your profile, photos and boards. It can’t be undone.',
-      [
-        { text: 'Keep my account', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () =>
-            run(async userId => {
-              await api.user.deleteAccount(userId);
-              await logout();
-            }, 'Couldn’t delete your account'),
-        },
-      ]
-    );
+  const deleteAccount = async () => {
+    const ok = await confirm({
+      title: 'Delete your account?',
+      message: 'This removes your profile, photos and boards. It can’t be undone.',
+      confirmLabel: 'Delete',
+      cancelLabel: 'Keep my account',
+      destructive: true,
+    });
+    if (!ok) return;
+    run(async userId => {
+      await api.user.deleteAccount(userId);
+      await logout();
+    }, 'Couldn’t delete your account');
+  };
 
   return (
     <Screen title="Privacy and data" back testID="privacy-settings-screen">

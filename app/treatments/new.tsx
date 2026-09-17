@@ -1,5 +1,4 @@
-import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { useAuth } from '@/features/auth';
 import {
   TreatmentForm,
@@ -7,6 +6,7 @@ import {
   treatmentFromDraft,
   useCreateTreatment,
 } from '@/features/planner';
+import { notify } from '@/shared/ui/dialog';
 import { Screen } from '@/shared/ui/Screen';
 
 export default function CreateTreatmentScreen() {
@@ -26,7 +26,10 @@ export default function CreateTreatmentScreen() {
             {
               onSuccess: () => router.back(),
               onError: () =>
-                Alert.alert('Couldn’t add the treatment', 'Check your connection and try again.'),
+                notify({
+                  title: 'Couldn’t add the treatment',
+                  message: 'Check your connection and try again.',
+                }),
             }
           )
         }

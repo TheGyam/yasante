@@ -1,5 +1,6 @@
-import { Alert, StyleSheet, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { format } from 'date-fns';
 import {
   Calendar,
@@ -27,6 +28,7 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
+import { confirm, notify } from '@/shared/ui/dialog';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -57,20 +59,23 @@ export default function BoardScreen() {
   const { user } = useAuth();
   const remove = useDeleteMoodBoardEntry(id, user?.id);
 
-  const confirmDelete = () =>
-    Alert.alert('Delete this board?', 'Its photos and details go with it. This can’t be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () =>
-          remove.mutate(undefined, {
-            onSuccess: () => router.back(),
-            onError: () =>
-              Alert.alert('Couldn’t delete the board', 'Check your connection and try again.'),
-          }),
-      },
-    ]);
+  const confirmDelete = async () => {
+    const ok = await confirm({
+      title: 'Delete this board?',
+      message: 'Its photos and details go with it. This can’t be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+    if (!ok) return;
+    remove.mutate(undefined, {
+      onSuccess: () => router.back(),
+      onError: () =>
+        notify({
+          title: 'Couldn’t delete the board',
+          message: 'Check your connection and try again.',
+        }),
+    });
+  };
 
   const headerRight = entry && (
     <>

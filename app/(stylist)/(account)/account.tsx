@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { BadgeCheck, MapPin, Settings, Store, WifiOff } from 'lucide-react-native';
 import {
   ModeSwitchRow,

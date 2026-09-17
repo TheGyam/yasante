@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import Animated, {
   FadeInDown,
   useAnimatedStyle,

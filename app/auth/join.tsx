@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { Scissors, Sparkles } from 'lucide-react-native';
 import { AuthLayout, AuthSwitch, RoleCard } from '@/features/auth';
 

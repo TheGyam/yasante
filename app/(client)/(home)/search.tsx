@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { FlashList } from '@shopify/flash-list';
 import { Clock, SearchX, X } from 'lucide-react-native';
 import {
@@ -40,6 +40,9 @@ const FILTERS = [
 
 const INSPO_TOPICS = new Set(['styling', 'tips']);
 const SEARCH_FIELDS = ['title', 'description', 'topic', 'hairTypes'];
+// Until the backend has a search endpoint, matching happens here — over one page,
+// so typing stays instant however big the catalogue gets.
+const PAGE_SIZE = 50;
 
 const useStyles = makeStyles(() => ({
   top: { gap: space.md, paddingHorizontal: GUTTER, paddingBottom: space.md },
@@ -55,7 +58,7 @@ export default function SearchScreen() {
   const [filter, setFilter] = useState<Filter>('all');
   const [recents, setRecents] = useState<string[]>([]);
   const term = useDebouncedValue(query.trim(), 200);
-  const { data } = useContent();
+  const { data } = useContent({ limit: PAGE_SIZE });
 
   useEffect(() => {
     getRecentSearches().then(items => setRecents(items.map(i => i.query)));

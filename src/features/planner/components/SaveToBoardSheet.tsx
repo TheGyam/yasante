@@ -1,9 +1,10 @@
-import { ActivityIndicator, Alert, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
+import { useRouter } from '@/shared/lib/navigation';
 import { Plus } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { haptics } from '@/shared/lib/haptics';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
+import { notify } from '@/shared/ui/dialog';
 import { ListRow } from '@/shared/ui/ListRow';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
@@ -59,7 +60,8 @@ export function SaveToBoardSheet({ visible, onClose, imageUri, title }: SaveToBo
           haptics.success();
           onClose();
         },
-        onError: () => Alert.alert('Couldn’t save', 'Check your connection and try again.'),
+        onError: () =>
+          notify({ title: 'Couldn’t save', message: 'Check your connection and try again.' }),
       }
     );
   };

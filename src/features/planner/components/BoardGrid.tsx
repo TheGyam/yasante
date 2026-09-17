@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import type { MoodBoardEntry } from '../types';
 import { BoardCard } from './BoardCard';

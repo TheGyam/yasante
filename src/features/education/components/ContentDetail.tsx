@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { Bookmark, BookmarkCheck, LayoutGrid, Share, WifiOff } from 'lucide-react-native';
 import { AuthPromptModal, useAuth } from '@/features/auth';
 import { SaveToBoardSheet } from '@/features/planner';

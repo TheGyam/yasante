@@ -1,11 +1,12 @@
-import { Alert, Linking, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Linking, View } from 'react-native';
+import { useRouter } from '@/shared/lib/navigation';
 import Constants from 'expo-constants';
 import { FileText, LifeBuoy, LogOut, MessageCircleQuestion, Shield } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { PRIVACY_URL, TERMS_URL } from '@/shared/config/policies';
 import { haptics } from '@/shared/lib/haptics';
 import { makeStyles, space, useThemePreference } from '@/shared/theme';
+import { confirm } from '@/shared/ui/dialog';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
@@ -32,20 +33,18 @@ export default function SettingsScreen() {
   const preference = useThemePreference(s => s.preference);
   const setPreference = useThemePreference(s => s.setPreference);
 
-  const signOut = () => {
+  const signOut = async () => {
     haptics.medium();
-    Alert.alert('Sign out?', 'Your boards stay safe in your account.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign out',
-        style: 'destructive',
-        // Back to the profile root first, so you land on its signed-out state.
-        onPress: () => {
-          router.dismissAll();
-          logout();
-        },
-      },
-    ]);
+    const ok = await confirm({
+      title: 'Sign out?',
+      message: 'Your boards stay safe in your account.',
+      confirmLabel: 'Sign out',
+      destructive: true,
+    });
+    if (!ok) return;
+    // Back to the profile root first, so you land on its signed-out state.
+    router.dismissAll();
+    logout();
   };
 
   return (
