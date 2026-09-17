@@ -6,6 +6,7 @@ import { useAuth } from '@/features/auth';
 import { BoardGrid, useMoodBoardEntries, useSavedMoodBoardEntries } from '@/features/planner';
 import { hairTraits, useUser, useUserStore } from '@/features/profile';
 import { ModeSwitchRow, useIsStylist } from '@/features/stylist';
+import { Scissors } from 'lucide-react-native';
 import { makeStyles, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
@@ -101,11 +102,18 @@ function Profile() {
         />
       </View>
 
-      {isStylist && (
-        <Section>
+      <Section>
+        {isStylist ? (
           <ModeSwitchRow />
-        </Section>
-      )}
+        ) : (
+          <ListRow
+            title="Set up your stylist profile"
+            subtitle="A page for your bio, free for founding stylists"
+            icon={Scissors}
+            onPress={() => router.push('/stylist-setup')}
+          />
+        )}
+      </Section>
 
       <Card onPress={() => router.push('/hair-profile')} accessibilityLabel="Hair profile">
         <View style={styles.hair}>

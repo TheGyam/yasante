@@ -38,6 +38,8 @@ export default function StylistAccountScreen() {
             icon={Store}
             title="Your page isn’t set up yet"
             message="Add your styles, prices and policies, and you’ll get a link for your bio."
+            actionLabel="Set up my page"
+            onAction={() => router.push('/stylist-setup')}
           />
         ) : isError || !profile ? (
           <EmptyState
@@ -73,7 +75,18 @@ export default function StylistAccountScreen() {
                 iconTone={profile.verificationTier > 0 ? 'success' : 'neutral'}
               />
             </Section>
-            <PageLinkCard profile={profile} />
+            {profile.published ? (
+              <PageLinkCard profile={profile} />
+            ) : (
+              <Section footer="Only you can see it until it's live.">
+                <ListRow
+                  title="Your page is still a draft"
+                  subtitle="Finish setting it up to go live"
+                  icon={Store}
+                  onPress={() => router.push('/stylist-setup')}
+                />
+              </Section>
+            )}
           </>
         )}
 
