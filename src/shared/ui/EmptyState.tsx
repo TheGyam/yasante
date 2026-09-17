@@ -28,6 +28,8 @@ const useStyles = makeStyles(t => ({
     backgroundColor: t.colors.accentSoft,
     marginBottom: space.xs,
   },
+  // Stretch so long copy wraps inside the gutter instead of sizing to one line.
+  text: { alignSelf: 'stretch' },
   action: { marginTop: space.sm },
 }));
 
@@ -40,11 +42,11 @@ export function EmptyState({ icon: Icon, title, message, actionLabel, onAction }
       <View style={styles.well}>
         <Icon size={28} color={theme.colors.accent} strokeWidth={2} />
       </View>
-      <Text variant="title3" align="center">
+      <Text variant="title3" align="center" style={styles.text}>
         {title}
       </Text>
       {message && (
-        <Text variant="subhead" tone="secondary" align="center">
+        <Text variant="subhead" tone="secondary" align="center" style={styles.text}>
           {message}
         </Text>
       )}

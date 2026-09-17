@@ -18,14 +18,12 @@ src/features/<name>/      Everything that belongs to one domain.
                             other features may import
 
 src/shared/               Cross-cutting, domain-free.
-  ui/                       Button, Card, Text, Input, Badge…
-  components/               Composed UI used by 3+ features
-  animations/               Animation wrappers
-  icons/
-  hooks/                    Device and UI hooks (useTheme, useResponsive…)
-  lib/                      API client, storage, notifications, images
-  theme/                    Tokens and ThemeProvider
-  config/                   Runtime config, policy versions
+  ui/                       The design system: Screen, Text, Button, Glass, Sheet,
+                            ListRow, TabBar… Import each by path; there is no barrel.
+  hooks/                    Device hooks (image picker, notifications, network)
+  lib/                      API client, storage, haptics, formatting, images
+  theme/                    Tokens, themes, motion, ThemeProvider and makeStyles
+  config/                   Runtime config, policy versions, consent
   utils/                    Pure helpers
   types/                    Only types genuinely shared across features
 ```
@@ -79,12 +77,38 @@ circular dependency the old lazy `require` existed to work around.
 Phase 1 adds `looks`, `stylist`, `booking`, `products` and later `insights`. Each
 one is a new folder following the same shape — no changes needed elsewhere.
 
+## Design system
+
+The UI is glass over a soft ambient background, in Instrument Sans. Everything a
+screen draws comes from `src/shared/ui` and `src/shared/theme`.
+
+- **Every screen is a `<Screen>`.** It owns the background, safe areas, the glass
+  header that fades in on scroll, keyboard handling and tab-bar clearance. A screen
+  that renders its own list uses `scroll="list"` with `useScreenScrollHandler` and
+  `useContentInsets`.
+- **Styles come from `makeStyles`.** Both themes' StyleSheets are built once at module
+  load, so the hook is a context read. Never build style objects in render, and never
+  hard-code a colour — read it from the theme.
+- **Type goes through `<Text variant>`.** Each weight is its own font family; never set
+  `fontWeight`.
+- **Motion runs on the UI thread.** Shared values and Reanimated only, springs and
+  curves from `theme/motion.ts`, reduced motion respected. Press feedback is
+  `PressableScale`; nothing re-renders while a finger is down. Tabs never slide.
+- **Haptics go through `shared/lib/haptics`**, one per user action, always with a
+  visual change.
+- **Glass has two weights.** `card` is a translucent fill with no blur and is safe
+  anywhere. `chrome` blurs on iOS for bars and sheets, and is a solid fill on
+  Android, where blur re-renders every frame.
+- **Use the platform where it's better.** Native switches, date and time pickers,
+  share sheet and stack transitions.
+- **Show only real data.** No placeholder counts, reviewers or success messages for
+  things that didn't happen.
+
 ## Known issues worth fixing
 
-- **Conditional hooks.** Several components `require()` Reanimated inside a
-  try/catch and then call `useAnimatedStyle` conditionally. That breaks the rules
-  of hooks and can crash on re-render when the import resolves differently.
-  ESLint flags all of them (`npm run lint`). Fix by importing normally and
-  handling reduced motion with a value, not by skipping the hook.
+- **Mood board field names.** Create maps fields to snake_case; update sends
+  camelCase. Confirm with the backend which one it accepts and make both match.
+- **Search and saved items only see the first page of content.** Both filter what
+  `useContent()` returns. A server-side search endpoint would remove the ceiling.
 - **Formatting drift.** `npm run format` rewrites a large number of files. Do it
   as its own commit, never mixed with a change.
