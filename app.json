@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#8DA399"
+      "backgroundColor": "#0B0709"
     },
     "ios": {
       "supportsTablet": true,
@@ -22,7 +22,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#8DA399"
+        "backgroundColor": "#0B0709"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -41,27 +41,22 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Yasante to access your photos to track your hair progress.",
-          "cameraPermission": "Allow Yasante to access your camera to take progress photos."
-        }
-      ],
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow Yasante to access your camera to take progress photos."
+          "photosPermission": "Allow Yasante to use your photos for your boards and profile picture.",
+          "cameraPermission": "Allow Yasante to use your camera for your boards and profile picture."
         }
       ],
       [
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#8DA399",
+          "color": "#B8336A",
           "sounds": []
         }
       ],
       "expo-video",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "router": {},

@@ -1,251 +1,115 @@
-import React, { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import styled from 'styled-components/native';
-import { useTheme } from '@/shared/legacy/hooks/useTheme';
-import { useContent } from '@/features/education';
-import { EducationHeader } from '@/features/education';
-import { TopicSection } from '@/features/education';
-import { TopTabs } from '@/shared/legacy/components/TopTabs';
-import { DIYCard, DIY } from '@/features/education';
-import { useEducationStore } from '@/features/education';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '@/shared/legacy/ui/Text';
-import { AuthPromptModal } from '@/features/auth';
+import { BookOpen, Droplets } from 'lucide-react-native';
 import {
-  Droplets,
-  Scissors,
-  Sparkles,
-  Heart,
-  TrendingUp,
-  Activity,
-  Palette,
-  Lightbulb,
-} from 'lucide-react-native';
-import { ContentTopic } from '@/features/education';
-import type { Theme } from '@/shared/legacy/theme/ThemeProvider';
+  ContentCarousel,
+  ContentRow,
+  TOPIC_LABELS,
+  TOPIC_ORDER,
+  useContent,
+  type Content,
+  type ContentTopic,
+} from '@/features/education';
+import { GUTTER, makeStyles, radius, space } from '@/shared/theme';
+import { Chip } from '@/shared/ui/Chip';
+import { EmptyState } from '@/shared/ui/EmptyState';
+import { ListRow } from '@/shared/ui/ListRow';
+import { Screen } from '@/shared/ui/Screen';
+import { Section } from '@/shared/ui/Section';
+import { Skeleton } from '@/shared/ui/Skeleton';
 
-const Container = styled.View`
-  flex: 1;
-  background-color: ${({ theme }: { theme: Theme }) => theme.colors.background};
-`;
+const useStyles = makeStyles(() => ({
+  body: { gap: space.xxl },
+  chips: { marginHorizontal: -GUTTER },
+  chipsContent: { paddingHorizontal: GUTTER, gap: space.sm },
+  loading: { flexDirection: 'row', gap: space.md },
+}));
 
-const ScrollableContent = styled.ScrollView`
-  flex: 1;
-`;
-
-const ContentWrapper = styled.View`
-  padding-bottom: ${({ theme }: { theme: Theme }) => theme.spacing[4]}px;
-`;
-
-// Topic display names
-const topicDisplayNames: Record<ContentTopic, string> = {
-  care: 'Hair Care Basics',
-  styling: 'Styling & Looks',
-  products: 'Product Reviews',
-  treatments: 'Treatments & Masks',
-  color: 'Color & Highlights',
-  growth: 'Hair Growth',
-  health: 'Scalp Health',
-  tips: 'Pro Tips',
-};
-
-// Quick category icons mapping
-const quickCategoryIcons = {
-  'Hair Type Quiz': <Droplets size={24} color="#8DA399" strokeWidth={2.5} />,
-  'Hair Growth': <TrendingUp size={24} color="#8DA399" strokeWidth={2.5} />,
-  'Product Guide': <Sparkles size={24} color="#8DA399" strokeWidth={2.5} />,
-  'Styling Tips': <Scissors size={24} color="#8DA399" strokeWidth={2.5} />,
-  'Hair Health': <Activity size={24} color="#8DA399" strokeWidth={2.5} />,
-  'Color Care': <Palette size={24} color="#8DA399" strokeWidth={2.5} />,
-  'Daily Tips': <Lightbulb size={24} color="#8DA399" strokeWidth={2.5} />,
-  Favorites: <Heart size={24} color="#8DA399" strokeWidth={2.5} />,
-};
-
-export default function ContentLibraryScreen() {
-  const { theme } = useTheme();
+export default function LearnScreen() {
+  const styles = useStyles();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { searchQuery, setSearchQuery } = useEducationStore();
-  const { data: contentResponse, isLoading } = useContent();
-  const [activeTab, setActiveTab] = useState<'education' | 'diy'>('education');
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const { data, isLoading, isRefetching, refetch } = useContent();
+  const [topic, setTopic] = useState<ContentTopic | null>(null);
 
-  const tabs = [
-    { id: 'education', label: 'Education' },
-    { id: 'diy', label: 'DIY' },
-  ];
-
-  const allContent = contentResponse?.data || [];
-
-  // Group content by topic
-  const contentByTopic = useMemo(() => {
-    const grouped: Partial<Record<ContentTopic, typeof allContent>> = {};
-
-    allContent.forEach(item => {
-      if (!grouped[item.topic]) {
-        grouped[item.topic] = [];
-      }
-      grouped[item.topic]!.push(item);
-    });
-
-    return grouped;
-  }, [allContent]);
-
-  // Filter content by search query
-  const filteredContentByTopic = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return contentByTopic;
-    }
-
-    const query = searchQuery.toLowerCase();
-    const filtered: Partial<Record<ContentTopic, typeof allContent>> = {};
-
-    Object.entries(contentByTopic).forEach(([topic, items]) => {
-      const matching = items.filter(
-        item =>
-          item.title.toLowerCase().includes(query) ||
-          item.description.toLowerCase().includes(query) ||
-          item.topic.toLowerCase().includes(query)
-      );
-      if (matching.length > 0) {
-        filtered[topic as ContentTopic] = matching;
-      }
-    });
-
-    return filtered;
-  }, [contentByTopic, searchQuery]);
-
-  // Quick categories for header
-  const quickCategories = useMemo(
-    () => [
-      {
-        icon: quickCategoryIcons['Hair Type Quiz'],
-        label: 'Hair Type Quiz',
-        onPress: () => router.push('/onboarding/quiz' as any),
-      },
-      {
-        icon: quickCategoryIcons['Hair Growth'],
-        label: 'Hair Growth',
-        onPress: () => {
-          // Scroll to growth section or filter
-          setSearchQuery('growth');
-        },
-      },
-      {
-        icon: quickCategoryIcons['Product Guide'],
-        label: 'Product Guide',
-        onPress: () => {
-          setSearchQuery('products');
-        },
-      },
-      {
-        icon: quickCategoryIcons['Styling Tips'],
-        label: 'Styling Tips',
-        onPress: () => {
-          setSearchQuery('styling');
-        },
-      },
-    ],
-    [router, setSearchQuery]
-  );
-
-  const handleContentPress = (contentId: string) => {
-    router.push(`/(tabs)/education/${contentId}` as any);
-  };
-
-  const handleBookmarkPress = () => {
-    // Navigate to favorites or show favorites modal
-    router.push('/(tabs)/profile' as any);
-  };
-
-  const handleNotificationPress = () => {
-    // Show notifications or navigate to notifications screen
-    console.log('Notifications pressed');
-  };
-
-  // Get all topics in a consistent order
-  const topicOrder: ContentTopic[] = [
-    'care',
-    'growth',
-    'styling',
-    'treatments',
-    'products',
-    'health',
-    'color',
-    'tips',
-  ];
+  const byTopic = new Map<ContentTopic, Content[]>();
+  for (const item of data?.data ?? []) {
+    const list = byTopic.get(item.topic);
+    if (list) list.push(item);
+    else byTopic.set(item.topic, [item]);
+  }
+  const topics = TOPIC_ORDER.filter(t => byTopic.has(t));
+  const open = (content: Content) => router.push(`/(tabs)/education/${content.id}`);
 
   return (
-    <Container testID="education-screen">
-      <EducationHeader
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onBookmarkPress={handleBookmarkPress}
-        onNotificationPress={handleNotificationPress}
-        quickCategories={quickCategories}
-      />
+    <Screen
+      back
+      title="Learn"
+      subtitle="Care, growth and styling, explained"
+      refreshing={isRefetching}
+      onRefresh={refetch}
+      testID="education-screen"
+    >
+      <View style={styles.body}>
+        <Section>
+          <ListRow
+            title="Find your hair type"
+            subtitle="Two minutes, and everything here gets more useful"
+            icon={Droplets}
+            iconTone="accent"
+            onPress={() => router.push('/onboarding/quiz')}
+          />
+        </Section>
 
-      <TopTabs
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabChange={tabId => setActiveTab(tabId as 'education' | 'diy')}
-      />
-
-      <ScrollableContent
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + 100,
-        }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {activeTab === 'education' ? (
-          <ContentWrapper>
-            {isLoading ? (
-              <View style={{ padding: theme.spacing[4] }}>
-                <Text>Loading content...</Text>
-              </View>
-            ) : (
-              topicOrder.map(topic => {
-                const content = filteredContentByTopic[topic];
-                if (!content || content.length === 0) {
-                  return null;
-                }
-                return (
-                  <TopicSection
-                    key={topic}
-                    title={topicDisplayNames[topic]}
-                    content={content}
-                    onContentPress={handleContentPress}
-                    onFavoritePress={() => setShowAuthPrompt(true)}
-                    testID={`topic-section-${topic}`}
-                  />
-                );
-              })
-            )}
-
-            {!isLoading && Object.keys(filteredContentByTopic).length === 0 && (
-              <View style={{ padding: theme.spacing[4], alignItems: 'center' }}>
-                <Text variant="body" color={theme.colors.text.medium}>
-                  No content found. Try a different search.
-                </Text>
-              </View>
-            )}
-          </ContentWrapper>
-        ) : (
-          <ContentWrapper>
-            <View style={{ padding: theme.spacing[4], alignItems: 'center' }}>
-              <Text variant="body" color={theme.colors.text.medium}>
-                DIY tutorials coming soon.
-              </Text>
-            </View>
-          </ContentWrapper>
+        {topics.length > 1 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chips}
+            contentContainerStyle={styles.chipsContent}
+          >
+            <Chip label="All" selected={topic === null} onPress={() => setTopic(null)} />
+            {topics.map(t => (
+              <Chip
+                key={t}
+                label={TOPIC_LABELS[t]}
+                selected={topic === t}
+                onPress={() => setTopic(t)}
+              />
+            ))}
+          </ScrollView>
         )}
-      </ScrollableContent>
-      <AuthPromptModal
-        visible={showAuthPrompt}
-        onClose={() => setShowAuthPrompt(false)}
-        feature="favorites"
-      />
-    </Container>
+
+        {isLoading ? (
+          <View style={styles.loading}>
+            <Skeleton width={200} height={290} radius={radius.lg} />
+            <Skeleton width={200} height={290} radius={radius.lg} />
+          </View>
+        ) : topics.length === 0 ? (
+          <EmptyState
+            icon={BookOpen}
+            title="Nothing here yet"
+            message="New guides are on the way. Pull down to check again."
+          />
+        ) : topic ? (
+          <View>
+            {byTopic.get(topic)?.map(item => (
+              <ContentRow key={item.id} content={item} onPress={open} />
+            ))}
+          </View>
+        ) : (
+          topics.map(t => (
+            <ContentCarousel
+              key={t}
+              title={TOPIC_LABELS[t]}
+              items={byTopic.get(t)!}
+              onPress={open}
+              actionLabel="See all"
+              onAction={() => setTopic(t)}
+            />
+          ))
+        )}
+      </View>
+    </Screen>
   );
 }

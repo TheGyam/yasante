@@ -154,12 +154,6 @@ export function useContentItem(contentId: string) {
     queryKey: [CONTENT_QUERY_KEY, contentId],
     queryFn: async () => {
       const response = await api.content.getById(contentId);
-      // Debug: Log the response to verify articleContent is present
-      console.log('API Response for content:', {
-        id: response.data.id,
-        hasArticleContent: !!response.data.articleContent,
-        articleContentLength: response.data.articleContent?.length || 0,
-      });
       return response.data;
     },
     enabled: !!contentId,

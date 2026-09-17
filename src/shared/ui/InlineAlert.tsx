@@ -32,7 +32,11 @@ export function InlineAlert({ message, tone = 'danger' }: InlineAlertProps) {
   const color = tone === 'info' ? theme.colors.accent : theme.colors[tone];
 
   return (
-    <View style={[styles.base, styles[tone]]} accessibilityRole="alert" accessibilityLiveRegion="polite">
+    <View
+      style={[styles.base, styles[tone]]}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+    >
       <Icon size={18} color={color} strokeWidth={2.2} />
       <Text variant="subhead" style={[styles.text, { color }]}>
         {message}

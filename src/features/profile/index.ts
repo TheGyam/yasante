@@ -11,4 +11,4 @@ export type {
   HairGoal,
   UserSettings,
 } from './types';
-export * from './components';
+export * from './format';

@@ -38,17 +38,6 @@ export function useBackgroundSync(options: UseBackgroundSyncOptions = {}) {
           case 'toggleFavorite':
             await api.favorites.toggle(params.userId, params.contentId);
             break;
-          // The goal endpoints take the goal itself; the user comes from the token.
-          case 'createGoal':
-            await api.goals.create(params.data);
-            break;
-          case 'updateGoal':
-            await api.goals.update(params.goalId, params.data);
-            break;
-          case 'deleteGoal':
-            await api.goals.delete(params.goalId);
-            break;
-          // Add more mutation types as needed
           default:
             if (__DEV__) {
               console.warn(`Unknown mutation type: ${type}`);
@@ -87,7 +76,7 @@ export function useBackgroundSync(options: UseBackgroundSyncOptions = {}) {
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
 
-    // Initial sync if online
+    // Runs on mount and again whenever the connection comes back.
     if (isConnected) {
       processOfflineQueue();
     }
@@ -96,13 +85,6 @@ export function useBackgroundSync(options: UseBackgroundSyncOptions = {}) {
       subscription.remove();
     };
   }, [enabled, syncOnAppStateChange, isConnected]);
-
-  // Also sync when network comes back online
-  useEffect(() => {
-    if (enabled && isConnected && !syncInProgressRef.current) {
-      processOfflineQueue();
-    }
-  }, [enabled, isConnected]);
 
   return {
     sync: processOfflineQueue,

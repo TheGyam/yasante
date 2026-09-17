@@ -13,12 +13,19 @@ import { Text } from '@/shared/ui/Text';
 
 const PROMISES: readonly { icon: LucideIcon; title: string; body: string }[] = [
   { icon: Sparkles, title: 'Made for your texture', body: 'Care and styles matched to your hair.' },
-  { icon: CalendarHeart, title: 'Plan every style', body: 'Appointments, costs and wash days in one place.' },
+  {
+    icon: CalendarHeart,
+    title: 'Plan every style',
+    body: 'Appointments, costs and wash days in one place.',
+  },
   { icon: TrendingUp, title: 'See your growth', body: 'Track length and health, month by month.' },
 ];
 
 // First-run only, so it can afford a considered entrance. Built once, outside render.
-const enter = (i: number) => FadeInDown.duration(420).delay(120 + i * 70).easing(EASE_OUT);
+const enter = (i: number) =>
+  FadeInDown.duration(420)
+    .delay(120 + i * 70)
+    .easing(EASE_OUT);
 const ENTER = [enter(0), enter(1), enter(2), enter(3), enter(4)];
 
 const useStyles = makeStyles(() => ({

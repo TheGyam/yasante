@@ -1,262 +1,117 @@
-import React from 'react';
-import { ScrollView, View, TouchableOpacity, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft } from 'lucide-react-native';
-import { useTheme } from '@/shared/legacy/hooks/useTheme';
-import { Text } from '@/shared/legacy/ui/Text';
-import { Switch } from '@/shared/legacy/ui/Switch';
-import { useConsentStore } from '@/shared/config/consentStore';
-import { useAuth } from '@/features/auth';
+import { useState } from 'react';
+import { Alert, View } from 'react-native';
+import {
+  BarChart3,
+  Download,
+  FlaskConical,
+  Sparkles,
+  Trash2,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { api } from '@/api';
+import { useAuth } from '@/features/auth';
+import { useConsentStore, type ConsentPurpose } from '@/shared/config/consentStore';
+import { makeStyles, space } from '@/shared/theme';
+import { ListRow } from '@/shared/ui/ListRow';
+import { Screen } from '@/shared/ui/Screen';
+import { Section } from '@/shared/ui/Section';
+import { Toggle } from '@/shared/ui/Toggle';
 
-export default function PrivacySettingsScreen() {
-  const { theme } = useTheme();
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
+const CHOICES: { purpose: ConsentPurpose; title: string; subtitle: string; icon: LucideIcon }[] = [
+  {
+    purpose: 'analytics',
+    title: 'Usage analytics',
+    subtitle: 'Anonymous data that shows us what to fix',
+    icon: BarChart3,
+  },
+  {
+    purpose: 'personalisation',
+    title: 'Personalisation',
+    subtitle: 'Match what you see to your hair profile',
+    icon: Sparkles,
+  },
+  {
+    purpose: 'research',
+    title: 'Hair research',
+    subtitle: 'Let anonymised data inform research. Off until you turn it on',
+    icon: FlaskConical,
+  },
+];
 
-  const { consents, setConsent } = useConsentStore();
+const useStyles = makeStyles(() => ({
+  body: { gap: space.xxl },
+}));
+
+export default function PrivacyScreen() {
+  const styles = useStyles();
+  const consents = useConsentStore(s => s.consents);
+  const setConsent = useConsentStore(s => s.setConsent);
   const { user, logout } = useAuth();
-  const [busy, setBusy] = React.useState(false);
+  const [busy, setBusy] = useState(false);
 
-  const handleExport = async () => {
+  const run = async (task: (userId: string) => Promise<unknown>, failure: string) => {
     if (!user?.id || busy) return;
     setBusy(true);
     try {
-      await api.user.requestDataExport(user.id);
-      Alert.alert('Request sent', 'We will email you a download link when your data is ready.');
+      await task(user.id);
     } catch {
-      Alert.alert('Could not send request', 'Please check your connection and try again.');
+      Alert.alert(failure, 'Check your connection and try again.');
     } finally {
       setBusy(false);
     }
   };
 
-  const handleDelete = () => {
-    if (!user?.id || busy) return;
+  const exportData = () =>
+    run(async userId => {
+      await api.user.requestDataExport(userId);
+      Alert.alert('Request sent', 'We’ll email you a download link when your data is ready.');
+    }, 'Couldn’t send the request');
+
+  const deleteAccount = () =>
     Alert.alert(
-      'Delete account',
-      'This removes your profile, photos and posts. It cannot be undone.',
+      'Delete your account?',
+      'This removes your profile, photos and boards. It can’t be undone.',
       [
         { text: 'Keep my account', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
-            setBusy(true);
-            try {
-              await api.user.deleteAccount(user.id);
+          onPress: () =>
+            run(async userId => {
+              await api.user.deleteAccount(userId);
               await logout();
-            } catch {
-              Alert.alert(
-                'Could not delete account',
-                'Please check your connection and try again.'
-              );
-            } finally {
-              setBusy(false);
-            }
-          },
+            }, 'Couldn’t delete your account'),
         },
       ]
     );
-  };
 
   return (
-    <View
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
-      testID="privacy-settings-screen"
-    >
-      {/* Header */}
-      <View
-        style={{
-          paddingTop: insets.top + 8,
-          paddingHorizontal: 20,
-          paddingBottom: 12,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          backgroundColor: theme.colors.background,
-          borderBottomWidth: 4,
-          borderBottomColor: theme.colors.border,
-          zIndex: 10,
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              backgroundColor: theme.colors.surface,
-              borderWidth: 2,
-              borderColor: theme.colors.border,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <ArrowLeft size={20} color={theme.colors.text.high} strokeWidth={2.5} />
-          </TouchableOpacity>
-          <Text
-            variant="h3"
-            weight="bold"
-            color={theme.colors.text.high}
-            style={{ fontSize: 20, textTransform: 'uppercase', fontStyle: 'italic' }}
-          >
-            Privacy
-          </Text>
-        </View>
+    <Screen title="Privacy and data" back testID="privacy-settings-screen">
+      <View style={styles.body}>
+        <Section title="What you share" footer="Change these whenever you like.">
+          {CHOICES.map(choice => (
+            <ListRow
+              key={choice.purpose}
+              title={choice.title}
+              subtitle={choice.subtitle}
+              icon={choice.icon}
+              iconTone="neutral"
+              trailing={
+                <Toggle
+                  value={consents[choice.purpose]?.granted ?? false}
+                  onValueChange={value => setConsent(choice.purpose, value)}
+                  accessibilityLabel={choice.title}
+                />
+              }
+            />
+          ))}
+        </Section>
+
+        <Section title="Your data">
+          <ListRow title="Download my data" icon={Download} onPress={exportData} />
+          <ListRow title="Delete account" icon={Trash2} destructive onPress={deleteAccount} />
+        </Section>
       </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={{ marginBottom: 32 }}>
-          <Text
-            variant="caption"
-            weight="bold"
-            color={theme.colors.primary}
-            style={{ textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}
-          >
-            Preferences
-          </Text>
-
-          <View style={{ gap: 16 }}>
-            <PrivacyRow
-              title="Analytics"
-              description="Help us improve the app by sharing anonymous usage data"
-              value={consents.analytics.granted}
-              onValueChange={(v: boolean) => setConsent('analytics', v)}
-              theme={theme}
-            />
-            <PrivacyRow
-              title="Personalization"
-              description="Match what you see to your hair profile"
-              value={consents.personalisation.granted}
-              onValueChange={(v: boolean) => setConsent('personalisation', v)}
-              theme={theme}
-            />
-            <PrivacyRow
-              title="Research"
-              description="Allow anonymised data to be used in hair research. Off unless you turn it on, and you can withdraw at any time"
-              value={consents.research.granted}
-              onValueChange={(v: boolean) => setConsent('research', v)}
-              theme={theme}
-            />
-          </View>
-        </View>
-
-        <View
-          style={{
-            marginTop: 20,
-            padding: 20,
-            backgroundColor: theme.colors.surface,
-            borderWidth: 3,
-            borderColor: theme.colors.text.high,
-            borderRadius: 20,
-            shadowColor: theme.colors.text.high,
-            shadowOffset: { width: 4, height: 4 },
-            shadowOpacity: 1,
-            shadowRadius: 0,
-            elevation: 4,
-          }}
-        >
-          <Text
-            variant="h3"
-            weight="bold"
-            color={theme.colors.text.high}
-            style={{ marginBottom: 12, textTransform: 'uppercase', fontStyle: 'italic' }}
-          >
-            Data Management
-          </Text>
-          <Text
-            variant="body"
-            color={theme.colors.text.high}
-            style={{ lineHeight: 22, marginBottom: 20 }}
-          >
-            You can request to download or delete your data at any time. This action cannot be
-            undone.
-          </Text>
-
-          <View style={{ gap: 12 }}>
-            <AdminAction label="Download My Data" onPress={handleExport} theme={theme} />
-            <AdminAction
-              label="Delete Account"
-              onPress={handleDelete}
-              theme={theme}
-              isDestructive
-            />
-          </View>
-        </View>
-      </ScrollView>
-    </View>
-  );
-}
-
-function PrivacyRow({ title, description, value, onValueChange, theme }: any) {
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-        backgroundColor: theme.colors.surface,
-        borderWidth: 3,
-        borderColor: theme.colors.text.high,
-        borderRadius: 16,
-      }}
-    >
-      <View style={{ flex: 1, marginRight: 16 }}>
-        <Text
-          variant="body"
-          weight="bold"
-          color={theme.colors.text.high}
-          style={{ textTransform: 'uppercase', fontSize: 14 }}
-        >
-          {title}
-        </Text>
-        <Text variant="caption" color={theme.colors.text.medium} style={{ marginTop: 4 }}>
-          {description}
-        </Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: theme.colors.background, true: theme.colors.primary }}
-        thumbColor={theme.colors.surface}
-      />
-    </View>
-  );
-}
-
-function AdminAction({ label, onPress, theme, isDestructive }: any) {
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.7}
-      style={{
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        alignItems: 'center',
-        backgroundColor: isDestructive
-          ? theme.colors.accentSecondary + '20'
-          : theme.colors.background,
-        borderWidth: 2,
-        borderColor: isDestructive ? theme.colors.accentSecondary : theme.colors.text.high,
-        borderRadius: 12,
-      }}
-    >
-      <Text
-        variant="caption"
-        weight="bold"
-        color={isDestructive ? theme.colors.accentSecondary : theme.colors.text.high}
-        style={{ textTransform: 'uppercase', letterSpacing: 1 }}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
+    </Screen>
   );
 }

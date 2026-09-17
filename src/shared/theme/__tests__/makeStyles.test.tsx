@@ -49,7 +49,9 @@ describe('makeStyles', () => {
     await act(async () => useThemePreference.setState({ preference: 'light' }));
 
     await waitFor(() =>
-      expect(StyleSheet.flatten(seen[seen.length - 1].box).backgroundColor).toBe(lightTheme.colors.bg)
+      expect(StyleSheet.flatten(seen[seen.length - 1].box).backgroundColor).toBe(
+        lightTheme.colors.bg
+      )
     );
   });
 });

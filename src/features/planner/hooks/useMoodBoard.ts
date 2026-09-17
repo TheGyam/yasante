@@ -110,15 +110,14 @@ export function useCreateMoodBoardEntry(userId?: string) {
       if (entry.notes) {
         apiEntry.notes = entry.notes;
       }
+      if (entry.stylistName) {
+        apiEntry.stylist_name = entry.stylistName;
+      }
+      if (entry.isSecret !== undefined) {
+        apiEntry.is_secret = entry.isSecret;
+      }
       if (entry.completed !== undefined) {
         apiEntry.completed = entry.completed;
-      }
-
-      if (__DEV__) {
-        console.log('📤 Creating moodboard entry:', {
-          original: entry,
-          transformed: apiEntry,
-        });
       }
 
       const response = await api.moodBoard.create(apiEntry);
@@ -213,9 +212,14 @@ export function useAddPhotoToMoodBoardEntry(userId?: string) {
   const actualUserId = userId || authUser?.id;
 
   return useMutation({
-    mutationFn: async ({ entryId, photoUri }: { entryId: string; photoUri: string }) => {
-      const response = await api.moodBoard.addPhoto(entryId, { main_photo_uri: photoUri });
-      return { entryId, updatedEntry: response.data };
+    // Appends to the board. The cover only changes when the board has none yet.
+    mutationFn: async ({ entry, photoUri }: { entry: MoodBoardEntry; photoUri: string }) => {
+      const photos = [...(entry.photos ?? []), photoUri];
+      const response = await api.moodBoard.addPhoto(entry.id, {
+        photos,
+        ...(entry.mainPhotoUri ? {} : { main_photo_uri: photoUri }),
+      });
+      return { entryId: entry.id, updatedEntry: response.data };
     },
     onSuccess: ({ entryId, updatedEntry }) => {
       if (actualUserId && updatedEntry) {

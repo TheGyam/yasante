@@ -231,7 +231,9 @@ export default function QuizScreen() {
                     },
                   ]}
                 >
-                  {selected && <Check size={14} color={theme.colors.text.onAccent} strokeWidth={3} />}
+                  {selected && (
+                    <Check size={14} color={theme.colors.text.onAccent} strokeWidth={3} />
+                  )}
                 </View>
               </PressableScale>
             );

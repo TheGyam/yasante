@@ -58,7 +58,11 @@ export function Glass({
   return (
     <View
       {...rest}
-      style={[variant === 'chrome' ? styles.chromeSolid : styles.card, { borderRadius: radius }, style]}
+      style={[
+        variant === 'chrome' ? styles.chromeSolid : styles.card,
+        { borderRadius: radius },
+        style,
+      ]}
     >
       {children}
     </View>

@@ -23,7 +23,9 @@ const useStyles = makeStyles(t => ({
 function initials(name?: string | null) {
   if (!name) return '';
   const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+  return (
+    (parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')
+  ).toUpperCase();
 }
 
 export function Avatar({ uri, name, size = 40 }: AvatarProps) {
@@ -31,9 +33,18 @@ export function Avatar({ uri, name, size = 40 }: AvatarProps) {
   const shape = { width: size, height: size, borderRadius: size / 2 };
 
   return (
-    <View style={[styles.base, shape]} accessibilityRole="image" accessibilityLabel={name ?? 'Avatar'}>
+    <View
+      style={[styles.base, shape]}
+      accessibilityRole="image"
+      accessibilityLabel={name ?? 'Avatar'}
+    >
       {uri ? (
-        <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
+        <Image
+          source={{ uri }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={150}
+        />
       ) : (
         <Text
           tone="accent"
