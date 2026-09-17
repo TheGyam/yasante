@@ -9,6 +9,8 @@ export type {
   HairDensity,
   HairPorosity,
   HairGoal,
+  HairLength,
   UserSettings,
 } from './types';
 export * from './format';
+export { HairQuiz } from './quiz/HairQuiz';

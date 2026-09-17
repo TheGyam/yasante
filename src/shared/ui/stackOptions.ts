@@ -1,25 +1,44 @@
+import { Platform } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { darkTheme, lightTheme, useTheme, type Theme } from '@/shared/theme';
 
-function build(theme: Theme, reduced: boolean): NativeStackNavigationOptions {
-  return {
+type Options = NativeStackNavigationOptions;
+
+/**
+ * How a screen arrives says where it sits:
+ * - push: deeper in the same place — slides in from the edge, swipe back to leave.
+ * - modal: a task on top — rises from the bottom, pull down or close to leave.
+ * - fade: the same place, rearranged — search opening over its field, sign in and
+ *   sign up swapping, the app appearing once you're in.
+ * With reduced motion everything crossfades.
+ */
+function build(theme: Theme, reduced: boolean) {
+  const push: Options = {
     headerShown: false,
     contentStyle: { backgroundColor: theme.colors.bg },
-    // The platform's own push and back gesture — or a fade when motion is reduced.
-    animation: reduced ? 'fade' : 'default',
+    // iOS keeps its native push and edge swipe; Android gets the same horizontal
+    // movement instead of its generic zoom.
+    animation: reduced ? 'fade' : Platform.OS === 'android' ? 'ios_from_right' : 'default',
   };
+  const modal: Options = {
+    presentation: 'modal',
+    animation: reduced ? 'fade' : Platform.OS === 'android' ? 'slide_from_bottom' : 'default',
+    gestureEnabled: true,
+  };
+  const fade: Options = { animation: 'fade', animationDuration: 220 };
+  return { push, modal, fade };
 }
 
-// Built once: navigators receive the same object until the scheme or motion setting changes.
-const OPTIONS = {
+// Built once per scheme and motion setting, so navigators always get the same objects.
+const PRESETS = {
   dark: { full: build(darkTheme, false), reduced: build(darkTheme, true) },
   light: { full: build(lightTheme, false), reduced: build(lightTheme, true) },
 } as const;
 
-/** Screen options shared by every stack in the app. */
-export function useStackOptions(): NativeStackNavigationOptions {
+/** `push` is every stack's screenOptions; `modal` and `fade` are per-screen options. */
+export function useStackPresets() {
   const theme = useTheme();
   const reduced = useReducedMotion();
-  return OPTIONS[theme.scheme][reduced ? 'reduced' : 'full'];
+  return PRESETS[theme.scheme][reduced ? 'reduced' : 'full'];
 }

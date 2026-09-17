@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useCallback } from 'react'
 import { useAuthStore, AuthTokens, loadStoredTokens } from './store';
 import { setAuthBridge } from '@/shared/lib/api';
 import { User } from '@/features/profile';
-import { useRouter, useSegments } from 'expo-router';
 import { queryClient } from '@/queryClient';
 import { api } from '@/api';
 
@@ -30,9 +29,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading,
   } = useAuthStore();
 
-  const router = useRouter();
-  const segments = useSegments();
-
   // Give the HTTP client its tokens without shared/ depending on this feature.
   useEffect(() => {
     setAuthBridge({
@@ -52,9 +48,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Load tokens out of secure storage before anything tries to use them.
+  // Signed-in state comes from two places: the persisted store (who) and secure storage
+  // (tokens). Stay loading until both are back, so a cold start never looks signed out.
   useEffect(() => {
-    loadStoredTokens().finally(() => setLoading(false));
+    const hydrated = useAuthStore.persist.hasHydrated()
+      ? Promise.resolve()
+      : new Promise<void>(resolve => {
+          const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
+            unsubscribe();
+            resolve();
+          });
+        });
+    Promise.all([hydrated, loadStoredTokens()]).finally(() => setLoading(false));
   }, [setLoading]);
 
   // Check if token is expired
@@ -139,25 +144,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, tokens, isTokenExpired, refreshToken]);
 
-  // Handle navigation based on auth state
-  useEffect(() => {
-    if (isLoading) return;
-
-    const inAuthGroup = segments[0] === 'auth';
-    const isOnboarding =
-      segments[0] === undefined || segments[0] === 'index' || segments[0] === 'onboarding';
-
-    // Don't redirect if on onboarding or index - let those screens handle their own navigation
-    if (isOnboarding) return;
-
-    // Allow all routes to be accessible - screens will handle showing appropriate content
-    // Only redirect authenticated users away from auth screens
-    if (isAuthenticated && inAuthGroup) {
-      // Redirect to home if authenticated and in auth group
-      router.replace('/(tabs)/home');
-    }
-  }, [isAuthenticated, isLoading, segments, router]);
-
   const login = useCallback(
     (user: User, tokens: AuthTokens) => {
       setAuth(user, tokens);
@@ -187,9 +173,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Logout from auth store (clears tokens and user)
       logoutStore();
 
-      // Navigate to login screen
-      router.replace('/auth/login');
-
       if (__DEV__) {
         console.log('✅ Logout successful - cache cleared');
       }
@@ -197,9 +180,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Even if cache clearing fails, proceed with logout
       console.error('Error during logout cleanup:', error);
       logoutStore();
-      router.replace('/auth/login');
     }
-  }, [logoutStore, router]);
+  }, [logoutStore]);
 
   const updateUser = useCallback(
     (user: User) => {

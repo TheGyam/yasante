@@ -85,7 +85,7 @@ export default function SignupScreen() {
         <AuthSwitch
           prompt="Already have an account?"
           action="Sign in"
-          onPress={() => router.push('/auth/login')}
+          onPress={() => router.replace('/auth/login')}
           testID="login-link"
         />
       }
@@ -150,7 +150,7 @@ export default function SignupScreen() {
         testID="password-input"
       />
 
-      <PasswordStrength password={password} />
+      {password ? <PasswordStrength password={password} /> : null}
 
       <Input
         ref={confirmRef}

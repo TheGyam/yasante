@@ -21,8 +21,6 @@ import { ContentCarousel } from './ContentCarousel';
 
 export interface ContentDetailProps {
   id: string;
-  /** Where related items open — the stack this screen lives in. */
-  basePath: '/(tabs)/home' | '/(tabs)/education';
 }
 
 const useStyles = makeStyles(() => ({
@@ -40,7 +38,7 @@ function metaLine(content: Content) {
 }
 
 /** Detail for any piece of content — inspiration, article or video. */
-export function ContentDetail({ id, basePath }: ContentDetailProps) {
+export function ContentDetail({ id }: ContentDetailProps) {
   const styles = useStyles();
   const router = useRouter();
   const { data: content, isLoading, isError, refetch } = useContentItem(id);
@@ -148,7 +146,7 @@ export function ContentDetail({ id, basePath }: ContentDetailProps) {
               title="More like this"
               items={relatedItems}
               tileWidth={160}
-              onPress={next => router.push(`${basePath}/${next.id}`)}
+              onPress={next => router.push(`/content/${next.id}`)}
             />
           </View>
         )}

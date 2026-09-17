@@ -13,12 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
-import { ChevronLeft } from 'lucide-react-native';
+import { ChevronLeft, X } from 'lucide-react-native';
 import { GUTTER, fonts, makeStyles, space, useTheme } from '@/shared/theme';
 import { AmbientBackground } from './AmbientBackground';
 import { Glass } from './Glass';
 import { IconButton } from './IconButton';
-import { HEADER_HEIGHT, useContentInsets } from './layout';
+import { HEADER_HEIGHT, sheetTop, useContentInsets } from './layout';
 import { Text } from './Text';
 
 export interface ScreenProps {
@@ -28,6 +28,8 @@ export interface ScreenProps {
   subtitle?: string;
   /** Show a back button that pops the stack. */
   back?: boolean;
+  /** Inside a modal: sheet-aware insets, and a close button unless `back` is set. */
+  modal?: boolean;
   onBack?: () => void;
   headerRight?: ReactNode;
   /**
@@ -107,6 +109,7 @@ export function Screen({
   title,
   subtitle,
   back,
+  modal = false,
   onBack,
   headerRight,
   scroll = true,
@@ -126,11 +129,12 @@ export function Screen({
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   useScrollToTop(scrollRef);
 
-  const canGoBack = back || !!onBack;
+  const canGoBack = back || modal || !!onBack;
+  const top = sheetTop(insets.top, modal);
   const hasBar = canGoBack || !!headerRight || !!title;
   const largeTitle = !!title && scroll !== false;
   const fades = scroll !== false;
-  const content = useContentInsets({ header: hasBar, tabBar });
+  const content = useContentInsets({ header: hasBar, tabBar, modal });
 
   const onScroll = useAnimatedScrollHandler(e => {
     scrollY.set(e.contentOffset.y);
@@ -205,19 +209,16 @@ export function Screen({
         <AmbientBackground />
         {body}
         {hasBar && (
-          <View
-            pointerEvents="box-none"
-            style={[styles.bar, { height: insets.top + HEADER_HEIGHT }]}
-          >
+          <View pointerEvents="box-none" style={[styles.bar, { height: top + HEADER_HEIGHT }]}>
             <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, barBackground]}>
               <Glass variant="chrome" radius={0} style={styles.barGlass} />
             </Animated.View>
-            <View pointerEvents="box-none" style={[styles.barRow, { marginTop: insets.top }]}>
+            <View pointerEvents="box-none" style={[styles.barRow, { marginTop: top }]}>
               <View style={styles.barSide}>
                 {canGoBack && (
                   <IconButton
-                    icon={ChevronLeft}
-                    accessibilityLabel="Back"
+                    icon={modal && !back ? X : ChevronLeft}
+                    accessibilityLabel={modal && !back ? 'Close' : 'Back'}
                     size={36}
                     onPress={onBack ?? (() => router.back())}
                   />

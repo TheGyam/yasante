@@ -67,7 +67,7 @@ export function SaveToBoardSheet({ visible, onClose, imageUri, title }: SaveToBo
   const startBoard = () => {
     onClose();
     router.push({
-      pathname: '/(tabs)/planner/moodboard/create',
+      pathname: '/boards/new',
       params: { name: title, photo: imageUri ?? '' },
     });
   };
