@@ -81,7 +81,10 @@ export function installMocks(client: AxiosInstance) {
   client.interceptors.request.use(config => {
     const url = config.url ?? '';
     const match = matchRoute(config.method ?? 'get', url);
-    if (!match) return config;
+    if (!match) {
+      if (__DEV__) console.log('[mocks] no handler for', config.method, url);
+      return config;
+    }
 
     config.adapter = async (cfg: InternalAxiosRequestConfig): Promise<AxiosResponse> => {
       await wait(LATENCY_MS);
@@ -97,10 +100,16 @@ export function installMocks(client: AxiosInstance) {
         headers: {},
         config: cfg,
       });
+      // Axios keeps `params` separate from the url; handlers see one query either way.
+      const query = new URLSearchParams(match.query);
+      for (const [key, value] of Object.entries(cfg.params ?? {})) {
+        if (value !== undefined && value !== null) query.set(key, String(value));
+      }
+
       try {
         const data = await match.route.handler({
           params: match.params,
-          query: match.query,
+          query,
           body,
           accountId,
         });
