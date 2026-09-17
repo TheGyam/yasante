@@ -14,7 +14,7 @@ const useStyles = makeStyles(() => ({
 export function BoardGrid({ entries }: { entries: readonly MoodBoardEntry[] }) {
   const styles = useStyles();
   const router = useRouter();
-  const open = (entry: MoodBoardEntry) => router.push(`/(tabs)/planner/moodboard/${entry.id}`);
+  const open = (entry: MoodBoardEntry) => router.push(`/board/${entry.id}`);
 
   const rows: MoodBoardEntry[][] = [];
   for (let i = 0; i < entries.length; i += 2) rows.push(entries.slice(i, i + 2));

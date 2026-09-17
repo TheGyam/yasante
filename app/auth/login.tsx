@@ -59,7 +59,7 @@ export default function LoginScreen() {
         <AuthSwitch
           prompt="New to Yasante?"
           action="Create an account"
-          onPress={() => router.push('/auth/signup')}
+          onPress={() => router.replace('/auth/signup')}
           testID="signup-link"
         />
       }

@@ -1,9 +1,7 @@
-import { useEffect } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { CalendarHeart, Sparkles, TrendingUp, type LucideIcon } from 'lucide-react-native';
-import { useUserStore } from '@/features/profile';
 import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { BrandMark } from '@/shared/ui/BrandMark';
 import { Button } from '@/shared/ui/Button';
@@ -49,11 +47,6 @@ export default function WelcomeScreen() {
   const styles = useStyles();
   const theme = useTheme();
   const router = useRouter();
-  const onboardingCompleted = useUserStore(s => s.onboardingCompleted);
-
-  useEffect(() => {
-    if (onboardingCompleted) router.replace('/(tabs)/home');
-  }, [onboardingCompleted, router]);
 
   return (
     <Screen scroll={false} testID="welcome-screen">

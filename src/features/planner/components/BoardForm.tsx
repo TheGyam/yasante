@@ -29,8 +29,8 @@ export interface BoardFormProps {
   submitLabel: string;
   pending: boolean;
   onSubmit: (draft: BoardDraft) => void;
-  /** Editing only: a destructive action at the foot of the form. */
-  onDelete?: () => void;
+  /** Editing an existing board: also offers marking the style as done. */
+  editing?: boolean;
 }
 
 const TILE = { width: 104, height: 130 };
@@ -55,11 +55,10 @@ const useStyles = makeStyles(t => ({
   fields: { gap: space.lg },
   prices: { flexDirection: 'row', gap: space.md },
   price: { flex: 1 },
-  notes: { minHeight: 96, textAlignVertical: 'top', paddingTop: space.md },
-  actions: { gap: space.sm },
+  notes: { minHeight: 96 },
 }));
 
-export function BoardForm({ initial, submitLabel, pending, onSubmit, onDelete }: BoardFormProps) {
+export function BoardForm({ initial, submitLabel, pending, onSubmit, editing }: BoardFormProps) {
   const styles = useStyles();
   const theme = useTheme();
   const [draft, setDraft] = useState(initial);
@@ -224,7 +223,7 @@ export function BoardForm({ initial, submitLabel, pending, onSubmit, onDelete }:
             />
           }
         />
-        {onDelete && (
+        {editing && (
           <ListRow
             title="Style done"
             icon={CheckCircle2}
@@ -240,10 +239,7 @@ export function BoardForm({ initial, submitLabel, pending, onSubmit, onDelete }:
         )}
       </Section>
 
-      <View style={styles.actions}>
-        <Button label={submitLabel} onPress={submit} loading={pending} haptic="success" fullWidth />
-        {onDelete && <Button label="Delete board" variant="danger" onPress={onDelete} fullWidth />}
-      </View>
+      <Button label={submitLabel} onPress={submit} loading={pending} haptic="success" fullWidth />
 
       <PhotoSourceSheet
         visible={addingPhoto}

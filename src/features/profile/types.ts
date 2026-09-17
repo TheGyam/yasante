@@ -1,10 +1,21 @@
 export type HairTexture = 'straight' | 'wavy' | 'curly' | 'coily' | 'kinky';
 export type HairDensity = 'fine' | 'medium' | 'thick';
 export type HairPorosity = 'low' | 'medium' | 'high';
+/** Where a gently stretched curl reaches — stretched, so shrinkage doesn't hide length. */
+export type HairLength =
+  | 'cropped'
+  | 'ear'
+  | 'chin'
+  | 'shoulder'
+  | 'armpit'
+  | 'mid-back'
+  | 'waist'
+  | 'hip';
 export type HairGoal = 'growth' | 'health' | 'moisture' | 'strength' | 'color' | 'style';
 
 export interface HairProfile {
   texture?: HairTexture;
+  length?: HairLength;
   density?: HairDensity;
   porosity?: HairPorosity;
   goals?: HairGoal[];

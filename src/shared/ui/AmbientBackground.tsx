@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useTheme } from '@/shared/theme';
 
@@ -9,7 +9,6 @@ import { useTheme } from '@/shared/theme';
  */
 export function AmbientBackground() {
   const theme = useTheme();
-  const { width, height } = useWindowDimensions();
   const [plum, rose, amber] = theme.colors.ambient;
   const strength = theme.scheme === 'dark' ? 0.55 : 0.75;
   // Gradient ids are document-global on web, and stacked screens each draw one.
@@ -20,7 +19,9 @@ export function AmbientBackground() {
       pointerEvents="none"
       style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.bg }]}
     >
-      <Svg width={width} height={height}>
+      {/* Sized to its container, not the window: on edge-to-edge Android the window
+          stops above the navigation bar, which left a flat band at the bottom. */}
+      <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
         <Defs>
           <RadialGradient id={`a${id}`} cx="12%" cy="6%" r="58%">
             <Stop offset="0" stopColor={plum} stopOpacity={strength} />
