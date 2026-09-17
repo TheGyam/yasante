@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api';
 import { useAuth } from '@/features/auth';
 import { AuthTokens } from '@/features/auth';
+import type { SignupRequest } from './api';
 
 export function useLogin() {
   const { login } = useAuth();
@@ -49,26 +50,7 @@ export function useSignup() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      name,
-      email,
-      password,
-      password_confirm,
-    }: {
-      name: string;
-      email: string;
-      password: string;
-      password_confirm: string;
-    }) => {
-      // Pass as object to match SignupRequest interface
-      const response = await api.auth.signup({
-        name,
-        email,
-        password,
-        password_confirm,
-      });
-      return response.data;
-    },
+    mutationFn: async (request: SignupRequest) => (await api.auth.signup(request)).data,
     onSuccess: data => {
       if (__DEV__) {
         console.log('✅ Signup successful, setting auth state:', {

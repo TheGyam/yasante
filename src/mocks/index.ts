@@ -11,6 +11,8 @@ import { findAccountByEmail } from './db';
 import './auth';
 import './users';
 import './stylist';
+import './verification';
+import './invites';
 
 installMocks(apiClient);
 

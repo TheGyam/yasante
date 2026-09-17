@@ -22,7 +22,9 @@ export function ModeSwitchRow() {
       icon={ArrowLeftRight}
       haptic="medium"
       trailing={waiting > 0 ? <Badge label={`${waiting} new`} tone="accent" /> : undefined}
-      onPress={() => beginSwitch(target)}
+      onPress={event =>
+        beginSwitch(target, { x: event.nativeEvent.pageX, y: event.nativeEvent.pageY })
+      }
       testID="mode-switch"
     />
   );

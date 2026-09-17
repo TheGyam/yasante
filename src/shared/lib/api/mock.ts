@@ -109,6 +109,8 @@ export function installMocks(client: AxiosInstance) {
         if (!(error instanceof MockError)) throw error;
         const failure = Object.assign(new Error(error.message), {
           isAxiosError: true,
+          // The client's interceptors read these, just as they would on a real failure.
+          config: cfg,
           response: respond(error.status, { message: error.message }),
         });
         throw failure;

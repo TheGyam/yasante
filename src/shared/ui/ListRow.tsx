@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, type GestureResponderEvent } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ChevronRight, type LucideIcon } from 'lucide-react-native';
 import { makeStyles, radius, space, timing, useTheme, type Theme } from '@/shared/theme';
@@ -14,7 +14,7 @@ export interface ListRowProps {
   value?: string;
   icon?: LucideIcon;
   iconTone?: ListRowTone;
-  onPress?: () => void;
+  onPress?: (event: GestureResponderEvent) => void;
   haptic?: HapticKind;
   /** Replaces the chevron, e.g. a Toggle. */
   trailing?: ReactNode;
@@ -133,9 +133,9 @@ export function ListRow({
       accessibilityLabel={accessibilityLabel ?? title}
       onPressIn={() => pressed.set(withTiming(1, timing.pressIn))}
       onPressOut={() => pressed.set(withTiming(0, timing.pressOut))}
-      onPress={() => {
+      onPress={event => {
         if (haptic) haptics[haptic]();
-        onPress();
+        onPress(event);
       }}
     >
       {content}

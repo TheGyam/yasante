@@ -10,8 +10,10 @@ interface ModeState {
   mode: AppMode;
   /** Set while the switch interstitial is showing. */
   switchingTo: AppMode | null;
+  /** Where the switch was tapped; the transition grows from there. */
+  origin: { x: number; y: number } | null;
   setMode: (mode: AppMode) => void;
-  beginSwitch: (to: AppMode) => void;
+  beginSwitch: (to: AppMode, origin?: { x: number; y: number }) => void;
   endSwitch: () => void;
 }
 
@@ -20,9 +22,10 @@ export const useModeStore = create<ModeState>()(
     set => ({
       mode: 'client',
       switchingTo: null,
+      origin: null,
       setMode: mode => set({ mode }),
-      beginSwitch: to => set({ switchingTo: to }),
-      endSwitch: () => set({ switchingTo: null }),
+      beginSwitch: (to, origin) => set({ switchingTo: to, origin: origin ?? null }),
+      endSwitch: () => set({ switchingTo: null, origin: null }),
     }),
     {
       name: '@yasante:mode',

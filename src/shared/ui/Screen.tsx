@@ -26,7 +26,7 @@ export interface ScreenProps {
   /** Shown large at the top of the content, then compact in the bar once scrolled away. */
   title?: string;
   subtitle?: string;
-  /** Show a back button that pops the stack. */
+  /** Show a back button that pops the stack. `false` hides even a modal's close button. */
   back?: boolean;
   /** Inside a modal: sheet-aware insets, and a close button unless `back` is set. */
   modal?: boolean;
@@ -129,7 +129,7 @@ export function Screen({
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   useScrollToTop(scrollRef);
 
-  const canGoBack = back || modal || !!onBack;
+  const canGoBack = back || (modal && back !== false) || !!onBack;
   const top = sheetTop(insets.top, modal);
   const hasBar = canGoBack || !!headerRight || !!title;
   const largeTitle = !!title && scroll !== false;

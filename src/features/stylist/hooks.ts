@@ -4,6 +4,10 @@ import { stylistApi } from './api';
 
 const KEY = 'stylist';
 
+/** True when the request failed because there's nothing there — not because of the network. */
+export const isNotFound = (error: unknown) =>
+  (error as { response?: { status?: number } } | null)?.response?.status === 404;
+
 /** The signed-in account's stylist profile, when it has the stylist role. */
 export function useMyStylistProfile() {
   const { user } = useAuth();

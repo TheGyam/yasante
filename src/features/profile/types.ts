@@ -31,6 +31,9 @@ export interface User {
   roles?: AccountRole[];
   name: string;
   email?: string;
+  /** E.164. Verified by a one-time code before booking or publishing a stylist page. */
+  phone?: string;
+  phoneVerified?: boolean;
   avatarUri?: string;
   hairProfile?: HairProfile;
   createdAt: string;

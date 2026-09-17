@@ -56,7 +56,7 @@ export default function ProfileScreen() {
           title="Your hair, your space"
           message="Create a free account to keep your boards, saved styles and hair profile in one place."
           actionLabel="Create a free account"
-          onAction={() => router.push('/auth/signup')}
+          onAction={() => router.push('/auth/join')}
         />
       )}
     </Screen>

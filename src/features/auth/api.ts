@@ -26,6 +26,13 @@ export interface SignupRequest {
   name: string;
   password: string;
   password_confirm: string;
+  /** Asked up front; an invite link pre-selects stylist. */
+  role: 'client' | 'stylist';
+  invite_code?: string;
+  /** 18+ confirmed at signup and stored. */
+  age_confirmed: true;
+  /** The terms and privacy version accepted. */
+  policy_version: string;
 }
 
 export interface RefreshTokenRequest {
@@ -124,12 +131,7 @@ export const authApi = {
     const url = '/api/auth/signup/';
 
     if (__DEV__) {
-      console.log('📡 API Request:', {
-        method: 'POST',
-        url,
-        email: userData.email,
-        payload: userData,
-      });
+      console.log('📡 API Request:', { method: 'POST', url, role: userData.role });
     }
 
     try {

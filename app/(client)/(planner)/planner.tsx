@@ -57,7 +57,7 @@ export default function PlannerScreen() {
           title="Plan your next look"
           message="Save inspiration to boards, track appointments and budgets, and keep your treatments on schedule."
           actionLabel="Create a free account"
-          onAction={() => router.push('/auth/signup')}
+          onAction={() => router.push('/auth/join')}
         />
       </Screen>
     );

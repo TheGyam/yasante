@@ -57,7 +57,7 @@ export function AuthPromptModal({ visible, onClose, feature = 'general' }: AuthP
   const router = useRouter();
   const copy = COPY[feature];
 
-  const go = (path: '/auth/signup' | '/auth/login') => {
+  const go = (path: '/auth/join' | '/auth/login') => {
     onClose();
     router.push(path);
   };
@@ -74,7 +74,7 @@ export function AuthPromptModal({ visible, onClose, feature = 'general' }: AuthP
         </Text>
       </View>
       <View style={styles.actions}>
-        <Button label="Create an account" onPress={() => go('/auth/signup')} fullWidth />
+        <Button label="Create an account" onPress={() => go('/auth/join')} fullWidth />
         <Button
           label="I have an account"
           variant="secondary"
