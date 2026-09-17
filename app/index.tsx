@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { CalendarHeart, Sparkles, TrendingUp, type LucideIcon } from 'lucide-react-native';
 import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { BookOpen, Droplets } from 'lucide-react-native';
 import {
   ContentCarousel,
@@ -19,6 +19,9 @@ import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 
+// One page of guides per topic is plenty for a library screen.
+const PAGE_SIZE = 40;
+
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
   chips: { marginHorizontal: -GUTTER },
@@ -29,7 +32,7 @@ const useStyles = makeStyles(() => ({
 export default function LearnScreen() {
   const styles = useStyles();
   const router = useRouter();
-  const { data, isLoading, isRefetching, refetch } = useContent();
+  const { data, isLoading, isRefetching, refetch } = useContent({ limit: PAGE_SIZE });
   const [topic, setTopic] = useState<ContentTopic | null>(null);
 
   const byTopic = new Map<ContentTopic, Content[]>();

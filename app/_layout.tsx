@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import { SplashScreen, Stack, useRouter } from 'expo-router';
+import { SplashScreen, Stack } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -18,6 +19,7 @@ import { useUserStore } from '@/features/profile';
 import { ModeSwitchOverlay, useActiveMode, useModeStore } from '@/features/stylist';
 import { useNotifications } from '@/shared/hooks/useNotifications';
 import { ThemeProvider, useTheme } from '@/shared/theme';
+import { DialogHost } from '@/shared/ui/DialogHost';
 import { useStackPresets } from '@/shared/ui/stackOptions';
 import { queryClient } from '@/queryClient';
 
@@ -107,6 +109,7 @@ function RootNavigator() {
         </Stack.Protected>
       </Stack>
       <ModeSwitchOverlay />
+      <DialogHost />
     </>
   );
 }

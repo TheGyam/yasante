@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { format, isSameDay } from 'date-fns';
 import { CalendarHeart, Droplets, Plus, Sparkles } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { Mail } from 'lucide-react-native';
 import { AuthLayout, useForgotPassword } from '@/features/auth';
 import { haptics } from '@/shared/lib/haptics';

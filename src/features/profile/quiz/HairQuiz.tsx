@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View } from 'react-native';
+import { useRouter } from '@/shared/lib/navigation';
 import Animated, { FadeInLeft, FadeInRight } from 'react-native-reanimated';
 import { useAuth } from '@/features/auth';
 import { haptics } from '@/shared/lib/haptics';
 import { EASE_OUT, makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
+import { notify } from '@/shared/ui/dialog';
 import { Chip } from '@/shared/ui/Chip';
 import { ProgressBar } from '@/shared/ui/ProgressBar';
 import { Screen } from '@/shared/ui/Screen';
@@ -93,10 +94,10 @@ export function HairQuiz({ mode }: HairQuizProps) {
       try {
         await save.mutateAsync(profile);
       } catch {
-        Alert.alert(
-          'Saved on this device',
-          'We couldn’t reach the server, so your answers are kept here for now.'
-        );
+        notify({
+          title: 'Saved on this device',
+          message: 'We couldn’t reach the server, so your answers are kept here for now.',
+        });
       }
     }
     haptics.success();

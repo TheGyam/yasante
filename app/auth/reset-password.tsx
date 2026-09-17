@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, type TextInput } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { type TextInput } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { Lock } from 'lucide-react-native';
 import { AuthLayout, PasswordStrength, useResetPassword } from '@/features/auth';
 import { haptics } from '@/shared/lib/haptics';
 import { Button } from '@/shared/ui/Button';
+import { notify } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/Input';
 import { validatePassword } from '@/shared/utils/validation';
 
@@ -23,9 +25,10 @@ export default function ResetPasswordScreen() {
 
   useEffect(() => {
     if (!token) {
-      Alert.alert('This link has expired', 'Request a new reset link and try again.', [
-        { text: 'OK', onPress: () => router.replace('/auth/forgot-password') },
-      ]);
+      notify({
+        title: 'This link has expired',
+        message: 'Request a new reset link and try again.',
+      }).then(() => router.replace('/auth/forgot-password'));
     }
   }, [token, router]);
 
@@ -48,10 +51,10 @@ export default function ResetPasswordScreen() {
       setDone(true);
     } catch (error: any) {
       haptics.error();
-      Alert.alert(
-        'Couldn’t reset your password',
-        error?.message || 'The link may have expired. Request a new one and try again.'
-      );
+      notify({
+        title: 'Couldn’t reset your password',
+        message: error?.message || 'The link may have expired. Request a new one and try again.',
+      });
     }
   };
 

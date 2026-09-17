@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { Linking, type TextInput } from 'react-native';
 import { useNavigationState } from '@react-navigation/native';
-import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
+import { useRouter } from '@/shared/lib/navigation';
 import { Lock, Mail, Store, UserRound } from 'lucide-react-native';
 import {
   AuthLayout,

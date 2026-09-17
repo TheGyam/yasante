@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { Camera, ImagePlus, Link2 } from 'lucide-react-native';
 import { useImagePicker } from '@/shared/hooks/useImagePicker';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from './Button';
+import { notify } from './dialog';
 import { Input } from './Input';
 import { ListRow } from './ListRow';
 import { Section } from './Section';
@@ -41,7 +42,7 @@ export function PhotoSourceSheet({
       const uri = await source();
       if (uri) onPick(uri);
     } catch {
-      Alert.alert('No access', 'Allow access in Settings to add your own pictures.');
+      notify({ title: 'No access', message: 'Allow access in Settings to add your own pictures.' });
     }
   };
 
