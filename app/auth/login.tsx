@@ -41,9 +41,10 @@ export default function LoginScreen() {
     }
 
     try {
-      await login.mutateAsync({ email: email.trim(), password });
+      const session = await login.mutateAsync({ email: email.trim(), password });
       haptics.success();
-      // AuthContext routes away once the session exists.
+      // A verified account closes this flow on its own; otherwise check the phone first.
+      if (!session.user.phoneVerified) router.push('/auth/verify-phone');
     } catch (error: any) {
       haptics.error();
       setFormError(error?.message || 'We couldn’t sign you in. Check your details and try again.');
@@ -59,7 +60,7 @@ export default function LoginScreen() {
         <AuthSwitch
           prompt="New to Yasante?"
           action="Create an account"
-          onPress={() => router.replace('/auth/signup')}
+          onPress={() => router.replace('/auth/join')}
           testID="signup-link"
         />
       }

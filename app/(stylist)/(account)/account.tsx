@@ -1,10 +1,11 @@
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BadgeCheck, MapPin, Settings, WifiOff } from 'lucide-react-native';
+import { BadgeCheck, MapPin, Settings, Store, WifiOff } from 'lucide-react-native';
 import {
   ModeSwitchRow,
   PageLinkCard,
   VERIFICATION_LABELS,
+  isNotFound,
   useMyStylistProfile,
 } from '@/features/stylist';
 import { makeStyles, space } from '@/shared/theme';
@@ -25,13 +26,19 @@ const useStyles = makeStyles(() => ({
 export default function StylistAccountScreen() {
   const styles = useStyles();
   const router = useRouter();
-  const { data: profile, isLoading, isError, refetch } = useMyStylistProfile();
+  const { data: profile, isLoading, isError, error, refetch } = useMyStylistProfile();
 
   return (
     <Screen tabBar testID="stylist-account">
       <View style={styles.body}>
         {isLoading ? (
           <Skeleton height={160} />
+        ) : isNotFound(error) ? (
+          <EmptyState
+            icon={Store}
+            title="Your page isn’t set up yet"
+            message="Add your styles, prices and policies, and you’ll get a link for your bio."
+          />
         ) : isError || !profile ? (
           <EmptyState
             icon={WifiOff}

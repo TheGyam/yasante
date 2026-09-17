@@ -39,6 +39,8 @@ interface AuthState {
   tokens: AuthTokens | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** Phone verification put off for this session, so the sign-up modal can close. */
+  phoneDeferred: boolean;
 
   // Actions
   setAuth: (user: User, tokens: AuthTokens) => void;
@@ -46,6 +48,7 @@ interface AuthState {
   setTokens: (tokens: AuthTokens) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
+  deferPhone: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -56,6 +59,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       // True until loadStoredTokens() has run, so nothing treats a cold start as signed out.
       isLoading: true,
+      phoneDeferred: false,
 
       setAuth: (user, tokens) => {
         saveTokens(tokens);
@@ -89,6 +93,8 @@ export const useAuthStore = create<AuthState>()(
       setLoading: loading => {
         set({ isLoading: loading });
       },
+
+      deferPhone: () => set({ phoneDeferred: true }),
     }),
     {
       name: '@yasante:auth',

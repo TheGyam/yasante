@@ -94,6 +94,20 @@ export default function WelcomeScreen() {
             onPress={() => router.push('/auth/login')}
             fullWidth
           />
+          {/* Stylists never see the hair quiz: straight to their own sign-up. */}
+          <Text
+            variant="subhead"
+            tone="secondary"
+            align="center"
+            suppressHighlighting
+            onPress={() => router.push({ pathname: '/auth/signup', params: { role: 'stylist' } })}
+            testID="stylist-entry"
+          >
+            Are you a stylist?{' '}
+            <Text variant="subhead" tone="accent">
+              Set up your page
+            </Text>
+          </Text>
         </View>
       </View>
     </Screen>

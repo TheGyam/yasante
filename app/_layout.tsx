@@ -13,7 +13,7 @@ import {
   InstrumentSans_600SemiBold,
   InstrumentSans_700Bold,
 } from '@expo-google-fonts/instrument-sans';
-import { AuthProvider, useAuth } from '@/features/auth';
+import { AuthProvider, useAuth, useAuthStore } from '@/features/auth';
 import { useUserStore } from '@/features/profile';
 import { ModeSwitchOverlay, useActiveMode, useModeStore } from '@/features/stylist';
 import { useNotifications } from '@/shared/hooks/useNotifications';
@@ -39,7 +39,8 @@ function RootNavigator() {
   const theme = useTheme();
   const router = useRouter();
   const { push, modal, fade } = useStackPresets();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const phoneDeferred = useAuthStore(s => s.phoneDeferred);
   const onboarded = useUserStore(s => s.onboardingCompleted);
   const mode = useActiveMode();
   const userHydrated = useHydrated(useUserStore);
@@ -60,6 +61,9 @@ function RootNavigator() {
 
   // Someone who has taken the quiz or signed in is inside the app, even as a guest.
   const entered = isAuthenticated || onboarded;
+  // Signing up continues into phone verification, so the auth flow stays open until
+  // the phone is checked or put off.
+  const inAuthFlow = !isAuthenticated || (!user?.phoneVerified && !phoneDeferred);
 
   return (
     <>
@@ -96,7 +100,9 @@ function RootNavigator() {
           <Stack.Screen name="edit-profile" options={modal} />
         </Stack.Protected>
 
-        <Stack.Protected guard={!isAuthenticated}>
+        <Stack.Screen name="invite/[code]" />
+
+        <Stack.Protected guard={inAuthFlow}>
           <Stack.Screen name="auth" options={modal} />
         </Stack.Protected>
       </Stack>

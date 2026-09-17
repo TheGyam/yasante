@@ -1,9 +1,18 @@
 import { useRef, useState } from 'react';
 import { Linking, type TextInput } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Lock, Mail, UserRound } from 'lucide-react-native';
-import { AuthLayout, AuthSwitch, PasswordStrength, useSignup } from '@/features/auth';
-import { PRIVACY_URL, TERMS_URL } from '@/shared/config/policies';
+import { useNavigationState } from '@react-navigation/native';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { Lock, Mail, Store, UserRound } from 'lucide-react-native';
+import {
+  AuthLayout,
+  AuthSwitch,
+  PasswordStrength,
+  errorMessage,
+  useInvite,
+  useSignup,
+} from '@/features/auth';
+import { useModeStore } from '@/features/stylist';
+import { POLICY_VERSION, PRIVACY_URL, TERMS_URL } from '@/shared/config/policies';
 import { useConsentStore } from '@/shared/config/consentStore';
 import { haptics } from '@/shared/lib/haptics';
 import { Button } from '@/shared/ui/Button';
@@ -13,11 +22,15 @@ import { Input } from '@/shared/ui/Input';
 import { Text } from '@/shared/ui/Text';
 import { isRequired, isValidEmail, validatePassword } from '@/shared/utils/validation';
 
-type Field = 'name' | 'email' | 'password' | 'confirmPassword' | 'terms';
+type Field = 'name' | 'email' | 'password' | 'confirmPassword' | 'agreed';
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { role, invite: inviteCode } = useLocalSearchParams<{ role?: string; invite?: string }>();
+  const { data: invite } = useInvite(inviteCode);
   const signup = useSignup();
+  // Back to the role choice when it came first; a close button when this opened the flow.
+  const pushed = useNavigationState(state => state.index > 0);
   const setConsent = useConsentStore(s => s.setConsent);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -27,9 +40,13 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [formError, setFormError] = useState('');
+
+  // Everyone picks a side first; an invite link picks stylist for them.
+  if (role !== 'client' && role !== 'stylist') return <Redirect href="/auth/join" />;
+  const stylist = role === 'stylist';
 
   const clear = (field: Field) => {
     if (errors[field]) setErrors(e => ({ ...e, [field]: undefined }));
@@ -38,14 +55,15 @@ export default function SignupScreen() {
 
   const submit = async () => {
     const next: Partial<Record<Field, string>> = {};
-    if (!isRequired(name)) next.name = 'Tell us your name';
+    if (!isRequired(name))
+      next.name = stylist ? 'Add the name clients know you by' : 'Tell us your name';
     if (!isRequired(email)) next.email = 'Enter your email';
     else if (!isValidEmail(email.trim())) next.email = 'That email doesn’t look right';
     const passwordCheck = validatePassword(password);
     if (!passwordCheck.isValid) next.password = passwordCheck.errors[0];
     if (!confirmPassword) next.confirmPassword = 'Confirm your password';
     else if (password !== confirmPassword) next.confirmPassword = 'Passwords don’t match';
-    if (!acceptedTerms) next.terms = 'Accept the terms to continue';
+    if (!agreed) next.agreed = 'Confirm you’re 18 or over to continue';
 
     setErrors(next);
     setFormError('');
@@ -60,26 +78,32 @@ export default function SignupScreen() {
         email: email.trim(),
         password,
         password_confirm: confirmPassword,
+        role,
+        invite_code: invite?.code,
+        age_confirmed: true,
+        policy_version: POLICY_VERSION,
       });
-      // Record what they agreed to, against the version they saw.
       setConsent('terms', true);
       setConsent('privacy', true);
+      if (stylist) useModeStore.getState().setMode('stylist');
       haptics.success();
-    } catch (error: any) {
+      // Signed in now; the flow stays open until the phone is checked or put off.
+      router.push('/auth/verify-phone');
+    } catch (error) {
       haptics.error();
-      setFormError(
-        error?.response?.data?.non_field_errors?.[0] ||
-          error?.response?.data?.message ||
-          error?.message ||
-          'We couldn’t create your account. Try again in a moment.'
-      );
+      setFormError(errorMessage(error, 'We couldn’t create your account. Try again in a moment.'));
     }
   };
 
   return (
     <AuthLayout
-      title="Create your account"
-      subtitle="Plan your styles, track your growth and find stylists who know your hair."
+      title={stylist ? 'Set up your stylist account' : 'Create your account'}
+      subtitle={
+        stylist
+          ? 'Your page, menu and bookings in one place. Free for founding stylists.'
+          : 'Plan your styles, track your growth and find stylists who know your hair.'
+      }
+      back={pushed}
       testID="signup-screen"
       footer={
         <AuthSwitch
@@ -90,17 +114,18 @@ export default function SignupScreen() {
         />
       }
     >
+      {invite ? <InlineAlert tone="success" message={`Invited by ${invite.invitedBy}`} /> : null}
       {formError ? <InlineAlert message={formError} /> : null}
 
       <Input
-        label="Name"
-        icon={UserRound}
+        label={stylist ? 'Your name or business name' : 'Name'}
+        icon={stylist ? Store : UserRound}
         value={name}
         onChangeText={text => {
           setName(text);
           clear('name');
         }}
-        placeholder="Your name"
+        placeholder={stylist ? 'Braids by Ama' : 'Your name'}
         autoCapitalize="words"
         autoComplete="name"
         textContentType="name"
@@ -172,15 +197,15 @@ export default function SignupScreen() {
       />
 
       <Checkbox
-        checked={acceptedTerms}
+        checked={agreed}
         onChange={value => {
-          setAcceptedTerms(value);
-          clear('terms');
+          setAgreed(value);
+          clear('agreed');
         }}
-        accessibilityLabel="I agree to the Terms of Service and Privacy Policy"
+        accessibilityLabel="I’m 18 or over, and I agree to the Terms of Service and Privacy Policy"
       >
         <Text variant="subhead" tone="secondary">
-          I agree to the{' '}
+          I’m 18 or over, and I agree to the{' '}
           <Text variant="subhead" tone="accent" onPress={() => Linking.openURL(TERMS_URL)}>
             Terms of Service
           </Text>{' '}
@@ -190,14 +215,14 @@ export default function SignupScreen() {
           </Text>
         </Text>
       </Checkbox>
-      {errors.terms ? (
+      {errors.agreed ? (
         <Text variant="footnote" tone="danger">
-          {errors.terms}
+          {errors.agreed}
         </Text>
       ) : null}
 
       <Button
-        label="Create account"
+        label={stylist ? 'Create stylist account' : 'Create account'}
         onPress={submit}
         loading={signup.isPending}
         fullWidth

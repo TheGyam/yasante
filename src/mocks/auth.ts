@@ -16,18 +16,29 @@ defineMocks({
   },
 
   'POST /api/auth/signup/': ({ body }) => {
-    if (findAccountByEmail(body?.email ?? ''))
+    if (findAccountByEmail(body?.email ?? '')) {
       throw new MockError(400, 'That email is already registered');
+    }
+    if (body?.age_confirmed !== true) throw new MockError(400, 'You need to be 18 or over');
+    const invite = body?.invite_code
+      ? db.invites.get(String(body.invite_code).toUpperCase())
+      : undefined;
+    if (body?.invite_code && (!invite || invite.redeemedBy)) {
+      throw new MockError(410, 'That invite has expired or been used');
+    }
     const id = `acc_${Date.now()}`;
     const now = new Date().toISOString();
+    const stylist = body?.role === 'stylist';
     db.accounts.set(id, {
       id,
       name: body.name,
       email: body.email,
-      roles: ['client'],
+      phoneVerified: false,
+      roles: stylist ? ['client', 'stylist'] : ['client'],
       createdAt: now,
       updatedAt: now,
     });
+    if (invite) invite.redeemedBy = id;
     return session(id);
   },
 

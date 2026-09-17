@@ -4,6 +4,7 @@ import Animated, {
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
+  withDelay,
   withSequence,
   withSpring,
   withTiming,
@@ -111,7 +112,12 @@ export function TabBar({
   state,
   navigation,
   items,
-}: BottomTabBarProps & { items: readonly TabItem[] }) {
+  enterAfter,
+}: BottomTabBarProps & {
+  items: readonly TabItem[];
+  /** Rise into place this many ms after mounting, instead of simply being there. */
+  enterAfter?: number;
+}) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { width: screenWidth } = useWindowDimensions();
@@ -131,10 +137,16 @@ export function TabBar({
     if (activeIndex >= 0) x.set(withSpring(activeIndex * itemWidth, spring.snap));
   }, [activeIndex, itemWidth, x]);
 
-  const hide = useSharedValue(hidden ? 1 : 0);
+  const hide = useSharedValue(hidden || enterAfter !== undefined ? 1 : 0);
+  const entered = useRef(enterAfter === undefined);
   useEffect(() => {
+    if (!entered.current && !hidden) {
+      entered.current = true;
+      hide.set(withDelay(enterAfter ?? 0, withSpring(0, spring.snap)));
+      return;
+    }
     hide.set(withTiming(hidden ? 1 : 0, timing.enter));
-  }, [hidden, hide]);
+  }, [hidden, hide, enterAfter]);
 
   const { progress: keyboard } = useReanimatedKeyboardAnimation();
   const away = useDerivedValue(() => Math.max(hide.get(), keyboard.get()));
