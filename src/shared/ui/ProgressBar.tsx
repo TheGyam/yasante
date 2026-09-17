@@ -11,7 +11,11 @@ export interface ProgressBarProps {
 }
 
 const useStyles = makeStyles(t => ({
-  track: { overflow: 'hidden', borderRadius: radius.pill, backgroundColor: t.colors.glass.fillStrong },
+  track: {
+    overflow: 'hidden',
+    borderRadius: radius.pill,
+    backgroundColor: t.colors.glass.fillStrong,
+  },
   fill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: radius.pill },
   accent: { backgroundColor: t.colors.accent },
   success: { backgroundColor: t.colors.success },

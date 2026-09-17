@@ -1,135 +1,200 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { View, Dimensions, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import BottomSheet from '@gorhom/bottom-sheet';
-import { Plus } from 'lucide-react-native';
-import { useTheme } from '@/shared/legacy/hooks/useTheme';
-import { FloatingActionButton } from '@/shared/legacy/components/FloatingActionButton';
-import { useMoodBoardEntries } from '@/features/planner';
-import type { MoodBoardEntry } from '@/features/planner';
-import { useQueryClient } from '@tanstack/react-query';
+import { format, isSameDay } from 'date-fns';
+import { CalendarHeart, Droplets, Plus, Sparkles } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
-import { format } from 'date-fns';
+import {
+  BoardGrid,
+  appointmentOf,
+  describeTreatment,
+  useMoodBoardEntries,
+  useTreatments,
+  type MoodBoardEntry,
+} from '@/features/planner';
+import { makeStyles, space } from '@/shared/theme';
+import { EmptyState } from '@/shared/ui/EmptyState';
+import { IconButton } from '@/shared/ui/IconButton';
+import { ListRow } from '@/shared/ui/ListRow';
+import { MonthCalendar, dayKey } from '@/shared/ui/MonthCalendar';
+import { Screen } from '@/shared/ui/Screen';
+import { Section } from '@/shared/ui/Section';
+import { SectionHeader } from '@/shared/ui/SectionHeader';
+import { SegmentedControl } from '@/shared/ui/SegmentedControl';
+import { Skeleton } from '@/shared/ui/Skeleton';
 
-import { CollectionCard } from '@/features/planner';
-import { PlannerBottomSheet } from '@/features/planner';
-import { PlannerCalendar } from '@/features/planner';
+type PlannerView = 'boards' | 'treatments';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const VIEWS = [
+  { value: 'boards', label: 'Boards' },
+  { value: 'treatments', label: 'Treatments' },
+] as const;
+
+const useStyles = makeStyles(() => ({
+  body: { gap: space.xxl },
+  row: { flexDirection: 'row', gap: space.md },
+  spacer: { flex: 1 },
+}));
 
 export default function PlannerScreen() {
-  const { theme } = useTheme();
+  const styles = useStyles();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
-  const userId = user?.id || '';
+  const [view, setView] = useState<PlannerView>('boards');
+  const [month, setMonth] = useState(() => new Date());
+  const [day, setDay] = useState<Date | null>(null);
 
-  const month = currentDate.getMonth();
-  const year = currentDate.getFullYear();
+  const boards = useMoodBoardEntries(user?.id, format(month, 'yyyy-MM'), {
+    enabled: isAuthenticated,
+  });
+  const treatments = useTreatments(user?.id, { enabled: isAuthenticated && view === 'treatments' });
 
-  const selectedMonth = useMemo(() => {
-    return format(currentDate, 'yyyy-MM');
-  }, [currentDate]);
+  if (!isAuthenticated) {
+    return (
+      <Screen title="Planner" tabBar testID="planner-screen">
+        <EmptyState
+          icon={CalendarHeart}
+          title="Plan your next look"
+          message="Save inspiration to boards, track appointments and budgets, and keep your treatments on schedule."
+          actionLabel="Create a free account"
+          onAction={() => router.push('/auth/signup')}
+        />
+      </Screen>
+    );
+  }
 
-  const {
-    data: moodBoardEntries = [],
-    isLoading,
-    refetch,
-  } = useMoodBoardEntries(userId, selectedMonth, { enabled: isAuthenticated && !!userId });
+  const create = () =>
+    router.push(
+      view === 'boards' ? '/(tabs)/planner/moodboard/create' : '/(tabs)/planner/treatments/create'
+    );
+  const active = view === 'boards' ? boards : treatments;
 
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayOfMonth = new Date(year, month, 1).getDay();
-
-  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-
-  const calendarDays = useMemo(() => {
-    const days: (number | null)[] = [];
-    for (let i = 0; i < firstDayOfMonth; i++) days.push(null);
-    for (let i = 1; i <= daysInMonth; i++) days.push(i);
-    return days;
-  }, [month, year, daysInMonth, firstDayOfMonth]);
-
-  const entriesByDay = useMemo(() => {
-    const map: Record<number, MoodBoardEntry[]> = {};
-    moodBoardEntries.forEach((entry: MoodBoardEntry) => {
-      const dateStr = entry.appointmentTime || entry.updatedAt || entry.createdAt;
-      if (dateStr) {
-        const date = new Date(dateStr);
-        if (!isNaN(date.getTime())) {
-          const day = date.getDate();
-          if (!map[day]) map[day] = [];
-          map[day].push(entry);
-        }
+  return (
+    <Screen
+      title="Planner"
+      tabBar
+      testID="planner-screen"
+      refreshing={active.isRefetching}
+      onRefresh={() => active.refetch()}
+      headerRight={
+        <IconButton
+          icon={Plus}
+          variant="accent"
+          size={36}
+          accessibilityLabel={view === 'boards' ? 'New board' : 'New treatment'}
+          onPress={create}
+        />
       }
-    });
-    return map;
-  }, [moodBoardEntries]);
+    >
+      <View style={styles.body}>
+        <SegmentedControl options={VIEWS} value={view} onChange={setView} />
+        {view === 'boards' ? (
+          <Boards
+            entries={boards.data ?? []}
+            loading={boards.isLoading}
+            month={month}
+            day={day}
+            onMonthChange={next => {
+              setMonth(next);
+              setDay(null);
+            }}
+            onDayChange={setDay}
+            onCreate={create}
+          />
+        ) : treatments.isLoading ? (
+          <Skeleton height={160} />
+        ) : treatments.data?.length ? (
+          <Section>
+            {treatments.data.map(t => (
+              <ListRow
+                key={t.id}
+                title={t.name}
+                subtitle={describeTreatment(t)}
+                icon={Droplets}
+                onPress={() => router.push(`/(tabs)/planner/treatments/edit/${t.id}`)}
+              />
+            ))}
+          </Section>
+        ) : (
+          <EmptyState
+            icon={Droplets}
+            title="No treatments yet"
+            message="Masks, oils, rinses — set a rhythm and we’ll keep track."
+            actionLabel="Add a treatment"
+            onAction={create}
+          />
+        )}
+      </View>
+    </Screen>
+  );
+}
 
-  const selectedEntries = useMemo(() => {
-    if (!selectedDay) return [];
-    return entriesByDay[selectedDay] || [];
-  }, [selectedDay, entriesByDay]);
+interface BoardsProps {
+  entries: MoodBoardEntry[];
+  loading: boolean;
+  month: Date;
+  day: Date | null;
+  onMonthChange: (month: Date) => void;
+  onDayChange: (day: Date | null) => void;
+  onCreate: () => void;
+}
 
-  const handleFABPress = () => {
-    router.push('/(tabs)/planner/moodboard/create' as any);
-  };
+function Boards({
+  entries,
+  loading,
+  month,
+  day,
+  onMonthChange,
+  onDayChange,
+  onCreate,
+}: BoardsProps) {
+  const styles = useStyles();
 
-  // Bottom sheet
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['45%', '80%'], []);
-
-  const handleBottomSheetChange = useCallback((index: number) => {
-    if (index < 0) {
-      bottomSheetRef.current?.snapToIndex(0);
-    }
-  }, []);
+  const marked = new Set<string>();
+  for (const entry of entries) {
+    const when = appointmentOf(entry);
+    if (when) marked.add(dayKey(when));
+  }
+  const shown = day
+    ? entries.filter(entry => {
+        const when = appointmentOf(entry);
+        return !!when && isSameDay(when, day);
+      })
+    : entries;
 
   return (
     <>
-      <View style={{ flex: 1, backgroundColor: theme.colors.background }} testID="planner-screen">
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Top spacer for safe area */}
-          <View style={{ height: insets.top + 12 }} />
-
-          <PlannerCalendar
-            month={month}
-            year={year}
-            calendarDays={calendarDays}
-            entriesByDay={entriesByDay}
-            selectedDay={selectedDay}
-            setSelectedDay={setSelectedDay}
-            prevMonth={prevMonth}
-            nextMonth={nextMonth}
-          />
-        </ScrollView>
-
-        <PlannerBottomSheet
-          ref={bottomSheetRef}
-          snapPoints={snapPoints}
-          onChange={handleBottomSheetChange}
-          isAuthenticated={isAuthenticated}
-          isLoading={isLoading}
-          month={month}
-          selectedDay={selectedDay}
-          selectedEntries={selectedEntries}
-          moodBoardEntries={moodBoardEntries}
-        />
-      </View>
-
-      <FloatingActionButton
-        onPress={handleFABPress}
-        visible={!(selectedDay ? selectedEntries.length === 0 : moodBoardEntries.length === 0)}
-        icon={<Plus size={28} color={theme.colors.surface} strokeWidth={3} />}
+      <MonthCalendar
+        month={month}
+        onMonthChange={onMonthChange}
+        selected={day}
+        // Tapping the selected day again goes back to the whole month.
+        onSelect={next => onDayChange(day && isSameDay(day, next) ? null : next)}
+        marked={marked}
       />
+      <View>
+        <SectionHeader
+          title={day ? format(day, 'EEEE d MMMM') : `${format(month, 'MMMM')} boards`}
+          actionLabel={day ? 'Whole month' : undefined}
+          onAction={() => onDayChange(null)}
+        />
+        {loading ? (
+          <View style={styles.row}>
+            <Skeleton height={220} style={styles.spacer} />
+            <Skeleton height={220} style={styles.spacer} />
+          </View>
+        ) : shown.length === 0 ? (
+          <EmptyState
+            icon={Sparkles}
+            title={day ? 'Nothing planned that day' : 'Nothing planned yet'}
+            message="Start a board for the next style you’re dreaming about."
+            actionLabel="Plan a look"
+            onAction={onCreate}
+          />
+        ) : (
+          <BoardGrid entries={shown} />
+        )}
+      </View>
     </>
   );
 }

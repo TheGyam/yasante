@@ -1,22 +1,9 @@
 import { Stack } from 'expo-router';
 import { useStackOptions } from '@/shared/ui/stackOptions';
 
+// Deep links land with the tab's root underneath, so back always has somewhere to go.
+export const unstable_settings = { initialRouteName: 'index' };
+
 export default function EducationLayout() {
-  const screenOptions = useStackOptions();
-  return (
-    <Stack
-      screenOptions={screenOptions}
-    >
-      <Stack.Screen name="index" />
-      <Stack.Screen name="[id]" />
-      <Stack.Screen
-        name="diy/[id]"
-        options={{
-          animation: 'fade',
-          presentation: 'transparentModal',
-          headerShown: false,
-        }}
-      />
-    </Stack>
-  );
+  return <Stack screenOptions={useStackOptions()} />;
 }

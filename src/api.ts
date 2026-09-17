@@ -11,12 +11,7 @@ import type { authApi } from '@/features/auth/api';
 import type { userApi } from '@/features/profile/api';
 import type { favoritesApi } from '@/features/profile/favoritesApi';
 import type { contentApi } from '@/features/education/api';
-import type { goalsApi } from '@/features/planner/api/goalsApi';
-import type { photosApi } from '@/features/planner/api/photosApi';
-import type { activitiesApi } from '@/features/planner/api/activitiesApi';
-import type { routinesApi } from '@/features/planner/api/routinesApi';
 import type { treatmentsApi } from '@/features/planner/api/treatmentsApi';
-import type { monthlyHairstylesApi } from '@/features/planner/api/monthlyHairstylesApi';
 import type { moodBoardApi } from '@/features/planner/api/moodBoardApi';
 
 export interface Api {
@@ -24,12 +19,7 @@ export interface Api {
   user: typeof userApi;
   favorites: typeof favoritesApi;
   content: typeof contentApi;
-  goals: typeof goalsApi;
-  photos: typeof photosApi;
-  activities: typeof activitiesApi;
-  routines: typeof routinesApi;
   treatments: typeof treatmentsApi;
-  monthlyHairstyles: typeof monthlyHairstylesApi;
   moodBoard: typeof moodBoardApi;
 }
 
@@ -43,13 +33,7 @@ const getApi = (): Api => {
       user: require('@/features/profile/api').userApi,
       favorites: require('@/features/profile/favoritesApi').favoritesApi,
       content: require('@/features/education/api').contentApi,
-      goals: require('@/features/planner/api/goalsApi').goalsApi,
-      photos: require('@/features/planner/api/photosApi').photosApi,
-      activities: require('@/features/planner/api/activitiesApi').activitiesApi,
-      routines: require('@/features/planner/api/routinesApi').routinesApi,
       treatments: require('@/features/planner/api/treatmentsApi').treatmentsApi,
-      monthlyHairstyles: require('@/features/planner/api/monthlyHairstylesApi')
-        .monthlyHairstylesApi,
       moodBoard: require('@/features/planner/api/moodBoardApi').moodBoardApi,
     };
     /* eslint-enable @typescript-eslint/no-require-imports */

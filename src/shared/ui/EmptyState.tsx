@@ -13,7 +13,12 @@ export interface EmptyStateProps {
 }
 
 const useStyles = makeStyles(t => ({
-  wrap: { alignItems: 'center', paddingVertical: space.huge, paddingHorizontal: space.xxl, gap: space.md },
+  wrap: {
+    alignItems: 'center',
+    paddingVertical: space.huge,
+    paddingHorizontal: space.xxl,
+    gap: space.md,
+  },
   well: {
     width: 64,
     height: 64,

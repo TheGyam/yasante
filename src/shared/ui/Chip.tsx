@@ -26,7 +26,13 @@ const useStyles = makeStyles(t => ({
 }));
 
 /** A filter or choice. Selection ticks with a haptic. */
-export function Chip({ label, selected = false, onPress, icon: Icon, accessibilityLabel }: ChipProps) {
+export function Chip({
+  label,
+  selected = false,
+  onPress,
+  icon: Icon,
+  accessibilityLabel,
+}: ChipProps) {
   const styles = useStyles();
   const theme = useTheme();
   const color = selected ? theme.colors.accent : theme.colors.text.secondary;

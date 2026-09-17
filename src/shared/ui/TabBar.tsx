@@ -70,7 +70,12 @@ function TabButton({ item, routeKey, focused, onTabPress }: TabButtonProps) {
   useEffect(() => {
     // A small lift when a tab becomes active — not on launch, where nobody asked for it.
     if (mounted.current && focused) {
-      pop.set(withSequence(withTiming(1.12, { duration: 110, easing: EASE_OUT }), withSpring(1, spring.settle)));
+      pop.set(
+        withSequence(
+          withTiming(1.12, { duration: 110, easing: EASE_OUT }),
+          withSpring(1, spring.settle)
+        )
+      );
     }
     mounted.current = true;
   }, [focused, pop]);
@@ -117,8 +122,9 @@ export function TabBar({
 
   const focusedRoute = state.routes[state.index];
   const activeIndex = items.findIndex(i => i.name === focusedRoute.name);
-  // Root screens of each tab show the bar; anything pushed on top hides it.
-  const hidden = (focusedRoute.state?.index ?? 0) > 0;
+  // Root screens of listed tabs show the bar. Anything pushed deeper — or a tab route
+  // that isn't in the bar, like the education library — gets the full screen.
+  const hidden = activeIndex < 0 || (focusedRoute.state?.index ?? 0) > 0;
 
   const x = useSharedValue(Math.max(0, activeIndex) * itemWidth);
   useEffect(() => {

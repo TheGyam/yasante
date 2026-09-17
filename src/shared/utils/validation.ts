@@ -81,7 +81,11 @@ export function getPasswordStrength(password: string): PasswordStrength {
 
 /** The password rules. The validator and the on-screen checklist both read this list. */
 export const PASSWORD_RULES = [
-  { label: '8+ characters', error: 'Use at least 8 characters', test: (p: string) => p.length >= 8 },
+  {
+    label: '8+ characters',
+    error: 'Use at least 8 characters',
+    test: (p: string) => p.length >= 8,
+  },
   { label: 'Uppercase', error: 'Add an uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
   { label: 'Lowercase', error: 'Add a lowercase letter', test: (p: string) => /[a-z]/.test(p) },
   { label: 'Number', error: 'Add a number', test: (p: string) => /[0-9]/.test(p) },

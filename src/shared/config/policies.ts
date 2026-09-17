@@ -9,3 +9,4 @@ export const POLICY_VERSION = '2026-09-draft';
 
 export const TERMS_URL = 'https://yasante.com/terms';
 export const PRIVACY_URL = 'https://yasante.com/privacy';
+export const SUPPORT_EMAIL = 'support@yasante.com';

@@ -7,7 +7,8 @@ export interface IconButtonProps extends Omit<PressableScaleProps, 'children' | 
   icon: LucideIcon;
   /** Required: an icon has no text for screen readers to announce. */
   accessibilityLabel: string;
-  variant?: 'glass' | 'plain' | 'accent';
+  /** `overlay` sits on photos and video, so it ignores the theme. */
+  variant?: 'glass' | 'plain' | 'accent' | 'overlay';
   size?: number;
   style?: StyleProp<ViewStyle>;
 }
@@ -22,6 +23,7 @@ const useStyles = makeStyles(t => ({
   },
   plain: { backgroundColor: 'transparent' },
   accent: { backgroundColor: t.colors.accent },
+  overlay: { backgroundColor: 'rgba(12,8,10,0.44)' },
 }));
 
 export function IconButton({
@@ -33,7 +35,12 @@ export function IconButton({
 }: IconButtonProps) {
   const styles = useStyles();
   const theme = useTheme();
-  const color = variant === 'accent' ? theme.colors.text.onAccent : theme.colors.text.primary;
+  const color =
+    variant === 'accent'
+      ? theme.colors.text.onAccent
+      : variant === 'overlay'
+        ? '#FFFFFF'
+        : theme.colors.text.primary;
   // Keep a 44pt target even when the visual is smaller.
   const slop = Math.max(0, (HIT_TARGET - size) / 2);
 

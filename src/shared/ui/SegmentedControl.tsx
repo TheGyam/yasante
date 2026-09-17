@@ -97,11 +97,7 @@ export function SegmentedControl<T extends string>({
               onChange(option.value);
             }}
           >
-            <Text
-              variant="callout"
-              tone={selected ? 'primary' : 'secondary'}
-              numberOfLines={1}
-            >
+            <Text variant="callout" tone={selected ? 'primary' : 'secondary'} numberOfLines={1}>
               {option.label}
             </Text>
           </Pressable>
