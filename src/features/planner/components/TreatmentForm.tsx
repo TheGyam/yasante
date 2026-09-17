@@ -8,7 +8,6 @@ import { DateTimeField } from '@/shared/ui/DateTimeField';
 import { Input } from '@/shared/ui/Input';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Section } from '@/shared/ui/Section';
-import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
 import { FREQUENCY_LABELS, TIME_OF_DAY_LABELS } from '../format';
@@ -24,10 +23,7 @@ export interface TreatmentFormProps {
 }
 
 const FREQUENCIES = Object.keys(FREQUENCY_LABELS) as TreatmentFrequency[];
-const TIMES = (Object.keys(TIME_OF_DAY_LABELS) as TreatmentTimeOfDay[]).map(value => ({
-  value,
-  label: TIME_OF_DAY_LABELS[value],
-}));
+const TIMES = Object.keys(TIME_OF_DAY_LABELS) as TreatmentTimeOfDay[];
 // Monday first, stored the API's way: Sunday = 0.
 const WEEKDAYS = [
   { day: 1, label: 'Mon' },
@@ -42,6 +38,8 @@ const WEEKDAYS = [
 const useStyles = makeStyles(() => ({
   form: { gap: space.xxl },
   group: { gap: space.sm },
+  // Matches Input's label, so every field in the form reads the same.
+  label: { marginLeft: space.xs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   actions: { gap: space.sm },
 }));
@@ -88,7 +86,7 @@ export function TreatmentForm({
       />
 
       <View style={styles.group}>
-        <Text variant="overline" tone="tertiary">
+        <Text variant="footnote" tone="secondary" style={styles.label}>
           How often
         </Text>
         <View style={styles.chips}>
@@ -134,14 +132,19 @@ export function TreatmentForm({
       )}
 
       <View style={styles.group}>
-        <Text variant="overline" tone="tertiary">
+        <Text variant="footnote" tone="secondary" style={styles.label}>
           Time of day
         </Text>
-        <SegmentedControl
-          options={TIMES}
-          value={draft.timeOfDay}
-          onChange={value => set('timeOfDay', value)}
-        />
+        <View style={styles.chips}>
+          {TIMES.map(value => (
+            <Chip
+              key={value}
+              label={TIME_OF_DAY_LABELS[value]}
+              selected={draft.timeOfDay === value}
+              onPress={() => set('timeOfDay', value)}
+            />
+          ))}
+        </View>
       </View>
 
       <Section>

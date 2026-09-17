@@ -22,7 +22,7 @@ A beautiful, modern mobile app for hairstyle planning and education built with E
 - **Framework**: Expo (Managed Workflow)
 - **Language**: TypeScript
 - **Navigation**: Expo Router
-- **Styling**: styled-components
+- **Styling**: StyleSheet via the design system in `src/shared/ui` (see ARCHITECTURE.md)
 - **State Management**: Zustand + React Query
 - **Animations**: React Native Reanimated 4
 - **Icons**: lucide-react-native
@@ -114,7 +114,7 @@ This is automatically called in dev mode on app start.
 
 ## Theme System
 
-The app supports light, dark, and system themes. Users can toggle themes in Settings. The theme system uses styled-components with a ThemeProvider.
+The app supports light, dark, and system themes. Users can toggle themes in Settings. Themes are built once per scheme with `makeStyles`; see ARCHITECTURE.md.
 
 ## Testing
 
@@ -132,7 +132,6 @@ npm run test:watch
 
 ### Test Coverage
 
-- Unit tests for `BottomTabBar` (tab navigation, animations)
 - Unit tests for `GreetingBanner` (rotation logic)
 - Unit tests for `greetings` utility (rotation, time-of-day)
 

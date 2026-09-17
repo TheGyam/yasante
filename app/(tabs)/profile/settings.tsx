@@ -21,6 +21,8 @@ const APPEARANCE = [
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
   group: { gap: space.sm },
+  // Lines up with the Section titles below.
+  label: { marginLeft: space.lg },
 }));
 
 export default function SettingsScreen() {
@@ -42,7 +44,7 @@ export default function SettingsScreen() {
     <Screen title="Settings" back testID="settings-screen">
       <View style={styles.body}>
         <View style={styles.group}>
-          <Text variant="overline" tone="tertiary">
+          <Text variant="overline" tone="tertiary" style={styles.label}>
             Appearance
           </Text>
           <SegmentedControl options={APPEARANCE} value={preference} onChange={setPreference} />
