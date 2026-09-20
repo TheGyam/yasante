@@ -4,7 +4,7 @@ import { Screen } from '@/shared/ui/Screen';
 
 export default function RequestsScreen() {
   return (
-    <Screen title="Requests" tabBar testID="stylist-requests">
+    <Screen title="Requests" testID="stylist-requests">
       <EmptyState
         icon={Inbox}
         title="No requests yet"

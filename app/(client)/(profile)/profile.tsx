@@ -48,7 +48,7 @@ export default function ProfileScreen() {
   );
 
   return (
-    <Screen tabBar headerRight={settings} testID="profile-screen">
+    <Screen headerRight={settings} testID="profile-screen">
       {isAuthenticated ? (
         <Profile />
       ) : (

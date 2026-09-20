@@ -29,7 +29,7 @@ export default function StylistAccountScreen() {
   const { data: profile, isLoading, isError, error, refetch } = useMyStylistProfile();
 
   return (
-    <Screen tabBar testID="stylist-account">
+    <Screen testID="stylist-account">
       <View style={styles.body}>
         {isLoading ? (
           <Skeleton height={160} />

@@ -41,7 +41,7 @@ const useStyles = makeStyles(() => ({
 
 export default function PortfolioScreen() {
   return (
-    <Screen title="Portfolio" tabBar scroll="list" testID="stylist-portfolio">
+    <Screen title="Portfolio" scroll="list" testID="stylist-portfolio">
       <PortfolioGrid />
     </Screen>
   );

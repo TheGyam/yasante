@@ -105,7 +105,9 @@ screen draws comes from `src/shared/ui` and `src/shared/theme`.
 - **Every screen is a `<Screen>`.** It owns the background, safe areas, the glass
   header that fades in on scroll, keyboard handling and tab-bar clearance. A screen
   that renders its own list uses `scroll="list"` with `useScreenScrollHandler` and
-  `useContentInsets`.
+  `useContentInsets`. Clearing the floating tab bar is automatic: `TabBarProvider`
+  wraps each tabs navigator, so every screen in that group — tab roots and anything
+  pushed on top of them — reserves the room. Nothing passes a flag for it.
 - **Styles come from `makeStyles`.** Both themes' StyleSheets are built once at module
   load, so the hook is a context read. Never build style objects in render, and never
   hard-code a colour — read it from the theme.

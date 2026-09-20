@@ -41,8 +41,6 @@ export interface ScreenProps {
   scroll?: boolean | 'list';
   /** Forms: the scroll view keeps the focused field above the keyboard. */
   keyboard?: boolean;
-  /** Tab roots: clear the floating tab bar and scroll to top when the tab is re-pressed. */
-  tabBar?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
   /** Apply the page gutter (default true). */
@@ -114,7 +112,6 @@ export function Screen({
   headerRight,
   scroll = true,
   keyboard = false,
-  tabBar = false,
   refreshing,
   onRefresh,
   padded = true,
@@ -134,7 +131,7 @@ export function Screen({
   const hasBar = canGoBack || !!headerRight || !!title;
   const largeTitle = !!title && scroll !== false;
   const fades = scroll !== false;
-  const content = useContentInsets({ header: hasBar, tabBar, modal });
+  const content = useContentInsets({ header: hasBar, modal });
 
   const onScroll = useAnimatedScrollHandler(e => {
     scrollY.set(e.contentOffset.y);
