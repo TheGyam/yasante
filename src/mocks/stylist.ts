@@ -4,6 +4,29 @@ import { db } from './db';
 /** Handles already in use, plus the ones we keep for ourselves. */
 const RESERVED = new Set(['yasante', 'admin', 'help', 'support', 'stylist', 'hair']);
 
+/** Her menu, created empty the first time she adds to it. */
+function menuOf(accountId: string) {
+  const menu = db.menus.get(accountId) ?? [];
+  db.menus.set(accountId, menu);
+  return menu;
+}
+
+/** What the server would keep from a posted draft, and nothing else. */
+function newItem(body: any) {
+  const name = String(body?.name ?? '').trim();
+  const price = Number(body?.price);
+  if (!name || !Number.isFinite(price) || price <= 0) {
+    throw new MockError(400, 'A service needs a name and a price');
+  }
+  return {
+    name,
+    price,
+    fromPrice: !!body?.fromPrice,
+    durationMinutes: body?.durationMinutes ? Number(body.durationMinutes) : undefined,
+    note: body?.note ? String(body.note).trim() : undefined,
+  };
+}
+
 const taken = (handle: string) =>
   RESERVED.has(handle) || [...db.stylists.values()].some(s => s.handle === handle);
 
@@ -67,5 +90,39 @@ defineMocks({
     }
     profile.published = true;
     return profile;
+  },
+
+  'GET /api/stylists/me/menu/': request => db.menus.get(requireAccount(request)) ?? [],
+
+  'POST /api/stylists/me/menu/': request => {
+    const item = { ...newItem(request.body), id: `men_${Date.now()}` };
+    menuOf(requireAccount(request)).push(item);
+    return item;
+  },
+
+  'PATCH /api/stylists/me/menu/:id/': request => {
+    const item = menuOf(requireAccount(request)).find(i => i.id === request.params.id);
+    if (!item) throw new MockError(404, 'That service is no longer on your menu');
+    Object.assign(item, request.body);
+    return item;
+  },
+
+  'DELETE /api/stylists/me/menu/:id/': request => {
+    const accountId = requireAccount(request);
+    db.menus.set(
+      accountId,
+      menuOf(accountId).filter(item => item.id !== request.params.id)
+    );
+    return null;
+  },
+
+  'POST /api/stylists/me/menu/import/': request => {
+    const menu = menuOf(requireAccount(request));
+    const added = (request.body?.items ?? []).map((draft: unknown, index: number) => ({
+      ...newItem(draft),
+      id: `men_${Date.now()}_${index}`,
+    }));
+    menu.push(...added);
+    return added;
   },
 });

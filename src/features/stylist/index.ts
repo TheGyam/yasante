@@ -1,5 +1,7 @@
 export type {
   DepositType,
+  MenuItem,
+  MenuItemDraft,
   ServiceModel,
   StylistPolicies,
   StylistProfile,
@@ -9,6 +11,7 @@ export type {
 } from './types';
 export { stylistApi } from './api';
 export * from './handle';
+export * from './priceList';
 export * from './setupDraft';
 export * from './hooks';
 export * from './mode';

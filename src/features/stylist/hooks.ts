@@ -3,7 +3,7 @@ import { useAuth } from '@/features/auth';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import { stylistApi } from './api';
 import { handleProblem } from './handle';
-import type { StylistProfile, StylistProfileDraft } from './types';
+import type { MenuItemDraft, StylistProfile, StylistProfileDraft } from './types';
 
 const KEY = 'stylist';
 
@@ -86,4 +86,58 @@ export function useUpdateStylistProfile() {
 export function usePublishPage() {
   const save = useSaveProfile();
   return useMutation({ mutationFn: stylistApi.publish, onSuccess: save });
+}
+
+/** Her menu. A stylist has a handful of services, so it arrives as one list. */
+export function useMenu() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: [KEY, 'menu', user?.id],
+    queryFn: stylistApi.getMenu,
+    enabled: !!user?.roles?.includes('stylist'),
+    staleTime: 5 * 60 * 1000,
+    retry: (count, error) => !isNotFound(error) && count < 2,
+  });
+}
+
+/** Writes the menu the server just returned back into the list. */
+/**
+ * Every menu write re-reads the list rather than patching the cache by hand. A
+ * patch that lands after an in-flight read duplicated a whole pasted list once;
+ * the menu is a handful of rows, so reading it again is cheaper than being clever.
+ */
+function useRefreshMenu() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return () => queryClient.invalidateQueries({ queryKey: [KEY, 'menu', user?.id] });
+}
+
+export function useAddMenuItem() {
+  const onSuccess = useRefreshMenu();
+  return useMutation({
+    mutationFn: (draft: MenuItemDraft) => stylistApi.addMenuItem(draft),
+    onSuccess,
+  });
+}
+
+export function useUpdateMenuItem(id: string) {
+  const onSuccess = useRefreshMenu();
+  return useMutation({
+    mutationFn: (changes: Partial<MenuItemDraft>) => stylistApi.updateMenuItem(id, changes),
+    onSuccess,
+  });
+}
+
+export function useRemoveMenuItem(id: string) {
+  const onSuccess = useRefreshMenu();
+  return useMutation({ mutationFn: () => stylistApi.removeMenuItem(id), onSuccess });
+}
+
+/** A pasted price list, added to whatever is already there. */
+export function useImportMenu() {
+  const onSuccess = useRefreshMenu();
+  return useMutation({
+    mutationFn: (drafts: MenuItemDraft[]) => stylistApi.importMenu(drafts),
+    onSuccess,
+  });
 }
