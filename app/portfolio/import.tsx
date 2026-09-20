@@ -13,6 +13,7 @@ import { notify } from '@/shared/ui/dialog';
 import { IconButton } from '@/shared/ui/IconButton';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
+import { Rise } from '@/shared/ui/Rise';
 import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
@@ -150,9 +151,13 @@ export default function ImportPhotosScreen() {
                     accessibilityLabel={`Leave out photo ${index + 1}`}
                     onPress={() => drop(index)}
                   />
-                  <Text variant="caption" tone={photo.serviceId ? 'secondary' : 'tertiary'}>
-                    {nameOf(photo.serviceId) ?? 'No tag'}
-                  </Text>
+                  {/* Keyed on the tag, so one tap on a chip sweeps across the grid —
+                      the batch doing its work, rather than the labels blinking. */}
+                  <Rise key={photo.serviceId ?? 'none'} index={index}>
+                    <Text variant="caption" tone={photo.serviceId ? 'secondary' : 'tertiary'}>
+                      {nameOf(photo.serviceId) ?? 'No tag'}
+                    </Text>
+                  </Rise>
                 </View>
               ))}
             </View>

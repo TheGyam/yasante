@@ -166,6 +166,11 @@ rules keep the app the same speed at ten thousand items as at ten.
   answer, so a mocked screen sits on its skeleton for ever. Reloading the page does
   not clear it; `npx expo start` again does.
 
+- **Entering animations don't finish in the web preview.** A `Rise` or a setup step
+  sits at its first frame, which reads as content that never arrives. They run
+  correctly on a device, so judge motion there — and don't take a blank-looking web
+  preview as proof a screen is broken.
+
 - **Bottom sheets don't open in the web preview.** `Sheet` presents nothing there,
   in a modal screen or a tab — `edit-profile`'s photo sheet included, so it predates
   the portfolio work. Anything behind a sheet has to be checked on a device.
