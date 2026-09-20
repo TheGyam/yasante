@@ -5,7 +5,7 @@ import { useScrollToTop } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import Animated from 'react-native-reanimated';
-import { ArrowUp, Search, WifiOff } from 'lucide-react-native';
+import { ArrowUp, Search, Sparkles, WifiOff } from 'lucide-react-native';
 import { AuthPromptModal, GreetingBanner, useAuth } from '@/features/auth';
 import {
   ContentCarousel,
@@ -130,6 +130,14 @@ function HomeFeed() {
           style={{ alignSelf: 'center' }}
         />
       )}
+      <Button
+        label="Looks from stylists on Yasante"
+        icon={Sparkles}
+        variant="secondary"
+        onPress={() => router.push('/looks')}
+        fullWidth
+        testID="home-looks"
+      />
       <ContentCarousel
         title="Styles and tips we love"
         items={carousel}
