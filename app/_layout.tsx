@@ -103,10 +103,11 @@ function RootNavigator() {
           <Stack.Screen name="looks/index" />
           <Stack.Screen name="looks/new" options={modal} />
           <Stack.Screen name="looks/options" options={modal} />
-          <Stack.Screen name="boards/new" options={modal} />
-          <Stack.Screen name="boards/[id]/edit" options={modal} />
-          <Stack.Screen name="treatments/new" options={modal} />
-          <Stack.Screen name="treatments/[id]" options={modal} />
+          <Stack.Screen name="collections/[id]" />
+          <Stack.Screen name="collections/new" options={modal} />
+          <Stack.Screen name="collections/save" options={modal} />
+          <Stack.Screen name="care-plans/[id]" />
+          <Stack.Screen name="care-plans/edit" options={modal} />
           <Stack.Screen name="edit-profile" options={modal} />
         </Stack.Protected>
 

@@ -181,6 +181,42 @@ export const db = {
     createdAt: string;
   }[],
 
+  /** A client's collections, with their items. Keyed by account. */
+  collections: new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      isPrivate: boolean;
+      createdAt: string;
+      items: {
+        id: string;
+        kind: string;
+        refId: string;
+        imageUri?: string;
+        title?: string;
+        addedAt: string;
+      }[];
+    }[]
+  >(),
+
+  /** Care plans, with their sessions appended as they're logged. */
+  carePlans: new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      frequency: string;
+      specificDays?: number[];
+      timeOfDay: string;
+      remindersOn: boolean;
+      steps: { id: string; text: string }[];
+      lastDoneAt?: string;
+      createdAt: string;
+      sessions: { id: string; completedAt: string; notes?: string }[];
+    }[]
+  >(),
+
   /** Who each account has blocked. Blocking is mutual. */
   blocks: new Map<string, Set<string>>(),
 

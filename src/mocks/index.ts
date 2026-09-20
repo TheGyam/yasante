@@ -11,6 +11,7 @@ import { db, findAccountByEmail } from './db';
 import './auth';
 import './users';
 import './stylist';
+import './planner';
 import './looks';
 import './verification';
 import './invites';

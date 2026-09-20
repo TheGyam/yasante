@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import { MoreHorizontal } from 'lucide-react-native';
+import { BookmarkPlus, MoreHorizontal } from 'lucide-react-native';
 import { formatMoney } from '@/shared/lib/format';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
@@ -13,6 +13,8 @@ export interface LookCardProps {
   look: Look;
   /** Opens the author's page. Absent when she hasn't published one. */
   onOpenAuthor?: (look: Look) => void;
+  /** Saves it into a collection. Absent for your own looks. */
+  onSave?: (look: Look) => void;
   onMore: (look: Look) => void;
 }
 
@@ -34,10 +36,11 @@ const useStyles = makeStyles(() => ({
     backgroundColor: 'rgba(12,8,10,0.55)',
   },
   serviceText: { color: '#FFFFFF' },
+  save: { position: 'absolute', right: space.sm, bottom: space.sm },
 }));
 
 /** One look in the feed: whose work it is, the picture, and what it costs. */
-export function LookCard({ look, onOpenAuthor, onMore }: LookCardProps) {
+export function LookCard({ look, onOpenAuthor, onSave, onMore }: LookCardProps) {
   const styles = useStyles();
   const price = look.price
     ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
@@ -80,6 +83,16 @@ export function LookCard({ look, onOpenAuthor, onMore }: LookCardProps) {
           recyclingKey={look.id}
           accessibilityLabel={look.caption ?? look.serviceName ?? 'A look'}
         />
+        {onSave && (
+          <IconButton
+            icon={BookmarkPlus}
+            variant="overlay"
+            size={32}
+            accessibilityLabel="Save to a collection"
+            onPress={() => onSave(look)}
+            style={styles.save}
+          />
+        )}
         {!!look.serviceName && (
           <View style={styles.service}>
             <Text variant="footnote" style={styles.serviceText} numberOfLines={1}>

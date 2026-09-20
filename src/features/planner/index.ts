@@ -1,7 +1,16 @@
-export * from './hooks/useTreatments';
-export * from './hooks/useMoodBoard';
-export type { TreatmentFrequency, TreatmentTimeOfDay, Treatment, MoodBoardEntry } from './types';
-export * from './components';
+export type {
+  CarePlan,
+  CarePlanDraft,
+  CarePlanFrequency,
+  CarePlanSession,
+  CarePlanStep,
+  Collection,
+  CollectionItem,
+  CollectionItemKind,
+  TimeOfDay,
+} from './types';
+export { plannerApi } from './api';
+export * from './carePlanDraft';
 export * from './format';
-export * from './boardDraft';
-export * from './treatmentDraft';
+export * from './hooks';
+export * from './components';

@@ -10,6 +10,7 @@ export interface IconButtonProps extends Omit<PressableScaleProps, 'children' | 
   /** `overlay` sits on photos and video, so it ignores the theme. */
   variant?: 'glass' | 'plain' | 'accent' | 'overlay';
   size?: number;
+  /** Where the button sits — applied to the touch target, so absolute works. */
   style?: StyleProp<ViewStyle>;
 }
 
@@ -31,6 +32,7 @@ export function IconButton({
   variant = 'glass',
   size = 40,
   style,
+  containerStyle,
   ...rest
 }: IconButtonProps) {
   const styles = useStyles();
@@ -48,12 +50,11 @@ export function IconButton({
     <PressableScale
       hitSlop={slop}
       {...rest}
-      style={[
-        styles.base,
-        styles[variant],
-        { width: size, height: size, borderRadius: size / 2 },
-        style,
-      ]}
+      // Positioning belongs on the touch target. Put it on the view that scales and
+      // the pressable stays behind in the layout at zero height — the button looks
+      // right and nothing can press it.
+      containerStyle={[containerStyle, style]}
+      style={[styles.base, styles[variant], { width: size, height: size, borderRadius: size / 2 }]}
     >
       <Icon size={Math.round(size * 0.48)} color={color} strokeWidth={2.2} />
     </PressableScale>

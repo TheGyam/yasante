@@ -17,7 +17,6 @@ import {
   useNewPosts,
   type Content,
 } from '@/features/education';
-import { SaveToBoardSheet } from '@/features/planner';
 import { useUser } from '@/features/profile';
 import { useBackgroundSync } from '@/shared/hooks/useBackgroundSync';
 import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -99,7 +98,6 @@ function HomeFeed() {
   useBackgroundSync({ enabled: true });
 
   const [authPrompt, setAuthPrompt] = useState(false);
-  const [saving, setSaving] = useState<Content | null>(null);
 
   const items = feed.data?.pages.flatMap(page => page.data) ?? [];
   const carousel = items.filter(item => CAROUSEL_TOPICS.has(item.topic)).slice(0, 10);
@@ -111,7 +109,13 @@ function HomeFeed() {
     router.push(`/content/${content.id}`);
   };
   const openArticle = (content: Content) => router.push(`/content/${content.id}`);
-  const save = (content: Content) => (isAuthenticated ? setSaving(content) : setAuthPrompt(true));
+  // The save screen can't read the content API, so it's handed what's on screen.
+  const save = (content: Content) =>
+    isAuthenticated
+      ? router.push(
+          `/collections/save?kind=content&refId=${content.id}&title=${encodeURIComponent(content.title)}&imageUri=${encodeURIComponent(content.thumbnailUri ?? '')}`
+        )
+      : setAuthPrompt(true);
 
   const header = (
     <View style={styles.header}>
@@ -203,12 +207,6 @@ function HomeFeed() {
         visible={authPrompt}
         onClose={() => setAuthPrompt(false)}
         feature="favorites"
-      />
-      <SaveToBoardSheet
-        visible={!!saving}
-        onClose={() => setSaving(null)}
-        imageUri={saving?.thumbnailUri}
-        title={saving?.title ?? ''}
       />
     </>
   );

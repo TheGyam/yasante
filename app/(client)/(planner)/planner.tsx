@@ -1,53 +1,45 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { useRouter } from '@/shared/lib/navigation';
-import { format, isSameDay } from 'date-fns';
-import { CalendarHeart, Droplets, Plus, Sparkles } from 'lucide-react-native';
+import { CalendarHeart, Droplets, FolderHeart, Plus } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import {
-  BoardGrid,
-  appointmentOf,
-  describeTreatment,
-  useMoodBoardEntries,
-  useTreatments,
-  type MoodBoardEntry,
+  CollectionCard,
+  describePlan,
+  dueLabel,
+  useCarePlans,
+  useCollections,
 } from '@/features/planner';
+import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
-import { MonthCalendar, dayKey } from '@/shared/ui/MonthCalendar';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
-import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Skeleton } from '@/shared/ui/Skeleton';
 
-type PlannerView = 'boards' | 'treatments';
+type PlannerView = 'collections' | 'plans';
 
 const VIEWS = [
-  { value: 'boards', label: 'Boards' },
-  { value: 'treatments', label: 'Treatments' },
+  { value: 'collections', label: 'Collections' },
+  { value: 'plans', label: 'Care plans' },
 ] as const;
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
-  row: { flexDirection: 'row', gap: space.md },
-  spacer: { flex: 1 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -space.xs },
+  cell: { width: '50%', flexDirection: 'row' },
 }));
 
 export default function PlannerScreen() {
   const styles = useStyles();
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
-  const [view, setView] = useState<PlannerView>('boards');
-  const [month, setMonth] = useState(() => new Date());
-  const [day, setDay] = useState<Date | null>(null);
+  const { isAuthenticated } = useAuth();
+  const [view, setView] = useState<PlannerView>('collections');
 
-  const boards = useMoodBoardEntries(user?.id, format(month, 'yyyy-MM'), {
-    enabled: isAuthenticated,
-  });
-  const treatments = useTreatments(user?.id, { enabled: isAuthenticated && view === 'treatments' });
+  const collections = useCollections();
+  const plans = useCarePlans();
 
   if (!isAuthenticated) {
     return (
@@ -55,7 +47,7 @@ export default function PlannerScreen() {
         <EmptyState
           icon={CalendarHeart}
           title="Plan your next look"
-          message="Save inspiration to boards, track appointments and budgets, and keep your treatments on schedule."
+          message="Save what you like into collections, and keep a care plan for the hair you have now."
           actionLabel="Create a free account"
           onAction={() => router.push('/auth/join')}
         />
@@ -63,8 +55,9 @@ export default function PlannerScreen() {
     );
   }
 
-  const create = () => router.push(view === 'boards' ? '/boards/new' : '/treatments/new');
-  const active = view === 'boards' ? boards : treatments;
+  const active = view === 'collections' ? collections : plans;
+  const create = () =>
+    router.push(view === 'collections' ? '/collections/new' : '/care-plans/edit');
 
   return (
     <Screen
@@ -77,120 +70,61 @@ export default function PlannerScreen() {
           icon={Plus}
           variant="accent"
           size={36}
-          accessibilityLabel={view === 'boards' ? 'New board' : 'New treatment'}
+          accessibilityLabel={view === 'collections' ? 'New collection' : 'New care plan'}
           onPress={create}
         />
       }
     >
       <View style={styles.body}>
         <SegmentedControl options={VIEWS} value={view} onChange={setView} />
-        {view === 'boards' ? (
-          <Boards
-            entries={boards.data ?? []}
-            loading={boards.isLoading}
-            month={month}
-            day={day}
-            onMonthChange={next => {
-              setMonth(next);
-              setDay(null);
-            }}
-            onDayChange={setDay}
-            onCreate={create}
-          />
-        ) : treatments.isLoading ? (
-          <Skeleton height={160} />
-        ) : treatments.data?.length ? (
-          <Section>
-            {treatments.data.map(t => (
+
+        {active.isLoading ? (
+          <Skeleton height={200} />
+        ) : view === 'collections' ? (
+          collections.data?.length ? (
+            <View style={styles.grid}>
+              {collections.data.map(collection => (
+                <View key={collection.id} style={styles.cell}>
+                  <CollectionCard
+                    collection={collection}
+                    onPress={() => router.push(`/collections/${collection.id}`)}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <EmptyState
+              icon={FolderHeart}
+              title="Nothing saved yet"
+              message="Save a look or an article and it lands in a collection — private unless you say otherwise."
+              actionLabel="Start a collection"
+              onAction={create}
+            />
+          )
+        ) : plans.data?.length ? (
+          <Section footer="Marking a plan done is what moves its next date.">
+            {plans.data.map(plan => (
               <ListRow
-                key={t.id}
-                title={t.name}
-                subtitle={describeTreatment(t)}
+                key={plan.id}
+                title={plan.name}
+                subtitle={describePlan(plan)}
+                value={dueLabel(plan)}
                 icon={Droplets}
-                onPress={() => router.push(`/treatments/${t.id}`)}
+                onPress={() => router.push(`/care-plans/${plan.id}`)}
+                testID={`plan-${plan.id}`}
               />
             ))}
           </Section>
         ) : (
           <EmptyState
             icon={Droplets}
-            title="No treatments yet"
-            message="Masks, oils, rinses — set a rhythm and we’ll keep track."
-            actionLabel="Add a treatment"
+            title="No care plan yet"
+            message="Wash day, oiling, a protein treatment — write the steps once and keep the rhythm."
+            actionLabel="Write a care plan"
             onAction={create}
           />
         )}
       </View>
     </Screen>
-  );
-}
-
-interface BoardsProps {
-  entries: MoodBoardEntry[];
-  loading: boolean;
-  month: Date;
-  day: Date | null;
-  onMonthChange: (month: Date) => void;
-  onDayChange: (day: Date | null) => void;
-  onCreate: () => void;
-}
-
-function Boards({
-  entries,
-  loading,
-  month,
-  day,
-  onMonthChange,
-  onDayChange,
-  onCreate,
-}: BoardsProps) {
-  const styles = useStyles();
-
-  const marked = new Set<string>();
-  for (const entry of entries) {
-    const when = appointmentOf(entry);
-    if (when) marked.add(dayKey(when));
-  }
-  const shown = day
-    ? entries.filter(entry => {
-        const when = appointmentOf(entry);
-        return !!when && isSameDay(when, day);
-      })
-    : entries;
-
-  return (
-    <>
-      <MonthCalendar
-        month={month}
-        onMonthChange={onMonthChange}
-        selected={day}
-        // Tapping the selected day again goes back to the whole month.
-        onSelect={next => onDayChange(day && isSameDay(day, next) ? null : next)}
-        marked={marked}
-      />
-      <View>
-        <SectionHeader
-          title={day ? format(day, 'EEEE d MMMM') : `${format(month, 'MMMM')} boards`}
-          actionLabel={day ? 'Whole month' : undefined}
-          onAction={() => onDayChange(null)}
-        />
-        {loading ? (
-          <View style={styles.row}>
-            <Skeleton height={220} style={styles.spacer} />
-            <Skeleton height={220} style={styles.spacer} />
-          </View>
-        ) : shown.length === 0 ? (
-          <EmptyState
-            icon={Sparkles}
-            title={day ? 'Nothing planned that day' : 'Nothing planned yet'}
-            message="Start a board for the next style you’re dreaming about."
-            actionLabel="Plan a look"
-            onAction={onCreate}
-          />
-        ) : (
-          <BoardGrid entries={shown} />
-        )}
-      </View>
-    </>
   );
 }
