@@ -11,6 +11,13 @@ function menuOf(accountId: string) {
   return menu;
 }
 
+/** Her portfolio, created empty the first time she imports into it. */
+function portfolioOf(accountId: string) {
+  const photos = db.portfolios.get(accountId) ?? [];
+  db.portfolios.set(accountId, photos);
+  return photos;
+}
+
 /** What the server would keep from a posted draft, and nothing else. */
 function newItem(body: any) {
   const name = String(body?.name ?? '').trim();
@@ -124,5 +131,43 @@ defineMocks({
     }));
     menu.push(...added);
     return added;
+  },
+
+  'GET /api/stylists/me/portfolio/': request => db.portfolios.get(requireAccount(request)) ?? [],
+
+  'POST /api/stylists/me/portfolio/': request => {
+    const photos = portfolioOf(requireAccount(request));
+    const drafts = request.body?.photos ?? [];
+    if (!Array.isArray(drafts) || !drafts.length) throw new MockError(400, 'No photos to add');
+    const added = drafts.map((draft: any, index: number) => {
+      const uri = String(draft?.uri ?? '').trim();
+      if (!uri) throw new MockError(400, 'A photo needs a picture');
+      return {
+        id: `pho_${Date.now()}_${index}`,
+        uri,
+        serviceId: draft?.serviceId ? String(draft.serviceId) : undefined,
+        createdAt: new Date().toISOString(),
+      };
+    });
+    // Newest first, the way she'll want to see them.
+    photos.unshift(...added);
+    return added;
+  },
+
+  'PATCH /api/stylists/me/portfolio/:id/': request => {
+    const photo = portfolioOf(requireAccount(request)).find(p => p.id === request.params.id);
+    if (!photo) throw new MockError(404, 'That photo is no longer in your portfolio');
+    // An untagged photo clears the field rather than storing an empty string.
+    if ('serviceId' in (request.body ?? {})) photo.serviceId = request.body.serviceId || undefined;
+    return photo;
+  },
+
+  'DELETE /api/stylists/me/portfolio/:id/': request => {
+    const accountId = requireAccount(request);
+    db.portfolios.set(
+      accountId,
+      portfolioOf(accountId).filter(photo => photo.id !== request.params.id)
+    );
+    return null;
   },
 });

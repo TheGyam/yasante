@@ -148,5 +148,9 @@ rules keep the app the same speed at ten thousand items as at ten.
 - **Search, the library and saved items read one page of content.** Each filters or
   joins what `useContent({ limit })` returns, so results are capped. They need
   server-side search, topic paging, and saved items returned with their content.
+- **Bottom sheets don't open in the web preview.** `Sheet` presents nothing there,
+  in a modal screen or a tab — `edit-profile`'s photo sheet included, so it predates
+  the portfolio work. Anything behind a sheet has to be checked on a device.
+
 - **Formatting drift.** `npm run format` rewrites a large number of files. Do it
   as its own commit, never mixed with a change.

@@ -3,7 +3,12 @@ import { useAuth } from '@/features/auth';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import { stylistApi } from './api';
 import { handleProblem } from './handle';
-import type { MenuItemDraft, StylistProfile, StylistProfileDraft } from './types';
+import type {
+  MenuItemDraft,
+  PortfolioPhotoDraft,
+  StylistProfile,
+  StylistProfileDraft,
+} from './types';
 
 const KEY = 'stylist';
 
@@ -140,4 +145,46 @@ export function useImportMenu() {
     mutationFn: (drafts: MenuItemDraft[]) => stylistApi.importMenu(drafts),
     onSuccess,
   });
+}
+
+/** Her portfolio. Virtualised where it's drawn, so it can grow without limit. */
+export function usePortfolio() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: [KEY, 'portfolio', user?.id],
+    queryFn: stylistApi.getPortfolio,
+    enabled: !!user?.roles?.includes('stylist'),
+    staleTime: 5 * 60 * 1000,
+    retry: (count, error) => !isNotFound(error) && count < 2,
+  });
+}
+
+function useRefreshPortfolio() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  return () => queryClient.invalidateQueries({ queryKey: [KEY, 'portfolio', user?.id] });
+}
+
+/** A batch of photos, tagged as she imported them. */
+export function useAddPhotos() {
+  const onSuccess = useRefreshPortfolio();
+  return useMutation({
+    mutationFn: (photos: PortfolioPhotoDraft[]) => stylistApi.addPhotos(photos),
+    onSuccess,
+  });
+}
+
+/** Takes the id per call: a grid re-tags whichever photo was tapped. */
+export function useUpdatePhoto() {
+  const onSuccess = useRefreshPortfolio();
+  return useMutation({
+    mutationFn: ({ id, ...changes }: Partial<PortfolioPhotoDraft> & { id: string }) =>
+      stylistApi.updatePhoto(id, changes),
+    onSuccess,
+  });
+}
+
+export function useRemovePhoto() {
+  const onSuccess = useRefreshPortfolio();
+  return useMutation({ mutationFn: (id: string) => stylistApi.removePhoto(id), onSuccess });
 }

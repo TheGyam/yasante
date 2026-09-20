@@ -2,6 +2,8 @@ import { apiClient } from '@/shared/lib/api/client';
 import type {
   MenuItem,
   MenuItemDraft,
+  PortfolioPhoto,
+  PortfolioPhotoDraft,
   StylistProfile,
   StylistProfileDraft,
   StylistSummary,
@@ -59,4 +61,24 @@ export const stylistApi = {
   /** POST /api/stylists/me/menu/import/ — a pasted price list, appended in one go. */
   importMenu: async (items: MenuItemDraft[]) =>
     (await apiClient.post<MenuItem[]>('/api/stylists/me/menu/import/', { items })).data,
+
+  /** GET /api/stylists/me/portfolio/ */
+  getPortfolio: async () =>
+    (await apiClient.get<PortfolioPhoto[]>('/api/stylists/me/portfolio/')).data,
+
+  /**
+   * POST /api/stylists/me/portfolio/ — photos always arrive as a batch, even a batch
+   * of one. `uri` is a local file until the backend can take an upload.
+   */
+  addPhotos: async (photos: PortfolioPhotoDraft[]) =>
+    (await apiClient.post<PortfolioPhoto[]>('/api/stylists/me/portfolio/', { photos })).data,
+
+  /** PATCH /api/stylists/me/portfolio/:id/ — re-tag a photo. */
+  updatePhoto: async (id: string, changes: Partial<PortfolioPhotoDraft>) =>
+    (await apiClient.patch<PortfolioPhoto>(`/api/stylists/me/portfolio/${id}/`, changes)).data,
+
+  /** DELETE /api/stylists/me/portfolio/:id/ */
+  removePhoto: async (id: string) => {
+    await apiClient.delete(`/api/stylists/me/portfolio/${id}/`);
+  },
 };

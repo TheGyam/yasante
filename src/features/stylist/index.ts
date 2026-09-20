@@ -2,6 +2,8 @@ export type {
   DepositType,
   MenuItem,
   MenuItemDraft,
+  PortfolioPhoto,
+  PortfolioPhotoDraft,
   ServiceModel,
   StylistPolicies,
   StylistProfile,

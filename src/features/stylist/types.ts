@@ -67,6 +67,17 @@ export interface MenuItem {
 
 export type MenuItemDraft = Omit<MenuItem, 'id'>;
 
+/** One picture of her work. */
+export interface PortfolioPhoto {
+  id: string;
+  uri: string;
+  /** The menu service it shows, when she's said — that's what ties a photo to a price. */
+  serviceId?: string;
+  createdAt: string;
+}
+
+export type PortfolioPhotoDraft = Pick<PortfolioPhoto, 'uri' | 'serviceId'>;
+
 /** What waits in stylist mode — drives the badge on the mode switch. */
 export interface StylistSummary {
   pendingRequests: number;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   pickImageFromLibrary,
+  pickImagesFromLibrary,
   takePhoto,
   compressImage,
   ImagePickerResult,
@@ -30,6 +31,23 @@ export function useImagePicker() {
     }
   };
 
+  /** Several at once. Compressed one after another, which is slow but predictable. */
+  const pickManyFromLibrary = async (limit?: number): Promise<string[]> => {
+    try {
+      setLoading(true);
+      setError(null);
+      const picked = await pickImagesFromLibrary(limit);
+      const uris: string[] = [];
+      for (const image of picked) uris.push(await compressImage(image.uri));
+      return uris;
+    } catch (err: any) {
+      setError(err.message || 'Failed to pick images');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const takePicture = async (compress: boolean = true): Promise<string | null> => {
     try {
       setLoading(true);
@@ -52,6 +70,7 @@ export function useImagePicker() {
 
   return {
     pickFromLibrary,
+    pickManyFromLibrary,
     takePicture,
     loading,
     error,

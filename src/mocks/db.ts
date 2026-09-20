@@ -1,5 +1,5 @@
 import type { User } from '@/features/profile';
-import type { MenuItem, StylistProfile } from '@/features/stylist';
+import type { MenuItem, PortfolioPhoto, StylistProfile } from '@/features/stylist';
 
 /**
  * An in-memory stand-in for the backend, seeded with two accounts:
@@ -103,6 +103,9 @@ export const db = {
       ],
     ],
   ]),
+
+  /** Portfolio photos, keyed by account. Empty until someone imports some. */
+  portfolios: new Map<string, PortfolioPhoto[]>(),
 
   /** Stylist invites. FOUNDING50 always works; USED1 has been redeemed. */
   invites: new Map([
