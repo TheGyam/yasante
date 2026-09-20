@@ -54,6 +54,33 @@ export async function pickImageFromLibrary(): Promise<ImagePickerResult | null> 
 }
 
 /**
+ * Pick several images at once, for a portfolio someone fills in one sitting.
+ * No cropping: choosing twenty photos and cropping each is nobody's afternoon.
+ */
+export async function pickImagesFromLibrary(limit = 20): Promise<ImagePickerResult[]> {
+  const hasPermission = await requestMediaLibraryPermissions();
+  if (!hasPermission) {
+    throw new Error('Media library permission not granted');
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsMultipleSelection: true,
+    selectionLimit: limit,
+    quality: 0.8,
+  });
+
+  if (result.canceled) return [];
+
+  return result.assets.map(asset => ({
+    uri: asset.uri,
+    width: asset.width,
+    height: asset.height,
+    type: asset.type ?? undefined,
+  }));
+}
+
+/**
  * Take photo with camera
  */
 export async function takePhoto(): Promise<ImagePickerResult | null> {

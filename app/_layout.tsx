@@ -99,6 +99,7 @@ function RootNavigator() {
           <Stack.Screen name="menu/index" />
           <Stack.Screen name="menu/paste" options={modal} />
           <Stack.Screen name="menu/[id]" options={modal} />
+          <Stack.Screen name="portfolio/import" options={modal} />
           <Stack.Screen name="boards/new" options={modal} />
           <Stack.Screen name="boards/[id]/edit" options={modal} />
           <Stack.Screen name="treatments/new" options={modal} />
