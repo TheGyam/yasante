@@ -16,6 +16,7 @@ import { Button } from '@/shared/ui/Button';
 import { notify } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/Input';
 import { ListRow } from '@/shared/ui/ListRow';
+import { Rise } from '@/shared/ui/Rise';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Text } from '@/shared/ui/Text';
@@ -87,15 +88,17 @@ export default function PastePriceListScreen() {
             footer="Check these read right — you can edit any of them afterwards."
           >
             {readable.map((service, index) => (
-              <ListRow
-                key={`${service.raw}-${index}`}
-                title={service.name}
-                subtitle={
-                  service.durationMinutes ? formatDuration(service.durationMinutes) : undefined
-                }
-                value={formatPrice({ price: service.price!, fromPrice: service.fromPrice })}
-                icon={Scissors}
-              />
+              // Each line lands a beat after the one above: the list being read.
+              <Rise key={`${service.raw}-${index}`} index={index}>
+                <ListRow
+                  title={service.name}
+                  subtitle={
+                    service.durationMinutes ? formatDuration(service.durationMinutes) : undefined
+                  }
+                  value={formatPrice({ price: service.price!, fromPrice: service.fromPrice })}
+                  icon={Scissors}
+                />
+              </Rise>
             ))}
           </Section>
         )}

@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { format } from 'date-fns';
+import { format, isToday } from 'date-fns';
 import { Check, CircleCheck, Pencil, Trash2 } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
@@ -18,6 +18,7 @@ import { Button } from '@/shared/ui/Button';
 import { confirm, notify } from '@/shared/ui/dialog';
 import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
+import { Rise } from '@/shared/ui/Rise';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -40,6 +41,7 @@ export default function CarePlanScreen() {
   const { data: sessions = [] } = useCarePlanSessions(id);
 
   const log = useLogCarePlanSession(id);
+  const doneToday = !!plan?.lastDoneAt && isToday(new Date(plan.lastDoneAt));
   const remove = useDeleteCarePlan();
 
   const markDone = async () => {
@@ -100,9 +102,13 @@ export default function CarePlanScreen() {
             <Text variant="title2" accessibilityRole="header">
               {plan.name}
             </Text>
-            <Text variant="subhead" tone="secondary">
-              {describePlan(plan)} · {dueLabel(plan)}
-            </Text>
+            {/* Keyed on the date: marking it done replays the arrival, so the thing
+                that changed is the thing that moves. */}
+            <Rise key={dueLabel(plan)}>
+              <Text variant="subhead" tone="secondary">
+                {describePlan(plan)} · {dueLabel(plan)}
+              </Text>
+            </Rise>
           </View>
 
           <Section title="Steps">
@@ -112,9 +118,13 @@ export default function CarePlanScreen() {
           </Section>
 
           <Button
-            label="I did this today"
+            label={doneToday ? 'Done today' : 'I did this today'}
             icon={Check}
+            variant={doneToday ? 'secondary' : 'primary'}
             onPress={markDone}
+            // Pressing again would log the same day twice and tell her the plan is
+            // due a week from the second tap.
+            disabled={doneToday}
             loading={log.isPending}
             fullWidth
             testID="care-plan-done"
@@ -123,13 +133,14 @@ export default function CarePlanScreen() {
           {sessions.length > 0 && (
             <Section title="When you followed it" footer="Kept as a record, never edited.">
               {sessions.slice(0, 10).map(session => (
-                <ListRow
-                  key={session.id}
-                  title={format(new Date(session.completedAt), 'EEEE d MMMM')}
-                  subtitle={session.notes}
-                  icon={CircleCheck}
-                  iconTone="success"
-                />
+                <Rise key={session.id}>
+                  <ListRow
+                    title={format(new Date(session.completedAt), 'EEEE d MMMM')}
+                    subtitle={session.notes}
+                    icon={CircleCheck}
+                    iconTone="success"
+                  />
+                </Rise>
               ))}
             </Section>
           )}
