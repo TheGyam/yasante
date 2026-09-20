@@ -7,22 +7,30 @@
 import { useAuthStore } from '@/features/auth';
 import { apiClient } from '@/shared/lib/api/client';
 import { installMocks, mockToken } from '@/shared/lib/api/mock';
-import { findAccountByEmail } from './db';
+import { db, findAccountByEmail } from './db';
 import './auth';
 import './users';
 import './stylist';
+import './looks';
 import './verification';
 import './invites';
 
 installMocks(apiClient);
 
-if (__DEV__) console.log('[mocks] API mocks on. Sign in as client@yasante.dev or ama@yasante.dev');
+if (__DEV__)
+  console.log(
+    '[mocks] API mocks on. Sign in as client@yasante.dev, ama@yasante.dev or zainab@yasante.dev'
+  );
 
-// Console helper for switching accounts while developing: mockSignIn('ama@yasante.dev')
+// Console helpers: mockSignIn('ama@yasante.dev') to switch accounts, mockDb to see
+// what the mock backend is actually holding when a screen disagrees with it.
 declare global {
   // eslint-disable-next-line no-var -- globals can only be declared with var
   var mockSignIn: ((email: string) => void) | undefined;
+  // eslint-disable-next-line no-var
+  var mockDb: typeof db | undefined;
 }
+globalThis.mockDb = db;
 globalThis.mockSignIn = email => {
   const account = findAccountByEmail(email);
   if (!account) throw new Error(`No mock account for ${email}`);

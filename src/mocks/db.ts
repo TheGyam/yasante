@@ -40,6 +40,19 @@ export const db = {
       },
     ],
     [
+      'acc_zainab',
+      {
+        id: 'acc_zainab',
+        name: 'Zainab Bello',
+        email: 'zainab@yasante.dev',
+        phone: '+447700900333',
+        phoneVerified: true,
+        roles: ['client', 'stylist'],
+        createdAt: now,
+        updatedAt: now,
+      },
+    ],
+    [
       'acc_new',
       {
         id: 'acc_new',
@@ -77,6 +90,27 @@ export const db = {
         createdAt: now,
       },
     ],
+    [
+      'acc_zainab',
+      {
+        id: 'sty_zainab',
+        accountId: 'acc_zainab',
+        displayName: 'Zainab Does Hair',
+        handle: 'zainabdoeshair',
+        bio: 'Silk presses and cornrows. Heat-safe, always.',
+        serviceModels: ['salon'],
+        baseArea: 'Dalston',
+        policies: {
+          noticeHours: 24,
+          depositType: 'percent' as const,
+          depositAmount: 20,
+          rescheduleFreeOnce: true,
+        },
+        verificationTier: 1,
+        published: true,
+        createdAt: now,
+      },
+    ],
   ]),
 
   /** A stylist's menu, keyed by account. Ama has three services already. */
@@ -103,6 +137,61 @@ export const db = {
       ],
     ],
   ]),
+
+  /**
+   * Looks, newest first. Stored without the author's name or avatar — the feed
+   * reads those from the account each time, the way a join would.
+   */
+  looks: [
+    {
+      id: 'look_seed_1',
+      authorId: 'acc_ama',
+      photoUri: 'https://images.unsplash.com/photo-1595959183082-7b570b7e08e2?w=800&q=80',
+      caption: 'Knotless, waist length, done in one sitting.',
+      serviceName: 'Knotless braids',
+      price: 120,
+      fromPrice: true,
+      createdAt: now,
+    },
+    {
+      id: 'look_seed_2',
+      authorId: 'acc_zainab',
+      photoUri: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=800&q=80',
+      caption: 'Silk press on 4c hair. No heat damage, ever.',
+      serviceName: 'Silk press',
+      price: 55,
+      fromPrice: false,
+      createdAt: now,
+    },
+    {
+      id: 'look_seed_3',
+      authorId: 'acc_zainab',
+      photoUri: 'https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=800&q=80',
+      caption: 'Cornrows with a bit of colour.',
+      createdAt: now,
+    },
+  ] as {
+    id: string;
+    authorId: string;
+    photoUri: string;
+    caption?: string;
+    serviceName?: string;
+    price?: number;
+    fromPrice?: boolean;
+    createdAt: string;
+  }[],
+
+  /** Who each account has blocked. Blocking is mutual. */
+  blocks: new Map<string, Set<string>>(),
+
+  /** Reports go to moderation. Nothing here reaches the person reported. */
+  reports: [] as {
+    lookId: string;
+    reason: string;
+    note?: string;
+    reportedBy: string;
+    at: string;
+  }[],
 
   /** Portfolio photos, keyed by account. Empty until someone imports some. */
   portfolios: new Map<string, PortfolioPhoto[]>(),
