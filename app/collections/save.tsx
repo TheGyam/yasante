@@ -57,11 +57,14 @@ export default function SaveToCollectionScreen() {
   };
 
   const saveTo = async (id: string) => {
+    if (saved) return;
     try {
       await add.mutateAsync({ id, kind, refId, title, imageUri });
       haptics.success();
       setSaved(id);
-      router.back();
+      // The tick has to be seen. Closing in the same breath as setting it meant the
+      // screen just vanished and she never learned which collection it went into.
+      setTimeout(() => router.back(), 550);
     } catch (error) {
       await fail(error);
     }
