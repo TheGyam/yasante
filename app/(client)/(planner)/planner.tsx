@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { CalendarHeart, Droplets, FolderHeart, Plus } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
@@ -6,6 +6,7 @@ import {
   CollectionCard,
   describePlan,
   dueLabel,
+  nextDue,
   useCarePlans,
   useCollections,
 } from '@/features/planner';
@@ -40,6 +41,13 @@ export default function PlannerScreen() {
 
   const collections = useCollections();
   const plans = useCarePlans();
+
+  // What's late, then what's next. A plan she's already done today is the least
+  // useful row on the screen, so it sinks to the bottom on its own.
+  const duePlans = useMemo(
+    () => [...(plans.data ?? [])].sort((a, b) => +nextDue(a) - +nextDue(b)),
+    [plans.data]
+  );
 
   if (!isAuthenticated) {
     return (
@@ -101,9 +109,9 @@ export default function PlannerScreen() {
               onAction={create}
             />
           )
-        ) : plans.data?.length ? (
+        ) : duePlans.length ? (
           <Section footer="Marking a plan done is what moves its next date.">
-            {plans.data.map(plan => (
+            {duePlans.map(plan => (
               <ListRow
                 key={plan.id}
                 title={plan.name}

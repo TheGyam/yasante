@@ -7,6 +7,7 @@ import { IconButton } from '@/shared/ui/IconButton';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
+import { postedLabel } from '../format';
 import type { Look } from '../types';
 
 export interface LookCardProps {
@@ -46,27 +47,38 @@ export function LookCard({ look, onOpenAuthor, onSave, onMore }: LookCardProps) 
     ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
     : undefined;
 
+  const who = (
+    <>
+      <Avatar uri={look.authorAvatarUri} name={look.authorName} size={36} />
+      <View style={styles.names}>
+        <Text variant="callout" numberOfLines={1}>
+          {look.authorName}
+        </Text>
+        <Text variant="caption" tone="tertiary" numberOfLines={1}>
+          {[look.authorHandle && `@${look.authorHandle}`, postedLabel(look.createdAt)]
+            .filter(Boolean)
+            .join(' · ')}
+        </Text>
+      </View>
+    </>
+  );
+
   return (
     <View style={styles.card}>
       <View style={styles.author}>
-        <PressableScale
-          onPress={() => onOpenAuthor?.(look)}
-          disabled={!onOpenAuthor}
-          accessibilityLabel={`${look.authorName}, open their page`}
-          containerStyle={styles.author}
-        >
-          <Avatar uri={look.authorAvatarUri} name={look.authorName} size={36} />
-          <View style={styles.names}>
-            <Text variant="callout" numberOfLines={1}>
-              {look.authorName}
-            </Text>
-            {!!look.authorHandle && (
-              <Text variant="caption" tone="tertiary" numberOfLines={1}>
-                @{look.authorHandle}
-              </Text>
-            )}
-          </View>
-        </PressableScale>
+        {/* A name with nowhere to go is a name, not a disabled button — a screen
+            reader shouldn't offer it. */}
+        {onOpenAuthor ? (
+          <PressableScale
+            onPress={() => onOpenAuthor(look)}
+            accessibilityLabel={`${look.authorName}, open their page`}
+            containerStyle={styles.author}
+          >
+            {who}
+          </PressableScale>
+        ) : (
+          <View style={styles.author}>{who}</View>
+        )}
         <IconButton
           icon={MoreHorizontal}
           variant="plain"

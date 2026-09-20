@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { CircleHelp, Scissors } from 'lucide-react-native';
+import { Check, CircleHelp, Scissors } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
   formatDuration,
   formatPrice,
   parsePriceList,
+  serviceKey,
   useImportMenu,
+  useMenu,
   type MenuItemDraft,
 } from '@/features/stylist';
 import { haptics } from '@/shared/lib/haptics';
@@ -40,8 +42,15 @@ export default function PastePriceListScreen() {
   const [text, setText] = useState('');
   const importMenu = useImportMenu();
 
+  const { data: menu = [] } = useMenu();
+
   const parsed = useMemo(() => parsePriceList(text), [text]);
-  const readable = parsed.filter(service => service.price !== undefined);
+  // Pasting the same list twice is the normal way to add the two services she
+  // forgot, so anything already on the menu is set aside rather than duplicated.
+  const onMenu = useMemo(() => new Set(menu.map(item => serviceKey(item.name))), [menu]);
+  const priced = parsed.filter(service => service.price !== undefined);
+  const readable = priced.filter(service => !onMenu.has(serviceKey(service.name)));
+  const already = priced.filter(service => onMenu.has(serviceKey(service.name)));
   const unreadable = parsed.filter(service => service.price === undefined);
 
   const save = async () => {
@@ -99,6 +108,22 @@ export default function PastePriceListScreen() {
                   icon={Scissors}
                 />
               </Rise>
+            ))}
+          </Section>
+        )}
+
+        {already.length > 0 && (
+          <Section
+            title="Already on your menu"
+            footer="Left as they are — edit them on your menu if the price has changed."
+          >
+            {already.map((service, index) => (
+              <ListRow
+                key={`${service.raw}-${index}`}
+                title={service.name}
+                icon={Check}
+                iconTone="success"
+              />
             ))}
           </Section>
         )}
