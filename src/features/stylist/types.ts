@@ -52,6 +52,21 @@ export type StylistProfileDraft = Pick<
   | 'proofPhotoUri'
 >;
 
+/** One line of her menu: what she does, what it costs, how long it takes. */
+export interface MenuItem {
+  id: string;
+  name: string;
+  /** Pounds. */
+  price: number;
+  /** Braids are priced by length and size, so most prices are a starting point. */
+  fromPrice: boolean;
+  durationMinutes?: number;
+  /** "Hair not included", "Bring your own beads". */
+  note?: string;
+}
+
+export type MenuItemDraft = Omit<MenuItem, 'id'>;
+
 /** What waits in stylist mode — drives the badge on the mode switch. */
 export interface StylistSummary {
   pendingRequests: number;

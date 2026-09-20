@@ -1,5 +1,11 @@
 import { apiClient } from '@/shared/lib/api/client';
-import type { StylistProfile, StylistProfileDraft, StylistSummary } from './types';
+import type {
+  MenuItem,
+  MenuItemDraft,
+  StylistProfile,
+  StylistProfileDraft,
+  StylistSummary,
+} from './types';
 
 export interface HandleCheck {
   handle: string;
@@ -33,4 +39,24 @@ export const stylistApi = {
 
   /** POST /api/stylists/me/publish/ — puts the page live. Needs a verified phone. */
   publish: async () => (await apiClient.post<StylistProfile>('/api/stylists/me/publish/')).data,
+
+  /** GET /api/stylists/me/menu/ — her whole menu, in the order she arranged it. */
+  getMenu: async () => (await apiClient.get<MenuItem[]>('/api/stylists/me/menu/')).data,
+
+  /** POST /api/stylists/me/menu/ */
+  addMenuItem: async (draft: MenuItemDraft) =>
+    (await apiClient.post<MenuItem>('/api/stylists/me/menu/', draft)).data,
+
+  /** PATCH /api/stylists/me/menu/:id/ */
+  updateMenuItem: async (id: string, changes: Partial<MenuItemDraft>) =>
+    (await apiClient.patch<MenuItem>(`/api/stylists/me/menu/${id}/`, changes)).data,
+
+  /** DELETE /api/stylists/me/menu/:id/ */
+  removeMenuItem: async (id: string) => {
+    await apiClient.delete(`/api/stylists/me/menu/${id}/`);
+  },
+
+  /** POST /api/stylists/me/menu/import/ — a pasted price list, appended in one go. */
+  importMenu: async (items: MenuItemDraft[]) =>
+    (await apiClient.post<MenuItem[]>('/api/stylists/me/menu/import/', { items })).data,
 };

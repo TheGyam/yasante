@@ -1,5 +1,5 @@
 import type { User } from '@/features/profile';
-import type { StylistProfile } from '@/features/stylist';
+import type { MenuItem, StylistProfile } from '@/features/stylist';
 
 /**
  * An in-memory stand-in for the backend, seeded with two accounts:
@@ -76,6 +76,31 @@ export const db = {
         published: true,
         createdAt: now,
       },
+    ],
+  ]),
+
+  /** A stylist's menu, keyed by account. Ama has three services already. */
+  menus: new Map<string, MenuItem[]>([
+    [
+      'acc_ama',
+      [
+        {
+          id: 'men_knotless',
+          name: 'Knotless braids',
+          price: 120,
+          fromPrice: true,
+          durationMinutes: 300,
+          note: 'Hair not included',
+        },
+        { id: 'men_cornrows', name: 'Cornrows', price: 45, fromPrice: false, durationMinutes: 120 },
+        {
+          id: 'men_takedown',
+          name: 'Take down and wash',
+          price: 30,
+          fromPrice: false,
+          durationMinutes: 60,
+        },
+      ],
     ],
   ]),
 

@@ -113,7 +113,10 @@ export function installMocks(client: AxiosInstance) {
           body,
           accountId,
         });
-        return respond(200, data);
+        // A real response is parsed fresh every time. Handlers hand back the objects
+        // they store, and returning those live would let a later write change data
+        // already in the query cache — which then can't tell it has changed at all.
+        return respond(200, data === undefined ? data : JSON.parse(JSON.stringify(data)));
       } catch (error) {
         if (!(error instanceof MockError)) throw error;
         const failure = Object.assign(new Error(error.message), {

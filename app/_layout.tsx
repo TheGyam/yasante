@@ -96,6 +96,9 @@ function RootNavigator() {
           <Stack.Screen name="settings/report" />
           <Stack.Screen name="hair-profile" options={modal} />
           <Stack.Screen name="stylist-setup" options={modal} />
+          <Stack.Screen name="menu/index" />
+          <Stack.Screen name="menu/paste" options={modal} />
+          <Stack.Screen name="menu/[id]" options={modal} />
           <Stack.Screen name="boards/new" options={modal} />
           <Stack.Screen name="boards/[id]/edit" options={modal} />
           <Stack.Screen name="treatments/new" options={modal} />
