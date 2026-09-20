@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { FlashList } from '@shopify/flash-list';
 import { Clock, SearchX, X } from 'lucide-react-native';
@@ -113,7 +113,14 @@ export default function SearchScreen() {
           }
         />
       ) : (
-        <View style={styles.idle}>
+        // Recents plus every topic can outgrow a small screen, and the tab bar
+        // floats over the last of them.
+        <ScrollView
+          contentContainerStyle={[styles.idle, { paddingBottom: insets.bottom }]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+        >
           {recents.length > 0 && (
             <View>
               <SectionHeader
@@ -153,7 +160,7 @@ export default function SearchScreen() {
               ))}
             </View>
           </View>
-        </View>
+        </ScrollView>
       )}
     </Screen>
   );

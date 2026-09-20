@@ -51,7 +51,6 @@ export default function HomeScreen() {
   return (
     <Screen
       scroll="list"
-      tabBar
       testID="home-screen"
       headerRight={
         <IconButton
@@ -88,7 +87,7 @@ function HomeFeed() {
   const theme = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const insets = useContentInsets({ tabBar: true });
+  const insets = useContentInsets();
   const onScroll = useScreenScrollHandler();
   const listRef = useRef<FlashListRef<Content>>(null);
   useScrollToTop(listRef);

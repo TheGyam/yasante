@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { CalendarClock, CircleUserRound, Images, Inbox } from 'lucide-react-native';
 import { useModeStore } from '@/features/stylist';
+import { TabBarProvider } from '@/shared/ui/layout';
 import { TabBar, type TabItem } from '@/shared/ui/TabBar';
 
 const TABS: readonly TabItem[] = [
@@ -27,5 +28,9 @@ const renderTabBar = (props: BottomTabBarProps) => (
 );
 
 export default function StylistTabsLayout() {
-  return <Tabs tabBar={renderTabBar} screenOptions={SCREEN_OPTIONS} />;
+  return (
+    <TabBarProvider>
+      <Tabs tabBar={renderTabBar} screenOptions={SCREEN_OPTIONS} />
+    </TabBarProvider>
+  );
 }

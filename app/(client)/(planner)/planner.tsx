@@ -51,7 +51,7 @@ export default function PlannerScreen() {
 
   if (!isAuthenticated) {
     return (
-      <Screen title="Planner" tabBar testID="planner-screen">
+      <Screen title="Planner" testID="planner-screen">
         <EmptyState
           icon={CalendarHeart}
           title="Plan your next look"
@@ -69,7 +69,6 @@ export default function PlannerScreen() {
   return (
     <Screen
       title="Planner"
-      tabBar
       testID="planner-screen"
       refreshing={active.isRefetching}
       onRefresh={() => active.refetch()}

@@ -24,7 +24,6 @@ export default function TodayScreen() {
     <Screen
       title="Today"
       subtitle={format(new Date(), 'EEEE d MMMM')}
-      tabBar
       refreshing={isRefetching}
       onRefresh={refetch}
       testID="stylist-today"
