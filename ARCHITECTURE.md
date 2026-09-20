@@ -72,10 +72,14 @@ circular dependency the old lazy `require` existed to work around.
 
 ## Features today
 
-`auth` · `profile` · `planner` · `education`
+`auth` · `profile` · `planner` · `education` · `stylist` · `looks`
 
-Phase 1 adds `looks`, `stylist`, `booking`, `products` and later `insights`. Each
-one is a new folder following the same shape — no changes needed elsewhere.
+Phase 1 still adds `booking` and `products`, and later `insights`. Each one is a new
+folder following the same shape — no changes needed elsewhere.
+
+`planner` is the client's own planning: collections (what she saves) and care plans
+(how she looks after the hair she has). Both replaced what came before — mood boards
+and treatments — because a booking owns the stylist, price and appointment now.
 
 ## Modes and navigation
 
@@ -90,12 +94,19 @@ you opened them from. See the comments in each `_layout.tsx`.
 ## Mocks
 
 Until an endpoint exists on the backend, the app answers it from `src/mocks`, an
-in-memory stand-in seeded with two accounts (`client@yasante.dev`, and
-`ama@yasante.dev`, who is also a stylist). Mocks run only in development with
-`EXPO_PUBLIC_API_MOCKS=true`, which `.env.development` sets. Anything without a mock
-goes to the real API. When an endpoint ships, delete its handlers.
+in-memory stand-in. Mocks run only in development with `EXPO_PUBLIC_API_MOCKS=true`,
+which `.env.development` sets. Anything without a mock goes to the real API. When an
+endpoint ships, delete its handlers.
 
-In the browser console, `mockSignIn('ama@yasante.dev')` signs in without the form.
+A mock returns a copy of what it stores. Handing back the live object let a write
+change data already sitting in the query cache, which then couldn't tell it had
+changed and never re-rendered.
+
+In the browser console, `mockSignIn('ama@yasante.dev')` signs in without the form, and
+`mockDb` is the store itself, for when a screen and the mock backend disagree.
+
+Seeded accounts: `client@yasante.dev`, `ama@yasante.dev` and `zainab@yasante.dev`
+(both stylists), `new@yasante.dev` (phone not verified).
 
 ## Design system
 
@@ -150,6 +161,11 @@ rules keep the app the same speed at ten thousand items as at ten.
 - **Search, the library and saved items read one page of content.** Each filters or
   joins what `useContent({ limit })` returns, so results are capped. They need
   server-side search, topic paging, and saved items returned with their content.
+- **Editing anything under `src/mocks` needs the dev server restarted**, not just a
+  reload. After an edit the bundler keeps serving a mock layer whose requests never
+  answer, so a mocked screen sits on its skeleton for ever. Reloading the page does
+  not clear it; `npx expo start` again does.
+
 - **Bottom sheets don't open in the web preview.** `Sheet` presents nothing there,
   in a modal screen or a tab — `edit-profile`'s photo sheet included, so it predates
   the portfolio work. Anything behind a sheet has to be checked on a device.

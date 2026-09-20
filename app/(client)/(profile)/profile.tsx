@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { Bookmark, Droplets, LayoutGrid, Settings, UserRound } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
-import { BoardGrid, useMoodBoardEntries, useSavedMoodBoardEntries } from '@/features/planner';
+import { useCollections } from '@/features/planner';
 import { hairTraits, useUser, useUserStore } from '@/features/profile';
 import { ModeSwitchRow, useIsStylist } from '@/features/stylist';
 import { Scissors } from 'lucide-react-native';
@@ -17,14 +16,7 @@ import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
-import { SegmentedControl } from '@/shared/ui/SegmentedControl';
-import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
-
-const BOARD_TABS = [
-  { value: 'mine', label: 'My boards' },
-  { value: 'saved', label: 'Saved boards' },
-] as const;
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
@@ -32,7 +24,6 @@ const useStyles = makeStyles(() => ({
   names: { alignItems: 'center', gap: 2, marginBottom: space.xs },
   hair: { gap: space.md },
   traits: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  boards: { gap: space.lg },
 }));
 
 export default function ProfileScreen() {
@@ -55,7 +46,7 @@ export default function ProfileScreen() {
         <EmptyState
           icon={UserRound}
           title="Your hair, your space"
-          message="Create a free account to keep your boards, saved styles and hair profile in one place."
+          message="Create a free account to keep your collections, saved styles and hair profile in one place."
           actionLabel="Create a free account"
           onAction={() => router.push('/auth/join')}
         />
@@ -73,11 +64,7 @@ function Profile() {
   // The quiz can be taken before signing up, so fall back to this device's answers.
   const localHair = useUserStore(s => s.hairProfile);
   const traits = hairTraits(user?.hairProfile ?? localHair);
-  const [tab, setTab] = useState<'mine' | 'saved'>('mine');
-
-  const mine = useMoodBoardEntries(authUser?.id, undefined, { enabled: tab === 'mine' });
-  const saved = useSavedMoodBoardEntries(authUser?.id, undefined, { enabled: tab === 'saved' });
-  const boards = tab === 'mine' ? mine : saved;
+  const collections = useCollections();
   const name = user?.name ?? authUser?.name;
 
   return (
@@ -139,6 +126,17 @@ function Profile() {
 
       <Section>
         <ListRow
+          title="Your collections"
+          subtitle={
+            collections.data?.length
+              ? `${collections.data.length} ${collections.data.length === 1 ? 'collection' : 'collections'}`
+              : 'Nothing saved yet'
+          }
+          icon={LayoutGrid}
+          onPress={() => router.navigate('/planner')}
+          testID="profile-collections"
+        />
+        <ListRow
           title="Saved styles and articles"
           icon={Bookmark}
           onPress={() => router.push('/saved')}
@@ -150,27 +148,6 @@ function Profile() {
           onPress={() => router.push('/learn')}
         />
       </Section>
-
-      <View style={styles.boards}>
-        <SegmentedControl options={BOARD_TABS} value={tab} onChange={setTab} />
-        {boards.isLoading ? (
-          <Skeleton height={220} />
-        ) : boards.data?.length ? (
-          <BoardGrid entries={boards.data} />
-        ) : (
-          <EmptyState
-            icon={LayoutGrid}
-            title={tab === 'mine' ? 'No boards yet' : 'Nothing saved yet'}
-            message={
-              tab === 'mine'
-                ? 'Boards keep the look, the appointment and the budget together.'
-                : 'Boards other people share with you will show up here.'
-            }
-            actionLabel={tab === 'mine' ? 'Plan a look' : undefined}
-            onAction={tab === 'mine' ? () => router.push('/boards/new') : undefined}
-          />
-        )}
-      </View>
     </View>
   );
 }

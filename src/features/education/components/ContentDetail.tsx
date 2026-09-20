@@ -3,7 +3,6 @@ import { StyleSheet, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { Bookmark, BookmarkCheck, LayoutGrid, Share, WifiOff } from 'lucide-react-native';
 import { AuthPromptModal, useAuth } from '@/features/auth';
-import { SaveToBoardSheet } from '@/features/planner';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
@@ -48,9 +47,14 @@ export function ContentDetail({ id }: ContentDetailProps) {
   const related = useRelatedContent(id, content?.topic ?? '', { enabled: !!content });
 
   const [authPrompt, setAuthPrompt] = useState(false);
-  const [saving, setSaving] = useState(false);
 
   const requireAccount = (action: () => void) => (isAuthenticated ? action() : setAuthPrompt(true));
+
+  // The save screen can't read the content API, so it's handed what's on screen.
+  const saveToCollection = () =>
+    router.push(
+      `/collections/save?kind=content&refId=${id}&title=${encodeURIComponent(content?.title ?? '')}&imageUri=${encodeURIComponent(content?.thumbnailUri ?? '')}`
+    );
   const relatedItems = related.data?.pages.flatMap(page => page.data).slice(0, 12) ?? [];
 
   const headerRight = content && (
@@ -124,12 +128,12 @@ export function ContentDetail({ id }: ContentDetailProps) {
             </View>
 
             <Button
-              label="Save to mood board"
+              label="Save to a collection"
               icon={LayoutGrid}
               variant="secondary"
               size="md"
               fullWidth
-              onPress={() => requireAccount(() => setSaving(true))}
+              onPress={() => requireAccount(saveToCollection)}
             />
 
             {content.articleContent ? (
@@ -156,12 +160,6 @@ export function ContentDetail({ id }: ContentDetailProps) {
         visible={authPrompt}
         onClose={() => setAuthPrompt(false)}
         feature="favorites"
-      />
-      <SaveToBoardSheet
-        visible={saving}
-        onClose={() => setSaving(false)}
-        imageUri={content?.thumbnailUri}
-        title={content?.title ?? ''}
       />
     </>
   );

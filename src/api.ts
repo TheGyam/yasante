@@ -11,16 +11,12 @@ import type { authApi } from '@/features/auth/api';
 import type { userApi } from '@/features/profile/api';
 import type { favoritesApi } from '@/features/profile/favoritesApi';
 import type { contentApi } from '@/features/education/api';
-import type { treatmentsApi } from '@/features/planner/api/treatmentsApi';
-import type { moodBoardApi } from '@/features/planner/api/moodBoardApi';
 
 export interface Api {
   auth: typeof authApi;
   user: typeof userApi;
   favorites: typeof favoritesApi;
   content: typeof contentApi;
-  treatments: typeof treatmentsApi;
-  moodBoard: typeof moodBoardApi;
 }
 
 let _api: Api | null = null;
@@ -33,8 +29,6 @@ const getApi = (): Api => {
       user: require('@/features/profile/api').userApi,
       favorites: require('@/features/profile/favoritesApi').favoritesApi,
       content: require('@/features/education/api').contentApi,
-      treatments: require('@/features/planner/api/treatmentsApi').treatmentsApi,
-      moodBoard: require('@/features/planner/api/moodBoardApi').moodBoardApi,
     };
     /* eslint-enable @typescript-eslint/no-require-imports */
   }

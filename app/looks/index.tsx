@@ -64,6 +64,9 @@ function LooksFeed() {
     </View>
   );
 
+  // A look carries its own picture and caption, so the save screen needs only its id.
+  const save = (look: Look) => router.push(`/collections/save?kind=look&refId=${look.id}`);
+
   // Tapping through to her page waits for the page itself to exist — a link to a
   // screen that isn't built is worse than a name you can't tap.
   const openOptions = (look: Look) =>
@@ -75,7 +78,9 @@ function LooksFeed() {
     <AnimatedFlashList
       data={feed.isLoading ? [] : looks}
       keyExtractor={look => look.id}
-      renderItem={({ item }) => <LookCard look={item} onMore={openOptions} />}
+      renderItem={({ item }) => (
+        <LookCard look={item} onSave={item.mine ? undefined : save} onMore={openOptions} />
+      )}
       ListHeaderComponent={header}
       ListEmptyComponent={
         feed.isLoading ? null : feed.isError ? (
