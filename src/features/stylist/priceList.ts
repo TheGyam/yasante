@@ -124,6 +124,12 @@ export function parseLine(raw: string): ParsedService {
   };
 }
 
+/**
+ * Two names for the same service. Pasting a list she has pasted before shouldn't
+ * give her "Knotless braids" twice because one of them said "knotless braids!".
+ */
+export const serviceKey = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
 /** A pasted list, one entry per line that says anything at all. */
 export function parsePriceList(text: string): ParsedService[] {
   return text
