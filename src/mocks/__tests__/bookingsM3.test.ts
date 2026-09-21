@@ -235,7 +235,7 @@ describe('pricing a request', () => {
     });
 
   it('needs every option chosen, and prices it from her menu', () => {
-    expect(() => ask()).toThrow(/length and size/);
+    expect(() => ask()).toThrow(/Pick your size/);
     expect(ask({ size: 'cr_small' })).toMatchObject({
       price: 75,
       fromPrice: false,

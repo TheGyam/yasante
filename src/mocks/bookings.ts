@@ -227,7 +227,10 @@ defineMocks({
     const chosen = request.body?.options ?? {};
     const priced = estimate(service, chosen);
     if (optionGroups(service).length && !priced.complete) {
-      throw new MockError(400, 'Pick a length and size so she knows what to quote');
+      const missing = optionGroups(service)
+        .map(g => g.name.toLowerCase())
+        .join(' and ');
+      throw new MockError(400, `Pick your ${missing} so she knows what to quote`);
     }
 
     const times: string[] = (request.body?.requestedTimes ?? []).filter(Boolean);

@@ -190,7 +190,7 @@ export default function RequestBookingScreen() {
             footer={
               quote.complete
                 ? 'Worked out from her own price list. She confirms it when she accepts.'
-                : 'Pick your length and size to see what it comes to.'
+                : `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')} to see what it comes to.`
             }
           >
             <ListRow
