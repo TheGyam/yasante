@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["expo", "start", "--web", "--port", "8081", "--clear"],
       "port": 8081
+    },
+    {
+      "name": "yasante-web-8082",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--web", "--port", "8082", "--clear"],
+      "port": 8082
     }
   ]
 }

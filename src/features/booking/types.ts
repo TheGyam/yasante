@@ -71,6 +71,11 @@ export interface Booking {
 
   /** Why it ended, when it ended badly. */
   reason?: string;
+  completedAt?: string;
+  /** Her review, once she's left one. Only on the client's copy. */
+  review?: Pick<Review, 'rating' | 'status'>;
+  /** The check-in the server is asking her for now, if any. Only on the client's copy. */
+  checkInDue?: CheckInWeek;
   createdAt: string;
   updatedAt: string;
 }
@@ -87,3 +92,38 @@ export interface BookingDraft {
 
 /** Whose side of the booking you're looking at. */
 export type BookingRole = 'client' | 'stylist';
+
+/**
+ * A review. Only accepted against a completed booking, one per booking, and
+ * checked before anyone else sees it.
+ */
+export interface Review {
+  id: string;
+  bookingId: string;
+  rating: number;
+  body?: string;
+  status: 'pending' | 'published' | 'removed';
+  /** First name only. */
+  authorName: string;
+  serviceName: string;
+  createdAt: string;
+}
+
+/** Why someone reported a review. The wording is what the reporter sees. */
+export const REVIEW_REPORT_REASONS = [
+  { value: 'not-real', label: "This appointment didn't happen" },
+  { value: 'private', label: 'It shares private details' },
+  { value: 'hate', label: 'Hateful or abusive' },
+  { value: 'other', label: 'Something else' },
+] as const;
+export type ReviewReportReason = (typeof REVIEW_REPORT_REASONS)[number]['value'];
+
+/** Check-ins come at week 2 and week 4 after a completed style. */
+export type CheckInWeek = 2 | 4;
+
+/** Three taps on how a style is holding up — the start of the outcome data. */
+export interface CheckInAnswers {
+  holding: 'fresh' | 'okay' | 'tired';
+  scalp: 'comfortable' | 'itchy' | 'sore';
+  again: 'yes' | 'maybe' | 'no';
+}

@@ -108,6 +108,12 @@ function RootNavigator() {
           <Stack.Screen name="bookings/index" />
           <Stack.Screen name="bookings/[id]" />
           <Stack.Screen name="requests/[id]" />
+          <Stack.Screen name="review/[id]" options={modal} />
+          <Stack.Screen name="review/report" options={modal} />
+          <Stack.Screen name="check-in/[id]" options={modal} />
+          <Stack.Screen name="shelf/index" />
+          <Stack.Screen name="shelf/add" options={modal} />
+          <Stack.Screen name="shelf/[id]" />
           <Stack.Screen name="collections/[id]" />
           <Stack.Screen name="collections/new" options={modal} />
           <Stack.Screen name="collections/save" options={modal} />

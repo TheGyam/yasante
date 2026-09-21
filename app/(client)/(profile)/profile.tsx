@@ -5,6 +5,7 @@ import {
   CalendarClock,
   Droplets,
   LayoutGrid,
+  Package,
   Settings,
   UserRound,
 } from 'lucide-react-native';
@@ -12,6 +13,7 @@ import { useAuth } from '@/features/auth';
 import { isLive, useBookings } from '@/features/booking';
 import { useCollections } from '@/features/planner';
 import { hairTraits, useUser, useUserStore } from '@/features/profile';
+import { shelfSummary, useShelf } from '@/features/shelf';
 import { ModeSwitchRow, useIsStylist } from '@/features/stylist';
 import { Scissors } from 'lucide-react-native';
 import { makeStyles, space } from '@/shared/theme';
@@ -74,6 +76,7 @@ function Profile() {
   const traits = hairTraits(user?.hairProfile ?? localHair);
   const collections = useCollections();
   const { data: bookings = [] } = useBookings('client');
+  const shelf = useShelf();
   const live = bookings.filter(isLive);
   const name = user?.name ?? authUser?.name;
 
@@ -155,6 +158,15 @@ function Profile() {
           icon={LayoutGrid}
           onPress={() => router.navigate('/planner')}
           testID="profile-collections"
+        />
+        <ListRow
+          title="Your product shelf"
+          subtitle={
+            shelf.data?.length ? shelfSummary(shelf.data) : 'What you use, and how it works'
+          }
+          icon={Package}
+          onPress={() => router.push('/shelf')}
+          testID="profile-shelf"
         />
         <ListRow
           title="Saved styles and articles"
