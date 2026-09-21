@@ -9,6 +9,7 @@ import {
   Check,
   ClipboardCheck,
   Hourglass,
+  Plus,
   Scissors,
   Send,
   UserCheck,
@@ -32,12 +33,20 @@ import {
   inSentence,
   whenLabel,
 } from '@/features/booking';
-import { formatDuration } from '@/features/stylist';
+import {
+  PaymentMethodForm,
+  formatDuration,
+  paymentLine,
+  useMyStylistProfile,
+  useUpdateStylistProfile,
+  type PaymentMethodDraft,
+} from '@/features/stylist';
 import { formatMoney, parseMoney } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
+import { Chip } from '@/shared/ui/Chip';
 import { confirm, notify } from '@/shared/ui/dialog';
 import { DateTimeField } from '@/shared/ui/DateTimeField';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
@@ -47,11 +56,13 @@ import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { Toggle } from '@/shared/ui/Toggle';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xl },
   head: { gap: space.xs },
   group: { gap: space.sm },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   label: { marginLeft: space.xs },
   footer: { gap: space.xs, paddingTop: space.lg },
 }));
@@ -76,7 +87,13 @@ export default function RequestScreen() {
 
   const [when, setWhen] = useState<Date>(() => setHours(startOfHour(new Date()), 10));
   const [deposit, setDeposit] = useState('');
-  const [method, setMethod] = useState('');
+  // How she's paid: one of her saved ways, or — the first time — typed here and kept.
+  const { data: me } = useMyStylistProfile();
+  const saveMethod = useUpdateStylistProfile();
+  const saved = me?.paymentMethods ?? [];
+  const [methodId, setMethodId] = useState<string>();
+  const [typed, setTyped] = useState<PaymentMethodDraft>({ label: 'Bank transfer', details: '' });
+  const [keepTyped, setKeepTyped] = useState(true);
 
   // Her first choice, at a sensible hour, is the default she'll usually keep.
   useEffect(() => {
@@ -95,10 +112,16 @@ export default function RequestScreen() {
     await notify({ title, message: errorMessage(error, 'Check your connection and try again.') });
   };
 
-  const run = async (action: () => Promise<unknown>, title: string, leave = true) => {
+  const run = async (
+    action: () => Promise<unknown>,
+    title: string,
+    leave = true,
+    after?: () => void
+  ) => {
     try {
       await action();
       haptics.success();
+      after?.();
       if (leave) router.back();
     } catch (error) {
       await fail(error, title);
@@ -115,7 +138,26 @@ export default function RequestScreen() {
 
   const first = booking.clientName.split(' ')[0];
   const amount = parseMoney(deposit);
-  const depositArgs = amount > 0 ? { amount, method: method.trim() } : undefined;
+  // The one she tapped, else the first she saved; nothing saved means typing one.
+  const picked = methodId === 'new' ? undefined : (saved.find(m => m.id === methodId) ?? saved[0]);
+  const method = picked
+    ? paymentLine(picked)
+    : typed.label.trim() && typed.details.trim()
+      ? paymentLine({ label: typed.label.trim(), details: typed.details.trim() })
+      : '';
+  const depositArgs = amount > 0 ? { amount, method } : undefined;
+  // A deposit she can't pay is no deposit: asking for one needs a way to pay it.
+  const missingMethod = amount > 0 && !method;
+  const keepIt = () => {
+    if (!picked && amount > 0 && keepTyped && method) {
+      saveMethod.mutate({
+        paymentMethods: [
+          ...saved,
+          { id: `pay_${Date.now()}`, label: typed.label.trim(), details: typed.details.trim() },
+        ],
+      });
+    }
+  };
   // A day she asked for is an answer; any other day is a suggestion she has to agree to.
   const onAskedDay = booking.requestedTimes.some(t => isSameDay(new Date(t), when));
   const started = !!booking.scheduledFor && new Date(booking.scheduledFor) <= new Date();
@@ -126,7 +168,9 @@ export default function RequestScreen() {
         onAskedDay
           ? accept.mutateAsync({ id, scheduledFor: when.toISOString(), deposit: depositArgs })
           : propose.mutateAsync({ id, scheduledFor: when.toISOString(), deposit: depositArgs }),
-      onAskedDay ? 'Couldn’t accept it' : 'Couldn’t send that'
+      onAskedDay ? 'Couldn’t accept it' : 'Couldn’t send that',
+      true,
+      keepIt
     );
 
   const say = async () => {
@@ -229,13 +273,52 @@ export default function RequestScreen() {
               hint="Leave it empty to confirm without one"
             />
             {amount > 0 && (
-              <Input
-                label="How she pays you"
-                value={method}
-                onChangeText={setMethod}
-                placeholder="Bank transfer to A. Owusu, 12-34-56 · 12345678"
-                hint="Shown only to her, once you accept. Yasante never handles it"
-              />
+              <View style={styles.group}>
+                <Text variant="footnote" tone="secondary" style={styles.label}>
+                  How she pays you
+                </Text>
+                {saved.length > 0 && (
+                  <View style={styles.chips}>
+                    {saved.map(m => (
+                      <Chip
+                        key={m.id}
+                        label={m.label}
+                        selected={picked?.id === m.id}
+                        onPress={() => setMethodId(m.id)}
+                      />
+                    ))}
+                    <Chip
+                      label="Something else"
+                      icon={Plus}
+                      selected={!picked}
+                      onPress={() => setMethodId('new')}
+                    />
+                  </View>
+                )}
+                {picked ? (
+                  <Text variant="caption" tone="tertiary" style={styles.label}>
+                    {picked.details} — sent only to her, once you accept
+                  </Text>
+                ) : (
+                  <>
+                    <PaymentMethodForm value={typed} onChange={setTyped} />
+                    {saved.length < 5 && (
+                      <Section>
+                        <ListRow
+                          title="Save it for next time"
+                          trailing={
+                            <Toggle
+                              value={keepTyped}
+                              onValueChange={setKeepTyped}
+                              accessibilityLabel="Save it for next time"
+                            />
+                          }
+                        />
+                      </Section>
+                    )}
+                  </>
+                )}
+              </View>
             )}
 
             <View style={styles.footer}>
@@ -243,6 +326,7 @@ export default function RequestScreen() {
                 label={onAskedDay ? 'Accept' : 'Suggest this time'}
                 icon={onAskedDay ? Check : Send}
                 onPress={take}
+                disabled={missingMethod}
                 loading={accept.isPending || propose.isPending}
                 fullWidth
                 testID="request-accept"

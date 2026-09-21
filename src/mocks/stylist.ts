@@ -54,6 +54,24 @@ function newItem(body: any) {
   };
 }
 
+/** Only complete ones, and few enough to pick from at a glance. */
+function paymentMethods(list: unknown) {
+  if (!Array.isArray(list)) throw new MockError(400, 'Send a list of payment methods');
+  const kept = list
+    .map((m: any, i: number) => ({
+      id: String(m?.id || `pay_${Date.now()}_${i}`),
+      label: String(m?.label ?? '')
+        .trim()
+        .slice(0, 40),
+      details: String(m?.details ?? '')
+        .trim()
+        .slice(0, 200),
+    }))
+    .filter(m => m.label && m.details);
+  if (kept.length > 5) throw new MockError(400, 'Keep it to five ways to be paid');
+  return kept;
+}
+
 const taken = (handle: string) =>
   RESERVED.has(handle) || [...db.stylists.values()].some(s => s.handle === handle);
 
@@ -218,8 +236,9 @@ defineMocks({
       db.pageViews.push({ stylistId: profile.accountId, at: new Date().toISOString() });
     }
     return {
-      // The proof photo is for the verification queue, never for clients.
-      profile: { ...profile, proofPhotoUri: undefined },
+      // The proof photo is for the verification queue, and her payment details go
+      // only to a client she's accepted — neither is on her page.
+      profile: { ...profile, proofPhotoUri: undefined, paymentMethods: undefined },
       menu: db.menus.get(profile.accountId) ?? [],
       photos: db.portfolios.get(profile.accountId) ?? [],
       confirmedStyles: db.bookings.filter(
@@ -269,7 +288,10 @@ defineMocks({
     const accountId = requireAccount(request);
     const profile = db.stylists.get(accountId);
     if (!profile) throw new MockError(404, 'No stylist profile yet');
-    Object.assign(profile, request.body);
+    const changes = { ...request.body };
+    if ('paymentMethods' in changes)
+      changes.paymentMethods = paymentMethods(changes.paymentMethods);
+    Object.assign(profile, changes);
     return profile;
   },
 

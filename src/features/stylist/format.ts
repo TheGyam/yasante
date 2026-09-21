@@ -4,6 +4,7 @@ import type {
   Availability,
   MenuItem,
   OptionGroup,
+  PaymentMethod,
   PriceOption,
   StylistProfile,
   VerificationTier,
@@ -181,3 +182,15 @@ export const TYPICAL_OPTIONS: Omit<PriceOption, 'id'>[] = [
   { group: 'size', label: 'Medium', add: 20, addMinutes: 60 },
   { group: 'size', label: 'Small', add: 40, addMinutes: 120 },
 ];
+
+/** The line a client is sent: "Monzo · monzo.me/amaowusu". */
+export const paymentLine = (method: Pick<PaymentMethod, 'label' | 'details'>) =>
+  `${method.label} · ${method.details}`;
+
+/** The usual ways a braider is paid, with what each one needs. */
+export const PAYMENT_KINDS = [
+  { label: 'Bank transfer', placeholder: 'A. Owusu · 12-34-56 · 12345678' },
+  { label: 'Monzo', placeholder: 'monzo.me/amaowusu' },
+  { label: 'Revolut', placeholder: 'revolut.me/amaowusu' },
+  { label: 'PayPal', placeholder: 'paypal.me/amaowusu' },
+] as const;

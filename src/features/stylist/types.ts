@@ -18,6 +18,19 @@ export interface StylistPolicies {
   rescheduleFreeOnce: boolean;
 }
 
+/**
+ * A way to be paid a deposit — her bank details, a Monzo link. Saved once and
+ * picked per request. Only ever shown to a client whose request she's accepted,
+ * never on her page, and Yasante never moves the money.
+ */
+export interface PaymentMethod {
+  id: string;
+  /** "Bank transfer", "Monzo". */
+  label: string;
+  /** What the client needs to pay: account name and numbers, or a link. */
+  details: string;
+}
+
 /** "09:00" to "18:00", or closed. */
 export type DayHours = { start: string; end: string } | null;
 
@@ -42,8 +55,10 @@ export interface StylistProfile {
   travelRadiusMiles?: number;
   instagramHandle?: string;
   policies: StylistPolicies;
-  /** When she works. Absent until she sets it, and then any day can be asked for. */
+  /** When she works. Absent until she sets it; until then, every day 9 to 6. */
   availability?: Availability;
+  /** How she's paid deposits. Private: stripped from her public page. */
+  paymentMethods?: PaymentMethod[];
   /** One photo of her own work, for the verification queue. */
   proofPhotoUri?: string;
   verificationTier: VerificationTier;
@@ -65,6 +80,7 @@ export type StylistProfileDraft = Pick<
   | 'policies'
   | 'proofPhotoUri'
   | 'availability'
+  | 'paymentMethods'
 >;
 
 /** One line of her menu: what she does, what it costs, how long it takes. */
