@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import {
@@ -85,7 +86,7 @@ const useStyles = makeStyles(t => ({
  * One look: whose work it is, the picture, and what it costs. A double tap on the
  * photo likes it, the way people expect; a single tap opens it.
  */
-export function LookCard({
+export const LookCard = memo(function LookCard({
   look,
   styleNames,
   detail,
@@ -291,4 +292,4 @@ export function LookCard({
       )}
     </View>
   );
-}
+});

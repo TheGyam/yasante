@@ -230,7 +230,11 @@ export const db = {
     ['look_seed_2', new Set(['acc_ama'])],
   ]),
 
-  /** Comments, oldest first. */
+  /**
+   * Comments, oldest first. A reply points at the thread it's in (`parentId`,
+   * always a top-level comment) and at the comment it answers (`replyToId`), which
+   * may itself be a reply — one level of nesting, the way social apps show it.
+   */
   comments: [
     {
       id: 'com_seed_1',
@@ -239,7 +243,15 @@ export const db = {
       body: 'The parts on this are so clean.',
       createdAt: now,
     },
-  ] as { id: string; lookId: string; authorId: string; body: string; createdAt: string }[],
+  ] as {
+    id: string;
+    lookId: string;
+    authorId: string;
+    body: string;
+    parentId?: string;
+    replyToId?: string;
+    createdAt: string;
+  }[],
 
   /** A client's collections, with their items. Keyed by account. */
   collections: new Map<

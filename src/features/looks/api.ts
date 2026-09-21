@@ -39,7 +39,7 @@ export const looksApi = {
     else await apiClient.delete(`/api/looks/${id}/like/`);
   },
 
-  /** GET /api/looks/:id/comments/?cursor= — oldest first, the way a conversation reads. */
+  /** GET /api/looks/:id/comments/?cursor= — the top of each thread, newest first. */
   comments: async (id: string, cursor?: string) =>
     (
       await apiClient.get<CommentsPage>(`/api/looks/${id}/comments/`, {
@@ -47,9 +47,17 @@ export const looksApi = {
       })
     ).data,
 
-  /** POST /api/looks/:id/comments/ */
-  comment: async (id: string, body: string) =>
-    (await apiClient.post<LookComment>(`/api/looks/${id}/comments/`, { body })).data,
+  /** GET /api/comments/:id/replies/?cursor= — one thread's replies, oldest first. */
+  replies: async (commentId: string, cursor?: string) =>
+    (
+      await apiClient.get<CommentsPage>(`/api/comments/${commentId}/replies/`, {
+        params: { cursor, limit: 10 },
+      })
+    ).data,
+
+  /** POST /api/looks/:id/comments/ — `replyTo` is any comment, top-level or a reply. */
+  comment: async (id: string, body: string, replyTo?: string) =>
+    (await apiClient.post<LookComment>(`/api/looks/${id}/comments/`, { body, replyTo })).data,
 
   /** DELETE /api/comments/:id/ — your own comment only. */
   removeComment: async (id: string) => {

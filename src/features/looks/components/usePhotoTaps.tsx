@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import Animated, {
@@ -79,9 +79,16 @@ export function usePhotoTaps(
     if (onOpen) pendingOpen.current = setTimeout(() => onOpen(look), DOUBLE_TAP_MS);
   };
 
-  const gesture = Gesture.Tap().onEnd((_e, success) => {
-    if (success) scheduleOnRN(onTap);
-  });
+  // Built once, calling the latest onTap: a new gesture each render makes the
+  // detector re-attach on every like.
+  const tap = useRef(onTap);
+  tap.current = onTap;
+  const gesture = useMemo(() => {
+    const fire = () => tap.current();
+    return Gesture.Tap().onEnd((_e, success) => {
+      if (success) scheduleOnRN(fire);
+    });
+  }, []);
 
   // The heart itself, laid over the photo; it never takes a touch.
   const heart = (

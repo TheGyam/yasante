@@ -35,7 +35,9 @@ interface Route {
 }
 
 const routes: Route[] = [];
-const LATENCY_MS = 280;
+// A quick real API on a good connection: loading states still show, but a dev build
+// isn't left waiting on a made-up network before every screen.
+const LATENCY_MS = 90;
 
 /** Tokens the mock auth hands out carry the account id, so handlers know who's asking. */
 export const mockToken = (accountId: string) => `mock.${accountId}`;
