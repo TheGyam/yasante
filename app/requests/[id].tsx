@@ -18,6 +18,7 @@ import {
 import { errorMessage } from '@/features/auth';
 import {
   STATUS_LABELS,
+  serviceLine,
   dayLabel,
   recordLabel,
   timingText,
@@ -157,7 +158,7 @@ export default function RequestScreen() {
       <View style={styles.body}>
         <View style={styles.head}>
           <Text variant="title2" accessibilityRole="header">
-            {booking.serviceName}
+            {serviceLine(booking)}
           </Text>
           <Text variant="subhead" tone="secondary">
             {booking.clientName} ·{' '}

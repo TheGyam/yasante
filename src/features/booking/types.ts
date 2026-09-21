@@ -1,4 +1,4 @@
-import type { StylistPolicies } from '@/features/stylist';
+import type { ChosenOptions, StylistPolicies } from '@/features/stylist';
 
 /**
  * The states a booking moves through, as the plan defines them. The server owns
@@ -48,6 +48,8 @@ export interface Booking {
 
   serviceId: string;
   serviceName: string;
+  /** The length and size she chose, as the stylist named them. */
+  optionLabels?: string[];
   price: number;
   fromPrice: boolean;
   durationMinutes?: number;
@@ -102,6 +104,8 @@ export interface Booking {
 export interface BookingDraft {
   stylistId: string;
   serviceId: string;
+  /** Option ids from the service, by group. The server prices them. */
+  options?: ChosenOptions;
   bringingOwnHair: boolean;
   requestedTimes: string[];
   notes?: string;

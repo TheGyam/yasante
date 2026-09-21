@@ -4,6 +4,8 @@ export type {
   DepositType,
   MenuItem,
   MenuItemDraft,
+  OptionGroup,
+  PriceOption,
   PortfolioPhoto,
   PortfolioPhotoDraft,
   ServiceModel,

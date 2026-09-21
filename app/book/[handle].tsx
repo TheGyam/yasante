@@ -7,11 +7,14 @@ import { errorMessage, useAuth } from '@/features/auth';
 import { dayLabel, useRequestBooking } from '@/features/booking';
 import {
   closedReason,
+  estimate,
   formatDuration,
   formatPrice,
   hoursLabel,
   nextOpenDay,
+  optionGroups,
   useStylistPage,
+  type ChosenOptions,
 } from '@/features/stylist';
 import { POLICY_VERSION } from '@/shared/config/policies';
 import { formatMoney } from '@/shared/lib/format';
@@ -20,6 +23,7 @@ import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
+import { Chip } from '@/shared/ui/Chip';
 import { DateTimeField } from '@/shared/ui/DateTimeField';
 import { notify } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/Input';
@@ -36,6 +40,7 @@ const useStyles = makeStyles(() => ({
   group: { gap: space.sm },
   label: { marginLeft: space.xs },
   estimate: { gap: space.xs },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   footer: { gap: space.xs, paddingTop: space.lg },
 }));
 
@@ -81,6 +86,7 @@ export default function RequestBookingScreen() {
   const [ownHair, setOwnHair] = useState(false);
   const [notes, setNotes] = useState('');
   const [accepted, setAccepted] = useState(false);
+  const [chosen, setChosen] = useState<ChosenOptions>({});
 
   const service = useMemo(
     () => data?.menu.find(item => item.id === serviceId),
@@ -96,6 +102,7 @@ export default function RequestBookingScreen() {
       const booking = await request.mutateAsync({
         stylistId: data.profile.accountId,
         serviceId: service.id,
+        options: chosen,
         bringingOwnHair: ownHair,
         requestedTimes: times.map(time => time.toISOString()),
         notes: notes.trim() || undefined,
@@ -122,11 +129,13 @@ export default function RequestBookingScreen() {
 
   const { profile, menu } = data;
   const closed = times.map(time => closedReason(profile.availability, time));
+  const quote = service ? estimate(service, chosen) : undefined;
+  const groups = service ? optionGroups(service) : [];
   const depositDue =
-    profile.policies.depositType === 'none' || !service
+    profile.policies.depositType === 'none' || !quote
       ? 0
       : profile.policies.depositType === 'percent'
-        ? Math.round((service.price * (profile.policies.depositAmount ?? 0)) / 100)
+        ? Math.round((quote.price * (profile.policies.depositAmount ?? 0)) / 100)
         : (profile.policies.depositAmount ?? 0);
 
   return (
@@ -145,21 +154,56 @@ export default function RequestBookingScreen() {
                 value={formatPrice(item)}
                 icon={Scissors}
                 iconTone={serviceId === item.id ? 'accent' : 'neutral'}
-                onPress={() => setServiceId(item.id)}
+                onPress={() => {
+                  setServiceId(item.id);
+                  setChosen({});
+                }}
                 testID={`service-${item.id}`}
               />
             ))}
           </Section>
         </View>
 
-        {!!service && (
-          <Section title="What it comes to" footer="An estimate from her menu, not a final bill.">
+        {groups.map(({ group, name, choices }) => (
+          <View key={group} style={styles.group}>
+            <Text variant="footnote" tone="secondary" style={styles.label}>
+              {name}
+            </Text>
+            <View style={styles.chips}>
+              {choices.map((choice, index) => (
+                <Chip
+                  key={choice.id}
+                  label={
+                    index === 0 ? choice.label : `${choice.label} · +${formatMoney(choice.add)}`
+                  }
+                  selected={chosen[group] === choice.id}
+                  onPress={() => setChosen(current => ({ ...current, [group]: choice.id }))}
+                />
+              ))}
+            </View>
+          </View>
+        ))}
+
+        {!!service && !!quote && (
+          <Section
+            title="What it comes to"
+            footer={
+              quote.complete
+                ? 'Worked out from her own price list. She confirms it when she accepts.'
+                : 'Pick your length and size to see what it comes to.'
+            }
+          >
             <ListRow
-              title={service.name}
+              title={[service.name, ...quote.labels].join(' · ')}
               subtitle={
-                service.durationMinutes ? formatDuration(service.durationMinutes) : undefined
+                [
+                  quote.minutes ? `About ${formatDuration(quote.minutes)}` : undefined,
+                  service.hairIncluded ? 'Hair included' : undefined,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || undefined
               }
-              value={formatPrice(service)}
+              value={`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price)}`}
               icon={CalendarClock}
             />
             {depositDue > 0 && (
@@ -230,7 +274,7 @@ export default function RequestBookingScreen() {
           <Button
             label="Send request"
             onPress={send}
-            disabled={!service || !accepted || closed.some(Boolean)}
+            disabled={!service || !quote?.complete || !accepted || closed.some(Boolean)}
             loading={request.isPending}
             fullWidth
             testID="booking-send"

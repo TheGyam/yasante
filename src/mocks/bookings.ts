@@ -1,6 +1,6 @@
 import type { Booking, BookingStatus, CheckInWeek, ClientRecord } from '@/features/booking';
 import { TIMING_REASONS } from '@/features/booking/types';
-import { isOpenOn } from '@/features/stylist/format';
+import { estimate, isOpenOn, optionGroups } from '@/features/stylist/format';
 import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
 import { db } from './db';
 
@@ -223,6 +223,12 @@ defineMocks({
 
     const service = (db.menus.get(stylistId) ?? []).find(s => s.id === request.body?.serviceId);
     if (!service) throw new MockError(400, 'Pick a service from her menu');
+    // Priced here from her menu, never from what the app says it costs.
+    const chosen = request.body?.options ?? {};
+    const priced = estimate(service, chosen);
+    if (optionGroups(service).length && !priced.complete) {
+      throw new MockError(400, 'Pick a length and size so she knows what to quote');
+    }
 
     const times: string[] = (request.body?.requestedTimes ?? []).filter(Boolean);
     if (!times.length) throw new MockError(400, 'Say when you’d like to come');
@@ -243,9 +249,10 @@ defineMocks({
       serviceId: service.id,
       serviceName: service.name,
       // Priced at request time and stored, so a later price change can't rewrite it.
-      price: service.price,
-      fromPrice: service.fromPrice,
-      durationMinutes: service.durationMinutes,
+      optionLabels: priced.labels.length ? priced.labels : undefined,
+      price: priced.price,
+      fromPrice: priced.fromPrice,
+      durationMinutes: priced.minutes,
       bringingOwnHair: !!request.body?.bringingOwnHair,
       notes: request.body?.notes ? String(request.body.notes).trim() : undefined,
       requestedTimes: times,

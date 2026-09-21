@@ -1,6 +1,13 @@
 import { Share } from 'react-native';
 import { formatMoney } from '@/shared/lib/format';
-import type { MenuItem, StylistProfile, VerificationTier, Availability } from './types';
+import type {
+  Availability,
+  MenuItem,
+  OptionGroup,
+  PriceOption,
+  StylistProfile,
+  VerificationTier,
+} from './types';
 import { track } from '@/shared/lib/analytics';
 
 export const PUBLIC_HOST = 'yasante.com';
@@ -126,3 +133,51 @@ export function nextOpenDay(availability: Availability | undefined, from = new D
   }
   return undefined;
 }
+
+export const OPTION_GROUPS: { group: OptionGroup; name: string }[] = [
+  { group: 'length', name: 'Length' },
+  { group: 'size', name: 'Size' },
+];
+
+/** The groups a service is priced by, each with its choices in order. */
+export function optionGroups(item: Pick<MenuItem, 'options'>) {
+  return OPTION_GROUPS.map(({ group, name }) => ({
+    group,
+    name,
+    choices: (item.options ?? []).filter(o => o.group === group),
+  })).filter(g => g.choices.length > 0);
+}
+
+export type ChosenOptions = Partial<Record<OptionGroup, string>>;
+
+/**
+ * What it comes to with her choices: the base, plus each chosen option. Exact
+ * once every group is chosen; a starting price until then.
+ */
+export function estimate(item: MenuItem, chosen: ChosenOptions = {}) {
+  const groups = optionGroups(item);
+  const picked = groups
+    .map(g => g.choices.find(c => c.id === chosen[g.group]))
+    .filter((o): o is PriceOption => !!o);
+  const complete = picked.length === groups.length;
+  return {
+    price: item.price + picked.reduce((sum, o) => sum + o.add, 0),
+    minutes: item.durationMinutes
+      ? item.durationMinutes + picked.reduce((sum, o) => sum + (o.addMinutes ?? 0), 0)
+      : undefined,
+    labels: picked.map(o => o.label),
+    // With options she's chosen from her own price list, it's her quote — not a "from".
+    fromPrice: groups.length ? !complete : item.fromPrice,
+    complete,
+  };
+}
+
+/** Typical London braid pricing, to start her off — she changes every number. */
+export const TYPICAL_OPTIONS: Omit<PriceOption, 'id'>[] = [
+  { group: 'length', label: 'Shoulder', add: 0 },
+  { group: 'length', label: 'Mid-back', add: 20, addMinutes: 60 },
+  { group: 'length', label: 'Waist', add: 40, addMinutes: 120 },
+  { group: 'size', label: 'Large', add: 0 },
+  { group: 'size', label: 'Medium', add: 20, addMinutes: 60 },
+  { group: 'size', label: 'Small', add: 40, addMinutes: 120 },
+];
