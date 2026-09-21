@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { useAuth } from '@/features/auth';
+import { track } from '@/shared/lib/analytics';
 
 export type AppMode = 'client' | 'stylist';
 
@@ -24,7 +25,10 @@ export const useModeStore = create<ModeState>()(
       switchingTo: null,
       origin: null,
       setMode: mode => set({ mode }),
-      beginSwitch: (to, origin) => set({ switchingTo: to, origin: origin ?? null }),
+      beginSwitch: (to, origin) => {
+        track('switch_mode', { to });
+        set({ switchingTo: to, origin: origin ?? null });
+      },
       endSwitch: () => set({ switchingTo: null, origin: null }),
     }),
     {

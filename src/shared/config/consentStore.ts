@@ -42,6 +42,8 @@ interface ConsentState {
   isGranted: (purpose: ConsentPurpose) => boolean;
   /** Records not yet stored server-side. */
   pendingSync: () => Array<{ purpose: ConsentPurpose } & ConsentRecord>;
+  /** Marks records stored — only if they haven't changed again since they were sent. */
+  markSynced: (sent: Array<{ purpose: ConsentPurpose; updatedAt: string }>, at: string) => void;
 }
 
 export const useConsentStore = create<ConsentState>()(
@@ -53,9 +55,18 @@ export const useConsentStore = create<ConsentState>()(
         set(state => ({
           consents: { ...state.consents, [purpose]: record(granted) },
         }));
-        // ponytail: device-local until the consent endpoint exists; pendingSync() is
-        // the hook for posting these, and syncedAt is what marks them done.
       },
+
+      markSynced: (sent, at) =>
+        set(state => {
+          const consents = { ...state.consents };
+          for (const { purpose, updatedAt } of sent) {
+            if (consents[purpose]?.updatedAt === updatedAt) {
+              consents[purpose] = { ...consents[purpose], syncedAt: at };
+            }
+          }
+          return { consents };
+        }),
 
       isGranted: purpose => get().consents[purpose]?.granted ?? false,
 

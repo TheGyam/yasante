@@ -29,6 +29,7 @@ import {
   getRecentSearches,
   removeFromSearchHistory,
 } from '@/shared/utils/searchHistory';
+import { track } from '@/shared/lib/analytics';
 
 type Filter = 'all' | 'inspo' | 'learn';
 
@@ -68,6 +69,12 @@ export default function SearchScreen() {
     filter === 'all' ? true : INSPO_TOPICS.has(item.topic) === (filter === 'inspo')
   );
   const results = term ? smartSearch<Content>(term, pool, SEARCH_FIELDS, 50).map(r => r.item) : [];
+
+  useEffect(() => {
+    if (term) track('search', { surface: 'content', query: term, filter, results: results.length });
+    // When the settled query or filter changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [term, filter]);
 
   const remember = (text: string) => {
     if (!text) return;

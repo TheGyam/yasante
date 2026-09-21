@@ -16,6 +16,13 @@ interface UserState {
    */
   hairProfile: HairProfile | null;
   setHairProfile: (profile: HairProfile) => void;
+  /**
+   * Whose account the device's answers belong to, once they've been synced. A
+   * guest's answers have none, and are merged into the account she makes; anyone
+   * else's are never merged into a different account on the same phone.
+   */
+  hairProfileOwner: string | null;
+  setHairProfileOwner: (accountId: string | null) => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -29,6 +36,8 @@ export const useUserStore = create<UserState>()(
       setHasSeenPlannerTour: seen => set({ hasSeenPlannerTour: seen }),
       hairProfile: null,
       setHairProfile: profile => set({ hairProfile: profile }),
+      hairProfileOwner: null,
+      setHairProfileOwner: accountId => set({ hairProfileOwner: accountId }),
     }),
     {
       name: '@yasante:user',

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react-native';
 import { api } from '@/api';
 import { useAuth } from '@/features/auth';
+import { useUserStore } from '@/features/profile';
 import { useConsentStore, type ConsentPurpose } from '@/shared/config/consentStore';
 import { makeStyles, space } from '@/shared/theme';
 import { confirm, notify } from '@/shared/ui/dialog';
@@ -74,7 +75,8 @@ export default function PrivacyScreen() {
   const deleteAccount = async () => {
     const ok = await confirm({
       title: 'Delete your account?',
-      message: 'This removes your profile, photos and boards. It can’t be undone.',
+      message:
+        'This removes your profile, hair profile, looks, comments, collections and shelf. Stylists keep a record of appointments you had, without your name. It can’t be undone.',
       confirmLabel: 'Delete',
       cancelLabel: 'Keep my account',
       destructive: true,
@@ -82,6 +84,9 @@ export default function PrivacyScreen() {
     if (!ok) return;
     run(async userId => {
       await api.user.deleteAccount(userId);
+      // Nothing of hers stays on the phone either.
+      useUserStore.getState().setHairProfile({});
+      useUserStore.getState().setHairProfileOwner(null);
       await logout();
     }, 'Couldn’t delete your account');
   };

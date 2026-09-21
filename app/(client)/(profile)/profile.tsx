@@ -12,7 +12,7 @@ import {
 import { useAuth } from '@/features/auth';
 import { isLive, useBookings } from '@/features/booking';
 import { useCollections } from '@/features/planner';
-import { hairTraits, useUser, useUserStore } from '@/features/profile';
+import { hairTraits, lengthIsStale, progressOf, useUser, useUserStore } from '@/features/profile';
 import { shelfSummary, useShelf } from '@/features/shelf';
 import { ModeSwitchRow, useIsStylist } from '@/features/stylist';
 import { Scissors } from 'lucide-react-native';
@@ -73,7 +73,10 @@ function Profile() {
   const { data: user } = useUser(authUser?.id);
   // The quiz can be taken before signing up, so fall back to this device's answers.
   const localHair = useUserStore(s => s.hairProfile);
-  const traits = hairTraits(user?.hairProfile ?? localHair);
+  const hair = { ...localHair, ...user?.hairProfile };
+  const traits = hairTraits(hair);
+  const progress = progressOf(hair);
+  const stale = lengthIsStale(hair);
   const collections = useCollections();
   const { data: bookings = [] } = useBookings('client');
   const shelf = useShelf();
@@ -132,7 +135,13 @@ function Profile() {
             </Text>
           )}
           <Text variant="callout" tone="accent">
-            {traits.length ? 'Retake the quiz' : 'Find your hair type'}
+            {!traits.length
+              ? 'Find your hair type'
+              : stale
+                ? 'It’s been a month — has it grown?'
+                : progress.next
+                  ? `${progress.done} of ${progress.total} answered · add ${progress.next.name.toLowerCase()}`
+                  : 'See your hair profile'}
           </Text>
         </View>
       </Card>

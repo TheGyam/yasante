@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import Animated, { FadeInLeft, FadeInRight } from 'react-native-reanimated';
 import { useAuth } from '@/features/auth';
+import { track } from '@/shared/lib/analytics';
 import { haptics } from '@/shared/lib/haptics';
 import { EASE_OUT, makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
@@ -10,6 +11,7 @@ import { notify } from '@/shared/ui/dialog';
 import { Chip } from '@/shared/ui/Chip';
 import { ProgressBar } from '@/shared/ui/ProgressBar';
 import { Screen } from '@/shared/ui/Screen';
+import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Text } from '@/shared/ui/Text';
 import { hairTraits } from '../format';
 import { useUpdateHairProfile, useUser } from '../hooks';
@@ -17,50 +19,51 @@ import { useUserStore } from '../store';
 import type { HairProfile } from '../types';
 import { GoalsStep } from './GoalsStep';
 import { LengthStep } from './LengthStep';
+import { AreaStep, BudgetStep, ChemicalStep, ScalpStep } from './MoreSteps';
+import { CORE, sectionFor, type SectionKey } from './sections';
 import { DensityStep, PorosityStep } from './TestStep';
 import { StrandArt, TextureStep } from './TextureStep';
 
-type StepKey = 'texture' | 'length' | 'density' | 'porosity' | 'goals' | 'summary';
-
-const STEPS: readonly { key: StepKey; title: string; help: string; optional?: boolean }[] = [
-  {
-    key: 'texture',
-    title: 'Which strand looks like yours?',
-    help: 'Pull out a single curl when your hair is dry and has no product in it.',
-  },
-  {
-    key: 'length',
-    title: 'How long is it, stretched?',
-    help: 'Gently pull a curl straight. Drag along the figure to where it reaches.',
-  },
-  { key: 'density', title: 'How full is it?', help: '', optional: true },
-  { key: 'porosity', title: 'How does it take water?', help: '', optional: true },
-  { key: 'goals', title: 'What are you working towards?', help: 'Pick as many as you like.' },
-  { key: 'summary', title: 'Here’s your hair', help: '' },
-];
-const QUESTIONS = STEPS.length - 1;
+type StepKey = SectionKey | 'summary';
 
 // Steps are a sequence, so they arrive from the direction you're travelling.
 const FORWARD = FadeInRight.duration(280).easing(EASE_OUT);
 const BACKWARD = FadeInLeft.duration(280).easing(EASE_OUT);
+
+const STRETCH = [
+  { value: 'stretched', label: 'Stretched' },
+  { value: 'shrunk', label: 'As it shrinks' },
+] as const;
 
 const useStyles = makeStyles(() => ({
   body: { flex: 1 },
   progress: { marginTop: space.sm, marginBottom: space.xxl },
   heading: { gap: space.sm, marginBottom: space.xl },
   step: { flex: 1 },
+  stretch: { marginBottom: space.lg },
   footer: { gap: space.xs, paddingTop: space.lg },
   summary: { alignItems: 'center', gap: space.xl, paddingTop: space.xl },
   traits: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.sm },
 }));
 
-export interface HairQuizProps {
-  /** `onboarding` finishes into the app; `retake` saves and closes. */
-  mode: 'onboarding' | 'retake';
+/** Whether a step has an answer yet. */
+function answered(key: StepKey, answers: HairProfile) {
+  if (key === 'summary') return true;
+  return sectionFor(key)!.answered(answers);
 }
 
-/** Finding out about someone's hair by having them look at it, not by asking for jargon. */
-export function HairQuiz({ mode }: HairQuizProps) {
+export interface HairQuizProps {
+  /** `onboarding` asks the core and finishes into the app; `section` asks one and saves. */
+  mode: 'onboarding' | 'section';
+  section?: SectionKey;
+}
+
+/**
+ * Finding out about someone's hair by having them look at it, not by asking for
+ * jargon. Every answer is kept on the device as it's given, so leaving halfway
+ * loses nothing: the next open starts where she stopped.
+ */
+export function HairQuiz({ mode, section }: HairQuizProps) {
   const styles = useStyles();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
@@ -70,90 +73,133 @@ export function HairQuiz({ mode }: HairQuizProps) {
   const setOnboardingCompleted = useUserStore(s => s.setOnboardingCompleted);
   const save = useUpdateHairProfile();
 
-  const [answers, setAnswers] = useState<HairProfile>(() =>
-    mode === 'retake' ? { ...(account?.hairProfile ?? local) } : {}
+  const steps: StepKey[] = mode === 'onboarding' ? [...CORE, 'summary'] : [section ?? 'texture'];
+  const [answers, setAnswers] = useState<HairProfile>(() => ({
+    ...local,
+    ...account?.hairProfile,
+  }));
+  // Resume at the first question still open.
+  const [index, setIndex] = useState(() =>
+    mode === 'onboarding'
+      ? Math.max(
+          0,
+          steps.findIndex(key => !answered(key, answers))
+        )
+      : 0
   );
-  const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
 
-  const step = STEPS[index];
-  const set = <K extends keyof HairProfile>(key: K, value: HairProfile[K]) =>
-    setAnswers(prev => ({ ...prev, [key]: value }));
+  const key = steps[index];
+  const info = key === 'summary' ? undefined : sectionFor(key)!;
+
+  const set = <K extends keyof HairProfile>(field: K, value: HairProfile[K]) => {
+    const next = { ...answers, [field]: value };
+    if (field === 'length') next.lengthMeasuredAt = new Date().toISOString();
+    if (field === 'length' && next.lengthStretched === undefined) next.lengthStretched = true;
+    setAnswers(next);
+    // Kept as she goes, so a closed app or a phone call doesn't cost her the answers.
+    setHairProfile(next);
+  };
 
   const go = (by: 1 | -1) => {
+    if (by > 0 && key !== 'summary') track('profile_section_completed', { section: key });
     setDirection(by);
     setIndex(i => i + by);
   };
 
-  const value = step.key === 'summary' ? undefined : answers[step.key];
-  const answered = step.key === 'summary' || (Array.isArray(value) ? value.length > 0 : !!value);
+  const store = async (profile: HairProfile) => {
+    setHairProfile(profile);
+    if (!isAuthenticated) return;
+    try {
+      await save.mutateAsync(profile);
+    } catch {
+      notify({
+        title: 'Saved on this device',
+        message: 'We couldn’t reach the server, so your answers are kept here and sent later.',
+      });
+    }
+  };
 
   const finish = async () => {
-    const profile = { ...answers, completedAt: new Date().toISOString() };
-    if (isAuthenticated) {
-      try {
-        await save.mutateAsync(profile);
-      } catch {
-        notify({
-          title: 'Saved on this device',
-          message: 'We couldn’t reach the server, so your answers are kept here for now.',
-        });
-      }
-    }
+    await store({ ...answers, completedAt: answers.completedAt ?? new Date().toISOString() });
     haptics.success();
-    setHairProfile(profile);
     // First run: this opens the app — the welcome screens' guard closes behind it.
-    if (mode === 'onboarding') setOnboardingCompleted(true);
-    else router.back();
+    setOnboardingCompleted(true);
+  };
+
+  const saveSection = async () => {
+    track('profile_section_completed', { section: key });
+    // "Still the same" is a measurement too: the growth curve needs to know it held.
+    await store(
+      key === 'length' ? { ...answers, lengthMeasuredAt: new Date().toISOString() } : answers
+    );
+    haptics.success();
+    router.back();
   };
 
   const traits = hairTraits(answers);
+  const done = answered(key, answers);
+  const questions = steps.length - 1;
+  const primary = mode === 'section' ? 'Save' : key === 'summary' ? 'Start exploring' : 'Continue';
 
   return (
     <Screen
       scroll={false}
-      modal={mode === 'retake'}
+      modal={mode === 'section'}
       back={index > 0 || mode === 'onboarding'}
       onBack={index > 0 ? () => go(-1) : undefined}
       testID="quiz-screen"
     >
       <View style={styles.body}>
-        <View style={styles.progress}>
-          <ProgressBar progress={Math.min(index + 1, QUESTIONS) / QUESTIONS} height={4} />
-        </View>
+        {mode === 'onboarding' && (
+          <View style={styles.progress}>
+            <ProgressBar progress={Math.min(index + 1, questions) / questions} height={4} />
+          </View>
+        )}
 
-        <Animated.View
-          key={step.key}
-          entering={direction > 0 ? FORWARD : BACKWARD}
-          style={styles.step}
-        >
+        <Animated.View key={key} entering={direction > 0 ? FORWARD : BACKWARD} style={styles.step}>
           <View style={styles.heading}>
             <Text variant="title1" accessibilityRole="header">
-              {step.title}
+              {info?.title ?? 'Here’s your hair'}
             </Text>
-            {!!step.help && (
+            {!!info?.help && (
               <Text variant="subhead" tone="secondary">
-                {step.help}
+                {info.help}
               </Text>
             )}
           </View>
 
-          {step.key === 'texture' && (
+          {key === 'texture' && (
             <TextureStep value={answers.texture} onChange={v => set('texture', v)} />
           )}
-          {step.key === 'length' && (
-            <LengthStep value={answers.length} onChange={v => set('length', v)} />
+          {key === 'length' && (
+            <>
+              <View style={styles.stretch}>
+                <SegmentedControl
+                  options={STRETCH}
+                  value={answers.lengthStretched === false ? 'shrunk' : 'stretched'}
+                  onChange={v => set('lengthStretched', v === 'stretched')}
+                />
+              </View>
+              <LengthStep value={answers.length} onChange={v => set('length', v)} />
+            </>
           )}
-          {step.key === 'density' && (
+          {key === 'density' && (
             <DensityStep value={answers.density} onChange={v => set('density', v)} />
           )}
-          {step.key === 'porosity' && (
+          {key === 'porosity' && (
             <PorosityStep value={answers.porosity} onChange={v => set('porosity', v)} />
           )}
-          {step.key === 'goals' && (
-            <GoalsStep value={answers.goals} onChange={v => set('goals', v)} />
+          {key === 'goals' && <GoalsStep value={answers.goals} onChange={v => set('goals', v)} />}
+          {key === 'scalp' && <ScalpStep value={answers.scalp} onChange={v => set('scalp', v)} />}
+          {key === 'chemicals' && (
+            <ChemicalStep value={answers.chemicals} onChange={v => set('chemicals', v)} />
           )}
-          {step.key === 'summary' && (
+          {key === 'area' && <AreaStep value={answers.area} onChange={v => set('area', v)} />}
+          {key === 'budget' && (
+            <BudgetStep value={answers.budget} onChange={v => set('budget', v)} />
+          )}
+          {key === 'summary' && (
             <View style={styles.summary}>
               {answers.texture && <StrandArt texture={answers.texture} selected height={140} />}
               <View style={styles.traits}>
@@ -162,8 +208,8 @@ export function HairQuiz({ mode }: HairQuizProps) {
                 ))}
               </View>
               <Text variant="body" tone="secondary" align="center">
-                Tips, products and styles now follow your hair. Retake this whenever it changes —
-                it’s on your profile.
+                Tips, products and styles now follow your hair. There’s more you can add whenever
+                you like — it’s all on your profile.
               </Text>
             </View>
           )}
@@ -171,21 +217,15 @@ export function HairQuiz({ mode }: HairQuizProps) {
 
         <View style={styles.footer}>
           <Button
-            label={
-              step.key === 'summary'
-                ? mode === 'onboarding'
-                  ? 'Start exploring'
-                  : 'Save'
-                : 'Continue'
-            }
-            onPress={step.key === 'summary' ? finish : () => go(1)}
-            disabled={!answered}
+            label={primary}
+            onPress={mode === 'section' ? saveSection : key === 'summary' ? finish : () => go(1)}
+            disabled={!done}
             loading={save.isPending}
-            haptic={step.key === 'summary' ? undefined : 'light'}
+            haptic={mode === 'onboarding' && key !== 'summary' ? 'light' : undefined}
             fullWidth
             testID="quiz-next"
           />
-          {step.optional && !answered && (
+          {info?.optional && !done && mode === 'onboarding' && (
             <Button label="I’m not sure — skip" variant="ghost" onPress={() => go(1)} fullWidth />
           )}
         </View>

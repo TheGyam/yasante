@@ -10,7 +10,9 @@ import type { Look } from '../types';
  */
 export function useLookActions({ onItsOwnPage = false } = {}) {
   const router = useRouter();
-  const like = useToggleLike();
+  // `mutate` keeps its identity; the mutation object doesn't, and every card would
+  // re-render on each like if the handler were built from it.
+  const { mutate: like } = useToggleLike();
   const { data: styles = [] } = useStyleTaxonomy();
   const styleNames = useMemo(
     () => Object.fromEntries(styles.map(style => [style.id, style.name])),
@@ -21,7 +23,7 @@ export function useLookActions({ onItsOwnPage = false } = {}) {
     styleNames,
     onOpen: (look: Look) => router.push(`/looks/${look.id}`),
     onOpenPerson: (handle: string) => router.push(`/stylist/${handle}`),
-    onLike: (look: Look, liked: boolean) => like.mutate({ id: look.id, liked }),
+    onLike: (look: Look, liked: boolean) => like({ id: look.id, liked }),
     // A look carries its own picture and caption, so the save screen needs only its id.
     onSave: (look: Look) => router.push(`/collections/save?kind=look&refId=${look.id}`),
     onShare: (look: Look) => shareLook(look),

@@ -16,9 +16,11 @@ import {
 } from '@expo-google-fonts/instrument-sans';
 import { AuthProvider, useAuth, useAuthStore } from '@/features/auth';
 import { ATTENDANCE_CATEGORY, bookingApi } from '@/features/booking';
-import { useUserStore } from '@/features/profile';
+import { useHairProfileSync, useUserStore } from '@/features/profile';
 import { ModeSwitchOverlay, useActiveMode, useModeStore } from '@/features/stylist';
 import { useNotifications } from '@/shared/hooks/useNotifications';
+import { useConsentSync } from '@/shared/config/consentSync';
+import { startAnalytics, track } from '@/shared/lib/analytics';
 import { ThemeProvider, useTheme } from '@/shared/theme';
 import { DialogHost } from '@/shared/ui/DialogHost';
 import { useStackPresets } from '@/shared/ui/stackOptions';
@@ -32,6 +34,7 @@ if (process.env.EXPO_PUBLIC_API_MOCKS === 'true') {
 }
 
 SplashScreen.preventAutoHideAsync();
+startAnalytics();
 
 export const unstable_settings = { anchor: '(client)' };
 
@@ -50,13 +53,21 @@ function RootNavigator() {
   const modeHydrated = useHydrated(useModeStore);
   const ready = userHydrated && modeHydrated && !isLoading;
 
+  // Answers given before signing up reach the account once there is one; so do
+  // consent choices, which are recorded on the device first.
+  useHairProfileSync();
+  useConsentSync(isAuthenticated);
+
   useNotifications(
     async target => {
       if (target.mode) useModeStore.getState().setMode(target.mode);
       // The reminder's buttons answer from the notification itself: "coming" is
       // sent there and then; "can't make it" opens the cancel, with its warning.
       if (target.bookingId && target.action === ATTENDANCE_CATEGORY.actions[0].id) {
-        await bookingApi.confirmAttendance(target.bookingId).catch(() => {});
+        await bookingApi
+          .confirmAttendance(target.bookingId)
+          .then(() => track('confirm_attendance', { from: 'notification' }))
+          .catch(() => {});
       }
       if (target.bookingId && target.action === ATTENDANCE_CATEGORY.actions[1].id) {
         router.push(`/bookings/${target.bookingId}?cancel=1` as never);
@@ -107,7 +118,8 @@ function RootNavigator() {
           <Stack.Screen name="settings/privacy" />
           <Stack.Screen name="settings/faqs" />
           <Stack.Screen name="settings/report" />
-          <Stack.Screen name="hair-profile" options={modal} />
+          <Stack.Screen name="hair-profile/index" options={modal} />
+          <Stack.Screen name="hair-profile/[section]" options={modal} />
           <Stack.Screen name="stylist-setup" options={modal} />
           <Stack.Screen name="menu/index" />
           <Stack.Screen name="menu/paste" options={modal} />

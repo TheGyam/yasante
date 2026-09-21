@@ -19,9 +19,10 @@ export interface ButtonProps extends Omit<PressableScaleProps, 'children' | 'sty
 }
 
 const sizes = StyleSheet.create({
-  lg: { height: 56, paddingHorizontal: space.xxl },
-  md: { height: 48, paddingHorizontal: space.xl },
-  sm: { height: 36, paddingHorizontal: space.md + 2 },
+  // Minimums, so text at the largest accessibility sizes grows the button, not clips.
+  lg: { minHeight: 56, paddingHorizontal: space.xxl, paddingVertical: space.sm },
+  md: { minHeight: 48, paddingHorizontal: space.xl, paddingVertical: space.sm },
+  sm: { minHeight: 36, paddingHorizontal: space.md + 2, paddingVertical: space.xs },
 });
 
 const labels = StyleSheet.create({
