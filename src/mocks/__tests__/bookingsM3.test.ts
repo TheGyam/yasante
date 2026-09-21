@@ -204,3 +204,22 @@ describe('her public timing label', () => {
     expect(timingLabelFor(STYLIST)).toBeUndefined();
   });
 });
+
+describe('her working hours', () => {
+  it('refuse a request for a day she doesn’t work', () => {
+    // Zainab is closed on Sundays and Mondays.
+    db.menus.set('acc_zainab', [
+      { id: 'z_press', name: 'Silk press', price: 55, fromPrice: false, durationMinutes: 120 },
+    ]);
+    const sunday = new Date();
+    sunday.setDate(sunday.getDate() + ((7 - sunday.getDay()) % 7 || 7));
+    expect(() =>
+      call('post', '/api/bookings/', CLIENT, {
+        stylistId: 'acc_zainab',
+        serviceId: 'z_press',
+        requestedTimes: [sunday.toISOString()],
+        policyVersion: 'v1',
+      })
+    ).toThrow(/doesn’t work/);
+  });
+});

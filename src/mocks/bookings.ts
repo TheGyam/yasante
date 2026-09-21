@@ -1,5 +1,6 @@
 import type { Booking, BookingStatus, CheckInWeek, ClientRecord } from '@/features/booking';
 import { TIMING_REASONS } from '@/features/booking/types';
+import { isOpenOn } from '@/features/stylist/format';
 import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
 import { db } from './db';
 
@@ -225,6 +226,9 @@ defineMocks({
 
     const times: string[] = (request.body?.requestedTimes ?? []).filter(Boolean);
     if (!times.length) throw new MockError(400, 'Say when you’d like to come');
+    // Only days she works. Her hours are hers to set; the server keeps to them.
+    const closed = times.find(time => !isOpenOn(profile.availability, new Date(time)));
+    if (closed) throw new MockError(400, 'She doesn’t work one of those days. Pick another');
     if (!request.body?.policyVersion) throw new MockError(400, 'Her terms have to be accepted');
 
     const when = new Date().toISOString();

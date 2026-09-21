@@ -1,6 +1,6 @@
 import { Share } from 'react-native';
 import { formatMoney } from '@/shared/lib/format';
-import type { MenuItem, StylistProfile, VerificationTier } from './types';
+import type { MenuItem, StylistProfile, VerificationTier, Availability } from './types';
 import { track } from '@/shared/lib/analytics';
 
 export const PUBLIC_HOST = 'yasante.com';
@@ -55,4 +55,74 @@ export function sharePage(profile: Pick<StylistProfile, 'handle' | 'displayName'
   const url = pageUrl(profile);
   track('share_link', { kind: 'stylist_page' });
   return Share.share({ message: `${profile.displayName} on Yasante: ${url}`, url }).catch(() => {});
+}
+
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const ymd = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+/** A sensible start: Tuesday to Saturday, nine to six. */
+export const DEFAULT_AVAILABILITY: Availability = {
+  week: [
+    null,
+    null,
+    { start: '09:00', end: '18:00' },
+    { start: '09:00', end: '18:00' },
+    { start: '09:00', end: '18:00' },
+    { start: '09:00', end: '18:00' },
+    { start: '09:00', end: '18:00' },
+  ],
+  blocked: [],
+};
+
+/** Whether she works that day. No availability set means she hasn't said, so yes. */
+export function isOpenOn(availability: Availability | undefined, date: Date) {
+  if (!availability) return true;
+  if (availability.blocked.includes(ymd(date))) return false;
+  return !!availability.week[date.getDay()];
+}
+
+/** Why a day doesn't work, in her words — for the client picking one. */
+export function closedReason(availability: Availability | undefined, date: Date) {
+  if (isOpenOn(availability, date)) return undefined;
+  return availability!.blocked.includes(ymd(date))
+    ? 'She’s away that day'
+    : `She doesn’t work ${DAY_NAMES[date.getDay()]}s`;
+}
+
+/** "Tue–Sat, 09:00–18:00" or "Mon, Wed, Fri" — how her week reads at a glance. */
+export function hoursLabel(availability?: Availability) {
+  if (!availability) return undefined;
+  // Monday first, the way people say a week.
+  const order = [1, 2, 3, 4, 5, 6, 0];
+  const open = order.filter(d => availability.week[d]);
+  if (!open.length) return 'Not taking bookings at the moment';
+  const runs: number[][] = [];
+  for (const day of open) {
+    const run = runs[runs.length - 1];
+    if (run && order.indexOf(day) === order.indexOf(run[run.length - 1]) + 1) run.push(day);
+    else runs.push([day]);
+  }
+  const days = runs
+    .map(r =>
+      r.length > 2
+        ? `${DAY_NAMES[r[0]]}–${DAY_NAMES[r[r.length - 1]]}`
+        : r.map(d => DAY_NAMES[d]).join(', ')
+    )
+    .join(', ');
+  const hours = open.map(d => availability.week[d]!);
+  const same = hours.every(h => h.start === hours[0].start && h.end === hours[0].end);
+  return same ? `${days}, ${hours[0].start}–${hours[0].end}` : days;
+}
+
+/** The next day she works, from tomorrow, within the next two months. */
+export function nextOpenDay(availability: Availability | undefined, from = new Date(), skip = 0) {
+  const day = new Date(from);
+  day.setHours(0, 0, 0, 0);
+  let found = 0;
+  for (let i = 1; i <= 62; i++) {
+    day.setDate(day.getDate() + 1);
+    if (isOpenOn(availability, day) && found++ === skip) return new Date(day);
+  }
+  return undefined;
 }

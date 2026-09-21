@@ -18,6 +18,16 @@ export interface StylistPolicies {
   rescheduleFreeOnce: boolean;
 }
 
+/** "09:00" to "18:00", or closed. */
+export type DayHours = { start: string; end: string } | null;
+
+export interface Availability {
+  /** Sunday is 0, as JavaScript counts. */
+  week: [DayHours, DayHours, DayHours, DayHours, DayHours, DayHours, DayHours];
+  /** Days off on top of the week — holidays, a wedding — as yyyy-MM-dd. */
+  blocked: string[];
+}
+
 export interface StylistProfile {
   id: string;
   accountId: string;
@@ -32,6 +42,8 @@ export interface StylistProfile {
   travelRadiusMiles?: number;
   instagramHandle?: string;
   policies: StylistPolicies;
+  /** When she works. Absent until she sets it, and then any day can be asked for. */
+  availability?: Availability;
   /** One photo of her own work, for the verification queue. */
   proofPhotoUri?: string;
   verificationTier: VerificationTier;
@@ -52,6 +64,7 @@ export type StylistProfileDraft = Pick<
   | 'instagramHandle'
   | 'policies'
   | 'proofPhotoUri'
+  | 'availability'
 >;
 
 /** One line of her menu: what she does, what it costs, how long it takes. */
