@@ -1,6 +1,14 @@
 import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
-import { BadgeCheck, Clock, MapPin, Settings, Store, WifiOff } from 'lucide-react-native';
+import {
+  BadgeCheck,
+  BarChart3,
+  Clock,
+  MapPin,
+  Settings,
+  Store,
+  WifiOff,
+} from 'lucide-react-native';
 import {
   ModeSwitchRow,
   PageLinkCard,
@@ -86,6 +94,13 @@ export default function StylistAccountScreen() {
                 iconTone={profile.availability ? 'accent' : 'gold'}
                 onPress={() => router.push('/availability')}
                 testID="account-hours"
+              />
+              <ListRow
+                title="Your numbers"
+                subtitle="This week, and how your services really run"
+                icon={BarChart3}
+                onPress={() => router.push('/numbers')}
+                testID="account-numbers"
               />
             </Section>
             {profile.published ? (

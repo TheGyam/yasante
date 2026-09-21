@@ -2,15 +2,22 @@ import { View } from 'react-native';
 import { format, isToday } from 'date-fns';
 import { CalendarClock, ClipboardCheck, Store, UserCheck } from 'lucide-react-native';
 import { useBookings, whenLabel, type Booking } from '@/features/booking';
-import { PageLinkCard, isNotFound, useMyStylistProfile } from '@/features/stylist';
+import {
+  PageLinkCard,
+  isNotFound,
+  useMyStylistProfile,
+  useStylistNumbers,
+} from '@/features/stylist';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
+import { Card } from '@/shared/ui/Card';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { Skeleton } from '@/shared/ui/Skeleton';
+import { Text } from '@/shared/ui/Text';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
@@ -32,6 +39,7 @@ export default function TodayScreen() {
   const router = useRouter();
   const { data: profile, isLoading, error, refetch, isRefetching } = useMyStylistProfile();
   const { data: confirmed = [] } = useBookings('stylist', ['confirmed']);
+  const { data: numbers } = useStylistNumbers();
 
   // Today, plus anything from before that still hasn't been closed out.
   const due = (booking: Booking) =>
@@ -70,6 +78,21 @@ export default function TodayScreen() {
           </Section>
         ) : (
           profile && <PageLinkCard profile={profile} />
+        )}
+
+        {!!numbers && (
+          <Card onPress={() => router.push('/numbers')} accessibilityLabel="Your week">
+            <Text variant="overline" tone="tertiary">
+              This week
+            </Text>
+            <Text variant="bodyStrong" style={{ marginTop: space.xs }}>
+              {numbers.thisWeek.requests} {numbers.thisWeek.requests === 1 ? 'request' : 'requests'}{' '}
+              · {numbers.thisWeek.confirmed} confirmed · {numbers.thisWeek.views} page views
+            </Text>
+            <Text variant="footnote" tone="accent" style={{ marginTop: space.xs }}>
+              See your numbers
+            </Text>
+          </Card>
         )}
 
         <View>

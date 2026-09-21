@@ -130,6 +130,41 @@ export interface StylistPage {
 }
 
 /** What waits in stylist mode — drives the badge on the mode switch. */
+/** One week of her business, counted by the server. */
+export interface WeekCounts {
+  views: number;
+  requests: number;
+  confirmed: number;
+  completed: number;
+  noShows: number;
+  lateCancellations: number;
+  /** What she was paid for completed appointments, where she recorded it. */
+  earned: number;
+}
+
+/** How a service really runs against what she quotes. Private: no threshold. */
+export interface ServiceTiming {
+  serviceId: string;
+  serviceName: string;
+  quotedMinutes?: number;
+  /** Her usual actual time, from close-outs. */
+  typicalMinutes?: number;
+  /** How many close-outs it's from. Always shown. */
+  sample: number;
+  early: number;
+  onTime: number;
+  over: number;
+  /** Of the overruns, how many were down to the client — for tightening her prep notes. */
+  clientSide: number;
+}
+
+export interface StylistNumbers {
+  weekOf: string;
+  thisWeek: WeekCounts;
+  lastWeek: WeekCounts;
+  timing: ServiceTiming[];
+}
+
 export interface StylistSummary {
   pendingRequests: number;
   appointmentsToday: number;
