@@ -5,6 +5,7 @@ export type {
   MenuItem,
   MenuItemDraft,
   OptionGroup,
+  PaymentMethod,
   PriceOption,
   PortfolioPhoto,
   PortfolioPhotoDraft,

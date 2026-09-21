@@ -8,6 +8,7 @@ import {
   Settings,
   Store,
   WifiOff,
+  Wallet,
 } from 'lucide-react-native';
 import {
   ModeSwitchRow,
@@ -88,12 +89,24 @@ export default function StylistAccountScreen() {
               <ListRow
                 title="Working hours"
                 subtitle={
-                  hoursLabel(profile.availability) ?? 'Not set — clients can ask for any day'
+                  hoursLabel(profile.availability) ?? 'Not set — clients see every day, 9 to 6'
                 }
                 icon={Clock}
                 iconTone={profile.availability ? 'accent' : 'gold'}
                 onPress={() => router.push('/availability')}
                 testID="account-hours"
+              />
+              <ListRow
+                title="Getting paid"
+                subtitle={
+                  profile.paymentMethods?.length
+                    ? profile.paymentMethods.map(m => m.label).join(', ')
+                    : 'Save your details once, pick them when you accept'
+                }
+                icon={Wallet}
+                iconTone={profile.paymentMethods?.length ? 'accent' : 'gold'}
+                onPress={() => router.push('/payment-methods')}
+                testID="account-payment"
               />
               <ListRow
                 title="Your numbers"
