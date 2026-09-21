@@ -1,4 +1,4 @@
-import { parseDuration, parseLine, parsePriceList } from '../priceList';
+import { isHeading, parseDuration, parseLine, parsePriceList } from '../priceList';
 
 describe('reading a pasted price list', () => {
   it('reads the shapes people actually write', () => {
@@ -67,5 +67,17 @@ describe('the how-long field', () => {
     expect(parseDuration('90 mins')).toBe(90);
     expect(parseDuration('3')).toBe(180);
     expect(parseDuration('')).toBeUndefined();
+  });
+});
+
+describe('headings', () => {
+  it('are told apart from services she forgot to price', () => {
+    expect(isHeading('BRAIDS')).toBe(true);
+    expect(isHeading('Twists:')).toBe(true);
+    expect(isHeading('✨✨✨')).toBe(true);
+    expect(isHeading('Wig install')).toBe(false);
+    expect(isHeading('BOX BRAIDS £120')).toBe(false);
+    const parsed = parsePriceList(['BRAIDS', 'Knotless £120', 'Wig install'].join('\n'));
+    expect(parsed.map(p => !!p.heading)).toEqual([true, false, false]);
   });
 });
