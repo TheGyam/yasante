@@ -60,7 +60,7 @@ export interface Booking {
   /** An .ics link the server provides for the confirmed appointment. */
   calendarUrl?: string;
 
-  /** Her first choice and two alternatives, in order of preference. */
+  /** The time she picked from the stylist's free slots. Older requests may hold three. */
   requestedTimes: string[];
   /** Set when the stylist accepts. */
   scheduledFor?: string;
@@ -114,6 +114,13 @@ export interface BookingDraft {
   requestedTimes: string[];
   notes?: string;
   policyVersion: string;
+}
+
+/** A stylist's free start times for one service, day by day. Only days with room. */
+export interface FreeSlots {
+  /** How long the job runs, which is what decides the times. */
+  minutes: number;
+  days: { date: string; times: string[] }[];
 }
 
 /** Whose side of the booking you're looking at. */

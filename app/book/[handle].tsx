@@ -1,17 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { addDays, startOfDay } from 'date-fns';
-import { CalendarClock, Scissors } from 'lucide-react-native';
+import { BellRing, CalendarClock, Scissors } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
-import { dayLabel, useRequestBooking } from '@/features/booking';
+import { SlotPicker, useFreeSlots, useRequestBooking, whenLabel } from '@/features/booking';
 import {
-  closedReason,
   estimate,
   formatDuration,
   formatPrice,
   hoursLabel,
-  nextOpenDay,
   optionGroups,
   useStylistPage,
   type ChosenOptions,
@@ -24,7 +21,6 @@ import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
 import { Chip } from '@/shared/ui/Chip';
-import { DateTimeField } from '@/shared/ui/DateTimeField';
 import { notify } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/Input';
 import { ListRow } from '@/shared/ui/ListRow';
@@ -44,12 +40,10 @@ const useStyles = makeStyles(() => ({
   footer: { gap: space.xs, paddingTop: space.lg },
 }));
 
-/** A sensible first suggestion: tomorrow, then the two days after. */
-const suggest = (offset: number) => startOfDay(addDays(new Date(), 1 + offset));
-
 /**
- * Asking for an appointment. Three times rather than one, because a stylist with a
- * chair already booked can say yes to the second instead of starting again.
+ * Asking for an appointment. She picks from the stylist's real free times — the
+ * days she works, with the hours already taken left out — so whatever's asked for
+ * is something the stylist can say yes to.
  */
 export default function RequestBookingScreen() {
   const styles = useStyles();
@@ -70,19 +64,7 @@ export default function RequestBookingScreen() {
   }, []);
 
   const [serviceId, setServiceId] = useState<string | undefined>(fromLook);
-  const [times, setTimes] = useState<Date[]>(() =>
-    slotDay
-      ? [startOfDay(new Date(`${slotDay}T12:00:00`)), suggest(1), suggest(2)]
-      : [suggest(0), suggest(1), suggest(2)]
-  );
-  // Once her hours arrive, the suggestions move onto days she's actually open.
-  const suggested = useRef(false);
-  useEffect(() => {
-    const availability = data?.profile.availability;
-    if (!availability || suggested.current || slotDay) return;
-    suggested.current = true;
-    setTimes(current => current.map((time, i) => nextOpenDay(availability, new Date(), i) ?? time));
-  }, [data?.profile.availability, slotDay]);
+  const [time, setTime] = useState<string>();
   const [ownHair, setOwnHair] = useState(false);
   const [notes, setNotes] = useState('');
   const [accepted, setAccepted] = useState(false);
@@ -92,19 +74,26 @@ export default function RequestBookingScreen() {
     () => data?.menu.find(item => item.id === serviceId),
     [data?.menu, serviceId]
   );
-
-  const setTime = (index: number, value: Date) =>
-    setTimes(current => current.map((time, i) => (i === index ? value : time)));
+  // Her free times depend on how long the job runs, so they follow the options.
+  const optionIds = Object.values(chosen).filter((id): id is string => !!id);
+  const quoteReady = !!service && estimate(service, chosen).complete;
+  const slots = useFreeSlots(handle, quoteReady ? serviceId : undefined, optionIds);
+  // A different job can take a different amount of time; a picked time may no longer fit.
+  useEffect(() => {
+    if (time && slots.data && !slots.data.days.some(d => d.times.includes(time))) {
+      setTime(undefined);
+    }
+  }, [slots.data, time]);
 
   const send = async () => {
-    if (!data || !service) return;
+    if (!data || !service || !time) return;
     try {
       const booking = await request.mutateAsync({
         stylistId: data.profile.accountId,
         serviceId: service.id,
         options: chosen,
         bringingOwnHair: ownHair,
-        requestedTimes: times.map(time => time.toISOString()),
+        requestedTimes: [time],
         notes: notes.trim() || undefined,
         policyVersion: POLICY_VERSION,
       });
@@ -116,6 +105,8 @@ export default function RequestBookingScreen() {
       await notify({ title: 'Couldn’t send that', message });
       // The one thing she can fix from here.
       if (message.toLowerCase().includes('mobile')) router.push('/auth/verify-phone');
+      // Someone got there first: show what's still free.
+      slots.refetch();
     }
   };
 
@@ -128,7 +119,6 @@ export default function RequestBookingScreen() {
   }
 
   const { profile, menu } = data;
-  const closed = times.map(time => closedReason(profile.availability, time));
   const quote = service ? estimate(service, chosen) : undefined;
   const groups = service ? optionGroups(service) : [];
   const depositDue =
@@ -218,27 +208,30 @@ export default function RequestBookingScreen() {
 
         <View style={styles.group}>
           <Text variant="footnote" tone="secondary" style={styles.label}>
-            When suits you? Give her three, in order.
-            {hoursLabel(profile.availability)
-              ? ` She works ${hoursLabel(profile.availability)}.`
-              : ''}
+            {!service
+              ? 'Pick a service to see when she’s free.'
+              : !quoteReady
+                ? `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')} to see when she’s free.`
+                : `When suits you?${hoursLabel(profile.availability) ? ` She works ${hoursLabel(profile.availability)}.` : ''}`}
           </Text>
-          {times.map((time, index) => (
-            <View key={index}>
-              <DateTimeField
-                title={['First choice', 'Second choice', 'Third choice'][index]}
-                mode="date"
-                value={time}
-                onChange={value => setTime(index, value)}
-                minimumDate={new Date()}
-              />
-              {!!closed[index] && (
-                <Text variant="caption" tone="danger" style={styles.label}>
-                  {closed[index]} — pick another day.
-                </Text>
-              )}
-            </View>
-          ))}
+          {quoteReady && (
+            <SlotPicker
+              slots={slots.data}
+              loading={slots.isLoading}
+              value={time}
+              onChange={setTime}
+              initialDay={slotDay}
+              whenFull={
+                <Button
+                  label="Tell me when a slot opens"
+                  icon={BellRing}
+                  variant="secondary"
+                  onPress={() => router.replace(`/waitlist/${handle}`)}
+                  fullWidth
+                />
+              }
+            />
+          )}
         </View>
 
         <Section footer="She'll know not to order hair for you.">
@@ -274,14 +267,16 @@ export default function RequestBookingScreen() {
           <Button
             label="Send request"
             onPress={send}
-            disabled={!service || !quote?.complete || !accepted || closed.some(Boolean)}
+            disabled={!service || !quote?.complete || !accepted || !time}
             loading={request.isPending}
             fullWidth
             testID="booking-send"
           />
           <Text variant="caption" tone="tertiary" align="center">
             {user?.phoneVerified
-              ? `She has 48 hours to reply. First choice: ${dayLabel(times[0].toISOString())}.`
+              ? time
+                ? `${whenLabel(time)}. She has 48 hours to reply.`
+                : 'Pick a time and she has 48 hours to reply.'
               : 'You’ll verify your mobile number before this can be sent.'}
           </Text>
         </View>

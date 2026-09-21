@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { isSameDay, setHours, startOfHour } from 'date-fns';
+import { setHours, startOfHour } from 'date-fns';
 import {
   Banknote,
   CalendarClock,
@@ -20,7 +20,6 @@ import { errorMessage } from '@/features/auth';
 import {
   STATUS_LABELS,
   serviceLine,
-  dayLabel,
   recordLabel,
   timingText,
   useAcceptRequest,
@@ -95,10 +94,10 @@ export default function RequestScreen() {
   const [typed, setTyped] = useState<PaymentMethodDraft>({ label: 'Bank transfer', details: '' });
   const [keepTyped, setKeepTyped] = useState(true);
 
-  // Her first choice, at a sensible hour, is the default she'll usually keep.
+  // The time she picked from your free slots is the default you'll nearly always keep.
   useEffect(() => {
-    const first = booking?.requestedTimes[0];
-    if (first) setWhen(setHours(startOfHour(new Date(first)), 10));
+    const asked = booking?.requestedTimes[0];
+    if (asked) setWhen(new Date(asked));
     if (booking?.policy.depositType === 'fixed' && booking.policy.depositAmount) {
       setDeposit(String(booking.policy.depositAmount));
     }
@@ -158,8 +157,8 @@ export default function RequestScreen() {
       });
     }
   };
-  // A day she asked for is an answer; any other day is a suggestion she has to agree to.
-  const onAskedDay = booking.requestedTimes.some(t => isSameDay(new Date(t), when));
+  // The time she asked for is an answer; any other time is a suggestion she has to agree to.
+  const onAskedDay = booking.requestedTimes.some(t => new Date(t).getTime() === when.getTime());
   const started = !!booking.scheduledFor && new Date(booking.scheduledFor) <= new Date();
 
   const take = () =>
@@ -253,13 +252,13 @@ export default function RequestScreen() {
             )}
             <View style={styles.group}>
               <Text variant="footnote" tone="secondary" style={styles.label}>
-                She asked for {booking.requestedTimes.map(dayLabel).join(', then ')}
+                She asked for {booking.requestedTimes.map(whenLabel).join(', or ')}
               </Text>
               <DateTimeField title="Day" mode="date" value={when} onChange={setWhen} />
               <DateTimeField title="Start at" mode="time" value={when} onChange={setWhen} />
               {!onAskedDay && (
                 <Text variant="caption" tone="accent" style={styles.label}>
-                  That’s not one of her days, so she’ll be asked if it works.
+                  That’s not the time she picked, so she’ll be asked if it works.
                 </Text>
               )}
             </View>

@@ -7,6 +7,7 @@ import type {
   CheckInAnswers,
   CheckInWeek,
   CloseOut,
+  FreeSlots,
   SlotInterest,
   Review,
   ReviewReportReason,
@@ -23,6 +24,14 @@ export const bookingApi = {
 
   /** GET /api/bookings/:id/ */
   get: async (id: string) => (await apiClient.get<Booking>(`/api/bookings/${id}/`)).data,
+
+  /** GET /api/stylists/by-handle/:handle/slots/?service=&options= — her free times for a job. */
+  slots: async (handle: string, serviceId: string, optionIds: string[]) =>
+    (
+      await apiClient.get<FreeSlots>(`/api/stylists/by-handle/${handle}/slots/`, {
+        params: { service: serviceId, options: optionIds.join(',') || undefined },
+      })
+    ).data,
 
   /** POST /api/bookings/ — the client asks. Her phone must be verified. */
   request: async (draft: BookingDraft) =>

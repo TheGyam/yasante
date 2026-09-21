@@ -9,6 +9,7 @@ export type {
   CloseOut,
   ClientRecord,
   Deposit,
+  FreeSlots,
   Review,
   ReviewReportReason,
   SlotInterest,
@@ -23,3 +24,4 @@ export * from './hooks';
 export { BookingNudge } from './components/BookingNudge';
 export { ReviewCard } from './components/ReviewCard';
 export { usePrepStore } from './prepStore';
+export { SlotPicker } from './components/SlotPicker';

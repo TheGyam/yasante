@@ -25,6 +25,20 @@ export function useBookings(role: BookingRole, status?: BookingStatus[]) {
   });
 }
 
+/**
+ * A stylist's free times for the job being asked for. Fresh for half a minute:
+ * a slot someone else takes should stop showing soon, and the server refuses a
+ * clash either way.
+ */
+export function useFreeSlots(handle: string, serviceId?: string, optionIds: string[] = []) {
+  return useQuery({
+    queryKey: ['slots', handle, serviceId, [...optionIds].sort().join(',')],
+    queryFn: () => bookingApi.slots(handle, serviceId!, optionIds),
+    enabled: !!handle && !!serviceId,
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useBooking(id: string) {
   const { user } = useAuth();
   return useQuery({
@@ -41,7 +55,11 @@ export function useBooking(id: string) {
  */
 function useRefresh() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: [KEY] });
+  return () => {
+    // Any change to a booking can free or take a slot.
+    queryClient.invalidateQueries({ queryKey: ['slots'] });
+    return queryClient.invalidateQueries({ queryKey: [KEY] });
+  };
 }
 
 export function useRequestBooking() {
