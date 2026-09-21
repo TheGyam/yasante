@@ -70,6 +70,10 @@ defineMocks({
     const profile = [...db.stylists.values()].find(s => s.handle === handle);
     // A draft page is nobody's business until she puts it live.
     if (!profile?.published) throw new MockError(404, 'No page at that address');
+    // Blocking runs both ways, pages included.
+    if (request.accountId && db.blocks.get(request.accountId)?.has(profile.accountId)) {
+      throw new MockError(404, 'No page at that address');
+    }
     return {
       // The proof photo is for the verification queue, never for clients.
       profile: { ...profile, proofPhotoUri: undefined },

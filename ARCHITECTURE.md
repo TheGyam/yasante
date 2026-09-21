@@ -86,6 +86,13 @@ check-ins. The server decides when each is open and says so on the booking
 (`review`, `checkInDue`); the app only reflects it. `shelf` is the product catalogue
 and the products a client uses, rates, finishes and buys again.
 
+`looks` is posted by clients and stylists alike. Who did the hair is never typed in: a
+stylist is credited through her own menu, a client's stylist through a completed
+booking. Likes are the one place the query cache is patched instead of re-read
+(`patchLook` in its hooks), because re-reading every page of a feed per tap costs more
+than the like. A double tap on a photo likes it; that's timed by hand in `LookCard`
+rather than with `Gesture.Exclusive`, which on web opened the look on the first tap.
+
 ## Modes and navigation
 
 One account can be a client and a stylist. The root layout guards two route groups,

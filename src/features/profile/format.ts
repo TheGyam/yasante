@@ -7,6 +7,9 @@ const TEXTURE: Record<HairTexture, string> = {
   coily: 'Coily',
   kinky: 'Zig-zag coils',
 };
+/** How each texture is named to people, not in the chart's numbers. */
+export const TEXTURE_LABELS = TEXTURE;
+
 const LENGTH: Record<HairLength, string> = {
   cropped: 'Cropped',
   ear: 'Ear length',

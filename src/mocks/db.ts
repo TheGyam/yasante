@@ -1,4 +1,4 @@
-import type { User } from '@/features/profile';
+import type { HairTexture, User } from '@/features/profile';
 import type { Booking, CheckInAnswers, CheckInWeek, Review } from '@/features/booking';
 import type { ShelfItem } from '@/features/shelf';
 import type { MenuItem, PortfolioPhoto, StylistProfile } from '@/features/stylist';
@@ -150,7 +150,11 @@ export const db = {
       authorId: 'acc_ama',
       photoUri: 'https://images.unsplash.com/photo-1595959183082-7b570b7e08e2?w=800&q=80',
       caption: 'Knotless, waist length, done in one sitting.',
+      serviceId: 'men_knotless',
       serviceName: 'Knotless braids',
+      stylistId: 'acc_ama',
+      styles: ['knotless'],
+      hairTexture: 'coily' as const,
       price: 120,
       fromPrice: true,
       createdAt: now,
@@ -161,6 +165,9 @@ export const db = {
       photoUri: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=800&q=80',
       caption: 'Silk press on 4c hair. No heat damage, ever.',
       serviceName: 'Silk press',
+      stylistId: 'acc_zainab',
+      styles: ['silk-press'],
+      hairTexture: 'kinky' as const,
       price: 55,
       fromPrice: false,
       createdAt: now,
@@ -170,6 +177,9 @@ export const db = {
       authorId: 'acc_zainab',
       photoUri: 'https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=800&q=80',
       caption: 'Cornrows with a bit of colour.',
+      stylistId: 'acc_zainab',
+      styles: ['cornrows'],
+      hairTexture: 'coily' as const,
       createdAt: now,
     },
   ] as {
@@ -177,11 +187,33 @@ export const db = {
     authorId: string;
     photoUri: string;
     caption?: string;
+    serviceId?: string;
     serviceName?: string;
     price?: number;
     fromPrice?: boolean;
+    /** Who did the hair. The author, unless a client posted it. */
+    stylistId?: string;
+    styles: string[];
+    hairTexture?: HairTexture;
     createdAt: string;
   }[],
+
+  /** Who has liked each look. */
+  likes: new Map<string, Set<string>>([
+    ['look_seed_1', new Set(['acc_zainab', 'acc_client'])],
+    ['look_seed_2', new Set(['acc_ama'])],
+  ]),
+
+  /** Comments, oldest first. */
+  comments: [
+    {
+      id: 'com_seed_1',
+      lookId: 'look_seed_1',
+      authorId: 'acc_zainab',
+      body: 'The parts on this are so clean.',
+      createdAt: now,
+    },
+  ] as { id: string; lookId: string; authorId: string; body: string; createdAt: string }[],
 
   /** A client's collections, with their items. Keyed by account. */
   collections: new Map<
@@ -246,6 +278,8 @@ export const db = {
   reports: [] as {
     lookId?: string;
     reviewId?: string;
+    commentId?: string;
+    profileId?: string;
     reason: string;
     note?: string;
     reportedBy: string;

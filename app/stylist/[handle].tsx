@@ -5,6 +5,7 @@ import {
   CalendarPlus,
   Clock,
   MapPin,
+  MoreHorizontal,
   Scissors,
   Store,
   WifiOff,
@@ -16,6 +17,7 @@ import {
   isNotFound,
   useStylistPage,
 } from '@/features/stylist';
+import { useAuth } from '@/features/auth';
 import { ReviewCard } from '@/features/booking';
 import { formatMoney } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
@@ -23,6 +25,7 @@ import { makeStyles, radius, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Screen } from '@/shared/ui/Screen';
@@ -52,6 +55,7 @@ export default function StylistPageScreen() {
   const router = useRouter();
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const { data, isLoading, isError, error, refetch } = useStylistPage(handle);
+  const { user } = useAuth();
 
   if (isLoading) {
     return (
@@ -88,7 +92,26 @@ export default function StylistPageScreen() {
         : `${formatMoney(profile.policies.depositAmount ?? 0)} deposit`;
 
   return (
-    <Screen back title={profile.displayName} testID="stylist-page">
+    <Screen
+      back
+      title={profile.displayName}
+      headerRight={
+        profile.accountId === user?.id ? undefined : (
+          <IconButton
+            icon={MoreHorizontal}
+            size={36}
+            accessibilityLabel={`Report or block ${profile.displayName}`}
+            onPress={() =>
+              router.push(
+                `/looks/options?kind=profile&id=${profile.accountId}&authorId=${profile.accountId}&name=${encodeURIComponent(profile.displayName)}&mine=0&leave=1`
+              )
+            }
+            testID="stylist-page-more"
+          />
+        )
+      }
+      testID="stylist-page"
+    >
       <View style={styles.body}>
         <View style={styles.identity}>
           <Avatar uri={profile.avatarUri} name={profile.displayName} size={88} />
