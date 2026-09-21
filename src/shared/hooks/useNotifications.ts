@@ -16,27 +16,67 @@ export interface NotificationTarget {
   mode?: 'client' | 'stylist';
   /** The route to open, e.g. `/requests`. */
   url?: string;
+  /** The booking it's about, for notifications with answer buttons. */
+  bookingId?: string;
+  /** Which button was pressed, when the notification has buttons and one was. */
+  action?: string;
+}
+
+/** Buttons a notification can carry, registered under a category the server names. */
+export interface NotificationCategory {
+  id: string;
+  actions: { id: string; title: string }[];
 }
 
 /**
- * Asks for permission and hands every tapped notification's target to `onOpen`,
- * including the one that launched the app.
+ * Asks for permission, registers the answer buttons notifications can carry, and
+ * hands every tapped notification's target to `onOpen` — including the one that
+ * launched the app, and which button was pressed.
  */
-export function useNotifications(onOpen: (target: NotificationTarget) => void) {
+export function useNotifications(
+  onOpen: (target: NotificationTarget) => void,
+  categories: NotificationCategory[] = []
+) {
   const handler = useRef(onOpen);
   handler.current = onOpen;
+  const registered = useRef(categories);
 
   useEffect(() => {
     if (!Notifications) return;
+    const api = Notifications;
     requestPermissions().catch(() => {});
 
-    const open = (response: { notification: { request: { content: { data: unknown } } } }) =>
-      handler.current((response.notification.request.content.data ?? {}) as NotificationTarget);
+    for (const category of registered.current) {
+      api
+        .setNotificationCategoryAsync(
+          category.id,
+          // Every answer opens the app, so it's handled by code that's running and signed in.
+          category.actions.map(action => ({
+            identifier: action.id,
+            buttonTitle: action.title,
+            options: { opensAppToForeground: true },
+          }))
+        )
+        .catch(() => {});
+    }
 
-    Notifications.getLastNotificationResponseAsync()
+    const open = (response: {
+      actionIdentifier: string;
+      notification: { request: { content: { data: unknown } } };
+    }) => {
+      const data = (response.notification.request.content.data ?? {}) as NotificationTarget;
+      const pressed =
+        response.actionIdentifier === api.DEFAULT_ACTION_IDENTIFIER
+          ? undefined
+          : response.actionIdentifier;
+      handler.current({ ...data, action: pressed });
+    };
+
+    api
+      .getLastNotificationResponseAsync()
       .then(response => response && open(response))
       .catch(() => {});
-    const subscription = Notifications.addNotificationResponseReceivedListener(open);
+    const subscription = api.addNotificationResponseReceivedListener(open);
     return () => subscription.remove();
   }, []);
 }

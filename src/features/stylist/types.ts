@@ -94,6 +94,10 @@ export interface StylistPage {
   reviews: Review[];
   /** Across every published review. Absent until there is one. */
   rating?: { average: number; count: number };
+  /** How long she usually takes to answer a request, in hours. Absent until she has. */
+  responseHours?: number;
+  /** "Usually finishes on time", once there's enough to say it honestly. */
+  timingLabel?: { outcome: 'early' | 'on_time' | 'over'; count: number; sample: number };
 }
 
 /** What waits in stylist mode — drives the badge on the mode switch. */

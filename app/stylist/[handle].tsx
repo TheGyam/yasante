@@ -2,8 +2,11 @@ import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
   BadgeCheck,
+  BellRing,
   CalendarPlus,
   Clock,
+  MessageCircleReply,
+  Timer,
   MapPin,
   MoreHorizontal,
   Scissors,
@@ -15,6 +18,8 @@ import {
   formatDuration,
   formatPrice,
   isNotFound,
+  replyLabel,
+  timingLabelText,
   useStylistPage,
 } from '@/features/stylist';
 import { useAuth } from '@/features/auth';
@@ -83,7 +88,10 @@ export default function StylistPageScreen() {
     );
   }
 
-  const { profile, menu, photos, confirmedStyles, reviews, rating } = data;
+  const { profile, menu, photos, confirmedStyles, reviews, rating, responseHours, timingLabel } =
+    data;
+  const reply = replyLabel(responseHours);
+  const timing = timingLabelText(timingLabel);
   const deposit =
     profile.policies.depositType === 'none'
       ? 'No deposit'
@@ -138,6 +146,17 @@ export default function StylistPageScreen() {
           fullWidth
           testID="stylist-page-book"
         />
+        {profile.accountId !== user?.id && (
+          <Button
+            label="Tell me if a slot opens"
+            icon={BellRing}
+            variant="ghost"
+            onPress={() => router.push(`/waitlist/${profile.handle}`)}
+            fullWidth
+            style={{ marginTop: -space.lg }}
+            testID="stylist-page-waitlist"
+          />
+        )}
 
         <Section>
           <ListRow
@@ -160,6 +179,15 @@ export default function StylistPageScreen() {
             icon={BadgeCheck}
             iconTone={profile.verificationTier > 0 ? 'success' : 'neutral'}
           />
+          {!!reply && <ListRow title={reply} icon={MessageCircleReply} iconTone="neutral" />}
+          {!!timing && (
+            <ListRow
+              title={timing}
+              subtitle="Only counts the times that were down to her"
+              icon={Timer}
+              iconTone="success"
+            />
+          )}
         </Section>
 
         {menu.length > 0 && (

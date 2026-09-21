@@ -7,6 +7,7 @@ import type {
   BookingStatus,
   CheckInAnswers,
   CheckInWeek,
+  CloseOut,
   ReviewReportReason,
 } from './types';
 
@@ -83,8 +84,7 @@ export function useCancelBooking() {
 export function useCloseBooking() {
   const onSuccess = useRefresh();
   return useMutation({
-    mutationFn: (args: { id: string; outcome: 'attended' | 'no_show' }) =>
-      bookingApi.close(args.id, args.outcome),
+    mutationFn: ({ id, ...closeOut }: { id: string } & CloseOut) => bookingApi.close(id, closeOut),
     onSuccess,
   });
 }
@@ -115,5 +115,96 @@ export function useReportReview() {
   return useMutation({
     mutationFn: (args: { id: string; reason: ReviewReportReason; note?: string }) =>
       bookingApi.reportReview(args.id, args.reason, args.note),
+  });
+}
+
+export function useProposeTime() {
+  const onSuccess = useRefresh();
+  return useMutation({
+    mutationFn: (args: {
+      id: string;
+      scheduledFor: string;
+      deposit?: { amount: number; method: string };
+    }) => bookingApi.propose(args.id, args.scheduledFor, args.deposit),
+    onSuccess,
+  });
+}
+
+export function useAnswerProposal() {
+  const onSuccess = useRefresh();
+  return useMutation({
+    mutationFn: (args: { id: string; accept: boolean }) =>
+      bookingApi.answerProposal(args.id, args.accept),
+    onSuccess,
+  });
+}
+
+export function useConfirmAttendance() {
+  const onSuccess = useRefresh();
+  return useMutation({ mutationFn: (id: string) => bookingApi.confirmAttendance(id), onSuccess });
+}
+
+export function useRequestMove() {
+  const onSuccess = useRefresh();
+  return useMutation({
+    mutationFn: (args: { id: string; scheduledFor: string }) =>
+      bookingApi.requestMove(args.id, args.scheduledFor),
+    onSuccess,
+  });
+}
+
+export function useAnswerMove() {
+  const onSuccess = useRefresh();
+  return useMutation({
+    mutationFn: (args: { id: string; accept: boolean }) =>
+      bookingApi.answerMove(args.id, args.accept),
+    onSuccess,
+  });
+}
+
+export function useStartedOnTime() {
+  const onSuccess = useRefresh();
+  return useMutation({
+    mutationFn: (args: { id: string; onTime: boolean }) =>
+      bookingApi.startedOnTime(args.id, args.onTime),
+    onSuccess,
+  });
+}
+
+export function useContest() {
+  const onSuccess = useRefresh();
+  return useMutation({
+    mutationFn: (args: { id: string; what: 'no_show' | 'timing'; note?: string }) =>
+      bookingApi.contest(args.id, args.what, args.note),
+    onSuccess,
+  });
+}
+
+const SLOTS = 'slot-interests';
+
+export function useSlotInterests() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: [SLOTS, user?.id],
+    queryFn: bookingApi.slotInterests,
+    enabled: !!user?.id,
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useWatchSlots() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { stylistId: string; from: string; to: string }) =>
+      bookingApi.watchSlots(args.stylistId, args.from, args.to),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [SLOTS] }),
+  });
+}
+
+export function useUnwatchSlots() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => bookingApi.unwatchSlots(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [SLOTS] }),
   });
 }

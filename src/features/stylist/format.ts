@@ -8,6 +8,27 @@ export const PUBLIC_HOST = 'yasante.com';
 export const pageUrl = (profile: Pick<StylistProfile, 'handle'>) =>
   `https://${PUBLIC_HOST}/${profile.handle}`;
 
+/** "Usually replies within an hour" — rounded the way a person would say it. */
+export function replyLabel(hours?: number) {
+  if (hours === undefined) return undefined;
+  if (hours <= 1) return 'Usually replies within an hour';
+  if (hours <= 6) return 'Usually replies within a few hours';
+  if (hours <= 24) return 'Usually replies within a day';
+  return 'Usually replies within two days';
+}
+
+const TIMING_WORDS = { early: 'finishes early', on_time: 'finishes on time', over: 'runs over' };
+
+/** "Usually finishes on time · 8 of 10 appointments". The sample size is always shown. */
+export function timingLabelText(label?: {
+  outcome: keyof typeof TIMING_WORDS;
+  count: number;
+  sample: number;
+}) {
+  if (!label) return undefined;
+  return `Usually ${TIMING_WORDS[label.outcome]} · ${label.count} of ${label.sample} appointments`;
+}
+
 /** Every badge says exactly what was checked — never a generic "verified". */
 export const VERIFICATION_LABELS: Record<VerificationTier, string> = {
   0: 'Not checked yet',

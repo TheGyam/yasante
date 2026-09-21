@@ -58,6 +58,16 @@ export interface Booking {
   requestedTimes: string[];
   /** Set when the stylist accepts. */
   scheduledFor?: string;
+  /** When a request or an unpaid deposit lapses on its own. The server enforces it. */
+  expiresAt?: string;
+  /** A time she suggested instead of the ones asked for. The client says yes or no. */
+  proposal?: { scheduledFor: string; deposit?: { amount: number; method: string } };
+  /** The client answered "Yes, I'm coming". */
+  attendanceConfirmedAt?: string;
+  /** How many times it has been moved. One move is free; a second is a cancellation. */
+  moves: number;
+  /** A move one side has asked for and the other hasn't answered. */
+  moveRequest?: { by: BookingRole; scheduledFor: string };
 
   deposit?: Deposit;
 
@@ -72,6 +82,14 @@ export interface Booking {
   /** Why it ended, when it ended badly. */
   reason?: string;
   completedAt?: string;
+  /** What she was actually paid, recorded at close-out. */
+  actualPrice?: number;
+  /** How the time went, recorded at close-out. */
+  timing?: BookingTiming;
+  /** The client's one tap: did it start on time? */
+  startedOnTime?: boolean;
+  /** A client may contest a no-show or a timing record, once each. */
+  contested?: { noShow?: boolean; timing?: boolean };
   /** Her review, once she's left one. Only on the client's copy. */
   review?: Pick<Review, 'rating' | 'status'>;
   /** The check-in the server is asking her for now, if any. Only on the client's copy. */
@@ -126,4 +144,62 @@ export interface CheckInAnswers {
   holding: 'fresh' | 'okay' | 'tired';
   scalp: 'comfortable' | 'itchy' | 'sore';
   again: 'yes' | 'maybe' | 'no';
+}
+
+/** Finished early, on time or ran over — never free-typed minutes. */
+export type TimingOutcome = 'early' | 'on_time' | 'over';
+export type TimingBucket = 'under_30' | '30_60' | '1_2h' | '2h_plus';
+
+export interface BookingTiming {
+  outcome: TimingOutcome;
+  bucket?: TimingBucket;
+  reason?: TimingReason;
+}
+
+export const TIMING_BUCKETS: { value: TimingBucket; label: string }[] = [
+  { value: 'under_30', label: 'Under 30 min' },
+  { value: '30_60', label: '30–60 min' },
+  { value: '1_2h', label: '1–2 hrs' },
+  { value: '2h_plus', label: '2 hrs or more' },
+];
+
+/**
+ * Why it ran early or over. Which side a reason falls on matters: only the
+ * stylist- and job-side ones feed her public label, so a late client can't cost
+ * her a badge — and she still sees the client-side ones privately.
+ */
+export const TIMING_REASONS = [
+  { value: 'client_late', label: 'Client arrived late', side: 'client' },
+  { value: 'hair_not_prepped', label: 'Hair not washed or detangled', side: 'client' },
+  { value: 'wrong_hair', label: 'Wrong or not enough hair brought', side: 'client' },
+  { value: 'old_style_in', label: 'Old style still in', side: 'client' },
+  { value: 'style_changed', label: 'Changed the style on the day', side: 'client' },
+  { value: 'long_breaks', label: 'Long breaks', side: 'client' },
+  { value: 'took_longer', label: 'Style took longer than expected', side: 'stylist' },
+  { value: 'more_hair', label: 'More hair or density than expected', side: 'stylist' },
+  { value: 'previous_overran', label: 'Previous client overran', side: 'stylist' },
+  { value: 'working_alone', label: 'Working alone', side: 'stylist' },
+  { value: 'supplies', label: 'Supplies or equipment', side: 'stylist' },
+  { value: 'own_delay', label: 'My own delay', side: 'stylist' },
+] as const;
+export type TimingReason = (typeof TIMING_REASONS)[number]['value'];
+
+/** A client waiting for a slot with a stylist on any day in a range. */
+export interface SlotInterest {
+  id: string;
+  stylistId: string;
+  stylistName: string;
+  stylistHandle?: string;
+  from: string;
+  to: string;
+  /** The day a slot opened, once one has. */
+  openedOn?: string;
+  createdAt: string;
+}
+
+/** What a close-out records. */
+export interface CloseOut {
+  outcome: 'attended' | 'no_show';
+  timing?: BookingTiming;
+  actualPrice?: number;
 }

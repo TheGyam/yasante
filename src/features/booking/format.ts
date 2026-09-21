@@ -1,5 +1,13 @@
 import { differenceInHours, format, isToday, isTomorrow } from 'date-fns';
-import type { Booking, BookingStatus, ClientRecord } from './types';
+import {
+  TIMING_BUCKETS,
+  TIMING_REASONS,
+  type Booking,
+  type BookingStatus,
+  type BookingTiming,
+  type ClientRecord,
+  type TimingOutcome,
+} from './types';
 
 /**
  * What each state means to the person reading it. Written from the client's side —
@@ -71,3 +79,55 @@ export function recordLabel(record?: ClientRecord) {
   ].filter(Boolean);
   return `${styles} · ${misses.join(', ')}`;
 }
+
+/**
+ * Whether to ask "Still coming?": a confirmed booking in the next two days that
+ * she hasn't answered for. The server's reminder asks at 24 hours; the app asks
+ * from the moment it's close enough to matter.
+ */
+export function needsAttendance(
+  booking: Pick<Booking, 'status' | 'scheduledFor' | 'attendanceConfirmedAt'>,
+  now = new Date()
+) {
+  if (booking.status !== 'confirmed' || !booking.scheduledFor || booking.attendanceConfirmedAt) {
+    return false;
+  }
+  const hours = differenceInHours(new Date(booking.scheduledFor), now);
+  return hours >= 0 && hours <= 48;
+}
+
+const OUTCOME_WORDS: Record<TimingOutcome, string> = {
+  early: 'Finished early',
+  on_time: 'Finished on time',
+  over: 'Ran over',
+};
+
+/** "Ran over by 30–60 min · Client arrived late" */
+export function timingText(timing?: BookingTiming) {
+  if (!timing) return undefined;
+  const bucket = TIMING_BUCKETS.find(b => b.value === timing.bucket)?.label.toLowerCase();
+  const reason = TIMING_REASONS.find(r => r.value === timing.reason)?.label;
+  return [
+    bucket ? `${OUTCOME_WORDS[timing.outcome]} by ${bucket}` : OUTCOME_WORDS[timing.outcome],
+    reason,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+/** Whether a timing record puts the delay on the client, which is what she may contest. */
+export const blamesClient = (timing?: BookingTiming) =>
+  TIMING_REASONS.find(r => r.value === timing?.reason)?.side === 'client';
+
+/** The buttons on the day-before reminder. The server sends it under this category. */
+export const ATTENDANCE_CATEGORY = {
+  id: 'attendance',
+  actions: [
+    { id: 'coming', title: 'Yes, I’m coming' },
+    { id: 'cant', title: 'I can’t make it' },
+  ],
+};
+
+/** "tomorrow, 14:00" inside a sentence; "Sat 26 Sep, 14:00" stays as it is. */
+export const inSentence = (label: string) =>
+  label.replace(/^(Today|Tomorrow)/, word => word.toLowerCase());

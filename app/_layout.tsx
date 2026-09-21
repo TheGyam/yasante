@@ -15,6 +15,7 @@ import {
   InstrumentSans_700Bold,
 } from '@expo-google-fonts/instrument-sans';
 import { AuthProvider, useAuth, useAuthStore } from '@/features/auth';
+import { ATTENDANCE_CATEGORY, bookingApi } from '@/features/booking';
 import { useUserStore } from '@/features/profile';
 import { ModeSwitchOverlay, useActiveMode, useModeStore } from '@/features/stylist';
 import { useNotifications } from '@/shared/hooks/useNotifications';
@@ -49,10 +50,22 @@ function RootNavigator() {
   const modeHydrated = useHydrated(useModeStore);
   const ready = userHydrated && modeHydrated && !isLoading;
 
-  useNotifications(target => {
-    if (target.mode) useModeStore.getState().setMode(target.mode);
-    if (target.url) router.push(target.url as never);
-  });
+  useNotifications(
+    async target => {
+      if (target.mode) useModeStore.getState().setMode(target.mode);
+      // The reminder's buttons answer from the notification itself: "coming" is
+      // sent there and then; "can't make it" opens the cancel, with its warning.
+      if (target.bookingId && target.action === ATTENDANCE_CATEGORY.actions[0].id) {
+        await bookingApi.confirmAttendance(target.bookingId).catch(() => {});
+      }
+      if (target.bookingId && target.action === ATTENDANCE_CATEGORY.actions[1].id) {
+        router.push(`/bookings/${target.bookingId}?cancel=1` as never);
+        return;
+      }
+      if (target.url) router.push(target.url as never);
+    },
+    [ATTENDANCE_CATEGORY]
+  );
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -109,6 +122,9 @@ function RootNavigator() {
           <Stack.Screen name="book/[handle]" options={modal} />
           <Stack.Screen name="bookings/index" />
           <Stack.Screen name="bookings/[id]" />
+          <Stack.Screen name="bookings/move" options={modal} />
+          <Stack.Screen name="close-out/[id]" options={modal} />
+          <Stack.Screen name="waitlist/[handle]" options={modal} />
           <Stack.Screen name="requests/[id]" />
           <Stack.Screen name="review/[id]" options={modal} />
           <Stack.Screen name="review/report" options={modal} />

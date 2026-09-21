@@ -3,14 +3,20 @@ export type {
   BookingDraft,
   BookingRole,
   BookingStatus,
+  BookingTiming,
   CheckInAnswers,
   CheckInWeek,
+  CloseOut,
   ClientRecord,
   Deposit,
   Review,
   ReviewReportReason,
+  SlotInterest,
+  TimingBucket,
+  TimingOutcome,
+  TimingReason,
 } from './types';
-export { REVIEW_REPORT_REASONS } from './types';
+export { REVIEW_REPORT_REASONS, TIMING_BUCKETS, TIMING_REASONS } from './types';
 export { bookingApi } from './api';
 export * from './format';
 export * from './hooks';

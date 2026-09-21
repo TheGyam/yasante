@@ -1,16 +1,21 @@
 import { View } from 'react-native';
-import { CalendarClock, CalendarX } from 'lucide-react-native';
+import { BellRing, CalendarClock, CalendarX, Sparkles, X } from 'lucide-react-native';
 import {
   STATUS_LABELS,
   dayLabel,
+  inSentence,
   isLive,
   useBookings,
+  useSlotInterests,
+  useUnwatchSlots,
   whenLabel,
   type Booking,
+  type SlotInterest,
 } from '@/features/booking';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
@@ -26,6 +31,8 @@ export default function BookingsScreen() {
   const router = useRouter();
   const { data: bookings = [], isLoading, isRefetching, refetch } = useBookings('client');
 
+  const { data: waiting = [] } = useSlotInterests();
+  const unwatch = useUnwatchSlots();
   const live = bookings.filter(isLive);
   const past = bookings.filter(booking => !isLive(booking));
 
@@ -46,6 +53,37 @@ export default function BookingsScreen() {
     />
   );
 
+  // An opened slot is the one worth acting on now, so it reads as an invitation.
+  const slot = (interest: SlotInterest) =>
+    interest.openedOn ? (
+      <ListRow
+        key={interest.id}
+        title={`A slot opened with ${interest.stylistName}`}
+        subtitle={`${dayLabel(interest.openedOn)} — ask before someone else does`}
+        icon={Sparkles}
+        iconTone="success"
+        onPress={() => router.push(`/book/${interest.stylistHandle}?date=${interest.openedOn}`)}
+        testID={`slot-open-${interest.id}`}
+      />
+    ) : (
+      <ListRow
+        key={interest.id}
+        title={interest.stylistName}
+        subtitle={`Any day ${inSentence(dayLabel(interest.from))} – ${inSentence(dayLabel(interest.to))}`}
+        icon={BellRing}
+        iconTone="neutral"
+        trailing={
+          <IconButton
+            icon={X}
+            variant="plain"
+            size={32}
+            accessibilityLabel={`Stop waiting for ${interest.stylistName}`}
+            onPress={() => unwatch.mutate(interest.id)}
+          />
+        }
+      />
+    );
+
   return (
     <Screen
       title="Your bookings"
@@ -57,9 +95,17 @@ export default function BookingsScreen() {
       <View style={styles.body}>
         {isLoading ? (
           <Skeleton height={200} />
-        ) : bookings.length ? (
+        ) : bookings.length || waiting.length ? (
           <>
             {live.length > 0 && <Section title="Coming up">{live.map(row)}</Section>}
+            {waiting.length > 0 && (
+              <Section
+                title="Waiting for a slot"
+                footer="You're told first when one of these stylists has a cancellation on your days."
+              >
+                {waiting.map(slot)}
+              </Section>
+            )}
             {past.length > 0 && <Section title="Before">{past.map(row)}</Section>}
           </>
         ) : (
