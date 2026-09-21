@@ -1,4 +1,5 @@
 import type { Booking, BookingStatus, CheckInWeek, ClientRecord } from '@/features/booking';
+import { TIMING_REASONS } from '@/features/booking/types';
 import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
 import { db } from './db';
 
@@ -55,7 +56,80 @@ export function checkInDue(
 
 const reviewOf = (bookingId: string) => db.reviews.find(r => r.bookingId === bookingId);
 
+const HOUR = 3_600_000;
+
+/** When each request was answered, for her typical response time. */
+export const respondedAt = new Map<string, string>();
+
+/**
+ * A slot came free: anyone waiting on that stylist for that day hears about it.
+ * The notification itself is the server's to send; this records that it's owed.
+ */
+function release(booking: Booking) {
+  const day = (booking.scheduledFor ?? booking.requestedTimes[0] ?? '').slice(0, 10);
+  if (!day) return;
+  for (const interest of db.slotInterests) {
+    if (
+      interest.stylistId === booking.stylistId &&
+      // Not the person whose booking it was: she knows.
+      interest.clientId !== booking.clientId &&
+      !interest.openedOn &&
+      interest.from.slice(0, 10) <= day &&
+      day <= interest.to.slice(0, 10)
+    ) {
+      interest.openedOn = day;
+    }
+  }
+}
+
+/**
+ * The scheduled jobs, run lazily whenever bookings are read: requests and unpaid
+ * deposits lapse, and an appointment nobody closed completes itself 24 hours on.
+ */
+function sweep(now = Date.now()) {
+  for (const booking of db.bookings) {
+    const lapsed = booking.expiresAt && new Date(booking.expiresAt).getTime() < now;
+    if ((booking.status === 'requested' || booking.status === 'awaiting_deposit') && lapsed) {
+      move(booking, 'expired');
+      booking.expiresAt = undefined;
+      release(booking);
+    }
+    if (booking.status === 'confirmed' && booking.scheduledFor) {
+      const end =
+        new Date(booking.scheduledFor).getTime() + (booking.durationMinutes ?? 120) * 60_000;
+      if (end + 24 * HOUR < now) move(booking, 'completed');
+    }
+  }
+}
+
+/** Taking a time: straight to confirmed with no deposit, otherwise a day to pay it. */
+function take(
+  booking: Booking,
+  scheduledFor: string,
+  deposit?: { amount?: unknown; method?: unknown }
+) {
+  booking.scheduledFor = scheduledFor;
+  booking.proposal = undefined;
+  respondedAt.set(booking.id, new Date().toISOString());
+  db.pendingRequests.set(
+    booking.stylistId,
+    Math.max(0, (db.pendingRequests.get(booking.stylistId) ?? 1) - 1)
+  );
+
+  const amount = Number(deposit?.amount ?? 0);
+  if (!amount) {
+    booking.expiresAt = undefined;
+    return move(booking, 'confirmed');
+  }
+  booking.deposit = { amount, method: String(deposit?.method ?? '').trim(), status: 'awaiting' };
+  booking.expiresAt = new Date(Date.now() + 24 * HOUR).toISOString();
+  return move(booking, 'awaiting_deposit');
+}
+
+const OUTCOMES = ['early', 'on_time', 'over'];
+
 const find = (id: string) => {
+  sweep();
   const booking = db.bookings.find(item => item.id === id);
   if (!booking) throw new MockError(404, 'That booking is gone');
   return booking;
@@ -118,6 +192,7 @@ const AGAIN = ['yes', 'maybe', 'no'];
 defineMocks({
   'GET /api/bookings/': request => {
     const accountId = requireAccount(request);
+    sweep();
     const role = request.query.get('role') === 'stylist' ? 'stylist' : 'client';
     const wanted = (request.query.get('status') ?? '').split(',').filter(Boolean);
 
@@ -175,6 +250,9 @@ defineMocks({
       address: `12 Bellenden Road, ${profile.baseArea}`,
       policy: profile.policies,
       policyVersion: String(request.body.policyVersion),
+      moves: 0,
+      // She has 48 hours to answer before it lapses on its own.
+      expiresAt: new Date(Date.now() + 48 * HOUR).toISOString(),
       createdAt: when,
       updatedAt: when,
     };
@@ -190,20 +268,7 @@ defineMocks({
 
     const scheduledFor = String(request.body?.scheduledFor ?? '');
     if (!scheduledFor) throw new MockError(400, 'Pick the time you’re accepting');
-    booking.scheduledFor = scheduledFor;
-
-    const amount = Number(request.body?.deposit?.amount ?? 0);
-    db.pendingRequests.set(accountId, Math.max(0, (db.pendingRequests.get(accountId) ?? 1) - 1));
-
-    // No deposit, nothing to wait for: it's confirmed there and then.
-    if (!amount) return forRole(move(booking, 'confirmed'), accountId);
-
-    booking.deposit = {
-      amount,
-      method: String(request.body?.deposit?.method ?? '').trim(),
-      status: 'awaiting',
-    };
-    return forRole(move(booking, 'awaiting_deposit'), accountId);
+    return forRole(take(booking, scheduledFor, request.body?.deposit), accountId);
   },
 
   'POST /api/bookings/:id/decline/': request => {
@@ -212,6 +277,8 @@ defineMocks({
     if (booking.stylistId !== accountId) throw new MockError(403, 'Only she can decline it');
     booking.reason = request.body?.reason ? String(request.body.reason).trim() : undefined;
     db.pendingRequests.set(accountId, Math.max(0, (db.pendingRequests.get(accountId) ?? 1) - 1));
+    respondedAt.set(booking.id, new Date().toISOString());
+    booking.expiresAt = undefined;
     return forRole(move(booking, 'declined'), accountId);
   },
 
@@ -220,6 +287,7 @@ defineMocks({
     const booking = find(request.params.id);
     if (booking.stylistId !== accountId) throw new MockError(403, 'Only she can mark it received');
     if (booking.deposit) booking.deposit.status = 'received';
+    booking.expiresAt = undefined;
     return forRole(move(booking, 'confirmed'), accountId);
   },
 
@@ -228,8 +296,11 @@ defineMocks({
     const booking = mine(find(request.params.id), accountId);
     booking.reason = request.body?.reason ? String(request.body.reason).trim() : undefined;
 
+    booking.moveRequest = undefined;
     if (booking.stylistId === accountId) {
-      return forRole(move(booking, 'cancelled_by_stylist'), accountId);
+      move(booking, 'cancelled_by_stylist');
+      release(booking);
+      return forRole(booking, accountId);
     }
 
     // In time or late is the server's call, from her notice window.
@@ -237,7 +308,10 @@ defineMocks({
       ? (new Date(booking.scheduledFor).getTime() - Date.now()) / 3_600_000
       : Infinity;
     const late = hoursAway < booking.policy.noticeHours;
-    return forRole(move(booking, late ? 'cancelled_late' : 'cancelled_in_time'), accountId);
+    move(booking, late ? 'cancelled_late' : 'cancelled_in_time');
+    booking.expiresAt = undefined;
+    release(booking);
+    return forRole(booking, accountId);
   },
 
   'POST /api/bookings/:id/close/': request => {
@@ -249,7 +323,186 @@ defineMocks({
     if (noShow && booking.scheduledFor && new Date(booking.scheduledFor) > new Date()) {
       throw new MockError(400, 'You can only mark a no-show after the start time');
     }
+    // How the time went: an outcome, a size and a reason from the list. Never minutes.
+    const timing = request.body?.timing;
+    if (!noShow && timing) {
+      if (!OUTCOMES.includes(timing.outcome)) throw new MockError(400, 'Say how the time went');
+      if (timing.outcome !== 'on_time' && !timing.bucket) {
+        throw new MockError(400, 'Say by roughly how much');
+      }
+      if (timing.reason && !TIMING_REASONS.some(r => r.value === timing.reason)) {
+        throw new MockError(400, 'Pick a reason from the list');
+      }
+      booking.timing = {
+        outcome: timing.outcome,
+        bucket: timing.outcome === 'on_time' ? undefined : timing.bucket,
+        reason: timing.outcome === 'on_time' ? undefined : timing.reason,
+      };
+    }
+    const paid = Number(request.body?.actualPrice);
+    if (!noShow && Number.isFinite(paid) && paid > 0) booking.actualPrice = paid;
     return forRole(move(booking, noShow ? 'no_show' : 'completed'), accountId);
+  },
+
+  'POST /api/bookings/:id/propose/': request => {
+    const accountId = requireAccount(request);
+    const booking = find(request.params.id);
+    if (booking.stylistId !== accountId) throw new MockError(403, 'Only she can suggest a time');
+    if (booking.status !== 'requested') throw new MockError(409, 'That request has moved on');
+    const scheduledFor = String(request.body?.scheduledFor ?? '');
+    if (!scheduledFor) throw new MockError(400, 'Pick the time you’re suggesting');
+    const amount = Number(request.body?.deposit?.amount ?? 0);
+    booking.proposal = {
+      scheduledFor,
+      deposit: amount
+        ? { amount, method: String(request.body?.deposit?.method ?? '').trim() }
+        : undefined,
+    };
+    respondedAt.set(booking.id, new Date().toISOString());
+    // Now the client has 48 hours to answer.
+    booking.expiresAt = new Date(Date.now() + 48 * HOUR).toISOString();
+    booking.updatedAt = new Date().toISOString();
+    return forRole(booking, accountId);
+  },
+
+  'POST /api/bookings/:id/proposal/': request => {
+    const accountId = requireAccount(request);
+    const booking = find(request.params.id);
+    if (booking.clientId !== accountId) throw new MockError(403, 'That isn’t yours to answer');
+    if (booking.status !== 'requested' || !booking.proposal) {
+      throw new MockError(409, 'There’s no suggested time to answer');
+    }
+    if (request.body?.accept) {
+      const { scheduledFor, deposit } = booking.proposal;
+      return forRole(take(booking, scheduledFor, deposit), accountId);
+    }
+    booking.proposal = undefined;
+    booking.expiresAt = undefined;
+    booking.reason = 'The suggested time didn’t work';
+    return forRole(move(booking, 'declined'), accountId);
+  },
+
+  'POST /api/bookings/:id/attending/': request => {
+    const accountId = requireAccount(request);
+    const booking = find(request.params.id);
+    if (booking.clientId !== accountId) throw new MockError(403, 'That booking isn’t yours');
+    if (booking.status !== 'confirmed') throw new MockError(409, 'Only a confirmed booking');
+    booking.attendanceConfirmedAt = new Date().toISOString();
+    return forRole(booking, accountId);
+  },
+
+  'POST /api/bookings/:id/move/': request => {
+    const accountId = requireAccount(request);
+    const booking = mine(find(request.params.id), accountId);
+    if (booking.status !== 'confirmed') throw new MockError(409, 'Only a confirmed booking moves');
+    // One free move keeps the deposit and the history. A second is a cancellation.
+    if (booking.moves >= 1) {
+      throw new MockError(409, 'It’s been moved once already. Cancel it and book again instead');
+    }
+    if (booking.moveRequest) throw new MockError(409, 'A move is already waiting for an answer');
+    const scheduledFor = String(request.body?.scheduledFor ?? '');
+    if (!scheduledFor || new Date(scheduledFor).getTime() < Date.now()) {
+      throw new MockError(400, 'Pick a time that hasn’t passed');
+    }
+    booking.moveRequest = {
+      by: booking.stylistId === accountId ? 'stylist' : 'client',
+      scheduledFor,
+    };
+    booking.updatedAt = new Date().toISOString();
+    return forRole(booking, accountId);
+  },
+
+  'POST /api/bookings/:id/move/answer/': request => {
+    const accountId = requireAccount(request);
+    const booking = mine(find(request.params.id), accountId);
+    const asked = booking.moveRequest;
+    if (!asked) throw new MockError(409, 'There’s no move to answer');
+    const side = booking.stylistId === accountId ? 'stylist' : 'client';
+    if (asked.by === side) throw new MockError(403, 'The other side answers a move');
+    if (request.body?.accept) {
+      booking.scheduledFor = asked.scheduledFor;
+      booking.moves += 1;
+      // A new day needs a new "yes, I'm coming".
+      booking.attendanceConfirmedAt = undefined;
+    }
+    booking.moveRequest = undefined;
+    booking.updatedAt = new Date().toISOString();
+    return forRole(booking, accountId);
+  },
+
+  'POST /api/bookings/:id/started-on-time/': request => {
+    const accountId = requireAccount(request);
+    const booking = find(request.params.id);
+    if (booking.clientId !== accountId) throw new MockError(403, 'That booking isn’t yours');
+    if (booking.status !== 'completed') throw new MockError(409, 'Once it’s done');
+    if (booking.startedOnTime !== undefined) throw new MockError(409, 'You’ve already answered');
+    booking.startedOnTime = !!request.body?.onTime;
+    return forRole(booking, accountId);
+  },
+
+  'POST /api/bookings/:id/contest/': request => {
+    const accountId = requireAccount(request);
+    const booking = find(request.params.id);
+    if (booking.clientId !== accountId) throw new MockError(403, 'That booking isn’t yours');
+    const what = request.body?.what;
+    booking.contested = booking.contested ?? {};
+    if (what === 'no_show') {
+      if (booking.status !== 'no_show') throw new MockError(409, 'It wasn’t marked a no-show');
+      if (booking.contested.noShow) throw new MockError(409, 'You’ve already contested it');
+      booking.contested.noShow = true;
+    } else if (what === 'timing') {
+      if (!booking.timing) throw new MockError(409, 'There’s no timing record');
+      if (booking.contested.timing) throw new MockError(409, 'You’ve already contested it');
+      booking.contested.timing = true;
+    } else {
+      throw new MockError(400, 'Say what you’re contesting');
+    }
+    return forRole(booking, accountId);
+  },
+
+  'GET /api/slot-interests/': request => {
+    const accountId = requireAccount(request);
+    return db.slotInterests
+      .filter(i => i.clientId === accountId)
+      .map(({ clientId: _c, ...interest }) => {
+        const profile = db.stylists.get(interest.stylistId);
+        return {
+          ...interest,
+          stylistName: profile?.displayName ?? 'A stylist',
+          stylistHandle: profile?.handle,
+        };
+      });
+  },
+
+  'POST /api/slot-interests/': request => {
+    const accountId = requireAccount(request);
+    const stylistId = String(request.body?.stylistId ?? '');
+    const profile = db.stylists.get(stylistId);
+    if (!profile?.published) throw new MockError(404, 'No stylist to wait for');
+    const from = String(request.body?.from ?? '');
+    const to = String(request.body?.to ?? '');
+    if (!from || !to || to < from) throw new MockError(400, 'Pick the days you could do');
+    const interest = {
+      id: 'slot_' + Date.now(),
+      clientId: accountId,
+      stylistId,
+      from,
+      to,
+      createdAt: new Date().toISOString(),
+    };
+    db.slotInterests.push(interest);
+    const { clientId: _c, ...shown } = interest;
+    return { ...shown, stylistName: profile.displayName, stylistHandle: profile.handle };
+  },
+
+  'DELETE /api/slot-interests/:id/': request => {
+    const accountId = requireAccount(request);
+    const index = db.slotInterests.findIndex(
+      i => i.id === request.params.id && i.clientId === accountId
+    );
+    if (index < 0) throw new MockError(404, 'Already gone');
+    db.slotInterests.splice(index, 1);
+    return null;
   },
 
   'POST /api/bookings/:id/review/': request => {

@@ -1,14 +1,10 @@
 import { View } from 'react-native';
 import { format, isToday } from 'date-fns';
-import { CalendarClock, Check, Store, UserX } from 'lucide-react-native';
-import { errorMessage } from '@/features/auth';
-import { recordLabel, useBookings, useCloseBooking, whenLabel } from '@/features/booking';
+import { CalendarClock, ClipboardCheck, Store, UserCheck } from 'lucide-react-native';
+import { useBookings, whenLabel, type Booking } from '@/features/booking';
 import { PageLinkCard, isNotFound, useMyStylistProfile } from '@/features/stylist';
-import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
-import { Button } from '@/shared/ui/Button';
-import { confirm, notify } from '@/shared/ui/dialog';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
@@ -18,41 +14,31 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
-  actions: { gap: space.xs, marginTop: space.sm },
 }));
+
+/** Where she's up to with the client: closing out, confirmed, or still waiting on a yes. */
+function attendance(booking: Booking) {
+  const first = booking.clientName.split(' ')[0];
+  if (booking.scheduledFor && new Date(booking.scheduledFor) <= new Date()) {
+    return { text: 'Close it out when she leaves', icon: ClipboardCheck, tone: 'accent' as const };
+  }
+  return booking.attendanceConfirmedAt
+    ? { text: `${first} said she’s coming`, icon: UserCheck, tone: 'success' as const }
+    : { text: 'Not confirmed yet', icon: CalendarClock, tone: 'neutral' as const };
+}
 
 export default function TodayScreen() {
   const styles = useStyles();
   const router = useRouter();
   const { data: profile, isLoading, error, refetch, isRefetching } = useMyStylistProfile();
   const { data: confirmed = [] } = useBookings('stylist', ['confirmed']);
-  const close = useCloseBooking();
 
-  const today = confirmed.filter(
-    booking => booking.scheduledFor && isToday(new Date(booking.scheduledFor))
-  );
-  const later = confirmed.filter(
-    booking => booking.scheduledFor && !isToday(new Date(booking.scheduledFor))
-  );
-
-  const closeOut = async (id: string, name: string) => {
-    const attended = await confirm({
-      title: `Did ${name} come?`,
-      message: 'A no-show can be contested, so only mark one if she really didn’t arrive.',
-      confirmLabel: 'She came',
-      cancelLabel: 'She didn’t',
-    });
-    try {
-      await close.mutateAsync({ id, outcome: attended ? 'attended' : 'no_show' });
-      haptics.success();
-    } catch (error) {
-      haptics.error();
-      await notify({
-        title: 'Couldn’t close it',
-        message: errorMessage(error, 'Check your connection and try again.'),
-      });
-    }
-  };
+  // Today, plus anything from before that still hasn't been closed out.
+  const due = (booking: Booking) =>
+    !!booking.scheduledFor &&
+    (isToday(new Date(booking.scheduledFor)) || new Date(booking.scheduledFor) < new Date());
+  const today = confirmed.filter(due);
+  const later = confirmed.filter(booking => booking.scheduledFor && !due(booking));
 
   return (
     <Screen
@@ -90,17 +76,20 @@ export default function TodayScreen() {
           <SectionHeader title="Appointments" />
           {today.length ? (
             <Section footer="Close one out when she leaves — it's what keeps your numbers honest.">
-              {today.map(booking => (
-                <ListRow
-                  key={booking.id}
-                  title={`${booking.clientName} · ${booking.serviceName}`}
-                  subtitle={`${whenLabel(booking.scheduledFor!)} · ${recordLabel(booking.clientRecord) ?? ''}`}
-                  icon={CalendarClock}
-                  iconTone="success"
-                  onPress={() => closeOut(booking.id, booking.clientName)}
-                  testID={`today-${booking.id}`}
-                />
-              ))}
+              {today.map(booking => {
+                const state = attendance(booking);
+                return (
+                  <ListRow
+                    key={booking.id}
+                    title={`${booking.clientName} · ${booking.serviceName}`}
+                    subtitle={`${whenLabel(booking.scheduledFor!)} · ${state.text}`}
+                    icon={state.icon}
+                    iconTone={state.tone}
+                    onPress={() => router.push(`/requests/${booking.id}`)}
+                    testID={`today-${booking.id}`}
+                  />
+                );
+              })}
             </Section>
           ) : (
             <EmptyState
@@ -117,8 +106,9 @@ export default function TodayScreen() {
               <ListRow
                 key={booking.id}
                 title={`${booking.clientName} · ${booking.serviceName}`}
-                subtitle={whenLabel(booking.scheduledFor!)}
+                subtitle={`${whenLabel(booking.scheduledFor!)} · ${attendance(booking).text}`}
                 icon={CalendarClock}
+                onPress={() => router.push(`/requests/${booking.id}`)}
               />
             ))}
           </Section>

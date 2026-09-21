@@ -257,6 +257,17 @@ export const db = {
    */
   bookings: [] as Booking[],
 
+  /** Clients waiting for a slot with a stylist on any day in a range. */
+  slotInterests: [] as {
+    id: string;
+    clientId: string;
+    stylistId: string;
+    from: string;
+    to: string;
+    openedOn?: string;
+    createdAt: string;
+  }[],
+
   /** Reviews, one per completed booking. They start pending and go through moderation. */
   reviews: [] as (Review & { stylistId: string; clientId: string })[],
 
@@ -349,6 +360,7 @@ function seedCompleted(id: string, clientId: string, daysAgo: number): Booking {
     address: `12 Bellenden Road, ${ama.baseArea}`,
     policy: ama.policies,
     policyVersion: 'seed',
+    moves: 0,
     completedAt: at,
     createdAt: at,
     updatedAt: at,

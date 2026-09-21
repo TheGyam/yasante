@@ -86,6 +86,19 @@ check-ins. The server decides when each is open and says so on the booking
 (`review`, `checkInDue`); the app only reflects it. `shelf` is the product catalogue
 and the products a client uses, rates, finishes and buys again.
 
+The booking state machine lives server-side; the mock in `src/mocks/bookings.ts` is
+its reference, tests included. Its scheduled jobs (requests lapse after 48 hours,
+unpaid deposits after 24, an unclosed appointment completes a day after it ends)
+run lazily on every read there; the real server runs them on a clock. A cancelled
+or lapsed booking releases its day to anyone on that stylist's waitlist for it.
+
+**Notifications the server sends** carry `data` the app acts on: `mode`
+(`client` or `stylist`) and `url` open the right screen. The day-before reminder
+goes out under the category `attendance` with `bookingId` in its data; its two
+buttons, "Yes, I'm coming" and "I can't make it", are registered by the app
+(`ATTENDANCE_CATEGORY`). The first confirms there and then; the second opens the
+booking with its cancel warning.
+
 `looks` is posted by clients and stylists alike. Who did the hair is never typed in: a
 stylist is credited through her own menu, a client's stylist through a completed
 booking. Likes are the one place the query cache is patched instead of re-read

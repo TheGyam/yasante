@@ -1,4 +1,6 @@
 import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
+import { TIMING_REASONS } from '@/features/booking/types';
+import { respondedAt } from './bookings';
 import { db } from './db';
 
 /** Handles already in use, plus the ones we keep for ourselves. */
@@ -54,6 +56,47 @@ function reviewsFor(stylistId: string) {
   };
 }
 
+const YEAR = 365 * 86_400_000;
+
+/**
+ * The public timing label, and only when it's earned: 10 completed appointments
+ * and 6 usable timing records in the last 12 months, and one outcome at 60% or
+ * more. Records blamed on the client, or contested by her, don't count.
+ */
+export function timingLabelFor(stylistId: string, now = Date.now()) {
+  const recent = db.bookings.filter(
+    b =>
+      b.stylistId === stylistId &&
+      b.status === 'completed' &&
+      now - new Date(b.completedAt ?? b.updatedAt).getTime() < YEAR
+  );
+  if (recent.length < 10) return undefined;
+  const usable = recent.filter(b => {
+    if (!b.timing || b.contested?.timing) return false;
+    const side = TIMING_REASONS.find(r => r.value === b.timing?.reason)?.side;
+    return side !== 'client';
+  });
+  if (usable.length < 6) return undefined;
+  for (const outcome of ['on_time', 'early', 'over'] as const) {
+    const count = usable.filter(b => b.timing?.outcome === outcome).length;
+    if (count / usable.length >= 0.6) return { outcome, count, sample: usable.length };
+  }
+  return undefined;
+}
+
+/** Her usual time to answer: the median, so one slow weekend doesn't define her. */
+function responseHoursFor(stylistId: string) {
+  const hours = db.bookings
+    .filter(b => b.stylistId === stylistId && respondedAt.has(b.id))
+    .map(
+      b =>
+        (new Date(respondedAt.get(b.id)!).getTime() - new Date(b.createdAt).getTime()) / 3_600_000
+    )
+    .sort((a, b) => a - b);
+  if (!hours.length) return undefined;
+  return Math.round(hours[Math.floor(hours.length / 2)] * 10) / 10;
+}
+
 defineMocks({
   'GET /api/stylists/handle-available/': ({ query }) => {
     const handle = (query.get('handle') ?? '').toLowerCase();
@@ -83,6 +126,8 @@ defineMocks({
         b => b.stylistId === profile.accountId && b.status === 'completed'
       ).length,
       ...reviewsFor(profile.accountId),
+      responseHours: responseHoursFor(profile.accountId),
+      timingLabel: timingLabelFor(profile.accountId),
     };
   },
 
