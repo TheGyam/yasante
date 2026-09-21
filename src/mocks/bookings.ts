@@ -1,6 +1,7 @@
 import type { Booking, BookingStatus, CheckInWeek, ClientRecord } from '@/features/booking';
 import { TIMING_REASONS } from '@/features/booking/types';
-import { estimate, isOpenOn, optionGroups } from '@/features/stylist/format';
+import type { ChosenOptions, MenuItem } from '@/features/stylist';
+import { estimate, freeStarts, isOpenOn, optionGroups, ymd } from '@/features/stylist/format';
 import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
 import { db } from './db';
 
@@ -129,6 +130,28 @@ function take(
 
 const OUTCOMES = ['early', 'on_time', 'over'];
 
+/** What holds a slot in her diary: anything asked for, waiting on a deposit, or booked. */
+const HOLDS: BookingStatus[] = ['requested', 'awaiting_deposit', 'confirmed'];
+
+/** Her diary as time ranges, so a slot can't be offered — or asked for — twice. */
+function busyFor(stylistId: string) {
+  return db.bookings
+    .filter(b => b.stylistId === stylistId && HOLDS.includes(b.status))
+    .map(b => {
+      const start = new Date(b.scheduledFor ?? b.proposal?.scheduledFor ?? b.requestedTimes[0]);
+      return { start: start.getTime(), end: start.getTime() + (b.durationMinutes ?? 120) * 60_000 };
+    });
+}
+
+/** How long the job runs, from her menu and the options chosen. Unknown is two hours. */
+const minutesFor = (service: MenuItem, chosen: ChosenOptions) =>
+  estimate(service, chosen).minutes ?? service.durationMinutes ?? 120;
+
+/** Far enough ahead that she can see the request before the time comes. */
+const LEAD_MS = 3 * HOUR;
+/** How far ahead a client can see. */
+const SLOT_DAYS = 28;
+
 const find = (id: string) => {
   sweep();
   const booking = db.bookings.find(item => item.id === id);
@@ -203,6 +226,38 @@ defineMocks({
       .map(b => forRole(b, accountId));
   },
 
+  // Her free times for one service, day by day. Public, like her page.
+  'GET /api/stylists/by-handle/:handle/slots/': request => {
+    sweep();
+    const handle = String(request.params.handle).toLowerCase();
+    const profile = [...db.stylists.values()].find(p => p.handle === handle && p.published);
+    if (!profile) throw new MockError(404, 'No page at that address');
+    const service = (db.menus.get(profile.accountId) ?? []).find(
+      s => s.id === request.query.get('service')
+    );
+    if (!service) throw new MockError(400, 'Pick a service from her menu');
+    // Option ids, in any order; the group each belongs to comes from her menu.
+    const ids = (request.query.get('options') ?? '').split(',').filter(Boolean);
+    const chosen: ChosenOptions = {};
+    for (const option of service.options ?? []) {
+      if (ids.includes(option.id)) chosen[option.group] = option.id;
+    }
+
+    const minutes = minutesFor(service, chosen);
+    const busy = busyFor(profile.accountId);
+    const notBefore = Date.now() + LEAD_MS;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = [];
+    for (let i = 0; i < SLOT_DAYS; i++) {
+      const day = new Date(today);
+      day.setDate(today.getDate() + i);
+      const times = freeStarts(profile.availability, day, minutes, busy, notBefore);
+      if (times.length) days.push({ date: ymd(day), times: times.map(t => t.toISOString()) });
+    }
+    return { minutes, days };
+  },
+
   'GET /api/bookings/:id/': request => {
     const accountId = requireAccount(request);
     return forRole(mine(find(request.params.id), accountId), accountId);
@@ -238,6 +293,21 @@ defineMocks({
     // Only days she works. Her hours are hers to set; the server keeps to them.
     const closed = times.find(time => !isOpenOn(profile.availability, new Date(time)));
     if (closed) throw new MockError(400, 'She doesn’t work one of those days. Pick another');
+    const minutes = minutesFor(service, chosen);
+    const start = new Date(times[0]);
+    if (profile.availability) {
+      const day = new Date(start);
+      day.setHours(0, 0, 0, 0);
+      const fits = freeStarts(profile.availability, day, minutes).some(
+        t => t.getTime() === start.getTime()
+      );
+      if (!fits) throw new MockError(400, 'That’s outside her hours. Pick one of her times');
+    }
+    // Two people can look at the same free slot; only the first to ask gets it.
+    const end = start.getTime() + minutes * 60_000;
+    if (busyFor(stylistId).some(b => start.getTime() < b.end && end > b.start)) {
+      throw new MockError(409, 'Someone has just asked for that time. Pick another');
+    }
     if (!request.body?.policyVersion) throw new MockError(400, 'Her terms have to be accepted');
 
     const when = new Date().toISOString();

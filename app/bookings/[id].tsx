@@ -180,7 +180,7 @@ export default function BookingScreen() {
 
   const when = booking.scheduledFor
     ? whenLabel(booking.scheduledFor)
-    : booking.requestedTimes.map(dayLabel).join(' · ');
+    : booking.requestedTimes.map(whenLabel).join(' · ');
 
   return (
     <Screen title={booking.stylistName} back testID="booking-screen">

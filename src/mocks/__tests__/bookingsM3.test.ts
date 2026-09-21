@@ -244,3 +244,43 @@ describe('pricing a request', () => {
     });
   });
 });
+
+describe('her free times', () => {
+  const slots = (query = '?service=men_cornrows') =>
+    call('get', `/api/stylists/by-handle/braidsbyama/slots/${query}`, CLIENT);
+
+  it('fit the job she was asked for, and a taken time stops being offered', () => {
+    const quick = slots('?service=men_cornrows');
+    const longer = slots('?service=men_cornrows&options=cr_small');
+    expect(quick.minutes).toBe(120);
+    expect(longer.minutes).toBe(180);
+    // Unset hours are 9 to 6: a three-hour job's last start is 15:00.
+    const day = longer.days[1];
+    const last = new Date(day.times[day.times.length - 1]);
+    expect(last.getHours()).toBe(15);
+
+    const first = quick.days[1].times[0];
+    call('post', '/api/bookings/', CLIENT, {
+      stylistId: STYLIST,
+      serviceId: 'men_cornrows',
+      options: { size: 'cr_big' },
+      requestedTimes: [first],
+      policyVersion: 'v1',
+    });
+    expect(slots().days[1].times).not.toContain(first);
+  });
+
+  it('can only be asked for once', () => {
+    const time = slots().days[2].times[0];
+    const ask = () =>
+      call('post', '/api/bookings/', CLIENT, {
+        stylistId: STYLIST,
+        serviceId: 'men_cornrows',
+        options: { size: 'cr_big' },
+        requestedTimes: [time],
+        policyVersion: 'v1',
+      });
+    ask();
+    expect(ask).toThrow(/just asked for that time/);
+  });
+});

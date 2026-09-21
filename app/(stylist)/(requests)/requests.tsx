@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { Banknote, Inbox, UserRound } from 'lucide-react-native';
-import { dayLabel, recordLabel, useBookings, whenLabel, type Booking } from '@/features/booking';
+import { recordLabel, useBookings, whenLabel, type Booking } from '@/features/booking';
 import { useRouter } from '@/shared/lib/navigation';
 import { formatMoney } from '@/shared/lib/format';
 import { makeStyles, space } from '@/shared/theme';
@@ -37,7 +37,7 @@ export default function RequestsScreen() {
       subtitle={
         booking.status === 'awaiting_deposit'
           ? `${whenLabel(booking.scheduledFor ?? '')} · ${recordLabel(booking.clientRecord) ?? ''}`
-          : `${booking.requestedTimes.map(dayLabel).join(' · ')}`
+          : `${booking.requestedTimes.map(whenLabel).join(' · ')}`
       }
       value={
         booking.status === 'awaiting_deposit' && booking.deposit

@@ -2,6 +2,7 @@ import { Share } from 'react-native';
 import { formatMoney } from '@/shared/lib/format';
 import type {
   Availability,
+  DayHours,
   MenuItem,
   OptionGroup,
   PaymentMethod,
@@ -66,7 +67,8 @@ export function sharePage(profile: Pick<StylistProfile, 'handle' | 'displayName'
 }
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const ymd = (date: Date) =>
+/** A day as yyyy-MM-dd, in local time. */
+export const ymd = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
 /** A sensible start: Tuesday to Saturday, nine to six. */
@@ -121,6 +123,49 @@ export function hoursLabel(availability?: Availability) {
   const hours = open.map(d => availability.week[d]!);
   const same = hours.every(h => h.start === hours[0].start && h.end === hours[0].end);
   return same ? `${days}, ${hours[0].start}–${hours[0].end}` : days;
+}
+
+/** Her hours on a day, or null when she's off. Hours she hasn't set are 9 to 6. */
+export function hoursOn(availability: Availability | undefined, date: Date): DayHours {
+  if (!availability) return { start: '09:00', end: '18:00' };
+  if (availability.blocked.includes(ymd(date))) return null;
+  return availability.week[date.getDay()];
+}
+
+/** Start times are offered on the half hour. */
+export const SLOT_STEP_MINUTES = 30;
+
+const toMinutes = (time: string) => {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + m;
+};
+
+/**
+ * The times on a day a job of `minutes` can start: inside her hours, finished by
+ * closing, clear of anything already `busy` (epoch ms ranges) and not before
+ * `notBefore`. A job longer than her whole day can still start when she opens.
+ */
+export function freeStarts(
+  availability: Availability | undefined,
+  day: Date,
+  minutes: number,
+  busy: { start: number; end: number }[] = [],
+  notBefore = -Infinity
+) {
+  const hours = hoursOn(availability, day);
+  if (!hours) return [];
+  const open = toMinutes(hours.start);
+  const last = Math.max(open, toMinutes(hours.end) - minutes);
+  const starts: Date[] = [];
+  for (let at = open; at <= last; at += SLOT_STEP_MINUTES) {
+    const start = new Date(day);
+    start.setHours(0, at, 0, 0);
+    const from = start.getTime();
+    const to = from + minutes * 60_000;
+    if (from < notBefore || busy.some(b => from < b.end && to > b.start)) continue;
+    starts.push(start);
+  }
+  return starts;
 }
 
 /** The next day she works, from tomorrow, within the next two months. */
