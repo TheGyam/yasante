@@ -18,6 +18,8 @@ export interface LikeButtonProps {
   liked: boolean;
   count: number;
   onToggle: () => void;
+  /** The heart's size; smaller in the home grid. */
+  size?: number;
 }
 
 const useStyles = makeStyles(() => ({
@@ -28,7 +30,7 @@ const useStyles = makeStyles(() => ({
  * The heart pops when it fills — only then, and only when she caused it. Unliking
  * is quiet: taking something back shouldn't celebrate.
  */
-export function LikeButton({ id, liked, count, onToggle }: LikeButtonProps) {
+export function LikeButton({ id, liked, count, onToggle, size = 22 }: LikeButtonProps) {
   const styles = useStyles();
   const theme = useTheme();
   const reduced = useReducedMotion();
@@ -61,10 +63,13 @@ export function LikeButton({ id, liked, count, onToggle }: LikeButtonProps) {
       style={styles.button}
     >
       <Animated.View style={heart}>
-        <Heart size={22} color={color} fill={liked ? color : 'transparent'} strokeWidth={2} />
+        <Heart size={size} color={color} fill={liked ? color : 'transparent'} strokeWidth={2} />
       </Animated.View>
       {count > 0 && (
-        <Text variant="callout" style={{ color, fontVariant: ['tabular-nums'] }}>
+        <Text
+          variant={size < 20 ? 'caption' : 'callout'}
+          style={{ color, fontVariant: ['tabular-nums'] }}
+        >
           {count}
         </Text>
       )}

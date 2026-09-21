@@ -1,26 +1,29 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, RefreshControl, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { useScrollToTop } from '@react-navigation/native';
-import { useQueryClient } from '@tanstack/react-query';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import Animated from 'react-native-reanimated';
-import { ArrowUp, Search, Sparkles, WifiOff } from 'lucide-react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
+import { Camera, Search, Sparkles, WifiOff } from 'lucide-react-native';
 import { AuthPromptModal, GreetingBanner, useAuth } from '@/features/auth';
-import {
-  ContentCarousel,
-  InspoCard,
-  TipOfTheDay,
-  prefetchContentItem,
-  prefetchRelatedContent,
-  useInfiniteContent,
-  useNewPosts,
-  type Content,
-} from '@/features/education';
 import { BookingNudge } from '@/features/booking';
+import { TipOfTheDay } from '@/features/education';
+import {
+  LookFilterBar,
+  LookTile,
+  useFeedQuery,
+  useLookActions,
+  useLookFilters,
+  useLooks,
+  type Look,
+} from '@/features/looks';
 import { useUser } from '@/features/profile';
-import { useBackgroundSync } from '@/shared/hooks/useBackgroundSync';
-import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
+import { GUTTER, makeStyles, radius, space, timing, useTheme } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -29,21 +32,25 @@ import { Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { SearchField } from '@/shared/ui/SearchField';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { Skeleton } from '@/shared/ui/Skeleton';
+import { Text } from '@/shared/ui/Text';
 
 // FlashList driven by a UI-thread scroll handler, so the header fades without renders.
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList
 ) as unknown as typeof FlashList;
 
-/** Horizontal padding each feed card carries; the list gutter makes up the rest. */
+/** Horizontal padding each tile carries; the list gutter makes up the rest. */
 const CARD_INSET = space.xs + 1;
-const CAROUSEL_TOPICS = new Set(['tips', 'care', 'styling']);
 
 const useStyles = makeStyles(() => ({
-  header: { gap: space.xxl, marginHorizontal: CARD_INSET, marginBottom: space.md },
-  skeletons: { flexDirection: 'row', gap: space.sm + 2, marginHorizontal: CARD_INSET },
+  header: { gap: space.xl, marginHorizontal: CARD_INSET, marginBottom: space.md },
+  feedHead: { gap: space.md },
+  skeletons: { flexDirection: 'row', gap: space.sm + 2 },
   skeletonColumn: { flex: 1, gap: space.sm + 2 },
   footer: { paddingVertical: space.xxl },
+  fallback: { gap: space.lg, marginHorizontal: CARD_INSET },
+  fallbackGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  fallbackCell: { width: '50%' },
 }));
 
 export default function HomeScreen() {
@@ -82,41 +89,55 @@ function FeedSkeleton() {
   );
 }
 
+/** Dims a tile while a new filter loads, from one shared value — no re-renders. */
+function Dim({ opacity, children }: { opacity: SharedValue<number>; children: ReactNode }) {
+  const style = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
+/**
+ * Home is the looks people post: real hair, and who did it. Everything in the
+ * grid was put up by someone on Yasante — a stylist's work, or a client's hair.
+ */
 function HomeFeed() {
   const styles = useStyles();
   const theme = useTheme();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const insets = useContentInsets();
   const onScroll = useScreenScrollHandler();
-  const listRef = useRef<FlashListRef<Content>>(null);
+  const listRef = useRef<FlashListRef<Look>>(null);
   useScrollToTop(listRef);
 
-  const feed = useInfiniteContent();
   const { user: authUser, isAuthenticated } = useAuth();
   const { data: user } = useUser(authUser?.id, { enabled: !!authUser?.id });
-  const { hasNewPosts, mergeNewPosts } = useNewPosts({ enabled: true });
-  useBackgroundSync({ enabled: true });
-
-  const [authPrompt, setAuthPrompt] = useState(false);
-
-  const items = feed.data?.pages.flatMap(page => page.data) ?? [];
-  const carousel = items.filter(item => CAROUSEL_TOPICS.has(item.topic)).slice(0, 10);
   const firstName = user?.name?.split(' ')[0];
 
-  const openInspo = (content: Content) => {
-    prefetchContentItem(queryClient, content.id);
-    if (content.topic) prefetchRelatedContent(queryClient, content.id, content.topic);
-    router.push(`/content/${content.id}`);
-  };
-  const openArticle = (content: Content) => router.push(`/content/${content.id}`);
-  // The save screen can't read the content API, so it's handed what's on screen.
-  const save = (content: Content) =>
-    isAuthenticated
-      ? router.push(
-          `/collections/save?kind=content&refId=${content.id}&title=${encodeURIComponent(content.title)}&imageUri=${encodeURIComponent(content.thumbnailUri ?? '')}`
-        )
-      : setAuthPrompt(true);
+  const [authPrompt, setAuthPrompt] = useState(false);
+  const actions = useLookActions({ onNeedsAccount: () => setAuthPrompt(true) });
+
+  const { query, filtered } = useFeedQuery();
+  const clearFilters = useLookFilters(s => s.clear);
+  const feed = useLooks(query);
+  const looks = feed.data?.pages.flatMap(page => page.data) ?? [];
+  const emptyFiltered = filtered && !feed.isLoading && !feed.isPlaceholderData && !looks.length;
+  // Nothing matched: rather than a blank page, the latest looks still show below.
+  const fallback = useLooks({}, { enabled: emptyFiltered });
+  const fallbackLooks = (fallback.data?.pages[0]?.data ?? []).slice(0, 6);
+
+  // Old results stay up, dimmed, while a new filter loads.
+  const opacity = useSharedValue(1);
+  useEffect(() => {
+    opacity.set(withTiming(feed.isPlaceholderData ? 0.45 : 1, timing.state));
+  }, [feed.isPlaceholderData, opacity]);
+
+  const tile = (look: Look) => (
+    <LookTile
+      look={look}
+      onOpen={actions.onOpen}
+      onLike={actions.onLike}
+      onSave={look.mine ? undefined : actions.onSave}
+    />
+  );
 
   const header = (
     <View style={styles.header}>
@@ -126,45 +147,20 @@ function HomeFeed() {
         placeholder="Search styles, tips and care"
         onPress={() => router.push('/search')}
       />
-      {hasNewPosts && (
-        <Button
-          label="New posts — show them"
-          icon={ArrowUp}
-          variant="secondary"
-          size="sm"
-          onPress={mergeNewPosts}
-          style={{ alignSelf: 'center' }}
-        />
-      )}
-      <Button
-        label="Looks — real hair, and who did it"
-        icon={Sparkles}
-        variant="secondary"
-        onPress={() => router.push('/looks')}
-        fullWidth
-        testID="home-looks"
-      />
-      <ContentCarousel
-        title="Styles and tips we love"
-        items={carousel}
-        onPress={openArticle}
-        actionLabel="See all"
-        onAction={() => router.push('/learn')}
-      />
       <TipOfTheDay />
-      <View>
-        <SectionHeader title="Inspiration" />
-        {feed.isLoading && <FeedSkeleton />}
-        {feed.isError && items.length === 0 && (
-          <EmptyState
-            icon={WifiOff}
-            title="Couldn’t load your feed"
-            message="Check your connection and try again."
-            actionLabel="Try again"
-            onAction={() => feed.refetch()}
-          />
-        )}
+      <View style={styles.feedHead}>
+        <SectionHeader title="Looks" />
+        <LookFilterBar />
+        <Button
+          label="Post a look"
+          icon={Camera}
+          variant="secondary"
+          onPress={() => (isAuthenticated ? router.push('/looks/new') : setAuthPrompt(true))}
+          fullWidth
+          testID="home-post-look"
+        />
       </View>
+      {feed.isLoading && <FeedSkeleton />}
     </View>
   );
 
@@ -172,12 +168,51 @@ function HomeFeed() {
     <>
       <AnimatedFlashList
         ref={listRef}
-        data={items}
+        data={feed.isLoading ? [] : looks}
         masonry
         numColumns={2}
-        keyExtractor={item => item.id}
-        renderItem={({ item }) => <InspoCard content={item} onPress={openInspo} onSave={save} />}
+        keyExtractor={look => look.id}
+        renderItem={({ item }) => <Dim opacity={opacity}>{tile(item)}</Dim>}
         ListHeaderComponent={header}
+        ListEmptyComponent={
+          feed.isLoading ? null : feed.isError ? (
+            <EmptyState
+              icon={WifiOff}
+              title="Couldn’t load looks"
+              message="Check your connection and try again."
+              actionLabel="Try again"
+              onAction={() => feed.refetch()}
+            />
+          ) : emptyFiltered ? (
+            <View style={styles.fallback}>
+              <EmptyState
+                icon={Sparkles}
+                title="Nothing matches yet"
+                message="Looks are added every day. Here’s the latest in the meantime."
+                actionLabel="Clear filters"
+                onAction={clearFilters}
+              />
+              {fallbackLooks.length > 0 && (
+                <Text variant="overline" tone="tertiary">
+                  Latest looks
+                </Text>
+              )}
+              <View style={styles.fallbackGrid}>
+                {fallbackLooks.map(look => (
+                  <View key={look.id} style={styles.fallbackCell}>
+                    {tile(look)}
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <EmptyState
+              icon={Sparkles}
+              title="No looks yet"
+              message="When people post their hair, it shows up here."
+            />
+          )
+        }
         ListFooterComponent={
           feed.isFetchingNextPage ? (
             <ActivityIndicator color={theme.colors.accent} style={styles.footer} />
@@ -192,7 +227,7 @@ function HomeFeed() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={feed.isRefetching && !feed.isFetchingNextPage}
+            refreshing={feed.isRefetching && !feed.isFetchingNextPage && !feed.isPlaceholderData}
             onRefresh={() => feed.refetch()}
             tintColor={theme.colors.accent}
             colors={[theme.colors.accent]}

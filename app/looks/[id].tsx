@@ -6,7 +6,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowUp, ImageOff, MoreHorizontal } from 'lucide-react-native';
-import { errorMessage } from '@/features/auth';
+import { errorMessage, useAuth } from '@/features/auth';
 import {
   LookCard,
   postedLabel,
@@ -20,6 +20,7 @@ import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { fonts, GUTTER, makeStyles, radius, space, timing, useTheme } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
+import { Button } from '@/shared/ui/Button';
 import { notify } from '@/shared/ui/dialog';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -114,6 +115,7 @@ function LookThread({ id }: { id: string }) {
   const onScroll = useScreenScrollHandler();
   const router = useRouter();
   const actions = useLookActions({ onItsOwnPage: true });
+  const { isAuthenticated } = useAuth();
   const listRef = useRef<FlashListRef<LookComment>>(null);
 
   const { data: look } = useLook(id);
@@ -199,16 +201,28 @@ function LookThread({ id }: { id: string }) {
           paddingHorizontal: GUTTER,
         }}
       />
-      <KeyboardStickyView offset={{ closed: 0, opened: safe.bottom }}>
-        <Composer
-          lookId={id}
-          bottom={safe.bottom + space.sm}
-          onSent={() =>
-            // The new comment is at the end, once the thread re-reads.
-            setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 250)
-          }
-        />
-      </KeyboardStickyView>
+      {!isAuthenticated ? (
+        // Anyone can read the conversation; joining it takes an account.
+        <View style={[styles.composer, { paddingBottom: safe.bottom + space.sm }]}>
+          <Button
+            label="Sign in to comment"
+            variant="secondary"
+            onPress={() => router.push('/auth/join')}
+            fullWidth
+          />
+        </View>
+      ) : (
+        <KeyboardStickyView offset={{ closed: 0, opened: safe.bottom }}>
+          <Composer
+            lookId={id}
+            bottom={safe.bottom + space.sm}
+            onSent={() =>
+              // The new comment is at the end, once the thread re-reads.
+              setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 250)
+            }
+          />
+        </KeyboardStickyView>
+      )}
     </View>
   );
 }

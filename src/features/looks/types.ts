@@ -13,6 +13,8 @@ export interface Look {
   authorHandle?: string;
   authorAvatarUri?: string;
   photoUri: string;
+  /** Width over height, from the server's media record, when it has one. */
+  photoAspect?: number;
   caption?: string;
   /** Who did the hair: the author when a stylist posts, the one she tagged when a client does. */
   stylist?: { id: string; name: string; handle?: string };

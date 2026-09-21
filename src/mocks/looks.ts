@@ -103,7 +103,8 @@ defineMocks({
       .sort(),
 
   'GET /api/looks/': request => {
-    const accountId = requireAccount(request);
+    // Public: anyone can read the feed. Signing in adds likes, blocks and her own.
+    const accountId = request.accountId ?? '';
     const blocked = blocksOf(accountId);
     const limit = Number(request.query.get('limit') ?? 12);
     const cursor = request.query.get('cursor');
@@ -136,7 +137,8 @@ defineMocks({
   },
 
   'GET /api/looks/:id/': request => {
-    const accountId = requireAccount(request);
+    // Public: anyone can read the feed. Signing in adds likes, blocks and her own.
+    const accountId = request.accountId ?? '';
     return present(visibleLook(request.params.id, accountId), accountId);
   },
 
@@ -213,7 +215,8 @@ defineMocks({
   },
 
   'GET /api/looks/:id/comments/': request => {
-    const accountId = requireAccount(request);
+    // Public: anyone can read the feed. Signing in adds likes, blocks and her own.
+    const accountId = request.accountId ?? '';
     const look = visibleLook(request.params.id, accountId);
     const blocked = blocksOf(accountId);
     const limit = Number(request.query.get('limit') ?? 20);
