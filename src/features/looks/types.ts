@@ -27,6 +27,10 @@ export interface Look {
   hairTexture?: HairTexture;
   /** The stylist's district, never more. */
   area?: string;
+  /** Products used on it, from the catalogue. */
+  products?: TaggedProduct[];
+  /** `private` is a record for herself: never in the feed, never on the web. */
+  visibility: LookVisibility;
   likeCount: number;
   liked: boolean;
   commentCount: number;
@@ -44,6 +48,17 @@ export interface LookDraft {
   bookingId?: string;
   styles: string[];
   hairTexture?: HairTexture;
+  /** Catalogue product ids, from her shelf. */
+  productIds?: string[];
+  visibility?: LookVisibility;
+}
+
+export type LookVisibility = 'public' | 'private';
+
+export interface TaggedProduct {
+  id: string;
+  brand: string;
+  name: string;
 }
 
 /** A style in the taxonomy. The server owns the list. */

@@ -33,13 +33,16 @@ export function useLooks(filters: LookFilters = {}, { enabled = true } = {}) {
   });
 }
 
-type Cached = InfiniteData<LooksPage> | Look | undefined;
+type Cached = InfiniteData<LooksPage> | Look | Look[] | undefined;
 
 /** Every cached copy of a look, in any feed or on its own. */
 function findLook(queryClient: QueryClient, id: string) {
   for (const [, data] of queryClient.getQueriesData<Cached>({ queryKey: [KEY] })) {
     if (!data) continue;
-    if ('pages' in data) {
+    if (Array.isArray(data)) {
+      const found = data.find(look => look.id === id);
+      if (found) return found;
+    } else if ('pages' in data) {
       const found = data.pages.flatMap(page => page.data).find(look => look.id === id);
       if (found) return found;
     } else if (data.id === id) return data;
@@ -51,6 +54,7 @@ function findLook(queryClient: QueryClient, id: string) {
 function patchLook(queryClient: QueryClient, id: string, change: (look: Look) => Look) {
   queryClient.setQueriesData<Cached>({ queryKey: [KEY] }, data => {
     if (!data) return data;
+    if (Array.isArray(data)) return data.map(look => (look.id === id ? change(look) : look));
     if ('pages' in data) {
       return {
         ...data,
@@ -61,6 +65,16 @@ function patchLook(queryClient: QueryClient, id: string, change: (look: Look) =>
       };
     }
     return data.id === id ? change(data) : data;
+  });
+}
+
+/** Her own looks, private included. Under the same key, so a like or a post updates it. */
+export function useMyLooks() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: [KEY, 'mine', user?.id],
+    queryFn: looksApi.mine,
+    enabled: !!user?.id,
   });
 }
 

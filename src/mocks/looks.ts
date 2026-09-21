@@ -1,5 +1,6 @@
 import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
 import { db } from './db';
+import { productById } from './shelf';
 
 /** The style taxonomy. Seeded from what stylists actually call things. */
 const STYLES = [
@@ -55,6 +56,11 @@ function present(look: StoredLook, accountId: string) {
         ? { id: look.stylistId, name: stylist.name, handle: stylist.handle }
         : undefined,
     area: look.stylistId ? db.stylists.get(look.stylistId)?.baseArea : undefined,
+    products: (look.productIds ?? [])
+      .map(id => productById(id))
+      .filter((p): p is NonNullable<typeof p> => !!p)
+      .map(({ id, brand, name }) => ({ id, brand, name })),
+    visibility: look.visibility ?? 'public',
     likeCount: likesOf(look.id).size,
     liked: likesOf(look.id).has(accountId),
     commentCount: db.comments.filter(c => c.lookId === look.id).length,
@@ -64,7 +70,9 @@ function present(look: StoredLook, accountId: string) {
 
 function visibleLook(id: string, accountId: string) {
   const look = db.looks.find(item => item.id === id);
-  if (!look || blocksOf(accountId).has(look.authorId)) {
+  // A private look is its author's alone.
+  const hidden = look?.visibility === 'private' && look.authorId !== accountId;
+  if (!look || hidden || blocksOf(accountId).has(look.authorId)) {
     throw new MockError(404, 'That look is gone');
   }
   return look;
@@ -106,6 +114,8 @@ defineMocks({
     const visible = db.looks.filter(
       look =>
         !blocked.has(look.authorId) &&
+        // Private looks never reach the feed — not even the author's own.
+        look.visibility !== 'private' &&
         (!hair || look.hairTexture === hair) &&
         (!style || look.styles.includes(style)) &&
         (!area || (look.stylistId && db.stylists.get(look.stylistId)?.baseArea === area))
@@ -117,6 +127,12 @@ defineMocks({
       data: page.map(look => present(look, accountId)),
       nextCursor: start + limit < visible.length ? page[page.length - 1]?.id : undefined,
     };
+  },
+
+  // Her own looks, private ones included. Registered before :id so "mine" isn't read as one.
+  'GET /api/looks/mine/': request => {
+    const accountId = requireAccount(request);
+    return db.looks.filter(l => l.authorId === accountId).map(l => present(l, accountId));
   },
 
   'GET /api/looks/:id/': request => {
@@ -163,6 +179,11 @@ defineMocks({
       stylistId,
       styles,
       hairTexture: body.hairTexture || undefined,
+      // Only real catalogue products, and not too many to read.
+      productIds: (Array.isArray(body.productIds) ? body.productIds : [])
+        .filter((id: string) => !!productById(id))
+        .slice(0, 5),
+      visibility: body.visibility === 'private' ? 'private' : 'public',
       createdAt: new Date().toISOString(),
     };
     // Newest first.

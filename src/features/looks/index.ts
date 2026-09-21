@@ -4,6 +4,8 @@ export type {
   LookComment,
   LookDraft,
   LookFilters,
+  LookVisibility,
+  TaggedProduct,
   LooksPage,
   ReportReason,
   Style,
