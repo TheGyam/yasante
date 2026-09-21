@@ -1,6 +1,7 @@
 import { matchRoute, MockError } from '@/shared/lib/api/mock';
 import { db } from '../db';
-import '../bookings';
+import { checkInDue } from '../bookings';
+import '../stylist';
 
 /**
  * The booking state machine is the most consequential logic in the app: it decides
@@ -30,6 +31,8 @@ const request = (times = [nextWeek()]) =>
 
 beforeEach(() => {
   db.bookings.length = 0;
+  db.reviews.length = 0;
+  db.checkIns.length = 0;
 });
 
 describe('asking for a booking', () => {
@@ -165,5 +168,88 @@ describe('what each side is told', () => {
     expect(() =>
       call('post', `/api/bookings/${booking.id}/close/`, STYLIST, { outcome: 'no_show' })
     ).toThrow(/after the start time/);
+  });
+});
+
+describe('reviews', () => {
+  const completed = () => {
+    const past = new Date(Date.now() - 3_600_000).toISOString();
+    const booking = request([past]);
+    call('post', `/api/bookings/${booking.id}/accept/`, STYLIST, { scheduledFor: past });
+    call('post', `/api/bookings/${booking.id}/close/`, STYLIST, { outcome: 'attended' });
+    return booking;
+  };
+
+  it('only follow a completed appointment, once, from the client', () => {
+    const upcoming = request();
+    expect(() =>
+      call('post', `/api/bookings/${upcoming.id}/review/`, CLIENT, { rating: 5 })
+    ).toThrow(/completed/);
+
+    const done = completed();
+    expect(() => call('post', `/api/bookings/${done.id}/review/`, STYLIST, { rating: 5 })).toThrow(
+      MockError
+    );
+    expect(() => call('post', `/api/bookings/${done.id}/review/`, CLIENT, { rating: 6 })).toThrow(
+      MockError
+    );
+
+    call('post', `/api/bookings/${done.id}/review/`, CLIENT, { rating: 4, body: 'Neat' });
+    expect(() => call('post', `/api/bookings/${done.id}/review/`, CLIENT, { rating: 5 })).toThrow(
+      /already/
+    );
+  });
+
+  it('stay off her page until moderation passes them', () => {
+    const done = completed();
+    const review = call('post', `/api/bookings/${done.id}/review/`, CLIENT, { rating: 4 });
+    expect(review.status).toBe('pending');
+    expect(call('get', `/api/bookings/${done.id}/`, CLIENT).review).toEqual({
+      rating: 4,
+      status: 'pending',
+    });
+
+    const page = () => call('get', '/api/stylists/by-handle/braidsbyama/', CLIENT);
+    expect(page().reviews).toHaveLength(0);
+    expect(page().rating).toBeUndefined();
+
+    db.reviews[0].status = 'published';
+    expect(page().reviews[0]).toMatchObject({ rating: 4, authorName: 'Efua' });
+    expect(page().reviews[0].clientId).toBeUndefined();
+    expect(page().rating).toEqual({ average: 4, count: 1 });
+  });
+});
+
+describe('check-ins', () => {
+  const DAY = 86_400_000;
+  const ago = (days: number) => new Date(Date.now() - days * DAY).toISOString();
+
+  it('open at week 2 and week 4, each for a fortnight', () => {
+    expect(checkInDue(ago(13), [])).toBeUndefined();
+    expect(checkInDue(ago(14), [])).toBe(2);
+    expect(checkInDue(ago(20), [2])).toBeUndefined();
+    expect(checkInDue(ago(28), [])).toBe(4);
+    expect(checkInDue(ago(30), [2, 4])).toBeUndefined();
+    // A week-2 answer in week 6 is noise, not data.
+    expect(checkInDue(ago(42), [])).toBeUndefined();
+    expect(checkInDue(undefined, [])).toBeUndefined();
+  });
+
+  it('take the open week only, from the client, and close once answered', () => {
+    const booking = request();
+    Object.assign(db.bookings[0], { status: 'completed', completedAt: ago(15) });
+    const answers = { holding: 'fresh', scalp: 'comfortable', again: 'yes' };
+
+    expect(call('get', `/api/bookings/${booking.id}/`, CLIENT).checkInDue).toBe(2);
+    expect(call('get', `/api/bookings/${booking.id}/`, STYLIST).checkInDue).toBeUndefined();
+    expect(() =>
+      call('post', `/api/bookings/${booking.id}/check-in/`, CLIENT, { week: 4, ...answers })
+    ).toThrow(/isn’t open/);
+    expect(() =>
+      call('post', `/api/bookings/${booking.id}/check-in/`, CLIENT, { week: 2, holding: 'fresh' })
+    ).toThrow(/all three/);
+
+    call('post', `/api/bookings/${booking.id}/check-in/`, CLIENT, { week: 2, ...answers });
+    expect(call('get', `/api/bookings/${booking.id}/`, CLIENT).checkInDue).toBeUndefined();
   });
 });

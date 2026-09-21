@@ -1,5 +1,6 @@
 import type { User } from '@/features/profile';
-import type { Booking } from '@/features/booking';
+import type { Booking, CheckInAnswers, CheckInWeek, Review } from '@/features/booking';
+import type { ShelfItem } from '@/features/shelf';
 import type { MenuItem, PortfolioPhoto, StylistProfile } from '@/features/stylist';
 
 /**
@@ -224,12 +225,27 @@ export const db = {
    */
   bookings: [] as Booking[],
 
+  /** Reviews, one per completed booking. They start pending and go through moderation. */
+  reviews: [] as (Review & { stylistId: string; clientId: string })[],
+
+  /** Week 2 and week 4 check-ins, as answered. */
+  checkIns: [] as (CheckInAnswers & {
+    bookingId: string;
+    accountId: string;
+    week: CheckInWeek;
+    at: string;
+  })[],
+
+  /** Each account's product shelf. The catalogue itself lives in ./shelf. */
+  shelves: new Map<string, ShelfItem[]>(),
+
   /** Who each account has blocked. Blocking is mutual. */
   blocks: new Map<string, Set<string>>(),
 
   /** Reports go to moderation. Nothing here reaches the person reported. */
   reports: [] as {
-    lookId: string;
+    lookId?: string;
+    reviewId?: string;
     reason: string;
     note?: string;
     reportedBy: string;
@@ -270,3 +286,54 @@ export const db = {
 
 export const findAccountByEmail = (email: string) =>
   [...db.accounts.values()].find(a => a.email.toLowerCase() === email.trim().toLowerCase());
+
+/**
+ * Two finished appointments with Ama, so reviews and check-ins have something to
+ * hang off: Efua's from a fortnight ago (her week-2 check-in is due and she hasn't
+ * reviewed it), and Zainab's, reviewed and through moderation.
+ */
+function seedCompleted(id: string, clientId: string, daysAgo: number): Booking {
+  const at = new Date(Date.now() - daysAgo * 86_400_000).toISOString();
+  const ama = db.stylists.get('acc_ama')!;
+  return {
+    id,
+    status: 'completed',
+    clientId,
+    clientName: db.accounts.get(clientId)!.name,
+    stylistId: 'acc_ama',
+    stylistName: ama.displayName,
+    stylistHandle: ama.handle,
+    serviceId: 'men_knotless',
+    serviceName: 'Knotless braids',
+    price: 120,
+    fromPrice: true,
+    durationMinutes: 300,
+    bringingOwnHair: false,
+    requestedTimes: [at],
+    scheduledFor: at,
+    area: ama.baseArea,
+    address: `12 Bellenden Road, ${ama.baseArea}`,
+    policy: ama.policies,
+    policyVersion: 'seed',
+    completedAt: at,
+    createdAt: at,
+    updatedAt: at,
+  };
+}
+
+db.bookings.push(
+  seedCompleted('bk_seed_efua', 'acc_client', 15),
+  seedCompleted('bk_seed_zainab', 'acc_zainab', 40)
+);
+db.reviews.push({
+  id: 'rev_seed_zainab',
+  bookingId: 'bk_seed_zainab',
+  stylistId: 'acc_ama',
+  clientId: 'acc_zainab',
+  rating: 5,
+  body: 'Neat parts, no tension on my edges, and done when she said it would be.',
+  status: 'published',
+  authorName: 'Zainab',
+  serviceName: 'Knotless braids',
+  createdAt: new Date(Date.now() - 38 * 86_400_000).toISOString(),
+});

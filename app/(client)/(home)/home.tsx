@@ -17,6 +17,7 @@ import {
   useNewPosts,
   type Content,
 } from '@/features/education';
+import { BookingNudge } from '@/features/booking';
 import { useUser } from '@/features/profile';
 import { useBackgroundSync } from '@/shared/hooks/useBackgroundSync';
 import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -120,6 +121,7 @@ function HomeFeed() {
   const header = (
     <View style={styles.header}>
       <GreetingBanner firstName={firstName} />
+      {isAuthenticated && <BookingNudge />}
       <SearchField
         placeholder="Search styles, tips and care"
         onPress={() => router.push('/search')}

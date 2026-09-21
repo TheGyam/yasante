@@ -15,3 +15,4 @@ export type {
 } from './types';
 export * from './format';
 export { HairQuiz } from './quiz/HairQuiz';
+export { ChoiceCard } from './quiz/ChoiceCard';

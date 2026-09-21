@@ -1,5 +1,14 @@
 import { apiClient } from '@/shared/lib/api/client';
-import type { Booking, BookingDraft, BookingRole, BookingStatus } from './types';
+import type {
+  Booking,
+  BookingDraft,
+  BookingRole,
+  BookingStatus,
+  CheckInAnswers,
+  CheckInWeek,
+  Review,
+  ReviewReportReason,
+} from './types';
 
 export const bookingApi = {
   /** GET /api/bookings/?role=&status= — one side's bookings, newest first. */
@@ -42,4 +51,16 @@ export const bookingApi = {
   /** POST /api/bookings/:id/close/ — attended or a no-show. Stylist only. */
   close: async (id: string, outcome: 'attended' | 'no_show') =>
     (await apiClient.post<Booking>(`/api/bookings/${id}/close/`, { outcome })).data,
+
+  /** POST /api/bookings/:id/review/ — completed bookings only, once. Goes to moderation. */
+  review: async (id: string, rating: number, body?: string) =>
+    (await apiClient.post<Review>(`/api/bookings/${id}/review/`, { rating, body })).data,
+
+  /** POST /api/bookings/:id/check-in/ — for the week the server asked about. */
+  checkIn: async (id: string, week: CheckInWeek, answers: CheckInAnswers) =>
+    (await apiClient.post<null>(`/api/bookings/${id}/check-in/`, { week, ...answers })).data,
+
+  /** POST /api/reviews/:id/report/ */
+  reportReview: async (id: string, reason: ReviewReportReason, note?: string) =>
+    (await apiClient.post<null>(`/api/reviews/${id}/report/`, { reason, note })).data,
 };

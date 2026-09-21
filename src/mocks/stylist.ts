@@ -37,6 +37,23 @@ function newItem(body: any) {
 const taken = (handle: string) =>
   RESERVED.has(handle) || [...db.stylists.values()].some(s => s.handle === handle);
 
+/**
+ * Only what moderation has passed, and nothing that says who the client is. The
+ * average counts every published review; the page carries the latest ten.
+ */
+function reviewsFor(stylistId: string) {
+  const published = db.reviews
+    .filter(r => r.stylistId === stylistId && r.status === 'published')
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const total = published.reduce((sum, r) => sum + r.rating, 0);
+  return {
+    reviews: published.slice(0, 10).map(({ stylistId: _s, clientId: _c, ...review }) => review),
+    rating: published.length
+      ? { average: Math.round((total / published.length) * 10) / 10, count: published.length }
+      : undefined,
+  };
+}
+
 defineMocks({
   'GET /api/stylists/handle-available/': ({ query }) => {
     const handle = (query.get('handle') ?? '').toLowerCase();
@@ -61,6 +78,7 @@ defineMocks({
       confirmedStyles: db.bookings.filter(
         b => b.stylistId === profile.accountId && b.status === 'completed'
       ).length,
+      ...reviewsFor(profile.accountId),
     };
   },
 

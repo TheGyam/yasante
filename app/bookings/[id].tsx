@@ -3,9 +3,12 @@ import { useLocalSearchParams } from 'expo-router';
 import {
   BadgeCheck,
   Banknote,
+  Camera,
   CalendarClock,
   MapPin,
+  MessageSquareHeart,
   Scissors,
+  Sparkles,
   TriangleAlert,
 } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
@@ -30,6 +33,7 @@ import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
+import { StarRating } from '@/shared/ui/StarRating';
 import { Text } from '@/shared/ui/Text';
 
 const useStyles = makeStyles(() => ({
@@ -171,12 +175,45 @@ export default function BookingScreen() {
         )}
 
         {booking.status === 'completed' && (
-          <Button
-            label="Post this as a look"
-            onPress={() => router.push('/looks/new')}
-            variant="secondary"
-            fullWidth
-          />
+          <Section title="After the appointment">
+            {!!booking.checkInDue && (
+              <ListRow
+                title={`Week ${booking.checkInDue} check-in`}
+                subtitle="How it's holding up, in three taps"
+                icon={Sparkles}
+                onPress={() => router.push(`/check-in/${booking.id}`)}
+                testID="booking-check-in"
+              />
+            )}
+            {booking.review ? (
+              <ListRow
+                title="Your review"
+                subtitle={
+                  booking.review.status === 'published'
+                    ? 'On her page'
+                    : booking.review.status === 'pending'
+                      ? 'Being checked before it goes up'
+                      : 'Taken down by moderation'
+                }
+                trailing={<StarRating value={booking.review.rating} size={12} />}
+                icon={MessageSquareHeart}
+                iconTone="success"
+              />
+            ) : (
+              <ListRow
+                title="Leave a review"
+                subtitle="It helps the next person choose"
+                icon={MessageSquareHeart}
+                onPress={() => router.push(`/review/${booking.id}`)}
+                testID="booking-review"
+              />
+            )}
+            <ListRow
+              title="Post this as a look"
+              icon={Camera}
+              onPress={() => router.push('/looks/new')}
+            />
+          </Section>
         )}
       </View>
     </Screen>

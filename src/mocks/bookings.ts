@@ -1,4 +1,4 @@
-import type { Booking, BookingStatus, ClientRecord } from '@/features/booking';
+import type { Booking, BookingStatus, CheckInWeek, ClientRecord } from '@/features/booking';
 import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
 import { db } from './db';
 
@@ -31,8 +31,29 @@ function move(booking: Booking, to: BookingStatus) {
   }
   booking.status = to;
   booking.updatedAt = new Date().toISOString();
+  if (to === 'completed') booking.completedAt = booking.updatedAt;
   return booking;
 }
+
+const DAY = 86_400_000;
+
+/**
+ * Which check-in is due, if any. Each gets a fortnight to be answered: an answer
+ * about week 2 given in week 6 is noise, not data.
+ */
+export function checkInDue(
+  completedAt: string | undefined,
+  answered: number[],
+  now = Date.now()
+): CheckInWeek | undefined {
+  if (!completedAt) return undefined;
+  const days = (now - new Date(completedAt).getTime()) / DAY;
+  if (days >= 28 && days < 42 && !answered.includes(4)) return 4;
+  if (days >= 14 && days < 28 && !answered.includes(2)) return 2;
+  return undefined;
+}
+
+const reviewOf = (bookingId: string) => db.reviews.find(r => r.bookingId === bookingId);
 
 const find = (id: string) => {
   const booking = db.bookings.find(item => item.id === id);
@@ -78,13 +99,21 @@ function hairOf(clientId: string) {
 function forRole(booking: Booking, accountId: string) {
   const asStylist = booking.stylistId === accountId;
   const confirmed = booking.status === 'confirmed' || booking.status === 'completed';
+  const review = reviewOf(booking.id);
+  const answered = db.checkIns.filter(c => c.bookingId === booking.id).map(c => c.week);
   return {
     ...booking,
     clientHair: asStylist ? hairOf(booking.clientId) : undefined,
     clientRecord: asStylist ? recordOf(booking.clientId) : undefined,
     address: confirmed ? booking.address : undefined,
+    review: !asStylist && review ? { rating: review.rating, status: review.status } : undefined,
+    checkInDue: asStylist ? undefined : checkInDue(booking.completedAt, answered),
   };
 }
+
+const RATINGS = ['fresh', 'okay', 'tired'];
+const SCALP = ['comfortable', 'itchy', 'sore'];
+const AGAIN = ['yes', 'maybe', 'no'];
 
 defineMocks({
   'GET /api/bookings/': request => {
@@ -221,5 +250,79 @@ defineMocks({
       throw new MockError(400, 'You can only mark a no-show after the start time');
     }
     return forRole(move(booking, noShow ? 'no_show' : 'completed'), accountId);
+  },
+
+  'POST /api/bookings/:id/review/': request => {
+    const accountId = requireAccount(request);
+    const booking = find(request.params.id);
+    // Only the person who sat in the chair, and only once she has.
+    if (booking.clientId !== accountId) throw new MockError(403, 'Only the client can review it');
+    if (booking.status !== 'completed') {
+      throw new MockError(409, 'A review can only follow a completed appointment');
+    }
+    if (reviewOf(booking.id)) throw new MockError(409, 'You’ve already reviewed this one');
+
+    const rating = Number(request.body?.rating);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      throw new MockError(400, 'Give it between one and five stars');
+    }
+    const body = request.body?.body ? String(request.body.body).trim().slice(0, 1000) : undefined;
+
+    const review = {
+      id: `rev_${Date.now()}`,
+      bookingId: booking.id,
+      stylistId: booking.stylistId,
+      clientId: accountId,
+      rating,
+      body: body || undefined,
+      // Checked before anyone else sees it.
+      status: 'pending' as const,
+      authorName: booking.clientName.split(' ')[0],
+      serviceName: booking.serviceName,
+      createdAt: new Date().toISOString(),
+    };
+    db.reviews.push(review);
+    return review;
+  },
+
+  'POST /api/bookings/:id/check-in/': request => {
+    const accountId = requireAccount(request);
+    const booking = find(request.params.id);
+    if (booking.clientId !== accountId) throw new MockError(403, 'That booking isn’t yours');
+
+    const answered = db.checkIns.filter(c => c.bookingId === booking.id).map(c => c.week);
+    const week = Number(request.body?.week);
+    if (week !== checkInDue(booking.completedAt, answered)) {
+      throw new MockError(409, 'That check-in isn’t open');
+    }
+    const { holding, scalp, again } = request.body ?? {};
+    if (!RATINGS.includes(holding) || !SCALP.includes(scalp) || !AGAIN.includes(again)) {
+      throw new MockError(400, 'Answer all three');
+    }
+    db.checkIns.push({
+      bookingId: booking.id,
+      accountId,
+      week: week as CheckInWeek,
+      holding,
+      scalp,
+      again,
+      at: new Date().toISOString(),
+    });
+    return null;
+  },
+
+  'POST /api/reviews/:id/report/': request => {
+    const accountId = requireAccount(request);
+    const review = db.reviews.find(r => r.id === request.params.id);
+    if (!review) throw new MockError(404, 'That review is already gone');
+    if (!request.body?.reason) throw new MockError(400, 'Say what’s wrong with it');
+    db.reports.push({
+      reviewId: review.id,
+      reason: String(request.body.reason),
+      note: request.body?.note ? String(request.body.note) : undefined,
+      reportedBy: accountId,
+      at: new Date().toISOString(),
+    });
+    return null;
   },
 });

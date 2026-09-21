@@ -1,7 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { bookingApi } from './api';
-import type { BookingDraft, BookingRole, BookingStatus } from './types';
+import type {
+  BookingDraft,
+  BookingRole,
+  BookingStatus,
+  CheckInAnswers,
+  CheckInWeek,
+  ReviewReportReason,
+} from './types';
 
 const KEY = 'bookings';
 
@@ -79,5 +86,34 @@ export function useCloseBooking() {
     mutationFn: (args: { id: string; outcome: 'attended' | 'no_show' }) =>
       bookingApi.close(args.id, args.outcome),
     onSuccess,
+  });
+}
+
+/** A review changes the booking, and once it's published, her page. */
+export function useLeaveReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { id: string; rating: number; body?: string }) =>
+      bookingApi.review(args.id, args.rating, args.body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [KEY] });
+      queryClient.invalidateQueries({ queryKey: ['stylist', 'page'] });
+    },
+  });
+}
+
+export function useCheckIn() {
+  const onSuccess = useRefresh();
+  return useMutation({
+    mutationFn: (args: { id: string; week: CheckInWeek; answers: CheckInAnswers }) =>
+      bookingApi.checkIn(args.id, args.week, args.answers),
+    onSuccess,
+  });
+}
+
+export function useReportReview() {
+  return useMutation({
+    mutationFn: (args: { id: string; reason: ReviewReportReason; note?: string }) =>
+      bookingApi.reportReview(args.id, args.reason, args.note),
   });
 }

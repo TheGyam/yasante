@@ -72,14 +72,19 @@ circular dependency the old lazy `require` existed to work around.
 
 ## Features today
 
-`auth` · `profile` · `planner` · `education` · `stylist` · `looks`
+`auth` · `profile` · `planner` · `education` · `stylist` · `looks` · `booking` · `shelf`
 
-Phase 1 still adds `booking` and `products`, and later `insights`. Each one is a new
+Phase 1 still adds `insights`. Each one is a new
 folder following the same shape — no changes needed elsewhere.
 
 `planner` is the client's own planning: collections (what she saves) and care plans
 (how she looks after the hair she has). Both replaced what came before — mood boards
 and treatments — because a booking owns the stylist, price and appointment now.
+
+`booking` owns what hangs off an appointment too: reviews and the week 2 and week 4
+check-ins. The server decides when each is open and says so on the booking
+(`review`, `checkInDue`); the app only reflects it. `shelf` is the product catalogue
+and the products a client uses, rates, finishes and buys again.
 
 ## Modes and navigation
 
@@ -106,7 +111,15 @@ In the browser console, `mockSignIn('ama@yasante.dev')` signs in without the for
 `mockDb` is the store itself, for when a screen and the mock backend disagree.
 
 Seeded accounts: `client@yasante.dev`, `ama@yasante.dev` and `zainab@yasante.dev`
-(both stylists), `new@yasante.dev` (phone not verified).
+(both stylists), `new@yasante.dev` (phone not verified). Efua (client) has a
+completed appointment with Ama from a fortnight ago, so her week-2 check-in and a
+review are both waiting, and two products on her shelf.
+
+Reviews arrive pending, as they will for real. To see one on a stylist page, pass it
+by hand: `mockDb.reviews.forEach(r => (r.status = 'published'))`.
+
+If your own dev server is on 8081, `.claude/launch.json` has a second web config on
+8082, so the preview can pick up new mocks without restarting yours.
 
 ## Design system
 

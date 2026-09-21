@@ -16,6 +16,7 @@ import {
   isNotFound,
   useStylistPage,
 } from '@/features/stylist';
+import { ReviewCard } from '@/features/booking';
 import { formatMoney } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space } from '@/shared/theme';
@@ -27,6 +28,7 @@ import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
+import { StarRating } from '@/shared/ui/StarRating';
 import { Text } from '@/shared/ui/Text';
 
 const useStyles = makeStyles(() => ({
@@ -35,6 +37,9 @@ const useStyles = makeStyles(() => ({
   names: { alignItems: 'center', gap: 2 },
   work: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   photo: { width: '31%', aspectRatio: 0.8, borderRadius: radius.sm },
+  reviews: { gap: space.sm },
+  reviewsHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  average: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
 }));
 
 /**
@@ -74,7 +79,7 @@ export default function StylistPageScreen() {
     );
   }
 
-  const { profile, menu, photos, confirmedStyles } = data;
+  const { profile, menu, photos, confirmedStyles, reviews, rating } = data;
   const deposit =
     profile.policies.depositType === 'none'
       ? 'No deposit'
@@ -165,6 +170,40 @@ export default function StylistPageScreen() {
             </View>
           </View>
         )}
+
+        <View style={styles.reviews}>
+          <View style={styles.reviewsHead}>
+            <Text variant="overline" tone="tertiary">
+              Reviews
+            </Text>
+            {!!rating && (
+              <View style={styles.average}>
+                <StarRating value={Math.round(rating.average)} size={12} />
+                <Text variant="footnote" tone="secondary">
+                  {rating.average.toFixed(1)} · {rating.count}{' '}
+                  {rating.count === 1 ? 'review' : 'reviews'}
+                </Text>
+              </View>
+            )}
+          </View>
+          {reviews.length ? (
+            reviews.map(review => (
+              <ReviewCard
+                key={review.id}
+                review={review}
+                onReport={r =>
+                  router.push(
+                    `/review/report?id=${r.id}&author=${encodeURIComponent(r.authorName)}`
+                  )
+                }
+              />
+            ))
+          ) : (
+            <Text variant="subhead" tone="secondary">
+              No reviews yet. Only clients who’ve had a completed appointment can leave one.
+            </Text>
+          )}
+        </View>
 
         <Section title="Her terms" footer="You'll be asked to accept these when you book.">
           <ListRow

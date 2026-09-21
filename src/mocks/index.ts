@@ -14,6 +14,7 @@ import './stylist';
 import './planner';
 import './looks';
 import './bookings';
+import './shelf';
 import './verification';
 import './invites';
 

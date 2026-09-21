@@ -1,3 +1,5 @@
+import type { Review } from '@/features/booking';
+
 export type ServiceModel = 'salon' | 'home' | 'mobile';
 
 /** Checks held, from none to met in person. Every badge states what was checked. */
@@ -88,6 +90,10 @@ export interface StylistPage {
   photos: PortfolioPhoto[];
   /** Styles clients confirmed she did — a count she can't type in herself. */
   confirmedStyles: number;
+  /** The latest published reviews, newest first. Every one is from a completed booking. */
+  reviews: Review[];
+  /** Across every published review. Absent until there is one. */
+  rating?: { average: number; count: number };
 }
 
 /** What waits in stylist mode — drives the badge on the mode switch. */
