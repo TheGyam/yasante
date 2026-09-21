@@ -223,3 +223,24 @@ describe('her working hours', () => {
     ).toThrow(/doesn’t work/);
   });
 });
+
+describe('pricing a request', () => {
+  const ask = (options?: Record<string, string>) =>
+    call('post', '/api/bookings/', CLIENT, {
+      stylistId: STYLIST,
+      serviceId: 'men_cornrows',
+      options,
+      requestedTimes: [inDays(7)],
+      policyVersion: 'v1',
+    });
+
+  it('needs every option chosen, and prices it from her menu', () => {
+    expect(() => ask()).toThrow(/length and size/);
+    expect(ask({ size: 'cr_small' })).toMatchObject({
+      price: 75,
+      fromPrice: false,
+      durationMinutes: 180,
+      optionLabels: ['Small'],
+    });
+  });
+});

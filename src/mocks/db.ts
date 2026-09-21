@@ -141,7 +141,18 @@ export const db = {
           durationMinutes: 300,
           note: 'Hair not included',
         },
-        { id: 'men_cornrows', name: 'Cornrows', price: 45, fromPrice: false, durationMinutes: 120 },
+        {
+          id: 'men_cornrows',
+          name: 'Cornrows',
+          price: 45,
+          fromPrice: true,
+          durationMinutes: 120,
+          options: [
+            { id: 'cr_big', group: 'size' as const, label: 'Big', add: 0 },
+            { id: 'cr_medium', group: 'size' as const, label: 'Medium', add: 15, addMinutes: 30 },
+            { id: 'cr_small', group: 'size' as const, label: 'Small', add: 30, addMinutes: 60 },
+          ],
+        },
         {
           id: 'men_takedown',
           name: 'Take down and wash',

@@ -19,6 +19,7 @@ import {
 import { errorMessage } from '@/features/auth';
 import {
   STATUS_LABELS,
+  serviceLine,
   blamesClient,
   cancellingIsLate,
   dayLabel,
@@ -176,7 +177,7 @@ export default function BookingScreen() {
       <View style={styles.body}>
         <View style={styles.head}>
           <Text variant="title2" accessibilityRole="header">
-            {booking.serviceName}
+            {serviceLine(booking)}
           </Text>
           <Text variant="subhead" tone="secondary">
             {booking.stylistName} · {STATUS_LABELS[booking.status]}

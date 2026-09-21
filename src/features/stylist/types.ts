@@ -78,6 +78,22 @@ export interface MenuItem {
   durationMinutes?: number;
   /** "Hair not included", "Bring your own beads". */
   note?: string;
+  /** What changes the price: longer or smaller costs more, on top of the base. */
+  options?: PriceOption[];
+  /** Braiding hair is in the price, so she brings it. */
+  hairIncluded?: boolean;
+}
+
+export type OptionGroup = 'length' | 'size';
+
+/** "Waist length, +£40, +1 hr". The base price is the first choice in each group. */
+export interface PriceOption {
+  id: string;
+  group: OptionGroup;
+  label: string;
+  /** Pounds on top of the base. */
+  add: number;
+  addMinutes?: number;
 }
 
 export type MenuItemDraft = Omit<MenuItem, 'id'>;

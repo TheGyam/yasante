@@ -33,6 +33,22 @@ function newItem(body: any) {
     fromPrice: !!body?.fromPrice,
     durationMinutes: body?.durationMinutes ? Number(body.durationMinutes) : undefined,
     note: body?.note ? String(body.note).trim() : undefined,
+    // Only well-formed options survive: a known group, a name, a price that isn't negative.
+    options: (Array.isArray(body?.options) ? body.options : [])
+      .filter(
+        (o: any) =>
+          (o?.group === 'length' || o?.group === 'size') &&
+          String(o?.label ?? '').trim() &&
+          Number(o?.add) >= 0
+      )
+      .map((o: any, i: number) => ({
+        id: String(o.id || `opt_${i}`),
+        group: o.group,
+        label: String(o.label).trim(),
+        add: Number(o.add),
+        addMinutes: o.addMinutes ? Number(o.addMinutes) : undefined,
+      })),
+    hairIncluded: !!body?.hairIncluded,
   };
 }
 
@@ -193,7 +209,7 @@ defineMocks({
   'PATCH /api/stylists/me/menu/:id/': request => {
     const item = menuOf(requireAccount(request)).find(i => i.id === request.params.id);
     if (!item) throw new MockError(404, 'That service is no longer on your menu');
-    Object.assign(item, request.body);
+    Object.assign(item, newItem({ ...item, ...request.body }));
     return item;
   },
 

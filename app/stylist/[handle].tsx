@@ -205,7 +205,15 @@ export default function StylistPageScreen() {
               <ListRow
                 key={item.id}
                 title={item.name}
-                subtitle={item.durationMinutes ? formatDuration(item.durationMinutes) : item.note}
+                subtitle={
+                  [
+                    item.durationMinutes ? formatDuration(item.durationMinutes) : item.note,
+                    item.options?.length ? 'priced by length and size' : undefined,
+                    item.hairIncluded ? 'hair included' : undefined,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ') || undefined
+                }
                 value={formatPrice(item)}
                 icon={Scissors}
               />

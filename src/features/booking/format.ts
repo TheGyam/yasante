@@ -131,3 +131,7 @@ export const ATTENDANCE_CATEGORY = {
 /** "tomorrow, 14:00" inside a sentence; "Sat 26 Sep, 14:00" stays as it is. */
 export const inSentence = (label: string) =>
   label.replace(/^(Today|Tomorrow)/, word => word.toLowerCase());
+
+/** "Knotless braids · Waist · Small" — the service as she chose it. */
+export const serviceLine = (booking: Pick<Booking, 'serviceName' | 'optionLabels'>) =>
+  [booking.serviceName, ...(booking.optionLabels ?? [])].join(' · ');
