@@ -17,6 +17,8 @@ export interface ParsedService {
   /** "from £120" — a range, a plus, or the word itself. */
   fromPrice: boolean;
   durationMinutes?: number;
+  /** "BRAIDS", "Twists:" — a heading over a group of services, not a service. */
+  heading?: boolean;
 }
 
 /** "4 hrs", "1.5hr", "2 hrs 30", "2h30". A bare number after the hours is minutes. */
@@ -130,6 +132,17 @@ export function parseLine(raw: string): ParsedService {
  */
 export const serviceKey = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
+/**
+ * A line that titles a group rather than naming a service: no numbers, and either
+ * shouted in capitals, ended with a colon, or nothing but decoration.
+ */
+export function isHeading(raw: string) {
+  if (/\d/.test(raw)) return false;
+  const letters = raw.replace(/[^A-Za-z]/g, '');
+  if (!letters) return true;
+  return raw.trim().endsWith(':') || (letters.length > 1 && letters === letters.toUpperCase());
+}
+
 /** A pasted list, one entry per line that says anything at all. */
 export function parsePriceList(text: string): ParsedService[] {
   return text
@@ -137,8 +150,8 @@ export function parsePriceList(text: string): ParsedService[] {
     .slice(0, 200)
     .map(line => line.trim())
     .filter(Boolean)
-    .map(parseLine)
-    .filter(service => service.name.length > 0);
+    .map(line => ({ ...parseLine(line), heading: isHeading(line) || undefined }))
+    .filter(service => service.name.length > 0 || service.heading);
 }
 
 /** What she typed in a "how long" field: "4 hrs", "2h30", "90 mins", "3". */

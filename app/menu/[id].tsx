@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Clock, Plus, PoundSterling, Scissors, Sparkles, Trash2, X } from 'lucide-react-native';
 import {
+  DURATION_PICKS,
   OPTION_GROUPS,
+  SERVICE_PRESETS,
   TYPICAL_OPTIONS,
+  estimate,
   formatDuration,
+  formatPrice,
   parseDuration,
+  serviceKey,
   useAddMenuItem,
   useMenu,
   useRemoveMenuItem,
@@ -19,7 +24,8 @@ import { errorMessage } from '@/features/auth';
 import { formatMoney, parseMoney } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
-import { makeStyles, space } from '@/shared/theme';
+import { GUTTER, makeStyles, space } from '@/shared/theme';
+import { Chip } from '@/shared/ui/Chip';
 import { Button } from '@/shared/ui/Button';
 import { confirm, notify } from '@/shared/ui/dialog';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -38,6 +44,8 @@ const useStyles = makeStyles(() => ({
   optionLabel: { flex: 2 },
   optionAdd: { flex: 1 },
   remove: { marginTop: space.sm },
+  strip: { marginHorizontal: -GUTTER },
+  chips: { flexDirection: 'row', gap: space.sm, paddingHorizontal: GUTTER },
 }));
 
 let nextId = 0;
@@ -85,6 +93,21 @@ export default function MenuItemScreen() {
     haptics.light();
     setOptions(TYPICAL_OPTIONS.map(o => ({ ...o, id: localId(), add: String(o.add) })));
   };
+  // One tap sets up the shape of a common service; she only has to add her price.
+  const startFrom = (preset: (typeof SERVICE_PRESETS)[number]) => {
+    setName(preset.name);
+    setHowLong(formatDuration(preset.minutes));
+    setFromPrice(preset.by.length > 0);
+    setOptions(
+      TYPICAL_OPTIONS.filter(o => preset.by.includes(o.group)).map(o => ({
+        ...o,
+        id: localId(),
+        add: String(o.add),
+      }))
+    );
+  };
+  const onMenu = new Set((menu ?? []).map(item => serviceKey(item.name)));
+  const presets = SERVICE_PRESETS.filter(p => !onMenu.has(serviceKey(p.name)));
 
   const add = useAddMenuItem();
   const update = useUpdateMenuItem(id);
@@ -93,6 +116,31 @@ export default function MenuItemScreen() {
   const minutes = parseDuration(howLong);
   const amount = parseMoney(price);
   const ready = !!name.trim() && amount > 0;
+
+  // Exactly what her page will show, and the most a client could be quoted.
+  const preview = ready
+    ? {
+        id: 'preview',
+        name: name.trim(),
+        price: amount,
+        fromPrice,
+        durationMinutes: minutes,
+        options: options
+          .filter(o => o.label.trim())
+          .map(o => ({ ...o, add: parseMoney(o.add) || 0 })),
+      }
+    : undefined;
+  const top = preview
+    ? estimate(
+        preview,
+        Object.fromEntries(
+          OPTION_GROUPS.map(({ group }) => {
+            const inGroup = preview.options.filter(o => o.group === group);
+            return [group, inGroup[inGroup.length - 1]?.id];
+          })
+        )
+      )
+    : undefined;
 
   const save = async () => {
     const draft: MenuItemDraft = {
@@ -143,6 +191,29 @@ export default function MenuItemScreen() {
   return (
     <Screen title={isNew ? 'Add a service' : 'Edit service'} modal keyboard testID="menu-item-form">
       <View style={styles.body}>
+        {isNew && presets.length > 0 && (
+          <View style={styles.group}>
+            <Text variant="footnote" tone="secondary">
+              Start from one of these, or type your own
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.strip}
+              contentContainerStyle={styles.chips}
+              keyboardShouldPersistTaps="handled"
+            >
+              {presets.map(preset => (
+                <Chip
+                  key={preset.name}
+                  label={preset.name}
+                  selected={name === preset.name}
+                  onPress={() => startFrom(preset)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
         <Input
           label="What you call it"
           icon={Scissors}
@@ -159,6 +230,32 @@ export default function MenuItemScreen() {
           placeholder="120"
           keyboardType="decimal-pad"
         />
+        <Input
+          label="How long it takes"
+          icon={Clock}
+          value={howLong}
+          onChangeText={setHowLong}
+          placeholder="4 hrs"
+          hint={
+            minutes ? `Clients see ${formatDuration(minutes)}` : 'Optional — “4 hrs”, “90 mins”'
+          }
+        />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.strip}
+          contentContainerStyle={styles.chips}
+          keyboardShouldPersistTaps="handled"
+        >
+          {DURATION_PICKS.map(pick => (
+            <Chip
+              key={pick}
+              label={formatDuration(pick)}
+              selected={minutes === pick}
+              onPress={() => setHowLong(formatDuration(pick))}
+            />
+          ))}
+        </ScrollView>
         <Section footer="Braids priced by length and size are nearly always a starting price.">
           <ListRow
             title="This is a starting price"
@@ -254,16 +351,6 @@ export default function MenuItemScreen() {
           />
         </Section>
         <Input
-          label="How long it takes"
-          icon={Clock}
-          value={howLong}
-          onChangeText={setHowLong}
-          placeholder="4 hrs"
-          hint={
-            minutes ? `Clients see ${formatDuration(minutes)}` : 'Optional — “4 hrs”, “90 mins”'
-          }
-        />
-        <Input
           label="Anything they should know"
           value={note}
           onChangeText={setNote}
@@ -271,6 +358,24 @@ export default function MenuItemScreen() {
           multiline
           style={{ minHeight: 72 }}
         />
+
+        {!!preview && (
+          <Section
+            title="On your page"
+            footer={
+              top && top.labels.length
+                ? `${top.labels.join(', ')} comes to ${formatPrice({ price: top.price, fromPrice: false })}.`
+                : undefined
+            }
+          >
+            <ListRow
+              title={preview.name}
+              subtitle={minutes ? formatDuration(minutes) : note.trim() || undefined}
+              value={formatPrice(preview)}
+              icon={Scissors}
+            />
+          </Section>
+        )}
 
         <View style={styles.footer}>
           <Button

@@ -239,3 +239,23 @@ export const PAYMENT_KINDS = [
   { label: 'Revolut', placeholder: 'revolut.me/amaowusu' },
   { label: 'PayPal', placeholder: 'paypal.me/amaowusu' },
 ] as const;
+
+/**
+ * What most braiders offer, to start a service from: the name, a usual time, and
+ * what it's priced by. Never a price — that's hers to say.
+ */
+export const SERVICE_PRESETS: { name: string; minutes: number; by: OptionGroup[] }[] = [
+  { name: 'Knotless braids', minutes: 300, by: ['length', 'size'] },
+  { name: 'Box braids', minutes: 300, by: ['length', 'size'] },
+  { name: 'Cornrows', minutes: 120, by: ['size'] },
+  { name: 'Feed-in braids', minutes: 180, by: ['size'] },
+  { name: 'Boho braids', minutes: 360, by: ['length', 'size'] },
+  { name: 'Twists', minutes: 240, by: ['length', 'size'] },
+  { name: 'Faux locs', minutes: 360, by: ['length'] },
+  { name: 'Silk press', minutes: 120, by: [] },
+  { name: 'Wig install', minutes: 120, by: [] },
+  { name: 'Take down and wash', minutes: 60, by: [] },
+];
+
+/** Quick picks for how long a job takes, in minutes. */
+export const DURATION_PICKS = [60, 120, 180, 240, 300, 360, 480];
