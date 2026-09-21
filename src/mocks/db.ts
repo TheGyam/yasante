@@ -102,6 +102,19 @@ export const db = {
         bio: 'Silk presses and cornrows. Heat-safe, always.',
         serviceModels: ['salon'],
         baseArea: 'Dalston',
+        // Tuesday to Saturday, and away on Christmas Eve.
+        availability: {
+          week: [
+            null,
+            null,
+            { start: '10:00', end: '19:00' },
+            { start: '10:00', end: '19:00' },
+            { start: '10:00', end: '19:00' },
+            { start: '10:00', end: '19:00' },
+            { start: '09:00', end: '17:00' },
+          ],
+          blocked: ['2026-12-24'],
+        },
         policies: {
           noticeHours: 24,
           depositType: 'percent' as const,

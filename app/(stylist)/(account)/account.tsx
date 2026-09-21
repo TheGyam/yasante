@@ -1,12 +1,13 @@
 import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
-import { BadgeCheck, MapPin, Settings, Store, WifiOff } from 'lucide-react-native';
+import { BadgeCheck, Clock, MapPin, Settings, Store, WifiOff } from 'lucide-react-native';
 import {
   ModeSwitchRow,
   PageLinkCard,
   VERIFICATION_LABELS,
   isNotFound,
   useMyStylistProfile,
+  hoursLabel,
 } from '@/features/stylist';
 import { makeStyles, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
@@ -73,6 +74,18 @@ export default function StylistAccountScreen() {
                 title={VERIFICATION_LABELS[profile.verificationTier]}
                 icon={BadgeCheck}
                 iconTone={profile.verificationTier > 0 ? 'success' : 'neutral'}
+              />
+            </Section>
+            <Section>
+              <ListRow
+                title="Working hours"
+                subtitle={
+                  hoursLabel(profile.availability) ?? 'Not set — clients can ask for any day'
+                }
+                icon={Clock}
+                iconTone={profile.availability ? 'accent' : 'gold'}
+                onPress={() => router.push('/availability')}
+                testID="account-hours"
               />
             </Section>
             {profile.published ? (

@@ -1,11 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { addDays, startOfDay } from 'date-fns';
 import { CalendarClock, Scissors } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
 import { dayLabel, useRequestBooking } from '@/features/booking';
-import { formatDuration, formatPrice, useStylistPage } from '@/features/stylist';
+import {
+  closedReason,
+  formatDuration,
+  formatPrice,
+  hoursLabel,
+  nextOpenDay,
+  useStylistPage,
+} from '@/features/stylist';
 import { POLICY_VERSION } from '@/shared/config/policies';
 import { formatMoney } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
@@ -63,6 +70,14 @@ export default function RequestBookingScreen() {
       ? [startOfDay(new Date(`${slotDay}T12:00:00`)), suggest(1), suggest(2)]
       : [suggest(0), suggest(1), suggest(2)]
   );
+  // Once her hours arrive, the suggestions move onto days she's actually open.
+  const suggested = useRef(false);
+  useEffect(() => {
+    const availability = data?.profile.availability;
+    if (!availability || suggested.current || slotDay) return;
+    suggested.current = true;
+    setTimes(current => current.map((time, i) => nextOpenDay(availability, new Date(), i) ?? time));
+  }, [data?.profile.availability, slotDay]);
   const [ownHair, setOwnHair] = useState(false);
   const [notes, setNotes] = useState('');
   const [accepted, setAccepted] = useState(false);
@@ -106,6 +121,7 @@ export default function RequestBookingScreen() {
   }
 
   const { profile, menu } = data;
+  const closed = times.map(time => closedReason(profile.availability, time));
   const depositDue =
     profile.policies.depositType === 'none' || !service
       ? 0
@@ -159,16 +175,25 @@ export default function RequestBookingScreen() {
         <View style={styles.group}>
           <Text variant="footnote" tone="secondary" style={styles.label}>
             When suits you? Give her three, in order.
+            {hoursLabel(profile.availability)
+              ? ` She works ${hoursLabel(profile.availability)}.`
+              : ''}
           </Text>
           {times.map((time, index) => (
-            <DateTimeField
-              key={index}
-              title={['First choice', 'Second choice', 'Third choice'][index]}
-              mode="date"
-              value={time}
-              onChange={value => setTime(index, value)}
-              minimumDate={new Date()}
-            />
+            <View key={index}>
+              <DateTimeField
+                title={['First choice', 'Second choice', 'Third choice'][index]}
+                mode="date"
+                value={time}
+                onChange={value => setTime(index, value)}
+                minimumDate={new Date()}
+              />
+              {!!closed[index] && (
+                <Text variant="caption" tone="danger" style={styles.label}>
+                  {closed[index]} — pick another day.
+                </Text>
+              )}
+            </View>
           ))}
         </View>
 
@@ -205,7 +230,7 @@ export default function RequestBookingScreen() {
           <Button
             label="Send request"
             onPress={send}
-            disabled={!service || !accepted}
+            disabled={!service || !accepted || closed.some(Boolean)}
             loading={request.isPending}
             fullWidth
             testID="booking-send"

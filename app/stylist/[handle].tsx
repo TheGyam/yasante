@@ -19,6 +19,7 @@ import {
   formatDuration,
   formatPrice,
   isNotFound,
+  hoursLabel,
   replyLabel,
   timingLabelText,
   useStylistPage,
@@ -184,6 +185,9 @@ export default function StylistPageScreen() {
             icon={BadgeCheck}
             iconTone={profile.verificationTier > 0 ? 'success' : 'neutral'}
           />
+          {!!hoursLabel(profile.availability) && (
+            <ListRow title={hoursLabel(profile.availability)!} icon={Clock} iconTone="neutral" />
+          )}
           {!!reply && <ListRow title={reply} icon={MessageCircleReply} iconTone="neutral" />}
           {!!timing && (
             <ListRow
