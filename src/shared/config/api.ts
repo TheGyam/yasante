@@ -75,7 +75,9 @@ const getApiBaseUrl = (): string => {
 export const apiConfig: ApiConfig = {
   baseURL: getApiBaseUrl(),
   timeout: 10000, // 10 seconds
-  enableLogging: __DEV__, // Enable logging in development
+  // Off unless asked for: logging every request and its body to the console costs
+  // more than the request itself on a phone, and makes a dev build feel slow.
+  enableLogging: __DEV__ && process.env.EXPO_PUBLIC_API_LOGGING === 'true',
   retryAttempts: 3,
   retryDelay: 1000, // 1 second
 };

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, RefreshControl, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { useScrollToTop } from '@react-navigation/native';
@@ -20,6 +20,7 @@ import {
   useLookActions,
   useLookFilters,
   useLooks,
+  useRefreshLooks,
   type Look,
 } from '@/features/looks';
 import { useUser } from '@/features/profile';
@@ -118,7 +119,9 @@ function HomeFeed() {
   const { query, filtered } = useFeedQuery();
   const clearFilters = useLookFilters(s => s.clear);
   const feed = useLooks(query);
-  const looks = feed.data?.pages.flatMap(page => page.data) ?? [];
+  const refresh = useRefreshLooks();
+  // One array per fetch, not per render: the list re-diffs whenever this changes.
+  const looks = useMemo(() => feed.data?.pages.flatMap(page => page.data) ?? [], [feed.data]);
   const emptyFiltered = filtered && !feed.isLoading && !feed.isPlaceholderData && !looks.length;
   // Nothing matched: rather than a blank page, the latest looks still show below.
   const fallback = useLooks({}, { enabled: emptyFiltered });
@@ -130,13 +133,20 @@ function HomeFeed() {
     opacity.set(withTiming(feed.isPlaceholderData ? 0.45 : 1, timing.state));
   }, [feed.isPlaceholderData, opacity]);
 
-  const tile = (look: Look) => (
-    <LookTile
-      look={look}
-      onOpen={actions.onOpen}
-      onLike={actions.onLike}
-      onSave={look.mine ? undefined : actions.onSave}
-    />
+  const tile = useCallback(
+    (look: Look) => (
+      <LookTile
+        look={look}
+        onOpen={actions.onOpen}
+        onLike={actions.onLike}
+        onSave={look.mine ? undefined : actions.onSave}
+      />
+    ),
+    [actions]
+  );
+  const renderItem = useCallback(
+    ({ item }: { item: Look }) => <Dim opacity={opacity}>{tile(item)}</Dim>,
+    [opacity, tile]
   );
 
   const header = (
@@ -172,7 +182,7 @@ function HomeFeed() {
         masonry
         numColumns={2}
         keyExtractor={look => look.id}
-        renderItem={({ item }) => <Dim opacity={opacity}>{tile(item)}</Dim>}
+        renderItem={renderItem}
         ListHeaderComponent={header}
         ListEmptyComponent={
           feed.isLoading ? null : feed.isError ? (
@@ -228,7 +238,7 @@ function HomeFeed() {
         refreshControl={
           <RefreshControl
             refreshing={feed.isRefetching && !feed.isFetchingNextPage && !feed.isPlaceholderData}
-            onRefresh={() => feed.refetch()}
+            onRefresh={refresh}
             tintColor={theme.colors.accent}
             colors={[theme.colors.accent]}
             progressViewOffset={insets.top}

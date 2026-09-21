@@ -9,7 +9,15 @@ import {
 } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { looksApi } from './api';
-import type { Look, LookDraft, LookFilters, LooksPage, ReportReason } from './types';
+import type {
+  CommentsPage,
+  Look,
+  LookComment,
+  LookDraft,
+  LookFilters,
+  LooksPage,
+  ReportReason,
+} from './types';
 import { track } from '@/shared/lib/analytics';
 
 const KEY = 'looks';
@@ -117,10 +125,35 @@ export function useToggleLike() {
   });
 }
 
-/** Anything that changes what the feed should contain re-reads it. */
+/**
+ * Cuts every cached copy of a paged list back to its first page. Refetching an
+ * infinite query re-reads every page it holds, one after another — fifty pages
+ * scrolled is fifty requests. Nobody needs page fifty refreshed: they're at the top.
+ */
+export function keepFirstPage(queryClient: QueryClient, queryKey: readonly unknown[]) {
+  queryClient.setQueriesData<InfiniteData<unknown, unknown>>({ queryKey }, data =>
+    data && 'pages' in data && data.pages.length > 1
+      ? { pages: data.pages.slice(0, 1), pageParams: data.pageParams.slice(0, 1) }
+      : data
+  );
+}
+
+/** Pull to refresh: the newest page, fresh, without re-reading the rest. */
+export function useRefreshLooks() {
+  const queryClient = useQueryClient();
+  return () => {
+    keepFirstPage(queryClient, [KEY, 'feed']);
+    return queryClient.refetchQueries({ queryKey: [KEY, 'feed'], type: 'active' });
+  };
+}
+
+/** Anything that changes what the feed should contain re-reads it — its first page. */
 function useRefreshFeed() {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: [KEY] });
+  return () => {
+    keepFirstPage(queryClient, [KEY]);
+    return queryClient.invalidateQueries({ queryKey: [KEY] });
+  };
 }
 
 export function usePostLook() {
@@ -139,6 +172,7 @@ export function useRemoveLook() {
   return useMutation({ mutationFn: (id: string) => looksApi.remove(id), onSuccess });
 }
 
+/** The top of each thread under a look, newest first, a page at a time. */
 export function useComments(lookId: string) {
   const { user } = useAuth();
   return useInfiniteQuery({
@@ -150,13 +184,74 @@ export function useComments(lookId: string) {
   });
 }
 
+/** One thread's replies — only fetched once someone opens it. */
+export function useReplies(lookId: string, commentId: string, enabled: boolean) {
+  const { user } = useAuth();
+  return useInfiniteQuery({
+    queryKey: [COMMENTS, user?.id, lookId, 'replies', commentId],
+    queryFn: ({ pageParam }: { pageParam?: string }) => looksApi.replies(commentId, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: page => page.nextCursor,
+    enabled,
+  });
+}
+
+type CommentPages = InfiniteData<CommentsPage, string | undefined>;
+
+/**
+ * Posting a comment or a reply. The new one is put straight into the cached
+ * thread rather than re-reading it: re-reading a long conversation to show one
+ * line would cost more than the line.
+ */
 export function useAddComment(lookId: string) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
-    mutationFn: (body: string) => looksApi.comment(lookId, body),
-    onSuccess: () => {
+    mutationFn: ({ body, replyTo }: { body: string; replyTo?: LookComment }) =>
+      looksApi.comment(lookId, body, replyTo?.id),
+    onSuccess: comment => {
       patchLook(queryClient, lookId, look => ({ ...look, commentCount: look.commentCount + 1 }));
-      return queryClient.invalidateQueries({ queryKey: [COMMENTS] });
+      const threads = [COMMENTS, user?.id, lookId];
+      if (!comment.parentId) {
+        // Newest first, so a new thread goes on top.
+        queryClient.setQueryData<CommentPages>(threads, data =>
+          data
+            ? {
+                ...data,
+                pages: data.pages.map((page, i) =>
+                  i === 0 ? { ...page, data: [comment, ...page.data] } : page
+                ),
+              }
+            : data
+        );
+        return;
+      }
+      // The thread's count goes up wherever it's shown...
+      queryClient.setQueryData<CommentPages>(threads, data =>
+        data
+          ? {
+              ...data,
+              pages: data.pages.map(page => ({
+                ...page,
+                data: page.data.map(c =>
+                  c.id === comment.parentId ? { ...c, replyCount: (c.replyCount ?? 0) + 1 } : c
+                ),
+              })),
+            }
+          : data
+      );
+      // ...and the reply joins the end of it, if the end is already loaded.
+      queryClient.setQueryData<CommentPages>([...threads, 'replies', comment.parentId], data => {
+        if (!data) return data;
+        const last = data.pages.length - 1;
+        if (data.pages[last].nextCursor) return data;
+        return {
+          ...data,
+          pages: data.pages.map((page, i) =>
+            i === last ? { ...page, data: [...page.data, comment] } : page
+          ),
+        };
+      });
     },
   });
 }
@@ -166,10 +261,9 @@ export function useRemoveComment(lookId: string) {
   return useMutation({
     mutationFn: (id: string) => looksApi.removeComment(id),
     onSuccess: () => {
-      patchLook(queryClient, lookId, look => ({
-        ...look,
-        commentCount: Math.max(0, look.commentCount - 1),
-      }));
+      // The look's count comes back from the server; a thread can take its replies with it.
+      keepFirstPage(queryClient, [COMMENTS]);
+      queryClient.invalidateQueries({ queryKey: [KEY, 'one'] });
       return queryClient.invalidateQueries({ queryKey: [COMMENTS] });
     },
   });

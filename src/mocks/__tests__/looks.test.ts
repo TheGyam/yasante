@@ -66,6 +66,32 @@ describe('comments', () => {
     expect(call('get', '/api/looks/look_seed_2/', CLIENT).commentCount).toBe(before);
   });
 
+  it('thread replies one level deep, and a reply to a reply says who it answers', () => {
+    const root = call('post', '/api/looks/look_seed_2/comments/', CLIENT, { body: 'How long?' });
+    const answer = call('post', '/api/looks/look_seed_2/comments/', 'acc_zainab', {
+      body: 'About three hours',
+      replyTo: root.id,
+    });
+    const back = call('post', '/api/looks/look_seed_2/comments/', CLIENT, {
+      body: 'Thank you!',
+      replyTo: answer.id,
+    });
+    // Both sit in the first comment's thread; the second names who it answers.
+    expect(answer).toMatchObject({ parentId: root.id, replyToName: 'Efua Mensah' });
+    expect(back).toMatchObject({ parentId: root.id, replyToName: 'Zainab Does Hair' });
+
+    // The top level shows the thread and its size, not the replies themselves.
+    const threads = call('get', '/api/looks/look_seed_2/comments/', CLIENT).data;
+    expect(threads[0]).toMatchObject({ id: root.id, replyCount: 2 });
+    expect(threads.some((c: any) => c.id === answer.id)).toBe(false);
+    const replies = call('get', `/api/comments/${root.id}/replies/`, CLIENT).data;
+    expect(replies.map((c: any) => c.id)).toEqual([answer.id, back.id]);
+
+    // The thread goes with its first comment.
+    call('delete', `/api/comments/${root.id}/`, CLIENT);
+    expect(db.comments.some(c => c.parentId === root.id)).toBe(false);
+  });
+
   it('refuse an empty one', () => {
     expect(() => call('post', '/api/looks/look_seed_2/comments/', CLIENT, { body: '   ' })).toThrow(
       MockError

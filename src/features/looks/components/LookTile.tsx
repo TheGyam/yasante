@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { BookmarkPlus } from 'lucide-react-native';
@@ -61,7 +62,7 @@ const useStyles = makeStyles(t => ({
  * A look in the home grid: the photo, who posted it, and the heart. One tap opens
  * it — comments, booking and the rest — and a double tap likes it.
  */
-export function LookTile({ look, onOpen, onLike, onSave }: LookTileProps) {
+export const LookTile = memo(function LookTile({ look, onOpen, onLike, onSave }: LookTileProps) {
   const styles = useStyles();
   const { gesture, heart } = usePhotoTaps(look, onOpen, onLike, 64);
   const price = look.price
@@ -85,8 +86,9 @@ export function LookTile({ look, onOpen, onLike, onSave }: LookTileProps) {
               .join(', ')}
             accessibilityHint="Opens the look. Double tap to like"
           >
+            {/* The grid's copy: half the width, a fraction of the bytes. */}
             <RemoteImage
-              uri={look.photoUri}
+              uri={look.thumbUri ?? look.photoUri}
               style={StyleSheet.absoluteFill}
               recyclingKey={look.id}
             />
@@ -126,4 +128,4 @@ export function LookTile({ look, onOpen, onLike, onSave }: LookTileProps) {
       </View>
     </View>
   );
-}
+});

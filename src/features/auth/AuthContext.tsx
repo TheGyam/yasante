@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useCallback, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore, AuthTokens, loadStoredTokens } from './store';
 import { setAuthBridge } from '@/shared/lib/api';
 import { User } from '@/features/profile';
@@ -27,7 +28,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser,
     logout: logoutStore,
     setLoading,
-  } = useAuthStore();
+  } = useAuthStore(
+    // Only what this provider uses: every screen reads the context, so a change to
+    // anything else in the store must not re-render the app.
+    useShallow(s => ({
+      user: s.user,
+      tokens: s.tokens,
+      isAuthenticated: s.isAuthenticated,
+      isLoading: s.isLoading,
+      setAuth: s.setAuth,
+      setUser: s.setUser,
+      logout: s.logout,
+      setLoading: s.setLoading,
+    }))
+  );
 
   // Give the HTTP client its tokens without shared/ depending on this feature.
   useEffect(() => {
@@ -190,15 +204,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [setUser]
   );
 
-  const value: AuthContextType = {
-    user,
-    isAuthenticated,
-    isLoading,
-    login,
-    logout,
-    updateUser,
-    refreshToken,
-  };
+  // A new object only when something in it changes, or every consumer re-renders.
+  const value = useMemo<AuthContextType>(
+    () => ({ user, isAuthenticated, isLoading, login, logout, updateUser, refreshToken }),
+    [user, isAuthenticated, isLoading, login, logout, updateUser, refreshToken]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

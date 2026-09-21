@@ -48,6 +48,11 @@ function present(look: StoredLook, accountId: string) {
   const stylist = look.stylistId ? person(look.stylistId) : undefined;
   return {
     ...look,
+    // The media pipeline's grid size. Seeded photos can be asked for smaller; an
+    // upload in the mock only has the one copy.
+    thumbUri: look.photoUri.includes('unsplash.com')
+      ? look.photoUri.replace(/w=d+/, 'w=400')
+      : undefined,
     authorName: author.name,
     authorHandle: author.handle,
     authorAvatarUri: author.avatarUri,
@@ -65,6 +70,36 @@ function present(look: StoredLook, accountId: string) {
     liked: likesOf(look.id).has(accountId),
     commentCount: db.comments.filter(c => c.lookId === look.id).length,
     mine: look.authorId === accountId,
+  };
+}
+
+type StoredComment = (typeof db.comments)[number];
+
+/** A comment as it's read: who wrote it, who it answers, and how many replies it has. */
+function presentComment(comment: StoredComment, accountId: string, blocked: Set<string>) {
+  const who = person(comment.authorId);
+  const answered = comment.replyToId
+    ? db.comments.find(c => c.id === comment.replyToId)
+    : undefined;
+  return {
+    ...comment,
+    authorName: who.name,
+    authorAvatarUri: who.avatarUri,
+    replyToName: answered ? person(answered.authorId).name : undefined,
+    replyCount: comment.parentId
+      ? undefined
+      : db.comments.filter(c => c.parentId === comment.id && !blocked.has(c.authorId)).length,
+    mine: comment.authorId === accountId,
+  };
+}
+
+/** A page of any list, by the id of the last item already seen. */
+function page<T extends { id: string }>(all: T[], cursor: string | null, limit: number) {
+  const start = cursor ? all.findIndex(item => item.id === cursor) + 1 : 0;
+  const items = all.slice(start, start + limit);
+  return {
+    items,
+    nextCursor: start + limit < all.length ? items[items.length - 1]?.id : undefined,
   };
 }
 
@@ -214,29 +249,38 @@ defineMocks({
     return null;
   },
 
+  // The top of each thread, newest first. Replies come separately, when asked for,
+  // so a look with a thousand replies costs one page to open.
   'GET /api/looks/:id/comments/': request => {
-    // Public: anyone can read the feed. Signing in adds likes, blocks and her own.
+    // Public: anyone can read the conversation. Signing in adds blocks and her own.
     const accountId = request.accountId ?? '';
     const look = visibleLook(request.params.id, accountId);
     const blocked = blocksOf(accountId);
-    const limit = Number(request.query.get('limit') ?? 20);
-    const cursor = request.query.get('cursor');
+    const threads = db.comments
+      .filter(c => c.lookId === look.id && !c.parentId && !blocked.has(c.authorId))
+      .reverse();
+    const { items, nextCursor } = page(
+      threads,
+      request.query.get('cursor'),
+      Number(request.query.get('limit') ?? 20)
+    );
+    return { data: items.map(c => presentComment(c, accountId, blocked)), nextCursor };
+  },
 
-    const all = db.comments.filter(c => c.lookId === look.id && !blocked.has(c.authorId));
-    const start = cursor ? all.findIndex(c => c.id === cursor) + 1 : 0;
-    const page = all.slice(start, start + limit);
-    return {
-      data: page.map(c => {
-        const who = person(c.authorId);
-        return {
-          ...c,
-          authorName: who.name,
-          authorAvatarUri: who.avatarUri,
-          mine: c.authorId === accountId,
-        };
-      }),
-      nextCursor: start + limit < all.length ? page[page.length - 1]?.id : undefined,
-    };
+  // One thread's replies, oldest first: a reply reads after what it answers.
+  'GET /api/comments/:id/replies/': request => {
+    const accountId = request.accountId ?? '';
+    const root = db.comments.find(c => c.id === request.params.id && !c.parentId);
+    if (!root) throw new MockError(404, 'That comment is gone');
+    visibleLook(root.lookId, accountId);
+    const blocked = blocksOf(accountId);
+    const replies = db.comments.filter(c => c.parentId === root.id && !blocked.has(c.authorId));
+    const { items, nextCursor } = page(
+      replies,
+      request.query.get('cursor'),
+      Number(request.query.get('limit') ?? 10)
+    );
+    return { data: items.map(c => presentComment(c, accountId, blocked)), nextCursor };
   },
 
   'POST /api/looks/:id/comments/': request => {
@@ -245,16 +289,26 @@ defineMocks({
     const body = String(request.body?.body ?? '').trim();
     if (!body) throw new MockError(400, 'Write something first');
     if (body.length > 500) throw new MockError(400, 'Keep it under 500 characters');
-    const comment = {
-      id: `com_${Date.now()}`,
+    // A reply joins the thread of whatever it answers, so threads never nest deeper.
+    let answered: StoredComment | undefined;
+    if (request.body?.replyTo) {
+      answered = db.comments.find(c => c.id === request.body.replyTo && c.lookId === look.id);
+      if (!answered) throw new MockError(404, 'That comment is gone');
+      if (blocksOf(accountId).has(answered.authorId)) {
+        throw new MockError(404, 'That comment is gone');
+      }
+    }
+    const comment: StoredComment = {
+      id: `com_${Date.now()}_${db.comments.length}`,
       lookId: look.id,
       authorId: accountId,
       body,
+      parentId: answered ? (answered.parentId ?? answered.id) : undefined,
+      replyToId: answered?.id,
       createdAt: new Date().toISOString(),
     };
     db.comments.push(comment);
-    const who = person(accountId);
-    return { ...comment, authorName: who.name, authorAvatarUri: who.avatarUri, mine: true };
+    return presentComment(comment, accountId, blocksOf(accountId));
   },
 
   'DELETE /api/comments/:id/': request => {
@@ -262,7 +316,8 @@ defineMocks({
     const comment = db.comments.find(c => c.id === request.params.id);
     if (!comment) throw new MockError(404, 'That comment is already gone');
     if (comment.authorId !== accountId) throw new MockError(403, 'That comment isn’t yours');
-    db.comments.splice(db.comments.indexOf(comment), 1);
+    // A thread goes with its first comment. A reply goes alone; anything answering it stays.
+    db.comments = db.comments.filter(c => c.id !== comment.id && c.parentId !== comment.id);
     return null;
   },
 

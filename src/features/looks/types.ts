@@ -13,6 +13,8 @@ export interface Look {
   authorHandle?: string;
   authorAvatarUri?: string;
   photoUri: string;
+  /** A smaller copy for grids, from the server's media pipeline. Falls back to the photo. */
+  thumbUri?: string;
   /** Width over height, from the server's media record, when it has one. */
   photoAspect?: number;
   caption?: string;
@@ -78,6 +80,12 @@ export interface LookComment {
   body: string;
   createdAt: string;
   mine?: boolean;
+  /** Set on a reply: the top-level comment whose thread it's in. */
+  parentId?: string;
+  /** Set on a reply: who it answers, shown as "@Name". */
+  replyToName?: string;
+  /** On a top-level comment: how many replies its thread has. */
+  replyCount?: number;
 }
 
 export interface CommentsPage {

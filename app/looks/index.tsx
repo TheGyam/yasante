@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { ActivityIndicator, RefreshControl, View } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import Animated, {
@@ -16,6 +16,7 @@ import {
   useLookActions,
   useLookFilters,
   useLooks,
+  useRefreshLooks,
   type Look,
 } from '@/features/looks';
 import { useRouter } from '@/shared/lib/navigation';
@@ -63,7 +64,8 @@ function LooksFeed() {
   const { query, filtered } = useFeedQuery();
   const clearFilters = useLookFilters(s => s.clear);
   const feed = useLooks(query);
-  const looks = feed.data?.pages.flatMap(page => page.data) ?? [];
+  const refresh = useRefreshLooks();
+  const looks = useMemo(() => feed.data?.pages.flatMap(page => page.data) ?? [], [feed.data]);
   const emptyFiltered = filtered && !feed.isLoading && !feed.isPlaceholderData && !looks.length;
   // Nothing matched: rather than a blank page, the latest looks still show below.
   const fallback = useLooks({}, { enabled: emptyFiltered });
@@ -90,8 +92,15 @@ function LooksFeed() {
     opacity.set(withTiming(feed.isPlaceholderData ? 0.45 : 1, timing.state));
   }, [feed.isPlaceholderData, opacity]);
 
-  const card = (look: Look) => (
-    <LookCard look={look} {...actions} onSave={look.mine ? undefined : actions.onSave} />
+  const card = useCallback(
+    (look: Look) => (
+      <LookCard look={look} {...actions} onSave={look.mine ? undefined : actions.onSave} />
+    ),
+    [actions]
+  );
+  const renderItem = useCallback(
+    ({ item }: { item: Look }) => <Dim opacity={opacity}>{card(item)}</Dim>,
+    [opacity, card]
   );
 
   const header = (
@@ -122,7 +131,7 @@ function LooksFeed() {
       ref={listRef}
       data={feed.isLoading ? [] : looks}
       keyExtractor={look => look.id}
-      renderItem={({ item }) => <Dim opacity={opacity}>{card(item)}</Dim>}
+      renderItem={renderItem}
       ListHeaderComponent={header}
       ListEmptyComponent={
         feed.isLoading ? null : feed.isError ? (
@@ -174,7 +183,7 @@ function LooksFeed() {
       refreshControl={
         <RefreshControl
           refreshing={feed.isRefetching && !feed.isFetchingNextPage && !feed.isPlaceholderData}
-          onRefresh={() => feed.refetch()}
+          onRefresh={refresh}
           tintColor={theme.colors.accent}
           colors={[theme.colors.accent]}
           progressViewOffset={insets.top}
