@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
@@ -38,6 +39,7 @@ import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StarRating } from '@/shared/ui/StarRating';
 import { Text } from '@/shared/ui/Text';
+import { track } from '@/shared/lib/analytics';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
@@ -61,6 +63,9 @@ export default function StylistPageScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const { data, isLoading, isError, error, refetch } = useStylistPage(handle);
   const { user } = useAuth();
+  useEffect(() => {
+    track('view_stylist', { handle });
+  }, [handle]);
 
   if (isLoading) {
     return (
@@ -210,12 +215,16 @@ export default function StylistPageScreen() {
               Her work
             </Text>
             <View style={[styles.work, { marginTop: space.sm }]}>
-              {photos.slice(0, 9).map(photo => (
+              {photos.slice(0, 9).map((photo, index, shown) => (
                 <RemoteImage
                   key={photo.id}
                   uri={photo.uri}
                   style={styles.photo}
                   recyclingKey={photo.id}
+                  accessibilityLabel={[
+                    menu.find(item => item.id === photo.serviceId)?.name ?? 'Her work',
+                    `photo ${index + 1} of ${shown.length}`,
+                  ].join(', ')}
                 />
               ))}
             </View>

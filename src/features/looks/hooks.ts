@@ -10,6 +10,7 @@ import {
 import { useAuth } from '@/features/auth';
 import { looksApi } from './api';
 import type { Look, LookDraft, LookFilters, LooksPage, ReportReason } from './types';
+import { track } from '@/shared/lib/analytics';
 
 const KEY = 'looks';
 const COMMENTS = 'look-comments';
@@ -110,7 +111,13 @@ function useRefreshFeed() {
 
 export function usePostLook() {
   const onSuccess = useRefreshFeed();
-  return useMutation({ mutationFn: (draft: LookDraft) => looksApi.create(draft), onSuccess });
+  return useMutation({
+    mutationFn: (draft: LookDraft) => looksApi.create(draft),
+    onSuccess: look => {
+      track('post_look', { styles: look.styles.join(','), creditsStylist: !!look.stylist });
+      return onSuccess();
+    },
+  });
 }
 
 export function useRemoveLook() {

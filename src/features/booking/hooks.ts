@@ -10,6 +10,7 @@ import type {
   CloseOut,
   ReviewReportReason,
 } from './types';
+import { track } from '@/shared/lib/analytics';
 
 const KEY = 'bookings';
 
@@ -45,7 +46,13 @@ function useRefresh() {
 
 export function useRequestBooking() {
   const onSuccess = useRefresh();
-  return useMutation({ mutationFn: (draft: BookingDraft) => bookingApi.request(draft), onSuccess });
+  return useMutation({
+    mutationFn: (draft: BookingDraft) => bookingApi.request(draft),
+    onSuccess: booking => {
+      track('submit_booking', { serviceId: booking.serviceId, stylistId: booking.stylistId });
+      return onSuccess();
+    },
+  });
 }
 
 export function useAcceptRequest() {
@@ -77,7 +84,10 @@ export function useCancelBooking() {
   const onSuccess = useRefresh();
   return useMutation({
     mutationFn: (args: { id: string; reason?: string }) => bookingApi.cancel(args.id, args.reason),
-    onSuccess,
+    onSuccess: booking => {
+      track('cancel_booking', { outcome: booking.status });
+      return onSuccess();
+    },
   });
 }
 
@@ -95,7 +105,8 @@ export function useLeaveReview() {
   return useMutation({
     mutationFn: (args: { id: string; rating: number; body?: string }) =>
       bookingApi.review(args.id, args.rating, args.body),
-    onSuccess: () => {
+    onSuccess: (_review, args) => {
+      track('leave_review', { rating: args.rating, withText: !!args.body });
       queryClient.invalidateQueries({ queryKey: [KEY] });
       queryClient.invalidateQueries({ queryKey: ['stylist', 'page'] });
     },
@@ -107,7 +118,10 @@ export function useCheckIn() {
   return useMutation({
     mutationFn: (args: { id: string; week: CheckInWeek; answers: CheckInAnswers }) =>
       bookingApi.checkIn(args.id, args.week, args.answers),
-    onSuccess,
+    onSuccess: (_data, args) => {
+      track('complete_checkin', { week: args.week });
+      return onSuccess();
+    },
   });
 }
 
@@ -141,7 +155,13 @@ export function useAnswerProposal() {
 
 export function useConfirmAttendance() {
   const onSuccess = useRefresh();
-  return useMutation({ mutationFn: (id: string) => bookingApi.confirmAttendance(id), onSuccess });
+  return useMutation({
+    mutationFn: (id: string) => bookingApi.confirmAttendance(id),
+    onSuccess: () => {
+      track('confirm_attendance', { from: 'app' });
+      return onSuccess();
+    },
+  });
 }
 
 export function useRequestMove() {

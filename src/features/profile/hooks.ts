@@ -1,7 +1,10 @@
+import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api';
 import { User, HairProfile } from '@/features/profile';
 import { useAuth } from '@/features/auth';
+import { mergeGaps } from './format';
+import { useUserStore } from './store';
 
 const USER_QUERY_KEY = 'user';
 
@@ -72,4 +75,32 @@ export function useUpdateHairProfile(userId?: string) {
       }
     },
   });
+}
+
+/**
+ * After signing up or in: answers given on this device before the account existed
+ * go to the account, filling only what the account hasn't got — what's already on
+ * the account wins. Runs once per account per launch.
+ */
+export function useHairProfileSync() {
+  const { user, isAuthenticated } = useAuth();
+  const { data: account, isSuccess } = useUser(user?.id, { enabled: isAuthenticated });
+  const save = useUpdateHairProfile();
+  const done = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id || !isSuccess || done.current === user.id) return;
+    done.current = user.id;
+
+    const store = useUserStore.getState();
+    const server = account?.hairProfile ?? {};
+    // Someone else's answers on a shared phone are never merged in.
+    const local =
+      store.hairProfileOwner && store.hairProfileOwner !== user.id ? {} : (store.hairProfile ?? {});
+    const gaps = mergeGaps(server, local);
+
+    if (Object.keys(gaps).length) save.mutate({ ...server, ...gaps });
+    store.setHairProfile({ ...server, ...gaps });
+    store.setHairProfileOwner(user.id);
+  }, [isAuthenticated, user?.id, isSuccess, account, save]);
 }

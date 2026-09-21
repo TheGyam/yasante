@@ -10,9 +10,15 @@ export type {
   HairPorosity,
   HairGoal,
   HairLength,
+  ScalpType,
+  ChemicalTreatment,
+  StyleBudget,
   AccountRole,
   UserSettings,
 } from './types';
 export * from './format';
 export { HairQuiz } from './quiz/HairQuiz';
+export { HairProfileHub } from './quiz/HairProfileHub';
+export { SECTIONS, lengthIsStale, progressOf, sectionFor } from './quiz/sections';
+export type { SectionKey } from './quiz/sections';
 export { ChoiceCard } from './quiz/ChoiceCard';

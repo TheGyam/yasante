@@ -21,7 +21,7 @@ const PAD = 3;
 const useStyles = makeStyles(t => ({
   track: {
     flexDirection: 'row',
-    height: 40,
+    minHeight: 40,
     padding: PAD,
     borderRadius: radius.pill,
     backgroundColor: t.colors.glass.fill,

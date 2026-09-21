@@ -24,9 +24,11 @@ export const LENGTHS: readonly { value: HairLength; label: string; y: number }[]
   { value: 'chin', label: 'Chin', y: 92 },
   { value: 'shoulder', label: 'Shoulder', y: 124 },
   { value: 'armpit', label: 'Armpit', y: 170 },
+  { value: 'bra-strap', label: 'Bra strap', y: 197 },
   { value: 'mid-back', label: 'Mid-back', y: 224 },
   { value: 'waist', label: 'Waist', y: 284 },
-  { value: 'hip', label: 'Hip or longer', y: 346 },
+  { value: 'hip', label: 'Hip', y: 340 },
+  { value: 'tailbone', label: 'Tailbone', y: 380 },
 ];
 const LEVEL_YS = LENGTHS.map(l => l.y);
 

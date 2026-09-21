@@ -1,6 +1,7 @@
 import { Share } from 'react-native';
 import { formatMoney } from '@/shared/lib/format';
 import type { MenuItem, StylistProfile, VerificationTier } from './types';
+import { track } from '@/shared/lib/analytics';
 
 export const PUBLIC_HOST = 'yasante.com';
 
@@ -52,5 +53,6 @@ export function formatPrice(item: Pick<MenuItem, 'price' | 'fromPrice'>) {
 
 export function sharePage(profile: Pick<StylistProfile, 'handle' | 'displayName'>) {
   const url = pageUrl(profile);
+  track('share_link', { kind: 'stylist_page' });
   return Share.share({ message: `${profile.displayName} on Yasante: ${url}`, url }).catch(() => {});
 }

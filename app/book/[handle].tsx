@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { addDays, startOfDay } from 'date-fns';
@@ -22,6 +22,7 @@ import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
+import { track } from '@/shared/lib/analytics';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xl },
@@ -50,6 +51,11 @@ export default function RequestBookingScreen() {
   const { user } = useAuth();
   const { data, isLoading } = useStylistPage(handle);
   const request = useRequestBooking();
+  useEffect(() => {
+    track('start_booking', { handle, from: fromLook ? 'look' : slotDay ? 'slot' : 'page' });
+    // Once, when she opens it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [serviceId, setServiceId] = useState<string | undefined>(fromLook);
   const [times, setTimes] = useState<Date[]>(() =>

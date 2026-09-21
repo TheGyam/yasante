@@ -1,16 +1,24 @@
 export type HairTexture = 'straight' | 'wavy' | 'curly' | 'coily' | 'kinky';
 export type HairDensity = 'fine' | 'medium' | 'thick';
 export type HairPorosity = 'low' | 'medium' | 'high';
-/** Where a gently stretched curl reaches — stretched, so shrinkage doesn't hide length. */
+/**
+ * A reference point on the body, not a tape measure, ranked so change can be
+ * computed. Always stored with whether it was measured stretched or as it shrinks.
+ */
 export type HairLength =
   | 'cropped'
   | 'ear'
   | 'chin'
   | 'shoulder'
   | 'armpit'
+  | 'bra-strap'
   | 'mid-back'
   | 'waist'
-  | 'hip';
+  | 'hip'
+  | 'tailbone';
+export type ScalpType = 'balanced' | 'dry' | 'oily' | 'flaky' | 'sensitive';
+export type ChemicalTreatment = 'relaxer' | 'texturiser' | 'colour' | 'bleach' | 'keratin';
+export type StyleBudget = 'under_50' | '50_100' | '100_150' | '150_plus';
 export type HairGoal = 'growth' | 'health' | 'moisture' | 'strength' | 'color' | 'style';
 
 export interface HairProfile {
@@ -19,6 +27,16 @@ export interface HairProfile {
   density?: HairDensity;
   porosity?: HairPorosity;
   goals?: HairGoal[];
+  /** False when it was measured as it shrinks. Textured hair can shrink by 70%. */
+  lengthStretched?: boolean;
+  /** When the length was last answered, so it can be asked again a month on. */
+  lengthMeasuredAt?: string;
+  scalp?: ScalpType[];
+  /** Empty means none, ever — which is an answer, unlike not saying. */
+  chemicals?: ChemicalTreatment[];
+  /** The district she'd like stylists near. */
+  area?: string;
+  budget?: StyleBudget;
   photoUri?: string;
   completedAt?: string;
 }

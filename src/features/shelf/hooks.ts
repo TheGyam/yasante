@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useAuth } from '@/features/auth';
 import { shelfApi } from './api';
 import type { ShelfStatus } from './types';
+import { track } from '@/shared/lib/analytics';
 
 const KEY = 'shelf';
 
@@ -32,7 +33,13 @@ function useRefresh() {
 
 export function useAddToShelf() {
   const onSuccess = useRefresh();
-  return useMutation({ mutationFn: (productId: string) => shelfApi.add(productId), onSuccess });
+  return useMutation({
+    mutationFn: (productId: string) => shelfApi.add(productId),
+    onSuccess: item => {
+      track('add_shelf_item', { productId: item.product.id, category: item.product.category });
+      return onSuccess();
+    },
+  });
 }
 
 export function useUpdateShelfItem() {

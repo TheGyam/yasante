@@ -92,6 +92,21 @@ unpaid deposits after 24, an unclosed appointment completes a day after it ends)
 run lazily on every read there; the real server runs them on a clock. A cancelled
 or lapsed booking releases its day to anyone on that stylist's waitlist for it.
 
+**The hair profile is progressive.** First run asks the core (curl pattern, length,
+density, porosity, goals); the rest (scalp, chemical history, area, budget) are
+sections answered whenever she likes, each saved on its own (`quiz/sections.ts`).
+Every answer is kept on the device as it's given, so a half-finished quiz resumes.
+After signing up, `useHairProfileSync` sends the device's answers to the account,
+filling only gaps; the device copy remembers whose it is, so a second person on the
+same phone never inherits the first's. Length is a ranked reference point stored
+with whether it was stretched, and asked again a month on.
+
+**Events and consent.** `track()` in `shared/lib/analytics.ts` sends only the plan's
+minimum event set, only with the analytics consent (otherwise dropped, never queued),
+with UTC and local time on each. Consent choices are recorded on the device first and
+synced by `useConsentSync` while signed in. Both give up on a request that hasn't
+settled in 20 seconds and try again later, so one stuck request can't stall them.
+
 **Notifications the server sends** carry `data` the app acts on: `mode`
 (`client` or `stylist`) and `url` open the right screen. The day-before reminder
 goes out under the category `attendance` with `bookingId` in its data; its two
@@ -207,6 +222,13 @@ rules keep the app the same speed at ten thousand items as at ten.
 - **Bottom sheets don't open in the web preview.** `Sheet` presents nothing there,
   in a modal screen or a tab — `edit-profile`'s photo sheet included, so it predates
   the portfolio work. Anything behind a sheet has to be checked on a device.
+
+- **Requests queued behind a token refresh can wait for ever.** On web, a reload
+  restores the user but not the tokens (SecureStore), so early requests 401; the
+  client queues 401s behind any refresh in progress, and in the web preview some of
+  those never settled. Screens recover through React Query's retries; consent sync
+  and analytics now give up and retry. Worth confirming on a device and against the
+  real API whether the refresh queue can hang.
 
 - **Formatting drift.** `npm run format` rewrites a large number of files. Do it
   as its own commit, never mixed with a change.

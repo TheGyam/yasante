@@ -28,6 +28,7 @@ import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { track } from '@/shared/lib/analytics';
 
 // Comments are virtualised: a look people love can gather hundreds.
 const AnimatedFlashList = Animated.createAnimatedComponent(
@@ -78,6 +79,9 @@ const useStyles = makeStyles(t => ({
 export default function LookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: look, isLoading } = useLook(id);
+  useEffect(() => {
+    track('view_look', { lookId: id });
+  }, [id]);
 
   if (!look) {
     return (

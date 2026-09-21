@@ -282,6 +282,31 @@ export const db = {
   /** Each account's product shelf. The catalogue itself lives in ./shelf. */
   shelves: new Map<string, ShelfItem[]>(),
 
+  /** Every hair profile change, appended. Nothing is overwritten in place. */
+  hairSnapshots: [] as { accountId: string; profile: unknown; at: string }[],
+
+  /** Consent records as the app sent them: a history, not a switch. */
+  consents: [] as {
+    accountId: string;
+    purpose: string;
+    granted: boolean;
+    policyVersion: string;
+    recordedAt: string;
+    source?: string;
+  }[],
+
+  /** Analytics events. Only ever sent with the analytics consent. */
+  events: [] as {
+    accountId?: string;
+    anonymousId?: string;
+    name: string;
+    at: string;
+    localAt: string;
+  }[],
+
+  /** Data export requests, fulfilled by email. */
+  exportRequests: [] as { accountId: string; at: string }[],
+
   /** Who each account has blocked. Blocking is mutual. */
   blocks: new Map<string, Set<string>>(),
 

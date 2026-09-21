@@ -16,9 +16,11 @@ const LENGTH: Record<HairLength, string> = {
   chin: 'Chin length',
   shoulder: 'Shoulder length',
   armpit: 'Armpit length',
+  'bra-strap': 'Bra-strap length',
   'mid-back': 'Mid-back length',
   waist: 'Waist length',
   hip: 'Hip length',
+  tailbone: 'Tailbone length',
 };
 const DENSITY: Record<HairDensity, string> = {
   fine: 'Low density',
@@ -40,4 +42,13 @@ export function hairTraits(profile?: HairProfile | null): string[] {
     profile.density && DENSITY[profile.density],
     profile.porosity && POROSITY[profile.porosity],
   ].filter((trait): trait is string => !!trait);
+}
+
+/** The answers in `local` the account doesn't have yet. */
+export function mergeGaps(server: HairProfile, local: HairProfile): Partial<HairProfile> {
+  return Object.fromEntries(
+    (Object.entries(local) as [keyof HairProfile, unknown][]).filter(
+      ([key, value]) => value !== undefined && server[key] === undefined
+    )
+  ) as Partial<HairProfile>;
 }

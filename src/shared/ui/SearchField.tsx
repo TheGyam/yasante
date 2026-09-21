@@ -17,7 +17,7 @@ const useStyles = makeStyles(t => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.sm + 2,
-    height: 48,
+    minHeight: 48,
     paddingHorizontal: space.lg,
     borderRadius: radius.pill,
     backgroundColor: t.colors.glass.fill,

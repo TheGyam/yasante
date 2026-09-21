@@ -21,6 +21,7 @@ import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { track } from '@/shared/lib/analytics';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xl },
@@ -60,6 +61,7 @@ export default function SaveToCollectionScreen() {
     if (saved) return;
     try {
       await add.mutateAsync({ id, kind, refId, title, imageUri });
+      if (kind === 'look') track('save_look', { lookId: refId });
       haptics.success();
       setSaved(id);
       // The tick has to be seen. Closing in the same breath as setting it meant the

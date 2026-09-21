@@ -16,7 +16,9 @@ const useStyles = makeStyles(t => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.xs + 2,
-    height: 36,
+    // A minimum, not a size: larger text grows the chip instead of clipping.
+    minHeight: 36,
+    paddingVertical: 6,
     paddingHorizontal: space.md + 2,
     borderRadius: radius.pill,
     borderWidth: 1,

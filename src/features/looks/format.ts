@@ -1,6 +1,7 @@
 import { Share } from 'react-native';
 import type { Look } from './types';
 import { differenceInCalendarDays, differenceInHours, differenceInMinutes } from 'date-fns';
+import { track } from '@/shared/lib/analytics';
 
 /**
  * How long ago a look went up, short enough to sit beside a handle. A feed with no
@@ -32,6 +33,7 @@ export const lookUrl = (look: Pick<Look, 'id'>) => `https://yasante.com/looks/${
 
 export function shareLook(look: Pick<Look, 'id' | 'authorName' | 'serviceName'>) {
   const url = lookUrl(look);
+  track('share_link', { kind: 'look' });
   const what = look.serviceName ? `${look.serviceName} by ${look.authorName}` : look.authorName;
   return Share.share({ message: `${what} on Yasante: ${url}`, url }).catch(() => {});
 }

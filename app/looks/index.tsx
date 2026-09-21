@@ -29,6 +29,7 @@ import { useContentInsets } from '@/shared/ui/layout';
 import { Screen, ScreenTitle, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { track } from '@/shared/lib/analytics';
 
 // One column, virtualised: the feed grows for as long as people post.
 const AnimatedFlashList = Animated.createAnimatedComponent(
@@ -83,6 +84,15 @@ function LooksFeed() {
   const fallback = useLooks({}, { enabled: emptyFiltered });
   const fallbackLooks = (fallback.data?.pages[0]?.data ?? []).slice(0, 6);
 
+  // A filtered feed is a search: what was asked, and how much came back.
+  useEffect(() => {
+    if (filtered && !feed.isLoading && !feed.isPlaceholderData) {
+      track('search', { surface: 'looks', ...query, results: looks.length });
+    }
+    // When the results for a new set of filters arrive.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query.hair, query.style, query.area, feed.isPlaceholderData, feed.isLoading]);
+
   // A new filter starts at the top, where the new results are.
   useEffect(() => {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -100,10 +110,10 @@ function LooksFeed() {
     if (texture) return filters.setHairLikeMine(true);
     const go = await confirm({
       title: 'Tell us about your hair first',
-      message: 'The two-minute quiz is what "hair like mine" matches on.',
-      confirmLabel: 'Take the quiz',
+      message: 'Your curl pattern is what "hair like mine" matches on. It takes a moment.',
+      confirmLabel: 'Add it',
     });
-    if (go) router.push('/hair-profile');
+    if (go) router.push('/hair-profile/texture');
   };
 
   const card = (look: Look) => (
