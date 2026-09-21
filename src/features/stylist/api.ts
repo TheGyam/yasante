@@ -4,6 +4,7 @@ import type {
   MenuItemDraft,
   PortfolioPhoto,
   PortfolioPhotoDraft,
+  StylistPage,
   StylistProfile,
   StylistProfileDraft,
   StylistSummary,
@@ -19,6 +20,13 @@ export interface HandleCheck {
 export const stylistApi = {
   /** GET /api/stylists/me/ — 404 when the account has no stylist profile yet. */
   getMine: async () => (await apiClient.get<StylistProfile>('/api/stylists/me/')).data,
+
+  /**
+   * GET /api/stylists/by-handle/:handle/ — her page, as a client sees it. Public:
+   * the same read the web pages on yasante.com will use.
+   */
+  getPage: async (handle: string) =>
+    (await apiClient.get<StylistPage>(`/api/stylists/by-handle/${handle}/`)).data,
 
   /** GET /api/stylists/me/summary/ */
   getSummary: async () => (await apiClient.get<StylistSummary>('/api/stylists/me/summary/')).data,

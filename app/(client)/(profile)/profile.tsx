@@ -1,7 +1,15 @@
 import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
-import { Bookmark, Droplets, LayoutGrid, Settings, UserRound } from 'lucide-react-native';
+import {
+  Bookmark,
+  CalendarClock,
+  Droplets,
+  LayoutGrid,
+  Settings,
+  UserRound,
+} from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
+import { isLive, useBookings } from '@/features/booking';
 import { useCollections } from '@/features/planner';
 import { hairTraits, useUser, useUserStore } from '@/features/profile';
 import { ModeSwitchRow, useIsStylist } from '@/features/stylist';
@@ -65,6 +73,8 @@ function Profile() {
   const localHair = useUserStore(s => s.hairProfile);
   const traits = hairTraits(user?.hairProfile ?? localHair);
   const collections = useCollections();
+  const { data: bookings = [] } = useBookings('client');
+  const live = bookings.filter(isLive);
   const name = user?.name ?? authUser?.name;
 
   return (
@@ -125,6 +135,16 @@ function Profile() {
       </Card>
 
       <Section>
+        <ListRow
+          title="Your bookings"
+          subtitle={
+            live.length ? `${live.length} coming up` : 'Requests, deposits and confirmed dates'
+          }
+          icon={CalendarClock}
+          iconTone={live.length ? 'success' : 'accent'}
+          onPress={() => router.push('/bookings')}
+          testID="profile-bookings"
+        />
         <ListRow
           title="Your collections"
           subtitle={

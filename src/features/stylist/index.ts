@@ -5,6 +5,7 @@ export type {
   PortfolioPhoto,
   PortfolioPhotoDraft,
   ServiceModel,
+  StylistPage,
   StylistPolicies,
   StylistProfile,
   StylistProfileDraft,

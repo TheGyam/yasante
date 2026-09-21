@@ -48,6 +48,22 @@ defineMocks({
     };
   },
 
+  'GET /api/stylists/by-handle/:handle/': request => {
+    const handle = String(request.params.handle ?? '').toLowerCase();
+    const profile = [...db.stylists.values()].find(s => s.handle === handle);
+    // A draft page is nobody's business until she puts it live.
+    if (!profile?.published) throw new MockError(404, 'No page at that address');
+    return {
+      // The proof photo is for the verification queue, never for clients.
+      profile: { ...profile, proofPhotoUri: undefined },
+      menu: db.menus.get(profile.accountId) ?? [],
+      photos: db.portfolios.get(profile.accountId) ?? [],
+      confirmedStyles: db.bookings.filter(
+        b => b.stylistId === profile.accountId && b.status === 'completed'
+      ).length,
+    };
+  },
+
   'GET /api/stylists/me/': request => {
     const profile = db.stylists.get(requireAccount(request));
     if (!profile) throw new MockError(404, 'No stylist profile yet');
