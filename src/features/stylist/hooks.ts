@@ -90,6 +90,17 @@ export function useCreateStylistProfile() {
   });
 }
 
+/** Her week. Fresh on each visit — it's the screen she checks. */
+export function useStylistNumbers() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: [KEY, 'numbers', user?.id],
+    queryFn: stylistApi.getNumbers,
+    enabled: !!user?.roles?.includes('stylist'),
+    staleTime: 0,
+  });
+}
+
 export function useUpdateStylistProfile() {
   const save = useSaveProfile();
   return useMutation({

@@ -113,6 +113,85 @@ function responseHoursFor(stylistId: string) {
   return Math.round(hours[Math.floor(hours.length / 2)] * 10) / 10;
 }
 
+const WEEK = 7 * 86_400_000;
+const BUCKET_MINUTES = { under_30: 15, '30_60': 45, '1_2h': 90, '2h_plus': 150 } as const;
+
+/** Monday 00:00 of the week `at` falls in. */
+function mondayOf(at: Date) {
+  const day = new Date(at);
+  day.setHours(0, 0, 0, 0);
+  day.setDate(day.getDate() - ((day.getDay() + 6) % 7));
+  return day;
+}
+
+function countWeek(stylistId: string, from: number, to: number) {
+  const inWeek = (iso?: string) => {
+    const t = iso ? new Date(iso).getTime() : NaN;
+    return t >= from && t < to;
+  };
+  const mine = db.bookings.filter(b => b.stylistId === stylistId);
+  const completed = mine.filter(b => b.status === 'completed' && inWeek(b.completedAt));
+  return {
+    views: db.pageViews.filter(v => v.stylistId === stylistId && inWeek(v.at)).length,
+    requests: mine.filter(b => inWeek(b.createdAt)).length,
+    confirmed: mine.filter(
+      b => (b.status === 'confirmed' || b.status === 'completed') && inWeek(b.scheduledFor)
+    ).length,
+    completed: completed.length,
+    noShows: mine.filter(b => b.status === 'no_show' && inWeek(b.scheduledFor)).length,
+    lateCancellations: mine.filter(b => b.status === 'cancelled_late' && inWeek(b.updatedAt))
+      .length,
+    earned: completed.reduce((sum, b) => sum + (b.actualPrice ?? 0), 0),
+  };
+}
+
+/**
+ * How each service really runs. Duration is the estimate plus the recorded
+ * deviation, taken at the middle of its bucket — the plan's rule, never minutes.
+ */
+export function timingFor(stylistId: string) {
+  const menu = db.menus.get(stylistId) ?? [];
+  const records = db.bookings.filter(
+    b => b.stylistId === stylistId && b.status === 'completed' && b.timing
+  );
+  return menu
+    .map(item => {
+      const mine = records.filter(b => b.serviceId === item.id);
+      const actual = mine
+        .filter(b => b.durationMinutes)
+        .map(b => {
+          const shift = b.timing!.bucket ? BUCKET_MINUTES[b.timing!.bucket] : 0;
+          const sign = b.timing!.outcome === 'over' ? 1 : b.timing!.outcome === 'early' ? -1 : 0;
+          return b.durationMinutes! + sign * shift;
+        })
+        .sort((a, b) => a - b);
+      return {
+        serviceId: item.id,
+        serviceName: item.name,
+        quotedMinutes: item.durationMinutes,
+        typicalMinutes: actual.length ? actual[Math.floor(actual.length / 2)] : undefined,
+        sample: mine.length,
+        early: mine.filter(b => b.timing!.outcome === 'early').length,
+        onTime: mine.filter(b => b.timing!.outcome === 'on_time').length,
+        over: mine.filter(b => b.timing!.outcome === 'over').length,
+        clientSide: mine.filter(
+          b => TIMING_REASONS.find(r => r.value === b.timing!.reason)?.side === 'client'
+        ).length,
+      };
+    })
+    .filter(t => t.sample > 0);
+}
+
+export function numbersFor(stylistId: string, now = new Date()) {
+  const monday = mondayOf(now).getTime();
+  return {
+    weekOf: new Date(monday).toISOString(),
+    thisWeek: countWeek(stylistId, monday, monday + WEEK),
+    lastWeek: countWeek(stylistId, monday - WEEK, monday),
+    timing: timingFor(stylistId),
+  };
+}
+
 defineMocks({
   'GET /api/stylists/handle-available/': ({ query }) => {
     const handle = (query.get('handle') ?? '').toLowerCase();
@@ -133,6 +212,9 @@ defineMocks({
     if (request.accountId && db.blocks.get(request.accountId)?.has(profile.accountId)) {
       throw new MockError(404, 'No page at that address');
     }
+    if (request.accountId !== profile.accountId) {
+      db.pageViews.push({ stylistId: profile.accountId, at: new Date().toISOString() });
+    }
     return {
       // The proof photo is for the verification queue, never for clients.
       profile: { ...profile, proofPhotoUri: undefined },
@@ -152,6 +234,8 @@ defineMocks({
     if (!profile) throw new MockError(404, 'No stylist profile yet');
     return profile;
   },
+
+  'GET /api/stylists/me/numbers/': request => numbersFor(requireAccount(request)),
 
   'GET /api/stylists/me/summary/': request => {
     const accountId = requireAccount(request);

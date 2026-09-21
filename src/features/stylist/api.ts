@@ -7,6 +7,7 @@ import type {
   StylistPage,
   StylistProfile,
   StylistProfileDraft,
+  StylistNumbers,
   StylistSummary,
 } from './types';
 
@@ -27,6 +28,9 @@ export const stylistApi = {
    */
   getPage: async (handle: string) =>
     (await apiClient.get<StylistPage>(`/api/stylists/by-handle/${handle}/`)).data,
+
+  /** GET /api/stylists/me/numbers/ — this week against last, and how her services really run. */
+  getNumbers: async () => (await apiClient.get<StylistNumbers>('/api/stylists/me/numbers/')).data,
 
   /** GET /api/stylists/me/summary/ */
   getSummary: async () => (await apiClient.get<StylistSummary>('/api/stylists/me/summary/')).data,

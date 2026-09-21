@@ -14,6 +14,9 @@ export type {
   StylistProfile,
   StylistProfileDraft,
   StylistSummary,
+  StylistNumbers,
+  WeekCounts,
+  ServiceTiming,
   VerificationTier,
 } from './types';
 export { stylistApi } from './api';

@@ -333,6 +333,9 @@ export const db = {
   /** Data export requests, fulfilled by email. */
   exportRequests: [] as { accountId: string; at: string }[],
 
+  /** Page views, counted by the server on every visit that isn't her own. */
+  pageViews: [] as { stylistId: string; at: string }[],
+
   /** Who each account has blocked. Blocking is mutual. */
   blocks: new Map<string, Set<string>>(),
 
