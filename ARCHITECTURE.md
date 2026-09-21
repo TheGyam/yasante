@@ -123,11 +123,15 @@ buttons, "Yes, I'm coming" and "I can't make it", are registered by the app
 (`ATTENDANCE_CATEGORY`). The first confirms there and then; the second opens the
 booking with its cancel warning.
 
+**Home is the looks feed.** Everything in its grid is posted by someone on Yasante;
+the editorial content (tips, the library) lives in Learn and search, not the feed.
+Anyone can browse looks; liking, saving, commenting and reporting ask for an account.
+
 `looks` is posted by clients and stylists alike. Who did the hair is never typed in: a
 stylist is credited through her own menu, a client's stylist through a completed
 booking. Likes are the one place the query cache is patched instead of re-read
 (`patchLook` in its hooks), because re-reading every page of a feed per tap costs more
-than the like. A double tap on a photo likes it; that's timed by hand in `LookCard`
+than the like. A double tap on a photo likes it; that's timed by hand in `usePhotoTaps`
 rather than with `Gesture.Exclusive`, which on web opened the look on the first tap.
 
 ## Modes and navigation

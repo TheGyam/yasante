@@ -3,7 +3,7 @@ import { db } from '../db';
 import '../looks';
 import '../stylist';
 
-const call = (method: string, url: string, accountId: string, body?: unknown) => {
+const call = (method: string, url: string, accountId: string | undefined, body?: unknown) => {
   const match = matchRoute(method, url);
   if (!match) throw new Error(`no handler for ${method} ${url}`);
   return match.route.handler({ params: match.params, query: match.query, body, accountId }) as any;
@@ -126,5 +126,21 @@ describe('a private look', () => {
     expect(call('get', `/api/looks/${look.id}/`, CLIENT).id).toBe(look.id);
     expect(call('get', '/api/looks/mine/', CLIENT).map((l: any) => l.id)).toContain(look.id);
     db.looks.splice(db.looks.indexOf(db.looks.find(l => l.id === look.id)!), 1);
+  });
+});
+
+describe('a guest', () => {
+  it('can read the feed, a look and its comments, but not like or comment', () => {
+    const page = call('get', '/api/looks/', undefined);
+    expect(page.data.length).toBeGreaterThan(0);
+    expect(page.data[0]).toMatchObject({ liked: false, mine: false });
+    expect(call('get', '/api/looks/look_seed_1/', undefined).id).toBe('look_seed_1');
+    expect(call('get', '/api/looks/look_seed_1/comments/', undefined).data.length).toBeGreaterThan(
+      0
+    );
+    expect(() => call('post', '/api/looks/look_seed_1/like/', undefined)).toThrow(MockError);
+    expect(() =>
+      call('post', '/api/looks/look_seed_1/comments/', undefined, { body: 'hi' })
+    ).toThrow(MockError);
   });
 });

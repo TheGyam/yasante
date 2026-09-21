@@ -1,19 +1,8 @@
-import { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import { GestureDetector } from 'react-native-gesture-handler';
 import {
   BookmarkPlus,
   CalendarPlus,
-  Heart,
   Lock,
   MessageCircle,
   MoreHorizontal,
@@ -21,8 +10,7 @@ import {
 } from 'lucide-react-native';
 import { TEXTURE_LABELS } from '@/features/profile';
 import { formatMoney } from '@/shared/lib/format';
-import { haptics } from '@/shared/lib/haptics';
-import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
+import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { IconButton } from '@/shared/ui/IconButton';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -31,9 +19,7 @@ import { Text } from '@/shared/ui/Text';
 import { bookable, postedLabel } from '../format';
 import type { Look } from '../types';
 import { LikeButton } from './LikeButton';
-
-/** Two taps closer together than this are one double tap. */
-const DOUBLE_TAP_MS = 280;
+import { usePhotoTaps } from './usePhotoTaps';
 
 /** "Coily hair", but "Zig-zag coils" — the word hair only where it reads. */
 const hairLabel = (label: string) => (/coils$/i.test(label) ? label : `${label} hair`);
@@ -64,11 +50,6 @@ const useStyles = makeStyles(t => ({
     borderRadius: radius.lg,
     aspectRatio: 0.8,
     backgroundColor: t.colors.glass.fillStrong,
-  },
-  burst: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   service: {
     position: 'absolute',
@@ -118,64 +99,11 @@ export function LookCard({
 }: LookCardProps) {
   const styles = useStyles();
   const theme = useTheme();
-  const reduced = useReducedMotion();
   const price = look.price
     ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
     : undefined;
 
-  // The big heart over the photo. Runs on the UI thread; the like itself is a
-  // single call back to React when the gesture ends.
-  const burstScale = useSharedValue(0.6);
-  const burstOpacity = useSharedValue(0);
-  const burst = useAnimatedStyle(() => ({
-    opacity: burstOpacity.get(),
-    transform: [{ scale: burstScale.get() }],
-  }));
-
-  // One tap opens the look, two like it. The first tap waits a beat to see if a
-  // second follows — the same wait a double-tap recogniser has, written out so it
-  // behaves identically on every platform.
-  const pendingOpen = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const lastTapAt = useRef(0);
-  useEffect(() => () => clearTimeout(pendingOpen.current), []);
-
-  const burstHeart = () => {
-    if (!reduced) {
-      burstScale.set(
-        withSequence(
-          withTiming(0.6, { duration: 0 }),
-          withSpring(1, { duration: 380, dampingRatio: 0.55 }),
-          withTiming(1.1, { duration: 220, easing: EASE_OUT })
-        )
-      );
-    }
-    burstOpacity.set(
-      withSequence(
-        withTiming(1, { duration: 90 }),
-        withTiming(1, { duration: 420 }),
-        withTiming(0, { duration: 200, easing: EASE_OUT })
-      )
-    );
-  };
-
-  const onPhotoTap = () => {
-    const now = Date.now();
-    if (now - lastTapAt.current < DOUBLE_TAP_MS) {
-      lastTapAt.current = 0;
-      clearTimeout(pendingOpen.current);
-      burstHeart();
-      haptics.light();
-      // A double tap only ever likes. Taking a like back is a deliberate tap on the heart.
-      if (!look.liked) onLike(look, true);
-      return;
-    }
-    lastTapAt.current = now;
-    if (onOpen) pendingOpen.current = setTimeout(() => onOpen(look), DOUBLE_TAP_MS);
-  };
-
-  const photoGesture = Gesture.Tap().onEnd((_e, success) => {
-    if (success) scheduleOnRN(onPhotoTap);
-  });
+  const { gesture: photoGesture, heart } = usePhotoTaps(look, onOpen, onLike);
   const open = () => onOpen?.(look);
 
   const author = (
@@ -242,9 +170,7 @@ export function LookCard({
               style={StyleSheet.absoluteFill}
               recyclingKey={look.id}
             />
-            <Animated.View pointerEvents="none" style={[styles.burst, burst]}>
-              <Heart size={96} color="#FFFFFF" fill="#FFFFFF" strokeWidth={1.2} />
-            </Animated.View>
+            {heart}
           </View>
         </GestureDetector>
         {onSave && (
