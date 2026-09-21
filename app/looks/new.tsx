@@ -51,6 +51,10 @@ const useStyles = makeStyles(t => ({
   footer: { gap: space.xs, paddingTop: space.lg },
 }));
 
+/** "coily hair", but "zig-zag coils" — the word hair only where it reads. */
+const hairLabel = (label: string) =>
+  (/coils$/i.test(label) ? label : `${label} hair`).toLowerCase();
+
 /** The style a service is, when its name says so: "Knotless braids" is knotless. */
 function styleFor(serviceName: string | undefined, taxonomy: Style[]) {
   if (!serviceName) return undefined;
@@ -85,10 +89,15 @@ export default function ComposeLookScreen() {
   const [serviceId, setServiceId] = useState<string>();
   const [bookingId, setBookingId] = useState(params.bookingId);
   const [picked, setPicked] = useState<string[]>([]);
-  // A client's look is her own hair, so her texture is the likely answer.
-  const [texture, setTexture] = useState<HairTexture | undefined>(() =>
-    asStylist ? undefined : (account?.hairProfile?.texture ?? ownTexture)
-  );
+  // A client's look is her own hair, and her hair profile already says what it is.
+  // Only a stylist — posting someone else's hair — or a client who hasn't said, picks.
+  const profileTexture = asStylist ? undefined : (account?.hairProfile?.texture ?? ownTexture);
+  const [texture, setTexture] = useState<HairTexture>();
+
+  // Posted from a finished appointment: who did it and what it was are facts of the
+  // booking, so they're set and can't be taken off. More styles can still be added.
+  const fromBooking = asStylist ? undefined : done.find(b => b.id === params.bookingId);
+  const lockedStyle = fromBooking ? styleFor(fromBooking.serviceName, taxonomy) : undefined;
   const [caption, setCaption] = useState('');
   const [productIds, setProductIds] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<LookVisibility>('public');
@@ -123,7 +132,8 @@ export default function ComposeLookScreen() {
     suggest(done.find(b => b.id === id)?.serviceName);
   };
 
-  const toggleStyle = (id: string) =>
+  const toggleStyle = (id: string) => {
+    if (id === lockedStyle) return;
     setPicked(current =>
       current.includes(id)
         ? current.filter(s => s !== id)
@@ -131,6 +141,7 @@ export default function ComposeLookScreen() {
           ? [...current, id]
           : current
     );
+  };
 
   const addFromLibrary = async () => {
     try {
@@ -152,7 +163,7 @@ export default function ComposeLookScreen() {
         serviceId: asStylist ? serviceId : undefined,
         bookingId: asStylist ? undefined : bookingId,
         styles: picked,
-        hairTexture: texture,
+        hairTexture: profileTexture ?? texture,
         productIds,
         visibility,
         caption: caption.trim() || undefined,
@@ -245,14 +256,17 @@ export default function ComposeLookScreen() {
         {!asStylist && done.length > 0 && (
           <View style={styles.group}>
             <Text variant="footnote" tone="secondary">
-              Who did it? Only stylists you’ve had an appointment with can be tagged.
+              {fromBooking
+                ? 'Who did it — from your appointment.'
+                : 'Who did it? Only stylists you’ve had an appointment with can be tagged.'}
             </Text>
             <View style={styles.chips}>
-              {done.map(booking => (
+              {(fromBooking ? [fromBooking] : done).map(booking => (
                 <Chip
                   key={booking.id}
                   label={`${booking.stylistName} · ${dayLabel(booking.completedAt ?? booking.updatedAt)}`}
                   selected={bookingId === booking.id}
+                  locked={!!fromBooking}
                   onPress={() => tagBooking(bookingId === booking.id ? undefined : booking.id)}
                 />
               ))}
@@ -270,28 +284,36 @@ export default function ComposeLookScreen() {
                 key={style.id}
                 label={style.name}
                 selected={picked.includes(style.id)}
+                locked={style.id === lockedStyle}
                 onPress={() => toggleStyle(style.id)}
               />
             ))}
           </View>
         </View>
 
-        <View style={styles.group}>
+        {profileTexture ? (
           <Text variant="footnote" tone="secondary">
-            {asStylist ? 'Her hair type' : 'Your hair type'} — it’s how people with hair like it
-            find this.
+            Tagged as {hairLabel(TEXTURE_LABELS[profileTexture])}, from your hair profile — it’s how
+            people with hair like yours find this.
           </Text>
-          <View style={styles.chips}>
-            {TEXTURES.map(value => (
-              <Chip
-                key={value}
-                label={TEXTURE_LABELS[value]}
-                selected={texture === value}
-                onPress={() => setTexture(texture === value ? undefined : value)}
-              />
-            ))}
+        ) : (
+          <View style={styles.group}>
+            <Text variant="footnote" tone="secondary">
+              {asStylist ? 'Her hair type' : 'Your hair type'} — it’s how people with hair like it
+              find this.
+            </Text>
+            <View style={styles.chips}>
+              {TEXTURES.map(value => (
+                <Chip
+                  key={value}
+                  label={TEXTURE_LABELS[value]}
+                  selected={texture === value}
+                  onPress={() => setTexture(texture === value ? undefined : value)}
+                />
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
         <View style={styles.group}>
           <Text variant="footnote" tone="secondary">

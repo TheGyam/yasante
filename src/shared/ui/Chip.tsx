@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react-native';
+import { Lock, type LucideIcon } from 'lucide-react-native';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { PressableScale } from './PressableScale';
 import { Text } from './Text';
@@ -9,6 +9,8 @@ export interface ChipProps {
   onPress?: () => void;
   icon?: LucideIcon;
   accessibilityLabel?: string;
+  /** Chosen for her and can't be undone here — shown selected, with a lock. */
+  locked?: boolean;
 }
 
 const useStyles = makeStyles(t => ({
@@ -32,19 +34,23 @@ export function Chip({
   label,
   selected = false,
   onPress,
-  icon: Icon,
+  icon,
   accessibilityLabel,
+  locked = false,
 }: ChipProps) {
+  const Icon = locked ? Lock : icon;
   const styles = useStyles();
   const theme = useTheme();
   const color = selected ? theme.colors.accent : theme.colors.text.secondary;
 
   return (
     <PressableScale
-      onPress={onPress}
-      haptic="selection"
+      // Not `disabled`: that fades it, and a locked choice is chosen, not unavailable.
+      onPress={locked ? undefined : onPress}
+      haptic={locked ? undefined : 'selection'}
+      scaleTo={locked ? 1 : undefined}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected, disabled: locked }}
       accessibilityLabel={accessibilityLabel ?? label}
       style={[styles.chip, selected ? styles.selected : styles.idle]}
     >
