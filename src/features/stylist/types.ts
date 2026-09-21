@@ -78,6 +78,18 @@ export interface PortfolioPhoto {
 
 export type PortfolioPhotoDraft = Pick<PortfolioPhoto, 'uri' | 'serviceId'>;
 
+/**
+ * Her page as a client sees it. Only what the plan says clients may see: never the
+ * full address before a booking is confirmed, and never a phone number or email.
+ */
+export interface StylistPage {
+  profile: StylistProfile;
+  menu: MenuItem[];
+  photos: PortfolioPhoto[];
+  /** Styles clients confirmed she did — a count she can't type in herself. */
+  confirmedStyles: number;
+}
+
 /** What waits in stylist mode — drives the badge on the mode switch. */
 export interface StylistSummary {
   pendingRequests: number;

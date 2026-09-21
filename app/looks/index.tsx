@@ -67,8 +67,8 @@ function LooksFeed() {
   // A look carries its own picture and caption, so the save screen needs only its id.
   const save = (look: Look) => router.push(`/collections/save?kind=look&refId=${look.id}`);
 
-  // Tapping through to her page waits for the page itself to exist — a link to a
-  // screen that isn't built is worse than a name you can't tap.
+  const openAuthor = (look: Look) => router.push(`/stylist/${look.authorHandle}`);
+
   const openOptions = (look: Look) =>
     router.push(
       `/looks/options?id=${look.id}&author=${encodeURIComponent(look.authorName)}&authorId=${look.authorId}&mine=${look.mine ? 1 : 0}`
@@ -79,7 +79,13 @@ function LooksFeed() {
       data={feed.isLoading ? [] : looks}
       keyExtractor={look => look.id}
       renderItem={({ item }) => (
-        <LookCard look={item} onSave={item.mine ? undefined : save} onMore={openOptions} />
+        <LookCard
+          look={item}
+          // Only a published page can be opened; a draft has nothing to show.
+          onOpenAuthor={item.authorHandle ? openAuthor : undefined}
+          onSave={item.mine ? undefined : save}
+          onMore={openOptions}
+        />
       )}
       ListHeaderComponent={header}
       ListEmptyComponent={

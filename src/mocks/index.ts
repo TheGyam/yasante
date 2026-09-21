@@ -13,6 +13,7 @@ import './users';
 import './stylist';
 import './planner';
 import './looks';
+import './bookings';
 import './verification';
 import './invites';
 

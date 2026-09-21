@@ -1,4 +1,5 @@
 import type { User } from '@/features/profile';
+import type { Booking } from '@/features/booking';
 import type { MenuItem, PortfolioPhoto, StylistProfile } from '@/features/stylist';
 
 /**
@@ -216,6 +217,12 @@ export const db = {
       sessions: { id: string; completedAt: string; notes?: string }[];
     }[]
   >(),
+
+  /**
+   * Bookings, newest first. The status field is the whole point: the app reflects
+   * it and never sets it, so every transition is checked in one place.
+   */
+  bookings: [] as Booking[],
 
   /** Who each account has blocked. Blocking is mutual. */
   blocks: new Map<string, Set<string>>(),

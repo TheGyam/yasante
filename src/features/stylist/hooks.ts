@@ -30,6 +30,17 @@ export function useMyStylistProfile() {
   });
 }
 
+/** Her page, by handle — what a client opens from a look or a shared link. */
+export function useStylistPage(handle?: string) {
+  return useQuery({
+    queryKey: [KEY, 'page', handle],
+    queryFn: () => stylistApi.getPage(handle!),
+    enabled: !!handle,
+    staleTime: 5 * 60 * 1000,
+    retry: (count, error) => !isNotFound(error) && count < 2,
+  });
+}
+
 /** Counts shown on the mode switch. */
 export function useStylistSummary() {
   const { user } = useAuth();
