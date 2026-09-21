@@ -1,10 +1,12 @@
+import { NOT_HANDLES } from '@/shared/lib/links';
 import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
 import { TIMING_REASONS } from '@/features/booking/types';
 import { respondedAt } from './bookings';
 import { db } from './db';
 
 /** Handles already in use, plus the ones we keep for ourselves. */
-const RESERVED = new Set(['yasante', 'admin', 'help', 'support', 'stylist', 'hair']);
+// The site's own paths too, so yasante.com/{handle} can never be ambiguous.
+const RESERVED = new Set(['yasante', 'admin', 'stylist', 'hair', ...NOT_HANDLES]);
 
 /** Her menu, created empty the first time she adds to it. */
 function menuOf(accountId: string) {
