@@ -254,6 +254,7 @@ defineMocks({
       fromPrice: priced.fromPrice,
       durationMinutes: priced.minutes,
       bringingOwnHair: !!request.body?.bringingOwnHair,
+      hairIncluded: !!service.hairIncluded,
       notes: request.body?.notes ? String(request.body.notes).trim() : undefined,
       requestedTimes: times,
       area: profile.baseArea,

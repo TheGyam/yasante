@@ -135,3 +135,50 @@ export const inSentence = (label: string) =>
 /** "Knotless braids · Waist · Small" — the service as she chose it. */
 export const serviceLine = (booking: Pick<Booking, 'serviceName' | 'optionLabels'>) =>
   [booking.serviceName, ...(booking.optionLabels ?? [])].join(' · ');
+
+const icsTime = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
+/**
+ * A link that adds the appointment to her calendar. The server's own .ics link
+ * when it sends one (it opens straight into Apple Calendar); otherwise Google's.
+ */
+export function calendarLink(booking: Booking) {
+  if (booking.calendarUrl) return booking.calendarUrl;
+  if (!booking.scheduledFor) return undefined;
+  const start = new Date(booking.scheduledFor);
+  const end = new Date(start.getTime() + (booking.durationMinutes ?? 120) * 60_000);
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `${serviceLine(booking)} with ${booking.stylistName}`,
+    dates: `${icsTime(start)}/${icsTime(end)}`,
+    details: 'Booked on Yasante',
+    location: booking.address ?? booking.area,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+/** Directions in the phone's own maps app. */
+export function directionsLink(address: string, platform: string) {
+  const q = encodeURIComponent(address);
+  return platform === 'ios'
+    ? `http://maps.apple.com/?daddr=${q}`
+    : `https://www.google.com/maps/dir/?api=1&destination=${q}`;
+}
+
+export interface PrepItem {
+  id: string;
+  text: string;
+}
+
+/** What to do before the day, from what she booked. Prep a stylist can't do for her. */
+export function prepList(booking: Pick<Booking, 'bringingOwnHair' | 'hairIncluded'>): PrepItem[] {
+  return [
+    { id: 'takedown', text: 'Take out your old style, unless she’s doing it' },
+    { id: 'wash', text: 'Wash and detangle the day before' },
+    { id: 'dry', text: 'Come with it dry and stretched, no heavy product' },
+    ...(booking.bringingOwnHair || booking.hairIncluded === false
+      ? [{ id: 'hair', text: 'Buy the braiding hair — ask her how many packs' }]
+      : []),
+    { id: 'time', text: 'Clear the time — a long style can run over' },
+  ];
+}

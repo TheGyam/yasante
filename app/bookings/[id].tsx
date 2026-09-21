@@ -1,8 +1,12 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { View } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
   BadgeCheck,
+  CalendarPlus,
+  Check,
+  Circle,
+  Navigation,
   CalendarSync,
   ClipboardCheck,
   Hourglass,
@@ -21,6 +25,10 @@ import {
   STATUS_LABELS,
   serviceLine,
   blamesClient,
+  calendarLink,
+  directionsLink,
+  prepList,
+  usePrepStore,
   cancellingIsLate,
   dayLabel,
   isLive,
@@ -101,6 +109,8 @@ export default function BookingScreen() {
   const attending = useConfirmAttendance();
   const answerMove = useAnswerMove();
   const onTime = useStartedOnTime();
+  const ticked = usePrepStore(s => s.done[id] ?? []);
+  const tick = usePrepStore(s => s.toggle);
   const contest = useContest();
 
   const act = async (action: () => Promise<unknown>, title: string) => {
@@ -358,6 +368,58 @@ export default function BookingScreen() {
             />
           )}
         </Section>
+
+        {booking.status === 'confirmed' && (
+          <>
+            <Section>
+              {!!calendarLink(booking) && (
+                <ListRow
+                  title="Add to calendar"
+                  icon={CalendarPlus}
+                  onPress={() => Linking.openURL(calendarLink(booking)!).catch(() => {})}
+                  testID="booking-calendar"
+                />
+              )}
+              {!!booking.address && (
+                <ListRow
+                  title="Directions"
+                  subtitle={booking.address}
+                  icon={Navigation}
+                  onPress={() =>
+                    Linking.openURL(directionsLink(booking.address!, Platform.OS)).catch(() => {})
+                  }
+                  testID="booking-directions"
+                />
+              )}
+            </Section>
+
+            <Section
+              title="Before the day"
+              footer={
+                ticked.length >= prepList(booking).length
+                  ? 'All set. She’ll be glad of it.'
+                  : 'Tick them off as you go. Only you see this.'
+              }
+            >
+              {prepList(booking).map(item => {
+                const done = ticked.includes(item.id);
+                return (
+                  <ListRow
+                    key={item.id}
+                    title={item.text}
+                    icon={done ? Check : Circle}
+                    iconTone={done ? 'success' : 'neutral'}
+                    haptic="selection"
+                    onPress={() => tick(id, item.id)}
+                    accessibilityLabel={`${item.text}, ${done ? 'done' : 'not done'}`}
+                    trailing={<View />}
+                    testID={`prep-${item.id}`}
+                  />
+                );
+              })}
+            </Section>
+          </>
+        )}
 
         {!!booking.notes && (
           <Section title="What you told her">
