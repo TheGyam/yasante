@@ -22,3 +22,4 @@ export * from './format';
 export * from './hooks';
 export { BookingNudge } from './components/BookingNudge';
 export { ReviewCard } from './components/ReviewCard';
+export { usePrepStore } from './prepStore';

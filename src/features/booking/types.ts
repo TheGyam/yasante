@@ -54,7 +54,11 @@ export interface Booking {
   fromPrice: boolean;
   durationMinutes?: number;
   bringingOwnHair: boolean;
+  /** Whether the service includes the braiding hair, from her menu at the time. */
+  hairIncluded?: boolean;
   notes?: string;
+  /** An .ics link the server provides for the confirmed appointment. */
+  calendarUrl?: string;
 
   /** Her first choice and two alternatives, in order of preference. */
   requestedTimes: string[];
