@@ -12,6 +12,9 @@
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://staging-api.yasante.com"
       }
     },
     "preview": {
@@ -22,7 +25,10 @@
       "android": {
         "buildType": "apk"
       },
-      "channel": "preview"
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://staging-api.yasante.com"
+      }
     },
     "production": {
       "distribution": "store",
@@ -32,7 +38,10 @@
       "android": {
         "buildType": "apk"
       },
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.yasante.com"
+      }
     }
   },
   "submit": {

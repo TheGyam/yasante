@@ -107,6 +107,15 @@ with UTC and local time on each. Consent choices are recorded on the device firs
 synced by `useConsentSync` while signed in. Both give up on a request that hasn't
 settled in 20 seconds and try again later, so one stuck request can't stall them.
 
+**Links.** yasante.com links open the app (iOS associated domains, Android verified
+intent filters in `app.json`). `routeForLink` in `shared/lib/links.ts` maps them:
+the site's pages match the app's screens, and a bare `/{handle}` opens her page. For
+the OS to verify the links, the site must serve `/.well-known/apple-app-site-association`
+(team ID + `com.yasante.app`) and `/.well-known/assetlinks.json` (package name + the
+signing certificate's SHA-256). Handles can't take the site's own paths (`NOT_HANDLES`).
+Each build profile in `eas.json` sets its API: staging for development and preview,
+`api.yasante.com` for production.
+
 **Notifications the server sends** carry `data` the app acts on: `mode`
 (`client` or `stylist`) and `url` open the right screen. The day-before reminder
 goes out under the category `attendance` with `bookingId` in its data; its two

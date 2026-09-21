@@ -62,9 +62,11 @@ const getApiBaseUrl = (): string => {
     }
   }
 
-  // Priority 3: Fallback based on environment
+  // Priority 3: staging. Every build profile sets its own address in eas.json
+  // (production is api.yasante.com), so only an unconfigured build lands here —
+  // and it should never be production by accident.
   // Note: basePath is /api according to Swagger, so base URL should NOT include /api
-  return 'https://yasante.com';
+  return 'https://staging-api.yasante.com';
 };
 
 /**

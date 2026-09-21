@@ -17,7 +17,11 @@
       "bundleIdentifier": "com.yasante.app",
       "infoPlist": {
         "CADisableMinimumFrameDurationOnPhone": true
-      }
+      },
+      "associatedDomains": [
+        "applinks:yasante.com",
+        "applinks:www.yasante.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -31,7 +35,27 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA"
       ],
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "yasante.com"
+            },
+            {
+              "scheme": "https",
+              "host": "www.yasante.com"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
