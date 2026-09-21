@@ -111,3 +111,20 @@ describe('posting', () => {
     db.looks.splice(db.looks.indexOf(db.looks.find(l => l.id === look.id)!), 1);
   });
 });
+
+describe('a private look', () => {
+  it('is hers alone: not in the feed, not to anyone else, but on her own page', () => {
+    const look = call('post', '/api/looks/', CLIENT, {
+      photoUri: 'x',
+      styles: ['twists'],
+      visibility: 'private',
+      productIds: ['prd_1', 'not-a-product'],
+    });
+    expect(look).toMatchObject({ visibility: 'private', products: [{ id: 'prd_1' }] });
+    expect(feed()).not.toContain(look.id);
+    expect(() => call('get', `/api/looks/${look.id}/`, 'acc_ama')).toThrow(MockError);
+    expect(call('get', `/api/looks/${look.id}/`, CLIENT).id).toBe(look.id);
+    expect(call('get', '/api/looks/mine/', CLIENT).map((l: any) => l.id)).toContain(look.id);
+    db.looks.splice(db.looks.indexOf(db.looks.find(l => l.id === look.id)!), 1);
+  });
+});

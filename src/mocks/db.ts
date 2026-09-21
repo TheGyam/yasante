@@ -219,6 +219,8 @@ export const db = {
     stylistId?: string;
     styles: string[];
     hairTexture?: HairTexture;
+    productIds?: string[];
+    visibility?: 'public' | 'private';
     createdAt: string;
   }[],
 

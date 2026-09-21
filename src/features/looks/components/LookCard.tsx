@@ -14,6 +14,7 @@ import {
   BookmarkPlus,
   CalendarPlus,
   Heart,
+  Lock,
   MessageCircle,
   MoreHorizontal,
   Share,
@@ -96,6 +97,7 @@ const useStyles = makeStyles(t => ({
     backgroundColor: t.colors.accentSoft,
   },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
+  private: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
 }));
 
 /**
@@ -290,14 +292,17 @@ export function LookCard({
             </Text>
           )}
         </PressableScale>
-        <PressableScale
-          onPress={() => onShare(look)}
-          scaleTo={0.92}
-          accessibilityLabel="Share"
-          style={styles.action}
-        >
-          <Share size={20} color={theme.colors.text.secondary} strokeWidth={2} />
-        </PressableScale>
+        {/* A private look has nobody to share with. */}
+        {look.visibility !== 'private' && (
+          <PressableScale
+            onPress={() => onShare(look)}
+            scaleTo={0.92}
+            accessibilityLabel="Share"
+            style={styles.action}
+          >
+            <Share size={20} color={theme.colors.text.secondary} strokeWidth={2} />
+          </PressableScale>
+        )}
         <View style={styles.spacer} />
         {onBook && bookable(look) && (
           <PressableScale
@@ -319,6 +324,21 @@ export function LookCard({
         <Text variant="subhead" tone="secondary" numberOfLines={detail ? undefined : 3}>
           {look.caption}
         </Text>
+      )}
+
+      {!!look.products?.length && (
+        <Text variant="caption" tone="secondary" numberOfLines={2}>
+          Used {look.products.map(p => `${p.brand} ${p.name}`).join(', ')}
+        </Text>
+      )}
+
+      {look.visibility === 'private' && (
+        <View style={styles.private}>
+          <Lock size={12} color={theme.colors.text.tertiary} strokeWidth={2.2} />
+          <Text variant="caption" tone="tertiary">
+            Only you can see this
+          </Text>
+        </View>
       )}
 
       {(credit || tags.length > 0) && (

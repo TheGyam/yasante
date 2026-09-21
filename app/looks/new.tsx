@@ -4,7 +4,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { Camera, Check, ImagePlus } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
 import { dayLabel, useBookings } from '@/features/booking';
-import { usePostLook, useStyleTaxonomy, type Style } from '@/features/looks';
+import { usePostLook, useStyleTaxonomy, type LookVisibility, type Style } from '@/features/looks';
+import { useShelf } from '@/features/shelf';
 import { TEXTURE_LABELS, useUser, useUserStore, type HairTexture } from '@/features/profile';
 import { formatPrice, useActiveMode, useMenu, usePortfolio } from '@/features/stylist';
 import { useImagePicker } from '@/shared/hooks/useImagePicker';
@@ -18,9 +19,14 @@ import { Input } from '@/shared/ui/Input';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Screen } from '@/shared/ui/Screen';
+import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Text } from '@/shared/ui/Text';
 
 const MAX_STYLES = 3;
+const VISIBILITY = [
+  { value: 'public', label: 'Everyone' },
+  { value: 'private', label: 'Just me' },
+] as const;
 const TEXTURES = Object.keys(TEXTURE_LABELS) as HairTexture[];
 
 const useStyles = makeStyles(t => ({
@@ -84,6 +90,9 @@ export default function ComposeLookScreen() {
     asStylist ? undefined : (account?.hairProfile?.texture ?? ownTexture)
   );
   const [caption, setCaption] = useState('');
+  const [productIds, setProductIds] = useState<string[]>([]);
+  const [visibility, setVisibility] = useState<LookVisibility>('public');
+  const { data: shelf = [] } = useShelf();
 
   const suggest = (serviceName?: string) => {
     const id = styleFor(serviceName, taxonomy);
@@ -144,6 +153,8 @@ export default function ComposeLookScreen() {
         bookingId: asStylist ? undefined : bookingId,
         styles: picked,
         hairTexture: texture,
+        productIds,
+        visibility,
         caption: caption.trim() || undefined,
       });
       haptics.success();
@@ -280,6 +291,49 @@ export default function ComposeLookScreen() {
               />
             ))}
           </View>
+        </View>
+
+        <View style={styles.group}>
+          <Text variant="footnote" tone="secondary">
+            {shelf.length
+              ? 'What went on it? From your shelf, up to five.'
+              : 'Add products to your shelf and you can tag what went on it.'}
+          </Text>
+          {shelf.length > 0 && (
+            <View style={styles.chips}>
+              {shelf.map(item => {
+                const on = productIds.includes(item.product.id);
+                return (
+                  <Chip
+                    key={item.id}
+                    label={`${item.product.brand} ${item.product.name}`}
+                    selected={on}
+                    onPress={() =>
+                      setProductIds(current =>
+                        on
+                          ? current.filter(id => id !== item.product.id)
+                          : current.length < 5
+                            ? [...current, item.product.id]
+                            : current
+                      )
+                    }
+                  />
+                );
+              })}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.group}>
+          <Text variant="footnote" tone="secondary">
+            Who sees it
+          </Text>
+          <SegmentedControl options={VISIBILITY} value={visibility} onChange={setVisibility} />
+          <Text variant="caption" tone="tertiary">
+            {visibility === 'public'
+              ? 'In the feed and on the web, with your name on it.'
+              : 'A record for yourself. It never appears in the feed.'}
+          </Text>
         </View>
 
         <Input

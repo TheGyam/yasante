@@ -4,6 +4,7 @@ import {
   Bookmark,
   CalendarClock,
   Droplets,
+  Images,
   LayoutGrid,
   Package,
   Settings,
@@ -167,6 +168,13 @@ function Profile() {
           icon={LayoutGrid}
           onPress={() => router.navigate('/planner')}
           testID="profile-collections"
+        />
+        <ListRow
+          title="Your looks"
+          subtitle="What you’ve posted, and the ones kept for yourself"
+          icon={Images}
+          onPress={() => router.push('/looks/mine')}
+          testID="profile-looks"
         />
         <ListRow
           title="Your product shelf"

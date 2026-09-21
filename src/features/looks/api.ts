@@ -19,6 +19,9 @@ export const looksApi = {
       })
     ).data,
 
+  /** GET /api/looks/mine/ — her own, private ones included. */
+  mine: async () => (await apiClient.get<Look[]>('/api/looks/mine/')).data,
+
   /** GET /api/looks/:id/ */
   get: async (id: string) => (await apiClient.get<Look>(`/api/looks/${id}/`)).data,
 

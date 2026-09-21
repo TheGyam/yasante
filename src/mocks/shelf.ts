@@ -41,6 +41,7 @@ const shelfOf = (accountId: string) => {
 };
 
 const product = (id: string) => CATALOGUE.find(p => p.id === id);
+export const productById = product;
 
 /** Her hair at the moment she rated, so a rating can later be read against hair like hers. */
 const ratedWith = new Map<string, { rating: number; hair: unknown; at: string }[]>();
