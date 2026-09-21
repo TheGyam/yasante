@@ -6,9 +6,11 @@ import { errorMessage } from '@/features/auth';
 import {
   REPORT_REASONS,
   useBlockAuthor,
+  useRemoveComment,
   useRemoveLook,
-  useReportLook,
+  useReport,
   type ReportReason,
+  type ReportTarget,
 } from '@/features/looks';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
@@ -26,28 +28,43 @@ const useStyles = makeStyles(() => ({
   footer: { gap: space.xs, paddingTop: space.lg },
 }));
 
+const NOUN: Record<ReportTarget, string> = { look: 'look', comment: 'comment', profile: 'page' };
+
 /**
- * What you can do about someone else's look: say what's wrong with it, or stop
- * seeing them at all. Your own look gets one option — take it down.
+ * What you can do about someone else's look, comment or page: say what's wrong
+ * with it, or stop seeing them at all. Your own gets one option — take it down.
  */
-export default function LookOptionsScreen() {
+export default function ReportOptionsScreen() {
   const styles = useStyles();
   const theme = useTheme();
   const router = useRouter();
-  const { id, author, authorId, mine } = useLocalSearchParams<{
+  const params = useLocalSearchParams<{
+    kind?: ReportTarget;
     id: string;
-    author: string;
+    lookId?: string;
+    name: string;
     authorId: string;
     mine: string;
+    /** Set when the screen underneath has nothing left once this one is gone. */
+    leave?: string;
   }>();
-  const isMine = mine === '1';
+  const kind = params.kind ?? 'look';
+  const { id, name, authorId } = params;
+  const isMine = params.mine === '1';
+  // Close this and, when asked, the screen under it too — one intent, two screens.
+  const close = (emptied: boolean) =>
+    emptied && params.leave === '1' ? router.dismiss(2) : router.back();
+  const noun = NOUN[kind];
+  // "It isn't their work" is about pictures; a comment can't be stolen work.
+  const reasons = REPORT_REASONS.filter(r => kind !== 'comment' || r.value !== 'not-their-work');
 
   const [reason, setReason] = useState<ReportReason>();
   const [note, setNote] = useState('');
 
-  const report = useReportLook();
+  const report = useReport();
   const block = useBlockAuthor();
-  const remove = useRemoveLook();
+  const removeLook = useRemoveLook();
+  const removeComment = useRemoveComment(params.lookId ?? '');
 
   const fail = async (error: unknown, title: string) => {
     haptics.error();
@@ -57,7 +74,7 @@ export default function LookOptionsScreen() {
   const send = async () => {
     if (!reason) return;
     try {
-      await report.mutateAsync({ id, reason, note: note.trim() || undefined });
+      await report.mutateAsync({ kind, id, reason, note: note.trim() || undefined });
       haptics.success();
       router.back();
       await notify({
@@ -71,8 +88,8 @@ export default function LookOptionsScreen() {
 
   const confirmBlock = async () => {
     const yes = await confirm({
-      title: `Block ${author}?`,
-      message: 'You won’t see their looks, and they won’t see yours.',
+      title: `Block ${name}?`,
+      message: 'You won’t see their looks or comments, and they won’t see yours.',
       confirmLabel: 'Block',
       destructive: true,
     });
@@ -80,7 +97,7 @@ export default function LookOptionsScreen() {
     try {
       await block.mutateAsync(authorId);
       haptics.success();
-      router.back();
+      close(kind !== 'comment');
     } catch (error) {
       await fail(error, 'Couldn’t block them');
     }
@@ -88,16 +105,18 @@ export default function LookOptionsScreen() {
 
   const confirmDelete = async () => {
     const yes = await confirm({
-      title: 'Take this look down?',
-      message: 'It comes out of the feed straight away.',
+      title: `Take this ${noun} down?`,
+      message:
+        kind === 'look' ? 'It comes out of the feed straight away.' : 'It’s removed for everyone.',
       confirmLabel: 'Take it down',
       destructive: true,
     });
     if (!yes) return;
     try {
-      await remove.mutateAsync(id);
+      if (kind === 'comment') await removeComment.mutateAsync(id);
+      else await removeLook.mutateAsync(id);
       haptics.success();
-      router.back();
+      close(kind === 'look');
     } catch (error) {
       await fail(error, 'Couldn’t take it down');
     }
@@ -105,10 +124,10 @@ export default function LookOptionsScreen() {
 
   if (isMine) {
     return (
-      <Screen title="Your look" modal testID="look-options">
-        <Section footer="Nobody is told when a look comes down.">
+      <Screen title={`Your ${noun}`} modal testID="look-options">
+        <Section footer={`Nobody is told when a ${noun} comes down.`}>
           <ListRow
-            title="Take this look down"
+            title={`Take this ${noun} down`}
             icon={Trash2}
             destructive
             onPress={confirmDelete}
@@ -120,14 +139,15 @@ export default function LookOptionsScreen() {
   }
 
   return (
-    <Screen title="Report this look" modal keyboard testID="look-options">
+    <Screen title={`Report this ${noun}`} modal keyboard testID="look-options">
       <View style={styles.body}>
         <Text variant="subhead" tone="secondary">
-          Tell us what’s wrong with it. {author} is never told who reported a look.
+          Tell us what’s wrong with it. {name} is never told who reported{' '}
+          {kind === 'profile' ? 'their page' : `a ${noun}`}.
         </Text>
 
         <Section>
-          {REPORT_REASONS.map(option => (
+          {reasons.map(option => (
             <ListRow
               key={option.value}
               title={option.label}
@@ -157,7 +177,7 @@ export default function LookOptionsScreen() {
 
         <Section footer="Blocking is separate from reporting, and takes effect straight away.">
           <ListRow
-            title={`Block ${author}`}
+            title={`Block ${name}`}
             subtitle="You stop seeing each other"
             icon={UserX}
             destructive

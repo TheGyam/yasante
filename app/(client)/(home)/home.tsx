@@ -137,7 +137,7 @@ function HomeFeed() {
         />
       )}
       <Button
-        label="Looks from stylists on Yasante"
+        label="Looks — real hair, and who did it"
         icon={Sparkles}
         variant="secondary"
         onPress={() => router.push('/looks')}

@@ -211,7 +211,7 @@ export default function BookingScreen() {
             <ListRow
               title="Post this as a look"
               icon={Camera}
-              onPress={() => router.push('/looks/new')}
+              onPress={() => router.push(`/looks/new?bookingId=${booking.id}`)}
             />
           </Section>
         )}

@@ -41,12 +41,16 @@ const suggest = (offset: number) => startOfDay(addDays(new Date(), 1 + offset));
 export default function RequestBookingScreen() {
   const styles = useStyles();
   const router = useRouter();
-  const { handle } = useLocalSearchParams<{ handle: string }>();
+  const { handle, service: fromLook } = useLocalSearchParams<{
+    handle: string;
+    service?: string;
+  }>();
   const { user } = useAuth();
   const { data, isLoading } = useStylistPage(handle);
   const request = useRequestBooking();
 
-  const [serviceId, setServiceId] = useState<string>();
+  // "Book this look" arrives with the service already chosen.
+  const [serviceId, setServiceId] = useState<string | undefined>(fromLook);
   const [times, setTimes] = useState<Date[]>(() => [suggest(0), suggest(1), suggest(2)]);
   const [ownHair, setOwnHair] = useState(false);
   const [notes, setNotes] = useState('');

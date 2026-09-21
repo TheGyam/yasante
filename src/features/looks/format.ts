@@ -1,3 +1,5 @@
+import { Share } from 'react-native';
+import type { Look } from './types';
 import { differenceInCalendarDays, differenceInHours, differenceInMinutes } from 'date-fns';
 
 /**
@@ -19,4 +21,17 @@ export function postedLabel(iso: string, now = new Date()) {
   if (days < 7) return `${days}d`;
   if (days < 365) return `${Math.floor(days / 7)}w`;
   return `${Math.floor(days / 365)}y`;
+}
+
+/** A look can be booked when its stylist has a live page and it's tagged with one of her services. */
+export const bookable = (look: Pick<Look, 'stylist' | 'serviceId'>) =>
+  !!look.stylist?.handle && !!look.serviceId;
+
+/** Where a look lives on the web, for sharing. */
+export const lookUrl = (look: Pick<Look, 'id'>) => `https://yasante.com/looks/${look.id}`;
+
+export function shareLook(look: Pick<Look, 'id' | 'authorName' | 'serviceName'>) {
+  const url = lookUrl(look);
+  const what = look.serviceName ? `${look.serviceName} by ${look.authorName}` : look.authorName;
+  return Share.share({ message: `${what} on Yasante: ${url}`, url }).catch(() => {});
 }
