@@ -82,8 +82,13 @@ export const stylistApi = {
    * POST /api/stylists/me/portfolio/ — photos always arrive as a batch, even a batch
    * of one. `uri` is a local file until the backend can take an upload.
    */
-  addPhotos: async (photos: PortfolioPhotoDraft[]) =>
-    (await apiClient.post<PortfolioPhoto[]>('/api/stylists/me/portfolio/', { photos })).data,
+  addPhotos: async (photos: PortfolioPhotoDraft[], postAsLooks = false) =>
+    (
+      await apiClient.post<PortfolioPhoto[]>('/api/stylists/me/portfolio/', {
+        photos,
+        postAsLooks,
+      })
+    ).data,
 
   /** PATCH /api/stylists/me/portfolio/:id/ — re-tag a photo. */
   updatePhoto: async (id: string, changes: Partial<PortfolioPhotoDraft>) =>
