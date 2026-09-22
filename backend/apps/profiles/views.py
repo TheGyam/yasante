@@ -46,13 +46,14 @@ class UserDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, pk):
-        try:
-            user = User.objects.get(pk=pk)
-        except User.DoesNotExist:
+        # Her own account only: this carries email and phone. Others appear through
+        # their public name and handle, never here. Same 404 either way, so an id
+        # can't be probed for whether it exists.
+        if str(request.user.pk) != str(pk):
             return Response(
                 {"message": "User not found."}, status=status.HTTP_404_NOT_FOUND
             )
-        return Response(UserDetailSerializer(user).data)
+        return Response(UserDetailSerializer(request.user).data)
 
     def patch(self, request, pk):
         if str(request.user.pk) != str(pk):

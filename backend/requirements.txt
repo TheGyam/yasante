@@ -35,5 +35,9 @@ python-decouple>=3.8,<3.9
 gunicorn>=23.0,<24
 whitenoise>=6.8,<6.9
 
+# API docs (/api/docs/)
+drf-spectacular>=0.30,<0.31
+
 # Utilities
 uuid7>=0.1,<0.2
+python-dateutil>=2.9,<3

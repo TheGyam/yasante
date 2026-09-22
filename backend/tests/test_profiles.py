@@ -80,3 +80,11 @@ def test_export_and_delete_are_hers_alone(api, make_user, make_stylist, book):
     # Bookings stay for the stylist's records, with the name taken off.
     kept = Booking.objects.get(pk=booking["id"])
     assert kept.client_name == "Deleted account"
+
+
+def test_an_account_is_only_readable_by_its_owner(api, make_user):
+    me, other = make_user(), make_user()
+    assert api(me).get(f"/api/users/{me.pk}/").json()["email"] == me.email
+    # Someone else's email and phone stay private, and a stranger's id looks like no id.
+    assert api(me).get(f"/api/users/{other.pk}/").status_code == 404
+    assert api().get(f"/api/users/{me.pk}/").status_code == 401
