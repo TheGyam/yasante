@@ -4,9 +4,9 @@ import {
   HeartPulse,
   Palette,
   ShieldCheck,
-  Sparkles,
   TrendingUp,
   type LucideIcon,
+  Scissors,
 } from 'lucide-react-native';
 import { makeStyles, space, useTheme } from '@/shared/theme';
 import type { HairGoal } from '../types';
@@ -18,7 +18,7 @@ const GOALS: readonly { value: HairGoal; label: string; icon: LucideIcon }[] = [
   { value: 'moisture', label: 'Moisture', icon: Droplets },
   { value: 'strength', label: 'Less breakage', icon: ShieldCheck },
   { value: 'color', label: 'Colour care', icon: Palette },
-  { value: 'style', label: 'New styles', icon: Sparkles },
+  { value: 'style', label: 'New styles', icon: Scissors },
 ];
 
 const useStyles = makeStyles(() => ({

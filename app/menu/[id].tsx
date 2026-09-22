@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Clock, Plus, PoundSterling, Scissors, Sparkles, Trash2, X } from 'lucide-react-native';
+import { Clock, Plus, PoundSterling, Scissors, Trash2, X, ListPlus } from 'lucide-react-native';
 import {
   DURATION_PICKS,
   OPTION_GROUPS,
@@ -280,7 +280,7 @@ export default function MenuItemScreen() {
           {!options.length && (
             <Button
               label="Start with typical prices"
-              icon={Sparkles}
+              icon={ListPlus}
               variant="secondary"
               onPress={startTypical}
               fullWidth

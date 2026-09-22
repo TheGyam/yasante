@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from '@/shared/lib/navigation';
-import { Scissors, Sparkles } from 'lucide-react-native';
+import { Scissors, Heart } from 'lucide-react-native';
 import { AuthLayout, AuthSwitch, RoleCard } from '@/features/auth';
 
 type Role = 'client' | 'stylist';
@@ -31,7 +31,7 @@ export default function JoinScreen() {
       }
     >
       <RoleCard
-        icon={Sparkles}
+        icon={Heart}
         title="I’m here for my hair"
         body="Styles for your texture, care that fits, and stylists near you."
         selected={picked === 'client'}

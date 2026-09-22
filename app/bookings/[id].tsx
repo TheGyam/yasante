@@ -17,8 +17,8 @@ import {
   MapPin,
   MessageSquareHeart,
   Scissors,
-  Sparkles,
   TriangleAlert,
+  Activity,
 } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
@@ -508,7 +508,7 @@ export default function BookingScreen() {
               <ListRow
                 title={`Week ${booking.checkInDue} check-in`}
                 subtitle="How it's holding up, in three taps"
-                icon={Sparkles}
+                icon={Activity}
                 onPress={() => router.push(`/check-in/${booking.id}`)}
                 testID="booking-check-in"
               />

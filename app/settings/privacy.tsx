@@ -4,9 +4,9 @@ import {
   BarChart3,
   Download,
   FlaskConical,
-  Sparkles,
   Trash2,
   type LucideIcon,
+  SlidersHorizontal,
 } from 'lucide-react-native';
 import { api } from '@/api';
 import { useAuth } from '@/features/auth';
@@ -30,7 +30,7 @@ const CHOICES: { purpose: ConsentPurpose; title: string; subtitle: string; icon:
     purpose: 'personalisation',
     title: 'Personalisation',
     subtitle: 'Match what you see to your hair profile',
-    icon: Sparkles,
+    icon: SlidersHorizontal,
   },
   {
     purpose: 'research',

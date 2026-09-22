@@ -1,5 +1,5 @@
 import { ScrollView } from 'react-native';
-import { ChevronDown, MapPin, Sparkles } from 'lucide-react-native';
+import { ChevronDown, MapPin, Waves } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { useUser, useUserStore } from '@/features/profile';
 import { useRouter } from '@/shared/lib/navigation';
@@ -67,7 +67,7 @@ export function LookFilterBar({ inset = true }: { inset?: boolean }) {
     >
       <Chip
         label="Hair like mine"
-        icon={Sparkles}
+        icon={Waves}
         selected={filters.hairLikeMine && !!texture}
         onPress={toggleHair}
       />

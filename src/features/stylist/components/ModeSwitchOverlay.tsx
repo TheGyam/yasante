@@ -9,7 +9,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { Scissors, Sparkles } from 'lucide-react-native';
+import { Scissors, UserRound } from 'lucide-react-native';
 import { EASE_IN_OUT, EASE_OUT, makeStyles, radius, space, spring, useTheme } from '@/shared/theme';
 import { Text } from '@/shared/ui/Text';
 import { useModeStore } from '../mode';
@@ -30,7 +30,7 @@ const LIFT = { duration: 300, easing: EASE_OUT };
 
 const COPY = {
   stylist: { icon: Scissors, title: 'Stylist mode', body: 'Requests, bookings and your page' },
-  client: { icon: Sparkles, title: 'Client mode', body: 'Styles, plans and your hair' },
+  client: { icon: UserRound, title: 'Client mode', body: 'Styles, plans and your hair' },
 } as const;
 
 const useStyles = makeStyles(t => ({

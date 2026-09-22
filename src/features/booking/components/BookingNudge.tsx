@@ -5,8 +5,8 @@ import {
   CalendarClock,
   ChevronRight,
   MessageSquareHeart,
-  Sparkles,
   type LucideIcon,
+  Activity,
 } from 'lucide-react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -74,7 +74,7 @@ function pickNudge(bookings: Booking[], waiting: SlotInterest[]): Nudge | undefi
   const checkIn = done.find(b => b.checkInDue);
   if (checkIn) {
     return {
-      icon: Sparkles,
+      icon: Activity,
       title: `How are your ${checkIn.serviceName.toLowerCase()} holding up?`,
       subtitle: `Week ${checkIn.checkInDue} · three taps`,
       href: `/check-in/${checkIn.id}`,

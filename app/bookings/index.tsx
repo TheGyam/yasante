@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { BellRing, CalendarClock, CalendarX, Sparkles, X } from 'lucide-react-native';
+import { BellRing, CalendarClock, CalendarX, X, CalendarCheck } from 'lucide-react-native';
 import {
   STATUS_LABELS,
   dayLabel,
@@ -60,7 +60,7 @@ export default function BookingsScreen() {
         key={interest.id}
         title={`A slot opened with ${interest.stylistName}`}
         subtitle={`${dayLabel(interest.openedOn)} — ask before someone else does`}
-        icon={Sparkles}
+        icon={CalendarCheck}
         iconTone="success"
         onPress={() => router.push(`/book/${interest.stylistHandle}?date=${interest.openedOn}`)}
         testID={`slot-open-${interest.id}`}

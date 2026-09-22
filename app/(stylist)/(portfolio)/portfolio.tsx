@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import Animated from 'react-native-reanimated';
-import { Images, ImagePlus, ScrollText, Sparkles } from 'lucide-react-native';
+import { Images, ImagePlus, ScrollText, LayoutGrid } from 'lucide-react-native';
 import {
   PhotoTagSheet,
   useMenu,
@@ -91,7 +91,7 @@ function PortfolioGrid() {
         <ListRow
           title="Looks"
           subtitle="Post your work where clients are looking"
-          icon={Sparkles}
+          icon={LayoutGrid}
           onPress={() => router.push('/looks')}
           testID="portfolio-looks"
         />

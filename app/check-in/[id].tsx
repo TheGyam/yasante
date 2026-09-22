@@ -8,7 +8,6 @@ import {
   Flame,
   Heart,
   Smile,
-  Sparkles,
   ThumbsDown,
   ThumbsUp,
   Wind,
@@ -39,7 +38,7 @@ const QUESTIONS: {
     key: 'holding',
     title: style => `How are your ${style} holding up?`,
     options: [
-      { value: 'fresh', label: 'Still fresh', icon: Sparkles },
+      { value: 'fresh', label: 'Still fresh', icon: Smile },
       { value: 'okay', label: 'A bit fuzzy', icon: Wind },
       { value: 'tired', label: 'Ready to come out', icon: CircleHelp },
     ],
