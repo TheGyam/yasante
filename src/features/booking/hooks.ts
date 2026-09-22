@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { bookingApi } from './api';
 import type {
@@ -36,6 +36,9 @@ export function useFreeSlots(handle: string, serviceId?: string, optionIds: stri
     queryFn: () => bookingApi.slots(handle, serviceId!, optionIds),
     enabled: !!handle && !!serviceId,
     staleTime: 30 * 1000,
+    // Changing a size keeps the times on screen while the new ones load, so nothing
+    // jumps out from under a finger that's about to tap.
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -64,10 +67,13 @@ function useRefresh() {
 
 export function useRequestBooking() {
   const onSuccess = useRefresh();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (draft: BookingDraft) => bookingApi.request(draft),
     onSuccess: booking => {
       track('submit_booking', { serviceId: booking.serviceId, stylistId: booking.stylistId });
+      // Asking clears her wait for this stylist, and the "a slot opened" card with it.
+      queryClient.invalidateQueries({ queryKey: [SLOTS] });
       return onSuccess();
     },
   });

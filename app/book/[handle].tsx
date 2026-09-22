@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { BellRing, CalendarClock, Scissors } from 'lucide-react-native';
+import { BellRing, CalendarClock, Circle, CircleCheck, Scissors } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
 import { SlotPicker, useFreeSlots, useRequestBooking, whenLabel } from '@/features/booking';
 import {
@@ -17,7 +17,7 @@ import { POLICY_VERSION } from '@/shared/config/policies';
 import { formatMoney } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
-import { makeStyles, space } from '@/shared/theme';
+import { makeStyles, space, useTheme } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
 import { Chip } from '@/shared/ui/Chip';
@@ -47,6 +47,7 @@ const useStyles = makeStyles(() => ({
  */
 export default function RequestBookingScreen() {
   const styles = useStyles();
+  const theme = useTheme();
   const router = useRouter();
   // "Book this look" arrives with a service; an opened slot arrives with its day.
   const {
@@ -128,6 +129,18 @@ export default function RequestBookingScreen() {
         ? Math.round((quote.price * (profile.policies.depositAmount ?? 0)) / 100)
         : (profile.policies.depositAmount ?? 0);
 
+  // The button stays off until everything's there; say what's left, so it never
+  // just looks broken.
+  const missing = !service
+    ? 'Pick a service to send a request.'
+    : !quote?.complete
+      ? `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')}.`
+      : !time
+        ? 'Pick a time and she has 48 hours to reply.'
+        : !accepted
+          ? 'Tick her terms above to send.'
+          : undefined;
+
   return (
     <Screen title={`Book ${profile.displayName}`} modal keyboard testID="booking-request">
       <View style={styles.body}>
@@ -144,9 +157,22 @@ export default function RequestBookingScreen() {
                 value={formatPrice(item)}
                 icon={Scissors}
                 iconTone={serviceId === item.id ? 'accent' : 'neutral'}
+                // A choice, not a link: a tick where a chevron would promise another page.
+                trailing={
+                  serviceId === item.id ? (
+                    <CircleCheck size={20} color={theme.colors.accent} strokeWidth={2.2} />
+                  ) : (
+                    <Circle size={20} color={theme.colors.text.tertiary} strokeWidth={1.8} />
+                  )
+                }
+                haptic="selection"
+                accessibilityLabel={`${item.name}${serviceId === item.id ? ', chosen' : ''}`}
                 onPress={() => {
+                  if (item.id === serviceId) return;
                   setServiceId(item.id);
                   setChosen({});
+                  // A time picked for another service may not fit this one.
+                  setTime(undefined);
                 }}
                 testID={`service-${item.id}`}
               />
@@ -218,6 +244,7 @@ export default function RequestBookingScreen() {
             <SlotPicker
               slots={slots.data}
               loading={slots.isLoading}
+              refreshing={slots.isPlaceholderData}
               value={time}
               onChange={setTime}
               initialDay={slotDay}
@@ -237,6 +264,9 @@ export default function RequestBookingScreen() {
         <Section footer="She'll know not to order hair for you.">
           <ListRow
             title="I'm bringing my own hair"
+            // The whole row, not just the switch: a small target is the one people miss.
+            onPress={() => setOwnHair(on => !on)}
+            haptic="selection"
             trailing={
               <Toggle
                 value={ownHair}
@@ -267,17 +297,16 @@ export default function RequestBookingScreen() {
           <Button
             label="Send request"
             onPress={send}
-            disabled={!service || !quote?.complete || !accepted || !time}
+            disabled={!!missing}
             loading={request.isPending}
             fullWidth
             testID="booking-send"
           />
           <Text variant="caption" tone="tertiary" align="center">
-            {user?.phoneVerified
-              ? time
-                ? `${whenLabel(time)}. She has 48 hours to reply.`
-                : 'Pick a time and she has 48 hours to reply.'
-              : 'You’ll verify your mobile number before this can be sent.'}
+            {missing ??
+              (user?.phoneVerified
+                ? `${whenLabel(time!)}. She has 48 hours to reply.`
+                : 'You’ll verify your mobile number before this can be sent.')}
           </Text>
         </View>
       </View>

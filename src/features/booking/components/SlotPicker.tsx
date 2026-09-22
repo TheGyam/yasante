@@ -26,6 +26,7 @@ const useStyles = makeStyles(t => ({
   part: { gap: space.sm },
   times: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   skeletons: { flexDirection: 'row', gap: space.sm },
+  refreshing: { opacity: 0.6 },
 }));
 
 // When the day is split, so a long list of times reads at a glance.
@@ -40,6 +41,8 @@ const dayOf = (iso: string) => format(new Date(iso), 'yyyy-MM-dd');
 export interface SlotPickerProps {
   slots?: FreeSlots;
   loading?: boolean;
+  /** Showing the last times while new ones load: dimmed, still tappable. */
+  refreshing?: boolean;
   /** The chosen start time, as ISO. */
   value?: string;
   onChange: (iso: string) => void;
@@ -57,6 +60,7 @@ export interface SlotPickerProps {
 export function SlotPicker({
   slots,
   loading,
+  refreshing,
   value,
   onChange,
   initialDay,
@@ -103,7 +107,7 @@ export function SlotPicker({
   const day = days.find(d => d.date === picked) ?? days[0];
 
   return (
-    <View style={styles.body}>
+    <View style={[styles.body, refreshing && styles.refreshing]}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
