@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import {
+  Bookmark,
   BookmarkPlus,
   CalendarPlus,
   Lock,
@@ -219,6 +220,34 @@ export const LookCard = memo(function LookCard({
             </Text>
           )}
         </PressableScale>
+        {/* How many people saved it — and a filled mark if you're one of them. */}
+        {look.visibility !== 'private' && (
+          <PressableScale
+            onPress={onSave ? () => onSave(look) : undefined}
+            disabled={!onSave}
+            scaleTo={0.92}
+            accessibilityLabel={`Saved by ${look.saveCount ?? 0} ${look.saveCount === 1 ? 'person' : 'people'}${onSave ? '. Save to a collection' : ''}`}
+            style={styles.action}
+          >
+            <Bookmark
+              size={20}
+              color={look.saved ? theme.colors.accent : theme.colors.text.secondary}
+              fill={look.saved ? theme.colors.accent : 'transparent'}
+              strokeWidth={2}
+            />
+            {!!look.saveCount && (
+              <Text
+                variant="callout"
+                style={{
+                  color: look.saved ? theme.colors.accent : theme.colors.text.secondary,
+                  fontVariant: ['tabular-nums'],
+                }}
+              >
+                {look.saveCount}
+              </Text>
+            )}
+          </PressableScale>
+        )}
         {/* A private look has nobody to share with. */}
         {look.visibility !== 'private' && (
           <PressableScale

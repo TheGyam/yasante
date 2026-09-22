@@ -855,6 +855,12 @@ for (const look of db.looks) {
 // Oldest first, as the store keeps them.
 db.comments.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
+// Comment hearts: most get a few, a thoughtful one a lot.
+for (const comment of db.comments) {
+  const n = comment.body.length > 120 ? int(4, 40) : chance(0.5) ? int(1, 12) : 0;
+  if (n) db.commentLikes.set(comment.id, new Set(sample(EVERYONE, n)));
+}
+
 // Efua has liked a good share of the feed.
 for (const look of sample(
   db.looks.filter(l => l.authorId !== 'acc_client'),
@@ -887,8 +893,13 @@ db.collections.set('acc_client', [
   collection('col_next', 'Next appointment', 4, true),
   collection('col_locs', 'Maybe locs one day', 9),
 ]);
-for (const id of sample(CLIENTS, 20)) {
-  db.collections.set(id, [collection(`col_${id}_1`, 'Saved', int(3, 12))]);
+// Nearly everyone saves: that's what gives a look its save count.
+for (const id of [...CLIENTS, ...STYLISTS.map(st => st.id)]) {
+  if (id === 'acc_client' || chance(0.15)) continue;
+  db.collections.set(id, [
+    collection(`col_${id}_1`, 'Saved', int(4, 25)),
+    ...(chance(0.4) ? [collection(`col_${id}_2`, 'Next appointment', int(2, 8))] : []),
+  ]);
 }
 
 db.shelves.set(

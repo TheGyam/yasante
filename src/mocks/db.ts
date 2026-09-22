@@ -253,6 +253,9 @@ export const db = {
     createdAt: string;
   }[],
 
+  /** Who has liked each comment. */
+  commentLikes: new Map<string, Set<string>>(),
+
   /** A client's collections, with their items. Keyed by account. */
   collections: new Map<
     string,

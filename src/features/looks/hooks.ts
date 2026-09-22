@@ -256,6 +256,35 @@ export function useAddComment(lookId: string) {
   });
 }
 
+/**
+ * A comment's heart answers on the spot, wherever that comment is cached — in the
+ * threads or an open thread's replies — and goes back if the server says no.
+ */
+export function useToggleCommentLike() {
+  const queryClient = useQueryClient();
+  const patch = (id: string, liked: boolean) =>
+    queryClient.setQueriesData<CommentPages>({ queryKey: [COMMENTS] }, data =>
+      data && 'pages' in data
+        ? {
+            ...data,
+            pages: data.pages.map(page => ({
+              ...page,
+              data: page.data.map(c =>
+                c.id === id && c.liked !== liked
+                  ? { ...c, liked, likeCount: Math.max(0, c.likeCount + (liked ? 1 : -1)) }
+                  : c
+              ),
+            })),
+          }
+        : data
+    );
+  return useMutation({
+    mutationFn: ({ id, liked }: { id: string; liked: boolean }) => looksApi.likeComment(id, liked),
+    onMutate: ({ id, liked }) => patch(id, liked),
+    onError: (_e, { id, liked }) => patch(id, !liked),
+  });
+}
+
 export function useRemoveComment(lookId: string) {
   const queryClient = useQueryClient();
   return useMutation({

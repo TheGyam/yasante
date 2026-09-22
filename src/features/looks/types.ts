@@ -38,6 +38,10 @@ export interface Look {
   likeCount: number;
   liked: boolean;
   commentCount: number;
+  /** How many people have it in a collection — the quietest signal someone wants it. */
+  saveCount?: number;
+  /** Whether you have it in one of yours. */
+  saved?: boolean;
   createdAt: string;
   /** True on your own looks: you can take one down, but not report it. */
   mine?: boolean;
@@ -86,6 +90,8 @@ export interface LookComment {
   replyToName?: string;
   /** On a top-level comment: how many replies its thread has. */
   replyCount?: number;
+  likeCount: number;
+  liked: boolean;
 }
 
 export interface CommentsPage {

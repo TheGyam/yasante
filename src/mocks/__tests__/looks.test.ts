@@ -170,3 +170,30 @@ describe('a guest', () => {
     ).toThrow(MockError);
   });
 });
+
+describe('comment likes and saves', () => {
+  it('count a heart once per person and take it back', () => {
+    const [comment] = call('get', '/api/looks/look_seed_1/comments/', CLIENT).data;
+    call('post', `/api/comments/${comment.id}/like/`, CLIENT);
+    call('post', `/api/comments/${comment.id}/like/`, CLIENT);
+    let again = call('get', '/api/looks/look_seed_1/comments/', CLIENT).data[0];
+    expect(again).toMatchObject({ liked: true, likeCount: comment.likeCount + 1 });
+    call('delete', `/api/comments/${comment.id}/like/`, CLIENT);
+    again = call('get', '/api/looks/look_seed_1/comments/', CLIENT).data[0];
+    expect(again).toMatchObject({ liked: false, likeCount: comment.likeCount });
+  });
+
+  it('count each person who saved a look once, however many collections', () => {
+    const item = { id: 'x', kind: 'look', refId: 'look_seed_2', addedAt: '' };
+    db.collections.set('acc_ama', [
+      { id: 'a1', name: 'A', isPrivate: false, createdAt: '', items: [item] },
+      { id: 'a2', name: 'B', isPrivate: false, createdAt: '', items: [item] },
+    ]);
+    expect(call('get', '/api/looks/look_seed_2/', CLIENT)).toMatchObject({
+      saveCount: 1,
+      saved: false,
+    });
+    expect(call('get', '/api/looks/look_seed_2/', 'acc_ama')).toMatchObject({ saved: true });
+    db.collections.delete('acc_ama');
+  });
+});
