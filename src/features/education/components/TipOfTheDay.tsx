@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { Sparkles } from 'lucide-react-native';
+import { Lightbulb } from 'lucide-react-native';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Card } from '@/shared/ui/Card';
 import { Text } from '@/shared/ui/Text';
@@ -25,7 +25,7 @@ export function TipOfTheDay() {
     <Card>
       <View style={styles.header}>
         <View style={styles.well}>
-          <Sparkles size={16} color={theme.colors.gold} strokeWidth={2.2} />
+          <Lightbulb size={16} color={theme.colors.gold} strokeWidth={2.2} />
         </View>
         <Text variant="overline" tone="tertiary">
           Tip of the day

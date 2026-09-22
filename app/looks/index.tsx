@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
-import { Camera, Sparkles, WifiOff } from 'lucide-react-native';
+import { WifiOff, SearchX, Images, Plus } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import {
   LookCard,
@@ -21,7 +21,7 @@ import {
 } from '@/features/looks';
 import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, space, timing, useTheme } from '@/shared/theme';
-import { Button } from '@/shared/ui/Button';
+import { IconButton } from '@/shared/ui/IconButton';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { useContentInsets } from '@/shared/ui/layout';
 import { Screen, ScreenTitle, useScreenScrollHandler } from '@/shared/ui/Screen';
@@ -44,8 +44,27 @@ const useStyles = makeStyles(() => ({
 }));
 
 export default function LooksScreen() {
+  const router = useRouter();
+  const { user } = useAuth();
   return (
-    <Screen title="Looks" back scroll="list" testID="looks-screen">
+    <Screen
+      title="Looks"
+      back
+      scroll="list"
+      testID="looks-screen"
+      headerRight={
+        user ? (
+          <IconButton
+            icon={Plus}
+            variant="accent"
+            accessibilityLabel="Post a look"
+            size={36}
+            onPress={() => router.push('/looks/new')}
+            testID="looks-post"
+          />
+        ) : undefined
+      }
+    >
       <LooksFeed />
     </Screen>
   );
@@ -54,13 +73,11 @@ export default function LooksScreen() {
 function LooksFeed() {
   const styles = useStyles();
   const theme = useTheme();
-  const router = useRouter();
   const insets = useContentInsets();
   const onScroll = useScreenScrollHandler();
   const actions = useLookActions();
   const listRef = useRef<FlashListRef<Look>>(null);
 
-  const { user } = useAuth();
   const { query, filtered } = useFeedQuery();
   const clearFilters = useLookFilters(s => s.clear);
   const feed = useLooks(query);
@@ -107,16 +124,6 @@ function LooksFeed() {
     <View style={styles.header}>
       <ScreenTitle title="Looks" subtitle="Real work, by the people who did it" />
       <LookFilterBar />
-      {!!user && (
-        <Button
-          label="Post a look"
-          icon={Camera}
-          variant="secondary"
-          onPress={() => router.push('/looks/new')}
-          fullWidth
-          testID="looks-post"
-        />
-      )}
       {feed.isLoading && (
         <View style={styles.skeletons}>
           <Skeleton height={320} />
@@ -145,7 +152,7 @@ function LooksFeed() {
         ) : emptyFiltered ? (
           <View style={styles.fallback}>
             <EmptyState
-              icon={Sparkles}
+              icon={SearchX}
               title="Nothing matches yet"
               message="Looks are added every day. Here’s the latest in the meantime."
               actionLabel="Clear filters"
@@ -162,7 +169,7 @@ function LooksFeed() {
           </View>
         ) : (
           <EmptyState
-            icon={Sparkles}
+            icon={Images}
             title="No looks yet"
             message="When people post their hair, it shows up here."
           />

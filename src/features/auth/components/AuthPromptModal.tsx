@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
-import { Bookmark, CalendarHeart, Sparkles, UserRound, type LucideIcon } from 'lucide-react-native';
+import { Bookmark, CalendarHeart, UserRound, type LucideIcon, UserPlus } from 'lucide-react-native';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { Sheet } from '@/shared/ui/Sheet';
@@ -31,7 +31,7 @@ const COPY: Record<AuthPromptFeature, { icon: LucideIcon; title: string; body: s
     body: 'Create a free account to track your progress and tailor what you see.',
   },
   general: {
-    icon: Sparkles,
+    icon: UserPlus,
     title: 'Join Yasante',
     body: 'Create a free account to plan, save and track everything about your hair.',
   },

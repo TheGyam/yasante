@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
-import { Camera, Search, Sparkles, WifiOff } from 'lucide-react-native';
+import { Images, Plus, Search, SearchX, WifiOff } from 'lucide-react-native';
 import { AuthPromptModal, GreetingBanner, useAuth } from '@/features/auth';
 import { BookingNudge } from '@/features/booking';
 import { TipOfTheDay } from '@/features/education';
@@ -25,7 +25,6 @@ import {
 } from '@/features/looks';
 import { useUser } from '@/features/profile';
 import { GUTTER, makeStyles, radius, space, timing, useTheme } from '@/shared/theme';
-import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
 import { useContentInsets } from '@/shared/ui/layout';
@@ -56,20 +55,39 @@ const useStyles = makeStyles(() => ({
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  // One place for the "you need an account" prompt: posting from the bar, or
+  // liking and saving in the grid.
+  const [authPrompt, setAuthPrompt] = useState(false);
   return (
     <Screen
       scroll="list"
       testID="home-screen"
       headerRight={
-        <IconButton
-          icon={Search}
-          accessibilityLabel="Search"
-          size={36}
-          onPress={() => router.push('/search')}
-        />
+        <>
+          <IconButton
+            icon={Search}
+            accessibilityLabel="Search"
+            size={36}
+            onPress={() => router.push('/search')}
+          />
+          <IconButton
+            icon={Plus}
+            variant="accent"
+            accessibilityLabel="Post a look"
+            size={36}
+            onPress={() => (isAuthenticated ? router.push('/looks/new') : setAuthPrompt(true))}
+            testID="home-post-look"
+          />
+        </>
       }
     >
-      <HomeFeed />
+      <HomeFeed onNeedsAccount={() => setAuthPrompt(true)} />
+      <AuthPromptModal
+        visible={authPrompt}
+        onClose={() => setAuthPrompt(false)}
+        feature="favorites"
+      />
     </Screen>
   );
 }
@@ -100,7 +118,7 @@ function Dim({ opacity, children }: { opacity: SharedValue<number>; children: Re
  * Home is the looks people post: real hair, and who did it. Everything in the
  * grid was put up by someone on Yasante — a stylist's work, or a client's hair.
  */
-function HomeFeed() {
+function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
   const styles = useStyles();
   const theme = useTheme();
   const router = useRouter();
@@ -113,8 +131,7 @@ function HomeFeed() {
   const { data: user } = useUser(authUser?.id, { enabled: !!authUser?.id });
   const firstName = user?.name?.split(' ')[0];
 
-  const [authPrompt, setAuthPrompt] = useState(false);
-  const actions = useLookActions({ onNeedsAccount: () => setAuthPrompt(true) });
+  const actions = useLookActions({ onNeedsAccount });
 
   const { query, filtered } = useFeedQuery();
   const clearFilters = useLookFilters(s => s.clear);
@@ -161,14 +178,6 @@ function HomeFeed() {
       <View style={styles.feedHead}>
         <SectionHeader title="Looks" />
         <LookFilterBar />
-        <Button
-          label="Post a look"
-          icon={Camera}
-          variant="secondary"
-          onPress={() => (isAuthenticated ? router.push('/looks/new') : setAuthPrompt(true))}
-          fullWidth
-          testID="home-post-look"
-        />
       </View>
       {feed.isLoading && <FeedSkeleton />}
     </View>
@@ -196,7 +205,7 @@ function HomeFeed() {
           ) : emptyFiltered ? (
             <View style={styles.fallback}>
               <EmptyState
-                icon={Sparkles}
+                icon={SearchX}
                 title="Nothing matches yet"
                 message="Looks are added every day. Here’s the latest in the meantime."
                 actionLabel="Clear filters"
@@ -217,7 +226,7 @@ function HomeFeed() {
             </View>
           ) : (
             <EmptyState
-              icon={Sparkles}
+              icon={Images}
               title="No looks yet"
               message="When people post their hair, it shows up here."
             />
@@ -249,11 +258,6 @@ function HomeFeed() {
           paddingBottom: insets.bottom,
           paddingHorizontal: GUTTER - CARD_INSET,
         }}
-      />
-      <AuthPromptModal
-        visible={authPrompt}
-        onClose={() => setAuthPrompt(false)}
-        feature="favorites"
       />
     </>
   );

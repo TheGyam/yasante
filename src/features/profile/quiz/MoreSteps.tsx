@@ -9,10 +9,10 @@ import {
   Palette,
   PoundSterling,
   Snowflake,
-  Sparkles,
   Sun,
   Wind,
   type LucideIcon,
+  Waves,
 } from 'lucide-react-native';
 import { makeStyles, space, useTheme } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
@@ -112,7 +112,7 @@ const CHEMICALS: readonly {
   icon: LucideIcon;
 }[] = [
   { value: 'relaxer', label: 'Relaxer', hint: 'Permanent straightening', icon: Wind },
-  { value: 'texturiser', label: 'Texturiser', hint: 'Loosened curls', icon: Sparkles },
+  { value: 'texturiser', label: 'Texturiser', hint: 'Loosened curls', icon: Waves },
   { value: 'colour', label: 'Colour', hint: 'Dye, not bleach', icon: Palette },
   { value: 'bleach', label: 'Bleach', hint: 'Lightened', icon: FlaskConical },
   { value: 'keratin', label: 'Keratin', hint: 'Smoothing treatment', icon: Droplets },

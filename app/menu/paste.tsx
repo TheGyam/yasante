@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from 'react';
 import { TextInput, View } from 'react-native';
-import { Check, Sparkles } from 'lucide-react-native';
+import { Check, Lightbulb } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
   formatDuration,
@@ -239,7 +239,7 @@ export default function PastePriceListScreen() {
           {!text && (
             <Button
               label="See how it works"
-              icon={Sparkles}
+              icon={Lightbulb}
               variant="ghost"
               size="sm"
               onPress={() => {

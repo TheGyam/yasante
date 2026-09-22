@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { CalendarHeart, Sparkles, TrendingUp, type LucideIcon } from 'lucide-react-native';
+import { CalendarHeart, TrendingUp, type LucideIcon, Waves } from 'lucide-react-native';
 import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { BrandMark } from '@/shared/ui/BrandMark';
 import { Button } from '@/shared/ui/Button';
@@ -10,7 +10,7 @@ import { Screen } from '@/shared/ui/Screen';
 import { Text } from '@/shared/ui/Text';
 
 const PROMISES: readonly { icon: LucideIcon; title: string; body: string }[] = [
-  { icon: Sparkles, title: 'Made for your texture', body: 'Care and styles matched to your hair.' },
+  { icon: Waves, title: 'Made for your texture', body: 'Care and styles matched to your hair.' },
   {
     icon: CalendarHeart,
     title: 'Plan every style',

@@ -136,7 +136,11 @@ export const inSentence = (label: string) =>
 export const serviceLine = (booking: Pick<Booking, 'serviceName' | 'optionLabels'>) =>
   [booking.serviceName, ...(booking.optionLabels ?? [])].join(' · ');
 
-const icsTime = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+const icsTime = (date: Date) =>
+  date
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}/, '');
 
 /**
  * A link that adds the appointment to her calendar. The server's own .ics link
