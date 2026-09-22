@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowUp, ImageOff, MoreHorizontal, X } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
 import {
+  LikeButton,
   LookCard,
   postedLabel,
   useAddComment,
@@ -15,6 +16,7 @@ import {
   useLook,
   useLookActions,
   useReplies,
+  useToggleCommentLike,
   type LookComment,
 } from '@/features/looks';
 import { haptics } from '@/shared/lib/haptics';
@@ -49,7 +51,7 @@ const useStyles = makeStyles(t => ({
   comment: { flexDirection: 'row', gap: space.sm, paddingVertical: space.sm },
   replies: { marginLeft: REPLY_INDENT },
   commentText: { flex: 1, gap: 2 },
-  commentActions: { flexDirection: 'row', gap: space.lg, marginTop: 2 },
+  commentActions: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginTop: 2 },
   link: { paddingVertical: space.xs },
   toggle: {
     flexDirection: 'row',
@@ -128,6 +130,7 @@ export default function LookScreen() {
 interface CommentHandlers {
   onReply: (comment: LookComment) => void;
   onOptions: (comment: LookComment) => void;
+  onLike: (comment: LookComment) => void;
 }
 
 /** One comment or reply: who, when, what they said, and a way to answer it. */
@@ -135,6 +138,7 @@ const CommentRow = memo(function CommentRow({
   comment,
   onReply,
   onOptions,
+  onLike,
 }: { comment: LookComment } & CommentHandlers) {
   const styles = useStyles();
   const theme = useTheme();
@@ -174,14 +178,22 @@ const CommentRow = memo(function CommentRow({
           >
             Reply
           </Text>
+          <IconButton
+            icon={MoreHorizontal}
+            variant="plain"
+            size={24}
+            accessibilityLabel={`Options for ${comment.authorName}'s comment`}
+            onPress={() => onOptions(comment)}
+          />
         </View>
       </View>
-      <IconButton
-        icon={MoreHorizontal}
-        variant="plain"
-        size={30}
-        accessibilityLabel={`Options for ${comment.authorName}'s comment`}
-        onPress={() => onOptions(comment)}
+      {/* The heart sits on the right, where thumbs expect it, with its count. */}
+      <LikeButton
+        id={comment.id}
+        liked={comment.liked}
+        count={comment.likeCount}
+        size={15}
+        onToggle={() => onLike(comment)}
       />
     </View>
   );
@@ -196,6 +208,7 @@ function Thread({
   comment,
   onReply,
   onOptions,
+  onLike,
 }: { lookId: string; comment: LookComment } & CommentHandlers) {
   const styles = useStyles();
   const theme = useTheme();
@@ -216,11 +229,17 @@ function Thread({
 
   return (
     <View style={styles.thread}>
-      <CommentRow comment={comment} onReply={answer} onOptions={onOptions} />
+      <CommentRow comment={comment} onReply={answer} onOptions={onOptions} onLike={onLike} />
       {open && (
         <View style={styles.replies}>
           {loaded.map(reply => (
-            <CommentRow key={reply.id} comment={reply} onReply={answer} onOptions={onOptions} />
+            <CommentRow
+              key={reply.id}
+              comment={reply}
+              onReply={answer}
+              onOptions={onOptions}
+              onLike={onLike}
+            />
           ))}
         </View>
       )}
@@ -285,11 +304,19 @@ function LookThread({ id }: { id: string }) {
       isAuthenticated ? setReplyingTo(comment) : router.push('/auth/join'),
     [isAuthenticated, router]
   );
+  const { mutate: likeComment } = useToggleCommentLike();
+  const onLike = useCallback(
+    (comment: LookComment) =>
+      isAuthenticated
+        ? likeComment({ id: comment.id, liked: !comment.liked })
+        : router.push('/auth/join'),
+    [isAuthenticated, likeComment, router]
+  );
   const renderItem = useCallback(
     ({ item }: { item: LookComment }) => (
-      <Thread lookId={id} comment={item} onReply={onReply} onOptions={onOptions} />
+      <Thread lookId={id} comment={item} onReply={onReply} onOptions={onOptions} onLike={onLike} />
     ),
-    [id, onReply, onOptions]
+    [id, onReply, onOptions, onLike]
   );
 
   if (!look) return null;

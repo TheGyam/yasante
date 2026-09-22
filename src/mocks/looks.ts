@@ -38,6 +38,24 @@ function person(accountId: string) {
   };
 }
 
+/** How many people have it in any of their collections, and whether this account does. */
+function savesOf(lookId: string, accountId: string) {
+  let count = 0;
+  let saved = false;
+  for (const [owner, collections] of db.collections) {
+    if (collections.some(c => c.items.some(i => i.kind === 'look' && i.refId === lookId))) {
+      count++;
+      if (owner === accountId) saved = true;
+    }
+  }
+  return { count, saved };
+}
+
+const commentLikesOf = (commentId: string) => {
+  if (!db.commentLikes.has(commentId)) db.commentLikes.set(commentId, new Set());
+  return db.commentLikes.get(commentId)!;
+};
+
 const likesOf = (lookId: string) => {
   if (!db.likes.has(lookId)) db.likes.set(lookId, new Set());
   return db.likes.get(lookId)!;
@@ -46,6 +64,7 @@ const likesOf = (lookId: string) => {
 function present(look: StoredLook, accountId: string) {
   const author = person(look.authorId);
   const stylist = look.stylistId ? person(look.stylistId) : undefined;
+  const saves = savesOf(look.id, accountId);
   return {
     ...look,
     // The media pipeline's grid size. Seeded photos can be asked for smaller; an
@@ -69,6 +88,8 @@ function present(look: StoredLook, accountId: string) {
     likeCount: likesOf(look.id).size,
     liked: likesOf(look.id).has(accountId),
     commentCount: db.comments.filter(c => c.lookId === look.id).length,
+    saveCount: saves.count,
+    saved: saves.saved,
     mine: look.authorId === accountId,
   };
 }
@@ -89,6 +110,8 @@ function presentComment(comment: StoredComment, accountId: string, blocked: Set<
     replyCount: comment.parentId
       ? undefined
       : db.comments.filter(c => c.parentId === comment.id && !blocked.has(c.authorId)).length,
+    likeCount: commentLikesOf(comment.id).size,
+    liked: commentLikesOf(comment.id).has(accountId),
     mine: comment.authorId === accountId,
   };
 }
@@ -318,6 +341,21 @@ defineMocks({
     if (comment.authorId !== accountId) throw new MockError(403, 'That comment isn’t yours');
     // A thread goes with its first comment. A reply goes alone; anything answering it stays.
     db.comments = db.comments.filter(c => c.id !== comment.id && c.parentId !== comment.id);
+    return null;
+  },
+
+  'POST /api/comments/:id/like/': request => {
+    const accountId = requireAccount(request);
+    const comment = db.comments.find(c => c.id === request.params.id);
+    if (!comment) throw new MockError(404, 'That comment is gone');
+    visibleLook(comment.lookId, accountId);
+    commentLikesOf(comment.id).add(accountId);
+    return null;
+  },
+
+  'DELETE /api/comments/:id/like/': request => {
+    const accountId = requireAccount(request);
+    commentLikesOf(String(request.params.id)).delete(accountId);
     return null;
   },
 

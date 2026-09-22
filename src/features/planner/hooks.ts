@@ -44,6 +44,8 @@ function useRefreshCollections() {
   return (id?: string) => {
     queryClient.invalidateQueries({ queryKey: keys.collections });
     if (id) queryClient.invalidateQueries({ queryKey: keys.items(id) });
+    // A look shows how many people saved it; the open one re-reads its count.
+    queryClient.invalidateQueries({ queryKey: ['looks', 'one'] });
   };
 }
 

@@ -59,6 +59,12 @@ export const looksApi = {
   comment: async (id: string, body: string, replyTo?: string) =>
     (await apiClient.post<LookComment>(`/api/looks/${id}/comments/`, { body, replyTo })).data,
 
+  /** POST / DELETE /api/comments/:id/like/ */
+  likeComment: async (id: string, liked: boolean) => {
+    if (liked) await apiClient.post(`/api/comments/${id}/like/`);
+    else await apiClient.delete(`/api/comments/${id}/like/`);
+  },
+
   /** DELETE /api/comments/:id/ — your own comment only. */
   removeComment: async (id: string) => {
     await apiClient.delete(`/api/comments/${id}/`);
