@@ -106,20 +106,29 @@ function RootNavigator() {
           <Stack.Screen name="onboarding/quiz" />
         </Stack.Protected>
 
-        <Stack.Protected guard={entered && mode === 'client'}>
+        {/* Open to everyone, so a shared link works before any sign-up or quiz. */}
+        <Stack.Protected guard={mode === 'client'}>
           <Stack.Screen name="(client)" options={fade} />
         </Stack.Protected>
         <Stack.Protected guard={entered && mode === 'stylist'}>
           <Stack.Screen name="(stylist)" options={fade} />
         </Stack.Protected>
 
-        <Stack.Protected guard={entered}>
-          <Stack.Screen name="settings/index" />
-          <Stack.Screen name="settings/privacy" />
-          <Stack.Screen name="settings/faqs" />
+        {/* Anyone can look around: looks, stylists' pages, settings. */}
+        <Stack.Screen name="settings/index" />
+        <Stack.Screen name="settings/privacy" />
+        <Stack.Screen name="settings/faqs" />
+        <Stack.Screen name="hair-profile/index" options={modal} />
+        <Stack.Screen name="hair-profile/[section]" options={modal} />
+        <Stack.Screen name="looks/index" />
+        <Stack.Screen name="looks/area" options={modal} />
+        <Stack.Screen name="looks/[id]" />
+        <Stack.Screen name="stylist/[handle]" />
+
+        {/* Doing anything needs an account; a guest's tap is sent to sign up instead
+            (see the account gate in AuthContext). */}
+        <Stack.Protected guard={isAuthenticated}>
           <Stack.Screen name="settings/report" />
-          <Stack.Screen name="hair-profile/index" options={modal} />
-          <Stack.Screen name="hair-profile/[section]" options={modal} />
           <Stack.Screen name="stylist-setup" options={modal} />
           <Stack.Screen name="availability" options={modal} />
           <Stack.Screen name="payment-methods" options={modal} />
@@ -128,13 +137,9 @@ function RootNavigator() {
           <Stack.Screen name="menu/paste" options={modal} />
           <Stack.Screen name="menu/[id]" options={modal} />
           <Stack.Screen name="portfolio/import" options={modal} />
-          <Stack.Screen name="looks/index" />
           <Stack.Screen name="looks/new" options={modal} />
           <Stack.Screen name="looks/options" options={modal} />
-          <Stack.Screen name="looks/area" options={modal} />
           <Stack.Screen name="looks/mine" />
-          <Stack.Screen name="looks/[id]" />
-          <Stack.Screen name="stylist/[handle]" />
           <Stack.Screen name="book/[handle]" options={modal} />
           <Stack.Screen name="bookings/index" />
           <Stack.Screen name="bookings/[id]" />

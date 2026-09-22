@@ -1,5 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { Platform } from 'react-native';
+import { apiClient } from '@/shared/lib/api/client';
 
 export interface ImagePickerResult {
   uri: string;
@@ -34,7 +36,7 @@ export async function pickImageFromLibrary(): Promise<ImagePickerResult | null> 
   }
 
   const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'],
     allowsEditing: true,
     aspect: [4, 3],
     quality: 0.8,
@@ -64,7 +66,7 @@ export async function pickImagesFromLibrary(limit = 20): Promise<ImagePickerResu
   }
 
   const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'],
     allowsMultipleSelection: true,
     selectionLimit: limit,
     quality: 0.8,
@@ -114,15 +116,14 @@ export async function takePhoto(): Promise<ImagePickerResult | null> {
 export async function compressImage(
   uri: string,
   maxWidth: number = 1200,
-  maxHeight: number = 1200,
   quality: number = 0.8
 ): Promise<string> {
   try {
-    const manipulated = await manipulateAsync(
-      uri,
-      [{ resize: { width: maxWidth, height: maxHeight } }],
-      { compress: quality, format: SaveFormat.JPEG }
-    );
+    // Width only: giving both would stretch every photo into a square.
+    const manipulated = await manipulateAsync(uri, [{ resize: { width: maxWidth } }], {
+      compress: quality,
+      format: SaveFormat.JPEG,
+    });
     return manipulated.uri;
   } catch (error) {
     console.error('Error compressing image:', error);
@@ -130,19 +131,32 @@ export async function compressImage(
   }
 }
 
+export interface UploadedPhoto {
+  uri: string;
+  /** A ~400px-wide copy for grids. */
+  thumbUri?: string;
+  /** Width ÷ height, so tiles are sized before the photo loads. */
+  photoAspect?: number;
+}
+
 /**
- * Upload image (mock implementation)
- * In production, this would upload to S3 or similar
+ * Send a photo picked on this device to the server and get back where it lives.
+ * A photo that's already online (a portfolio photo, a seeded look) is returned as
+ * it is. With the mock backend there is nowhere to send it, so the local copy stands.
  */
-export async function uploadImage(uri: string): Promise<string> {
-  // Simulate upload delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  // In production, this would:
-  // 1. Get presigned URL from backend
-  // 2. Upload to S3/CDN
-  // 3. Return the public URL
-
-  // For MVP, return a mock URL
-  return 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=600&fit=crop&q=80';
+export async function uploadImage(uri: string): Promise<UploadedPhoto> {
+  if (/^https?:\/\//.test(uri) || process.env.EXPO_PUBLIC_API_MOCKS === 'true') return { uri };
+  const form = new FormData();
+  if (Platform.OS === 'web') {
+    // On the web a picked photo is a blob: or data: URL; send the bytes themselves.
+    const blob = await (await fetch(uri)).blob();
+    form.append('file', blob, 'photo.jpg');
+  } else {
+    form.append('file', { uri, name: 'photo.jpg', type: 'image/jpeg' } as unknown as Blob);
+  }
+  const response = await apiClient.post<UploadedPhoto>('/api/uploads/', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60_000,
+  });
+  return response.data;
 }

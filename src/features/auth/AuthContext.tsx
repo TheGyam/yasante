@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useCallback, useMemo } fro
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore, AuthTokens, loadStoredTokens } from './store';
 import { setAuthBridge } from '@/shared/lib/api';
+import { setAccountGate } from '@/shared/lib/navigation';
+import { guestRedirect } from './accountGate';
 import { User } from '@/features/profile';
 import { queryClient } from '@/queryClient';
 import { api } from '@/api';
@@ -16,6 +18,32 @@ interface AuthContextType {
   refreshToken: () => Promise<boolean>;
 }
 
+// Give the HTTP client its tokens without shared/ depending on this feature. Set at
+// load, not in an effect: screens' effects run before this provider's and fetch at once.
+setAuthBridge({
+  ready: loadStoredTokens,
+  getAccessToken: () => useAuthStore.getState().tokens?.accessToken,
+  getRefreshToken: () => useAuthStore.getState().tokens?.refreshToken,
+  getUserId: () => useAuthStore.getState().user?.id,
+  setTokens: ({ accessToken, refreshToken, expiresAt }) => {
+    const current = useAuthStore.getState().tokens;
+    if (!current) return;
+    useAuthStore.getState().setTokens({
+      ...current,
+      accessToken,
+      refreshToken: refreshToken ?? current.refreshToken,
+      expiresAt,
+    });
+  },
+  refresh: async refreshToken => {
+    const response = await api.auth.refreshToken(refreshToken);
+    return response.data;
+  },
+  logout: () => useAuthStore.getState().logout(),
+});
+
+setAccountGate(href => (useAuthStore.getState().isAuthenticated ? undefined : guestRedirect(href)));
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -27,7 +55,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuth,
     setUser,
     logout: logoutStore,
-    setLoading,
   } = useAuthStore(
     // Only what this provider uses: every screen reads the context, so a change to
     // anything else in the store must not re-render the app.
@@ -39,42 +66,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuth: s.setAuth,
       setUser: s.setUser,
       logout: s.logout,
-      setLoading: s.setLoading,
     }))
   );
 
-  // Give the HTTP client its tokens without shared/ depending on this feature.
-  useEffect(() => {
-    setAuthBridge({
-      getAccessToken: () => useAuthStore.getState().tokens?.accessToken,
-      getRefreshToken: () => useAuthStore.getState().tokens?.refreshToken,
-      getUserId: () => useAuthStore.getState().user?.id,
-      setTokens: ({ accessToken, expiresAt }) => {
-        const current = useAuthStore.getState().tokens;
-        if (!current) return;
-        useAuthStore.getState().setTokens({ ...current, accessToken, expiresAt });
-      },
-      refresh: async refreshToken => {
-        const response = await api.auth.refreshToken(refreshToken);
-        return response.data;
-      },
-      logout: () => useAuthStore.getState().logout(),
-    });
-  }, []);
-
   // Signed-in state comes from two places: the persisted store (who) and secure storage
-  // (tokens). Stay loading until both are back, so a cold start never looks signed out.
+  // (tokens). loadStoredTokens stays loading until both are back.
   useEffect(() => {
-    const hydrated = useAuthStore.persist.hasHydrated()
-      ? Promise.resolve()
-      : new Promise<void>(resolve => {
-          const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
-            unsubscribe();
-            resolve();
-          });
-        });
-    Promise.all([hydrated, loadStoredTokens()]).finally(() => setLoading(false));
-  }, [setLoading]);
+    loadStoredTokens();
+  }, []);
 
   // Check if token is expired
   const isTokenExpired = useCallback(() => {
@@ -106,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Call the API to refresh the token
       const response = await api.auth.refreshToken(tokens.refreshToken);
-      const { accessToken, expiresAt } = response.data;
+      const { accessToken, refreshToken: rotated, expiresAt } = response.data;
 
       // Convert expiresAt to timestamp if needed
       const expiresAtTimestamp =
@@ -115,7 +114,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Update tokens in store
       useAuthStore.getState().setTokens({
         accessToken,
-        refreshToken: tokens.refreshToken, // Keep the same refresh token
+        // The server revokes the old refresh token when it sends a new one.
+        refreshToken: rotated ?? tokens.refreshToken,
         expiresAt: expiresAtTimestamp,
       });
 

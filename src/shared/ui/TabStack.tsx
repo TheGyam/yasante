@@ -12,7 +12,8 @@ export function TabStack({ root, children }: { root: string; children?: ReactNod
   return (
     <Stack screenOptions={push}>
       <Stack.Screen name={root} />
-      {children}
+      {/* Never undefined: the router warns about any child that isn't a Screen. */}
+      {children ?? []}
     </Stack>
   );
 }

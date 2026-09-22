@@ -8,11 +8,15 @@ import { offlineQueue } from './offlineQueue';
  * This also removes the circular dependency the old lazy require worked around.
  */
 export interface AuthBridge {
+  /** Settles once saved tokens are back in memory; requests wait for it. */
+  ready: () => Promise<void>;
   getAccessToken: () => string | undefined;
   getRefreshToken: () => string | undefined;
   getUserId: () => string | undefined;
-  setTokens: (tokens: { accessToken: string; expiresAt: number }) => void;
-  refresh: (refreshToken: string) => Promise<{ accessToken: string; expiresAt: number | string }>;
+  setTokens: (tokens: { accessToken: string; refreshToken?: string; expiresAt: number }) => void;
+  refresh: (
+    refreshToken: string
+  ) => Promise<{ accessToken: string; refreshToken?: string; expiresAt: number | string }>;
   logout: () => void;
 }
 
@@ -37,7 +41,9 @@ export const apiClient: AxiosInstance = axios.create({
 
 // Request interceptor
 apiClient.interceptors.request.use(
-  config => {
+  async config => {
+    // Screens fetch on mount, which can beat reading the saved sign-in back.
+    await authBridge?.ready();
     // Add auth token if available
     const accessToken = authBridge?.getAccessToken();
     if (accessToken) {
@@ -117,7 +123,11 @@ apiClient.interceptors.response.use(
       const refreshToken = authBridge?.getRefreshToken();
       if (refreshToken) {
         try {
-          const { accessToken, expiresAt } = await authBridge!.refresh(refreshToken);
+          const {
+            accessToken,
+            refreshToken: rotated,
+            expiresAt,
+          } = await authBridge!.refresh(refreshToken);
 
           // Convert expiresAt string to timestamp if needed
           const expiresAtTimestamp =
@@ -125,6 +135,7 @@ apiClient.interceptors.response.use(
 
           authBridge!.setTokens({
             accessToken,
+            refreshToken: rotated,
             expiresAt: expiresAtTimestamp,
           });
 
@@ -143,7 +154,11 @@ apiClient.interceptors.response.use(
           return Promise.reject(refreshError);
         }
       } else {
-        // No refresh token, logout
+        // No refresh token: sign out, and settle everything queued behind this
+        // request. Leaving the flag set would park every later 401 forever, and
+        // anything awaiting those requests would never finish.
+        processQueue(error, null);
+        isRefreshing = false;
         authBridge?.logout();
         return Promise.reject(error);
       }

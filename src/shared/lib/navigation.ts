@@ -32,19 +32,29 @@ export function withoutThrottle<T>(run: () => T): T {
   return result;
 }
 
+/**
+ * Where a guest goes instead, if this destination needs an account. Registered by
+ * the auth feature at load, so shared/ doesn't depend on it.
+ */
+let accountGate: (href: unknown) => string | undefined = () => undefined;
+export const setAccountGate = (gate: typeof accountGate) => {
+  accountGate = gate;
+};
+const gated = <H>(href: H) => (accountGate(href) ?? href) as H;
+
 export function useRouter(): Router {
   const router = useExpoRouter();
   return useMemo(
     () => ({
       ...router,
-      push: (...args: Parameters<Router['push']>) => {
-        if (once()) router.push(...args);
+      push: (href, options) => {
+        if (once()) router.push(gated(href), options);
       },
-      navigate: (...args: Parameters<Router['navigate']>) => {
-        if (once()) router.navigate(...args);
+      navigate: (href, options) => {
+        if (once()) router.navigate(gated(href), options);
       },
-      replace: (...args: Parameters<Router['replace']>) => {
-        if (once()) router.replace(...args);
+      replace: (href, options) => {
+        if (once()) router.replace(gated(href), options);
       },
       back: () => {
         if (once()) router.back();

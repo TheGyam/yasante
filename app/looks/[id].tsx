@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { ActivityIndicator, TextInput, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { FlashList, useRecyclingState, type FlashListRef } from '@shopify/flash-list';
@@ -287,6 +288,7 @@ function LookThread({ id }: { id: string }) {
 
   const { data: look } = useLook(id);
   const thread = useComments(id);
+  const focused = useIsFocused();
   const comments = useMemo(
     () => thread.data?.pages.flatMap(page => page.data) ?? [],
     [thread.data]
@@ -354,7 +356,8 @@ function LookThread({ id }: { id: string }) {
         }
         ListFooterComponent={<ListFooter more={!!thread.hasNextPage} />}
         onEndReached={() => {
-          if (thread.hasNextPage && !thread.isFetchingNextPage) thread.fetchNextPage();
+          // A screen covered by another reports it's at the end; only the visible one loads more.
+          if (focused && thread.hasNextPage && !thread.isFetchingNextPage) thread.fetchNextPage();
         }}
         onEndReachedThreshold={FEED_LIST.onEndReachedThreshold}
         drawDistance={FEED_LIST.drawDistance}

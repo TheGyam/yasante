@@ -1,4 +1,5 @@
 import { apiClient } from '@/shared/lib/api/client';
+import { uploadImage } from '@/shared/lib/imageService';
 import type {
   MenuItem,
   MenuItemDraft,
@@ -44,12 +45,20 @@ export const stylistApi = {
     ).data,
 
   /** POST /api/stylists/ — creates her profile as a draft. */
-  create: async (draft: StylistProfileDraft) =>
-    (await apiClient.post<StylistProfile>('/api/stylists/', draft)).data,
+  create: async (draft: StylistProfileDraft) => {
+    const proofPhotoUri = draft.proofPhotoUri
+      ? (await uploadImage(draft.proofPhotoUri)).uri
+      : undefined;
+    return (await apiClient.post<StylistProfile>('/api/stylists/', { ...draft, proofPhotoUri }))
+      .data;
+  },
 
   /** PATCH /api/stylists/me/ */
-  update: async (changes: Partial<StylistProfileDraft>) =>
-    (await apiClient.patch<StylistProfile>('/api/stylists/me/', changes)).data,
+  update: async (changes: Partial<StylistProfileDraft>) => {
+    const body = { ...changes };
+    if (body.proofPhotoUri) body.proofPhotoUri = (await uploadImage(body.proofPhotoUri)).uri;
+    return (await apiClient.patch<StylistProfile>('/api/stylists/me/', body)).data;
+  },
 
   /** POST /api/stylists/me/publish/ — puts the page live. Needs a verified phone. */
   publish: async () => (await apiClient.post<StylistProfile>('/api/stylists/me/publish/')).data,
@@ -80,15 +89,24 @@ export const stylistApi = {
 
   /**
    * POST /api/stylists/me/portfolio/ — photos always arrive as a batch, even a batch
-   * of one. `uri` is a local file until the backend can take an upload.
+   * of one. Each photo is uploaded first, a few at a time.
    */
-  addPhotos: async (photos: PortfolioPhotoDraft[], postAsLooks = false) =>
-    (
+  addPhotos: async (photos: PortfolioPhotoDraft[], postAsLooks = false) => {
+    const uploaded = [];
+    for (let i = 0; i < photos.length; i += 4) {
+      const batch = photos.slice(i, i + 4);
+      const done = await Promise.all(batch.map(p => uploadImage(p.uri)));
+      uploaded.push(
+        ...batch.map((p, j) => ({ ...p, uri: done[j].uri, thumbUri: done[j].thumbUri }))
+      );
+    }
+    return (
       await apiClient.post<PortfolioPhoto[]>('/api/stylists/me/portfolio/', {
-        photos,
+        photos: uploaded,
         postAsLooks,
       })
-    ).data,
+    ).data;
+  },
 
   /** PATCH /api/stylists/me/portfolio/:id/ — re-tag a photo. */
   updatePhoto: async (id: string, changes: Partial<PortfolioPhotoDraft>) =>

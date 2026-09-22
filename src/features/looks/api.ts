@@ -1,4 +1,5 @@
 import { apiClient } from '@/shared/lib/api/client';
+import { uploadImage } from '@/shared/lib/imageService';
 import type {
   CommentsPage,
   Look,
@@ -26,7 +27,18 @@ export const looksApi = {
   get: async (id: string) => (await apiClient.get<Look>(`/api/looks/${id}/`)).data,
 
   /** POST /api/looks/ — the server fills in the author, the stylist and the tagged service. */
-  create: async (draft: LookDraft) => (await apiClient.post<Look>('/api/looks/', draft)).data,
+  create: async (draft: LookDraft) => {
+    // The photo goes up first; the look points at where it now lives.
+    const photo = await uploadImage(draft.photoUri);
+    return (
+      await apiClient.post<Look>('/api/looks/', {
+        ...draft,
+        photoUri: photo.uri,
+        thumbUri: photo.thumbUri,
+        photoAspect: photo.photoAspect,
+      })
+    ).data;
+  },
 
   /** DELETE /api/looks/:id/ — your own look only. */
   remove: async (id: string) => {

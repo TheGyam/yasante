@@ -197,7 +197,7 @@ export const authApi = {
    */
   refreshToken: async (
     refreshToken: string
-  ): Promise<ApiResponse<{ accessToken: string; expiresAt: number }>> => {
+  ): Promise<ApiResponse<{ accessToken: string; refreshToken?: string; expiresAt: number }>> => {
     const url = '/api/auth/refresh-token/';
 
     if (__DEV__) {
@@ -236,11 +236,12 @@ export const authApi = {
       }
 
       // Handle wrapped response format
-      let data: { accessToken: string; expiresAt: number };
+      // A server that rotates refresh tokens sends the new one back; the old is revoked.
+      let data: { accessToken: string; refreshToken?: string; expiresAt: number };
       if ((response.data as any).data) {
         data = (response.data as any).data;
       } else {
-        data = response.data as { accessToken: string; expiresAt: number };
+        data = response.data as { accessToken: string; refreshToken?: string; expiresAt: number };
       }
 
       if (!data.accessToken) {
