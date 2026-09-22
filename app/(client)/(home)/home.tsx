@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { RefreshControl, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
-import { useScrollToTop } from '@react-navigation/native';
+import { useScrollToTop, useIsFocused } from '@react-navigation/native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import Animated, {
   useAnimatedStyle,
@@ -137,6 +137,7 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
   const { query, filtered } = useFeedQuery();
   const clearFilters = useLookFilters(s => s.clear);
   const feed = useLooks(query);
+  const focused = useIsFocused();
   const refresh = useRefreshLooks();
   // One array per fetch, not per render: the list re-diffs whenever this changes.
   const looks = useMemo(() => feed.data?.pages.flatMap(page => page.data) ?? [], [feed.data]);
@@ -240,7 +241,8 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
         }
         ListFooterComponent={<ListFooter more={!!feed.hasNextPage} />}
         onEndReached={() => {
-          if (feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
+          // A screen covered by another reports it's at the end; only the visible one loads more.
+          if (focused && feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
         }}
         onEndReachedThreshold={FEED_LIST.onEndReachedThreshold}
         drawDistance={FEED_LIST.drawDistance}

@@ -16,17 +16,36 @@ const saveTokens = (tokens: AuthTokens | null) =>
   });
 
 /**
- * Read tokens back into memory at app start.
- * Must finish before the first authenticated request, or it will 401 and log the user out.
+ * Read tokens back into memory at app start, once the remembered account is back too.
+ * Every request waits on this (see the auth bridge), so none goes out half signed in.
  */
-export const loadStoredTokens = async () => {
-  try {
-    const stored = await SecureStore.getItemAsync(TOKEN_KEY);
-    if (stored) useAuthStore.setState({ tokens: JSON.parse(stored) });
-  } catch (error) {
-    if (__DEV__) console.warn('Could not read tokens from secure storage:', error);
-  }
-};
+let tokensLoaded: Promise<void> | undefined;
+export const loadStoredTokens = () =>
+  (tokensLoaded ??= Promise.all([
+    new Promise<void>(resolve => {
+      if (useAuthStore.persist.hasHydrated()) return resolve();
+      const unsubscribe = useAuthStore.persist.onFinishHydration(() => {
+        unsubscribe();
+        resolve();
+      });
+    }),
+    SecureStore.getItemAsync(TOKEN_KEY).catch(error => {
+      if (__DEV__) console.warn('Could not read tokens from secure storage:', error);
+      return null;
+    }),
+  ]).then(([, stored]) => {
+    const state = useAuthStore.getState();
+    // A sign-in that finished while this was reading is newer; keep it.
+    if (state.tokens) return state.setLoading(false);
+    if (stored) {
+      useAuthStore.setState({ tokens: JSON.parse(stored), isLoading: false });
+    } else if (state.isAuthenticated) {
+      // Remembered who, but no tokens (the web keeps none, or the keystore was wiped).
+      state.logout();
+    } else {
+      state.setLoading(false);
+    }
+  }));
 
 export interface AuthTokens {
   accessToken: string;
@@ -107,3 +126,21 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+// Dev only: sign in with a session fetched elsewhere (e.g. from the backend with
+// curl), for testing against the real API without typing into the sign-in form.
+declare global {
+  // eslint-disable-next-line no-var -- globals can only be declared with var
+  var devSignIn:
+    | ((session: {
+        user: User;
+        accessToken: string;
+        refreshToken: string;
+        expiresAt: number;
+      }) => void)
+    | undefined;
+}
+if (__DEV__) {
+  globalThis.devSignIn = ({ user, accessToken, refreshToken, expiresAt }) =>
+    useAuthStore.getState().setAuth(user, { accessToken, refreshToken, expiresAt });
+}

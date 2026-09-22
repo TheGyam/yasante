@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { uploadImage } from '@/shared/lib/imageService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api';
 import { User, HairProfile } from '@/features/profile';
@@ -36,11 +37,12 @@ export function useUpdateUser(userId?: string) {
       if (!actualUserId) {
         throw new Error('User ID is required');
       }
-      // The API speaks snake_case; the app speaks camelCase.
+      // Only what changed: an empty email would be refused as invalid.
+      const avatar = updates.avatarUri ? (await uploadImage(updates.avatarUri)).uri : undefined;
       const response = await api.user.updateProfile(actualUserId, {
-        name: updates.name ?? '',
-        email: updates.email ?? '',
-        avatar_uri: updates.avatarUri,
+        ...(updates.name !== undefined && { name: updates.name }),
+        ...(updates.email && { email: updates.email }),
+        ...(avatar && { avatar_uri: avatar }),
       });
       return response.data;
     },

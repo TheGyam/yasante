@@ -1,5 +1,6 @@
 import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
+import { useUserStore } from '@/features/profile';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { CalendarHeart, TrendingUp, type LucideIcon, Waves } from 'lucide-react-native';
 import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -47,6 +48,7 @@ export default function WelcomeScreen() {
   const styles = useStyles();
   const theme = useTheme();
   const router = useRouter();
+  const setOnboardingCompleted = useUserStore(s => s.setOnboardingCompleted);
 
   return (
     <Screen scroll={false} testID="welcome-screen">
@@ -93,6 +95,14 @@ export default function WelcomeScreen() {
             variant="ghost"
             onPress={() => router.push('/auth/login')}
             fullWidth
+          />
+          {/* The feed is open to everyone; the quiz and an account can wait. */}
+          <Button
+            label="Just look around"
+            variant="ghost"
+            onPress={() => setOnboardingCompleted(true)}
+            fullWidth
+            testID="look-around"
           />
           {/* Stylists never see the hair quiz: straight to their own sign-up. */}
           <Text
