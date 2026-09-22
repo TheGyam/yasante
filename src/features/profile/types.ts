@@ -23,12 +23,13 @@ export type HairGoal = 'growth' | 'health' | 'moisture' | 'strength' | 'color' |
 
 export interface HairProfile {
   texture?: HairTexture;
+  /** Stretched out — the length it really is. */
   length?: HairLength;
+  /** As it sits day to day. Textured hair can shrink by 70%, so it's its own answer. */
+  shrunkLength?: HairLength;
   density?: HairDensity;
   porosity?: HairPorosity;
   goals?: HairGoal[];
-  /** False when it was measured as it shrinks. Textured hair can shrink by 70%. */
-  lengthStretched?: boolean;
   /** When the length was last answered, so it can be asked again a month on. */
   lengthMeasuredAt?: string;
   scalp?: ScalpType[];

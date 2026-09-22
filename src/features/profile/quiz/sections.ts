@@ -1,5 +1,5 @@
 import { differenceInDays } from 'date-fns';
-import type { HairProfile } from '../types';
+import type { HairLength, HairProfile } from '../types';
 
 export type SectionKey =
   | 'texture'
@@ -41,7 +41,7 @@ export const SECTIONS: readonly Section[] = [
     name: 'Length',
     title: 'How long is it?',
     help: 'Drag along the figure to where it reaches.',
-    answered: p => !!p.length,
+    answered: p => !!(p.length || p.shrunkLength),
   },
   {
     key: 'density',
@@ -110,9 +110,32 @@ export function progressOf(profile?: HairProfile | null) {
   };
 }
 
+const LENGTH_WORDS: Record<HairLength, string> = {
+  cropped: 'Cropped',
+  ear: 'Ear',
+  chin: 'Chin',
+  shoulder: 'Shoulder',
+  armpit: 'Armpit',
+  'bra-strap': 'Bra strap',
+  'mid-back': 'Mid-back',
+  waist: 'Waist',
+  hip: 'Hip',
+  tailbone: 'Tailbone',
+};
+
+/** "Mid-back stretched · Shoulder as it shrinks" — whichever of the two she's given. */
+export function lengthLine(p: Pick<HairProfile, 'length' | 'shrunkLength'>) {
+  return [
+    p.length && `${LENGTH_WORDS[p.length]} stretched`,
+    p.shrunkLength && `${LENGTH_WORDS[p.shrunkLength]} as it shrinks`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
 /** A month on from the last length, it's worth asking again — that's the growth curve. */
 export function lengthIsStale(profile?: HairProfile | null, now = new Date()) {
-  if (!profile?.length || !profile.lengthMeasuredAt) return false;
+  if (!(profile?.length || profile?.shrunkLength) || !profile.lengthMeasuredAt) return false;
   return differenceInDays(now, new Date(profile.lengthMeasuredAt)) >= 30;
 }
 
@@ -161,7 +184,7 @@ export function sectionSummary(
     case 'texture':
       return texture;
     case 'length':
-      return length && `${length} · ${p.lengthStretched === false ? 'as it shrinks' : 'stretched'}`;
+      return lengthLine(p) || undefined;
     case 'density':
       return density;
     case 'porosity':

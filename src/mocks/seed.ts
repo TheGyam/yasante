@@ -353,7 +353,7 @@ Object.assign(db.accounts.get('acc_client')!, {
     density: 'thick',
     porosity: 'high',
     goals: ['growth', 'moisture'],
-    lengthStretched: true,
+    shrunkLength: 'chin',
     lengthMeasuredAt: ago(20),
     scalp: ['dry'],
     chemicals: [],

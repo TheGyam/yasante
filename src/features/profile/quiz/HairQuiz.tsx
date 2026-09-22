@@ -20,7 +20,7 @@ import type { HairProfile } from '../types';
 import { GoalsStep } from './GoalsStep';
 import { LengthStep } from './LengthStep';
 import { AreaStep, BudgetStep, ChemicalStep, ScalpStep } from './MoreSteps';
-import { CORE, sectionFor, type SectionKey } from './sections';
+import { CORE, lengthLine, sectionFor, type SectionKey } from './sections';
 import { DensityStep, PorosityStep } from './TestStep';
 import { StrandArt, TextureStep } from './TextureStep';
 
@@ -40,7 +40,7 @@ const useStyles = makeStyles(() => ({
   progress: { marginTop: space.sm, marginBottom: space.xxl },
   heading: { gap: space.sm, marginBottom: space.xl },
   step: { flex: 1 },
-  stretch: { marginBottom: space.lg },
+  stretch: { marginBottom: space.lg, gap: space.sm },
   footer: { gap: space.xs, paddingTop: space.lg },
   summary: { alignItems: 'center', gap: space.xl, paddingTop: space.xl },
   traits: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.sm },
@@ -88,14 +88,17 @@ export function HairQuiz({ mode, section }: HairQuizProps) {
       : 0
   );
   const [direction, setDirection] = useState<1 | -1>(1);
+  // Stretched and as it shrinks are two answers; this is which one the figure is setting.
+  const [lengthMode, setLengthMode] = useState<'stretched' | 'shrunk'>('stretched');
 
   const key = steps[index];
   const info = key === 'summary' ? undefined : sectionFor(key)!;
 
   const set = <K extends keyof HairProfile>(field: K, value: HairProfile[K]) => {
     const next = { ...answers, [field]: value };
-    if (field === 'length') next.lengthMeasuredAt = new Date().toISOString();
-    if (field === 'length' && next.lengthStretched === undefined) next.lengthStretched = true;
+    if (field === 'length' || field === 'shrunkLength') {
+      next.lengthMeasuredAt = new Date().toISOString();
+    }
     setAnswers(next);
     // Kept as she goes, so a closed app or a phone call doesn't cost her the answers.
     setHairProfile(next);
@@ -175,13 +178,17 @@ export function HairQuiz({ mode, section }: HairQuizProps) {
           {key === 'length' && (
             <>
               <View style={styles.stretch}>
-                <SegmentedControl
-                  options={STRETCH}
-                  value={answers.lengthStretched === false ? 'shrunk' : 'stretched'}
-                  onChange={v => set('lengthStretched', v === 'stretched')}
-                />
+                <SegmentedControl options={STRETCH} value={lengthMode} onChange={setLengthMode} />
+                <Text variant="caption" tone="tertiary" align="center">
+                  {lengthLine(answers)}
+                </Text>
               </View>
-              <LengthStep value={answers.length} onChange={v => set('length', v)} />
+              {/* One figure per state, each holding its own answer. */}
+              <LengthStep
+                key={lengthMode}
+                value={lengthMode === 'stretched' ? answers.length : answers.shrunkLength}
+                onChange={v => set(lengthMode === 'stretched' ? 'length' : 'shrunkLength', v)}
+              />
             </>
           )}
           {key === 'density' && (
