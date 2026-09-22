@@ -8,6 +8,7 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
+import { prefetchImages } from '@/shared/ui/RemoteImage';
 import { looksApi } from './api';
 import type {
   CommentsPage,
@@ -21,6 +22,8 @@ import type {
 import { track } from '@/shared/lib/analytics';
 
 const KEY = 'looks';
+/** Enough to fill a couple of screens of the grid, so the first page never ends early. */
+const PAGE_SIZE = 20;
 const COMMENTS = 'look-comments';
 
 /**
@@ -31,7 +34,12 @@ export function useLooks(filters: LookFilters = {}, { enabled = true } = {}) {
   const { user } = useAuth();
   return useInfiniteQuery({
     queryKey: [KEY, 'feed', user?.id, filters],
-    queryFn: ({ pageParam }: { pageParam?: string }) => looksApi.getPage(filters, pageParam),
+    queryFn: async ({ pageParam }: { pageParam?: string }) => {
+      const page = await looksApi.getPage(filters, pageParam, PAGE_SIZE);
+      // Decode the photos now, while they're still below the fold.
+      prefetchImages(page.data.map(look => look.thumbUri ?? look.photoUri));
+      return page;
+    },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: page => page.nextCursor,
     staleTime: 60 * 1000,
@@ -285,7 +293,7 @@ export function useToggleCommentLike() {
   });
 }
 
-export function useRemoveComment(lookId: string) {
+export function useRemoveComment(_lookId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => looksApi.removeComment(id),

@@ -16,7 +16,11 @@ const useStyles = makeStyles(t => ({
   base: { backgroundColor: t.colors.glass.fillStrong },
 }));
 
-/** Cached network image on a quiet placeholder, fading in once decoded. */
+/**
+ * Cached network image on a quiet placeholder. Standalone images fade in once
+ * decoded; inside a recycled list (a `recyclingKey`) they appear at once, because a
+ * fade on every reused cell is what makes scrolling back up flash empty tiles.
+ */
 export function RemoteImage({
   uri,
   style,
@@ -31,7 +35,7 @@ export function RemoteImage({
       source={uri ? { uri } : undefined}
       style={[styles.base, style]}
       contentFit={contentFit}
-      transition={180}
+      transition={recyclingKey ? 0 : 180}
       cachePolicy="memory-disk"
       recyclingKey={recyclingKey}
       priority={priority}
@@ -39,4 +43,13 @@ export function RemoteImage({
       accessibilityLabel={accessibilityLabel}
     />
   );
+}
+
+/**
+ * Warm the cache with images about to scroll into view, so they're decoded before
+ * they're needed. Best effort: a miss just loads normally.
+ */
+export function prefetchImages(uris: (string | undefined)[]) {
+  const list = uris.filter((u): u is string => !!u);
+  if (list.length) Image.prefetch(list, 'memory-disk').catch(() => {});
 }

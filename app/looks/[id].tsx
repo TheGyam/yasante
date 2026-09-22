@@ -29,6 +29,7 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { ExpandableText } from '@/shared/ui/ExpandableText';
 import { IconButton } from '@/shared/ui/IconButton';
 import { useContentInsets } from '@/shared/ui/layout';
+import { FEED_LIST, ListFooter } from '@/shared/ui/ListFooter';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -275,7 +276,6 @@ function Thread({
 
 function LookThread({ id }: { id: string }) {
   const styles = useStyles();
-  const theme = useTheme();
   const insets = useContentInsets();
   const safe = useSafeAreaInsets();
   const onScroll = useScreenScrollHandler();
@@ -352,15 +352,12 @@ function LookThread({ id }: { id: string }) {
             </Text>
           )
         }
-        ListFooterComponent={
-          thread.isFetchingNextPage ? (
-            <ActivityIndicator color={theme.colors.accent} style={{ padding: space.lg }} />
-          ) : null
-        }
+        ListFooterComponent={<ListFooter more={!!thread.hasNextPage} />}
         onEndReached={() => {
           if (thread.hasNextPage && !thread.isFetchingNextPage) thread.fetchNextPage();
         }}
-        onEndReachedThreshold={0.5}
+        onEndReachedThreshold={FEED_LIST.onEndReachedThreshold}
+        drawDistance={FEED_LIST.drawDistance}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         onScroll={onScroll}
