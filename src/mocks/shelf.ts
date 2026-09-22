@@ -3,7 +3,7 @@ import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
 import { db } from './db';
 
 /** A starter catalogue of what's actually on shelves in UK Afro hair aisles. */
-const CATALOGUE: Product[] = [
+export const CATALOGUE: Product[] = [
   ['Cantu', 'Shea Butter Leave-In Conditioning Repair Cream', 'leave-in'],
   ['Cantu', 'Coconut Curling Cream', 'styler'],
   ['Cantu', 'Sulfate-Free Cleansing Cream Shampoo', 'shampoo'],

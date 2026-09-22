@@ -1,0 +1,193 @@
+"""
+Looks models: Look, LookLike, LookComment, CommentLike, Style, Report, Block.
+"""
+
+import uuid
+
+from apps.common.models import TimeStampedModel
+from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.db import models
+
+
+class Style(models.Model):
+    """Hair style taxonomy — cached for 1 hour."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=100, unique=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "looks_style"
+        ordering = ["sort_order", "name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Look(TimeStampedModel):
+    """A look posting — the main feed content."""
+
+    VISIBILITY_CHOICES = [("public", "Public"), ("private", "Private")]
+
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="looks"
+    )
+    photo_uri = models.URLField(max_length=500)
+    thumb_uri = models.URLField(max_length=500, blank=True, default="")
+    photo_aspect = models.FloatField(default=1)
+    caption = models.TextField(max_length=1000, blank=True, default="")
+    visibility = models.CharField(
+        max_length=10, choices=VISIBILITY_CHOICES, default="public", db_index=True
+    )
+    hair_texture = models.CharField(max_length=20, blank=True, default="", db_index=True)
+    booking_id = models.UUIDField(null=True, blank=True)
+
+    # Style tags
+    styles = models.ManyToManyField(Style, related_name="looks", blank=True)
+
+    # Stylist attribution
+    stylist_id = models.CharField(max_length=50, blank=True, default="")
+    stylist_name = models.CharField(max_length=150, blank=True, default="")
+    stylist_handle = models.CharField(max_length=50, blank=True, default="")
+
+    # Service
+    service_id = models.CharField(max_length=50, blank=True, default="")
+    service_name = models.CharField(max_length=150, blank=True, default="")
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    from_price = models.BooleanField(default=False)
+    area = models.CharField(max_length=100, blank=True, default="")
+
+    # Denormalised counts
+    like_count = models.PositiveIntegerField(default=0, db_index=True)
+    comment_count = models.PositiveIntegerField(default=0)
+    save_count = models.PositiveIntegerField(default=0)
+
+    products = models.ManyToManyField(
+        "shelf.Product", related_name="looks", blank=True
+    )
+
+    class Meta:
+        db_table = "looks_look"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["-like_count", "-created_at"]),
+            models.Index(fields=["visibility", "-created_at"]),
+            models.Index(fields=["hair_texture", "visibility", "-created_at"]),
+            models.Index(fields=["area", "visibility", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Look by {self.author.name}"
+
+
+class LookLike(models.Model):
+    """Unique like per user+look. Idempotent."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="look_likes"
+    )
+    look = models.ForeignKey(Look, on_delete=models.CASCADE, related_name="likes")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "looks_look_like"
+        unique_together = [("user", "look")]
+
+
+class LookComment(TimeStampedModel):
+    """
+    Comments with threading.
+    parent_id → top-level comment (for thread grouping)
+    reply_to_id → specific comment being replied to (for @mention)
+    """
+
+    look = models.ForeignKey(Look, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="look_comments"
+    )
+    body = models.TextField(max_length=500)
+    parent = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.CASCADE, related_name="replies"
+    )
+    reply_to = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    reply_to_name = models.CharField(max_length=150, blank=True, default="")
+    like_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "looks_comment"
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"Comment by {self.author.name} on look {self.look_id}"
+
+
+class CommentLike(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comment_likes"
+    )
+    comment = models.ForeignKey(
+        LookComment, on_delete=models.CASCADE, related_name="likes"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "looks_comment_like"
+        unique_together = [("user", "comment")]
+
+
+class Report(TimeStampedModel):
+    """
+    Generic report for looks, comments, or profiles.
+    Anonymous — the target never sees who reported.
+    """
+
+    REASON_CHOICES = [
+        ("not-their-work", "Not their work"),
+        ("nudity", "Nudity"),
+        ("hate", "Hate"),
+        ("scam", "Scam"),
+        ("other", "Other"),
+    ]
+
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reports_made"
+    )
+    reason = models.CharField(max_length=30, choices=REASON_CHOICES)
+    note = models.TextField(max_length=500, blank=True, default="")
+
+    # Generic FK so we can report looks, comments, profiles
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.UUIDField()
+    content_object = GenericForeignKey("content_type", "object_id")
+
+    class Meta:
+        db_table = "looks_report"
+        ordering = ["-created_at"]
+
+
+class Block(models.Model):
+    """
+    Symmetric block. One row covers both directions.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    blocker = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="blocks_made"
+    )
+    blocked = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="blocks_received",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "looks_block"
+        unique_together = [("blocker", "blocked")]

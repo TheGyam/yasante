@@ -1,0 +1,39 @@
+# Django core
+Django>=5.1,<5.2
+djangorestframework>=3.15,<3.16
+djangorestframework-simplejwt>=5.4,<5.5
+
+# Database
+psycopg[binary]>=3.2,<3.3
+
+# Background tasks
+celery[redis]>=5.4,<5.5
+django-celery-beat>=2.7,<2.8
+
+# Cache / Rate limiting
+redis>=5.2,<5.3
+
+# Security
+argon2-cffi>=23.1,<24
+django-cors-headers>=4.6,<4.7
+django-csp>=3.8,<3.9
+
+# Filtering / Pagination
+django-filter>=24.1,<25
+
+# Image processing
+Pillow>=11.0,<12
+
+# Storage (S3-compatible)
+django-storages>=1.14,<1.15
+boto3>=1.35,<1.36
+
+# Configuration
+python-decouple>=3.8,<3.9
+
+# Production server
+gunicorn>=23.0,<24
+whitenoise>=6.8,<6.9
+
+# Utilities
+uuid7>=0.1,<0.2
