@@ -4,7 +4,12 @@ import { useLocalSearchParams } from 'expo-router';
 import { Camera, Check, ImagePlus } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
 import { dayLabel, useBookings } from '@/features/booking';
-import { usePostLook, useStyleTaxonomy, type LookVisibility, type Style } from '@/features/looks';
+import {
+  styleForService,
+  usePostLook,
+  useStyleTaxonomy,
+  type LookVisibility,
+} from '@/features/looks';
 import { useShelf } from '@/features/shelf';
 import { TEXTURE_LABELS, useUser, useUserStore, type HairTexture } from '@/features/profile';
 import { formatPrice, useActiveMode, useMenu, usePortfolio } from '@/features/stylist';
@@ -55,15 +60,6 @@ const useStyles = makeStyles(t => ({
 const hairLabel = (label: string) =>
   (/coils$/i.test(label) ? label : `${label} hair`).toLowerCase();
 
-/** The style a service is, when its name says so: "Knotless braids" is knotless. */
-function styleFor(serviceName: string | undefined, taxonomy: Style[]) {
-  if (!serviceName) return undefined;
-  const name = serviceName.toLowerCase();
-  return taxonomy.find(
-    style => name.includes(style.name.toLowerCase()) || style.name.toLowerCase().includes(name)
-  )?.id;
-}
-
 /**
  * Posting a look. A stylist posts her own work, and most of the time the picture
  * is already in her portfolio. A client posts her hair, and credits her stylist
@@ -97,14 +93,14 @@ export default function ComposeLookScreen() {
   // Posted from a finished appointment: who did it and what it was are facts of the
   // booking, so they're set and can't be taken off. More styles can still be added.
   const fromBooking = asStylist ? undefined : done.find(b => b.id === params.bookingId);
-  const lockedStyle = fromBooking ? styleFor(fromBooking.serviceName, taxonomy) : undefined;
+  const lockedStyle = fromBooking ? styleForService(fromBooking.serviceName, taxonomy) : undefined;
   const [caption, setCaption] = useState('');
   const [productIds, setProductIds] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<LookVisibility>('public');
   const { data: shelf = [] } = useShelf();
 
   const suggest = (serviceName?: string) => {
-    const id = styleFor(serviceName, taxonomy);
+    const id = styleForService(serviceName, taxonomy);
     if (id && !picked.includes(id)) setPicked(current => [id, ...current].slice(0, MAX_STYLES));
   };
 

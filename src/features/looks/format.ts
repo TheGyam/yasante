@@ -1,5 +1,5 @@
 import { Share } from 'react-native';
-import type { Look } from './types';
+import type { Look, Style } from './types';
 import { differenceInCalendarDays, differenceInHours, differenceInMinutes } from 'date-fns';
 import { track } from '@/shared/lib/analytics';
 
@@ -36,4 +36,24 @@ export function shareLook(look: Pick<Look, 'id' | 'authorName' | 'serviceName'>)
   track('share_link', { kind: 'look' });
   const what = look.serviceName ? `${look.serviceName} by ${look.authorName}` : look.authorName;
   return Share.share({ message: `${what} on Yasante: ${url}`, url }).catch(() => {});
+}
+
+/**
+ * The style a service is, when its name says so: "Knotless braids" is knotless,
+ * and so is "Boho knotless". The server applies the same rule when it shares a
+ * portfolio photo to Looks.
+ */
+export function styleForService(serviceName: string | undefined, taxonomy: Style[]) {
+  if (!serviceName) return undefined;
+  const name = serviceName.toLowerCase();
+  const words = (text: string) =>
+    text
+      .toLowerCase()
+      .split(/[^a-z]+/)
+      .filter(w => w.length > 3);
+  return (
+    taxonomy.find(
+      style => name.includes(style.name.toLowerCase()) || style.name.toLowerCase().includes(name)
+    ) ?? taxonomy.find(style => words(style.name).some(w => w !== 'braids' && name.includes(w)))
+  )?.id;
 }

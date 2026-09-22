@@ -2,6 +2,7 @@ import { NOT_HANDLES } from '@/shared/lib/links';
 import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
 import { TIMING_REASONS } from '@/features/booking/types';
 import { respondedAt } from './bookings';
+import { lookFromPortfolio } from './looks';
 import { db } from './db';
 
 /** Handles already in use, plus the ones we keep for ourselves. */
@@ -344,18 +345,23 @@ defineMocks({
 
   'POST /api/stylists/me/portfolio/': request => {
     const photos = portfolioOf(requireAccount(request));
+    const accountId = requireAccount(request);
     const drafts = request.body?.photos ?? [];
     if (!Array.isArray(drafts) || !drafts.length) throw new MockError(400, 'No photos to add');
-    const added = drafts.map((draft: any, index: number) => {
+    // Shared to the feed only from a live page: a draft page has nobody to send clients to.
+    const share = !!request.body?.postAsLooks && !!db.stylists.get(accountId)?.published;
+    const checked = drafts.map((draft: any) => {
       const uri = String(draft?.uri ?? '').trim();
       if (!uri) throw new MockError(400, 'A photo needs a picture');
-      return {
-        id: `pho_${Date.now()}_${index}`,
-        uri,
-        serviceId: draft?.serviceId ? String(draft.serviceId) : undefined,
-        createdAt: new Date().toISOString(),
-      };
+      return { uri, serviceId: draft?.serviceId ? String(draft.serviceId) : undefined };
     });
+    const added = checked.map(({ uri, serviceId }, index) => ({
+      id: `pho_${Date.now()}_${index}`,
+      uri,
+      serviceId,
+      lookId: share ? lookFromPortfolio(accountId, uri, serviceId) : undefined,
+      createdAt: new Date().toISOString(),
+    }));
     // Newest first, the way she'll want to see them.
     photos.unshift(...added);
     return added;

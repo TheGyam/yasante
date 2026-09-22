@@ -189,10 +189,21 @@ function useRefreshPortfolio() {
 
 /** A batch of photos, tagged as she imported them. */
 export function useAddPhotos() {
-  const onSuccess = useRefreshPortfolio();
+  const refresh = useRefreshPortfolio();
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (photos: PortfolioPhotoDraft[]) => stylistApi.addPhotos(photos),
-    onSuccess,
+    mutationFn: ({
+      photos,
+      postAsLooks,
+    }: {
+      photos: PortfolioPhotoDraft[];
+      postAsLooks: boolean;
+    }) => stylistApi.addPhotos(photos, postAsLooks),
+    onSuccess: added => {
+      // Anything shared is new in the feed and on her own looks.
+      if (added.some(photo => photo.lookId)) queryClient.invalidateQueries({ queryKey: ['looks'] });
+      return refresh();
+    },
   });
 }
 

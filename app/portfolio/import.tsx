@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { X } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
-import { PhotoTagSheet, useAddPhotos, useMenu, type PortfolioPhotoDraft } from '@/features/stylist';
+import { styleForService, useStyleTaxonomy } from '@/features/looks';
+import {
+  PhotoTagSheet,
+  useAddPhotos,
+  useMenu,
+  useMyStylistProfile,
+  type PortfolioPhotoDraft,
+} from '@/features/stylist';
 import { useImagePicker } from '@/shared/hooks/useImagePicker';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter, withoutThrottle } from '@/shared/lib/navigation';
@@ -11,12 +18,15 @@ import { Button } from '@/shared/ui/Button';
 import { Chip } from '@/shared/ui/Chip';
 import { notify } from '@/shared/ui/dialog';
 import { IconButton } from '@/shared/ui/IconButton';
+import { ListRow } from '@/shared/ui/ListRow';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Rise } from '@/shared/ui/Rise';
 import { Screen } from '@/shared/ui/Screen';
+import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { Toggle } from '@/shared/ui/Toggle';
 
 const LIMIT = 20;
 
@@ -41,6 +51,10 @@ export default function ImportPhotosScreen() {
   const { pickManyFromLibrary } = useImagePicker();
   const { data: services = [] } = useMenu();
   const addPhotos = useAddPhotos();
+  const { data: profile } = useMyStylistProfile();
+  const { data: taxonomy = [] } = useStyleTaxonomy();
+  // Her work goes where clients look, unless she says otherwise.
+  const [postAsLooks, setPostAsLooks] = useState(true);
 
   const [photos, setPhotos] = useState<PortfolioPhotoDraft[]>([]);
   const [picking, setPicking] = useState(true);
@@ -95,7 +109,7 @@ export default function ImportPhotosScreen() {
 
   const save = async () => {
     try {
-      await addPhotos.mutateAsync(photos);
+      await addPhotos.mutateAsync({ photos, postAsLooks: canShare && postAsLooks });
       haptics.success();
       router.back();
     } catch (error) {
@@ -108,6 +122,21 @@ export default function ImportPhotosScreen() {
   };
 
   const nameOf = (serviceId?: string) => services.find(s => s.id === serviceId)?.name;
+
+  // Only a live page can send clients anywhere, and only a photo whose style we
+  // can tell from its service can be found in the feed. The rest stay portfolio-only.
+  const canShare = !!profile?.published;
+  const shareable = photos.filter(photo => styleForService(nameOf(photo.serviceId), taxonomy));
+  const sharing = canShare && postAsLooks ? shareable.length : 0;
+  const shareNote = !canShare
+    ? 'Your page isn’t live yet, so these stay in your portfolio for now.'
+    : !postAsLooks
+      ? 'They’ll stay in your portfolio. You can post any of them to Looks later.'
+      : shareable.length === photos.length
+        ? 'Each one goes to Looks with its service and price, so clients can book it.'
+        : shareable.length
+          ? `${shareable.length} tagged with a style go to Looks with their price. The rest stay in your portfolio.`
+          : 'Tag a service to share them — Looks are found by style.';
 
   return (
     <Screen title="Add your work" modal testID="portfolio-import">
@@ -161,6 +190,21 @@ export default function ImportPhotosScreen() {
                 </View>
               ))}
             </View>
+
+            <Section footer={shareNote}>
+              <ListRow
+                title="Also post to Looks"
+                subtitle={sharing ? `${sharing} of ${photos.length} will be shared` : undefined}
+                trailing={
+                  <Toggle
+                    value={canShare && postAsLooks}
+                    onValueChange={setPostAsLooks}
+                    disabled={!canShare}
+                    accessibilityLabel="Also post to Looks"
+                  />
+                }
+              />
+            </Section>
 
             <View style={styles.footer}>
               <Button

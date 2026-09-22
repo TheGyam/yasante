@@ -21,3 +21,18 @@ describe('how long ago a look went up', () => {
     expect(postedLabel('not a date', now)).toBe('');
   });
 });
+
+describe('styleForService', () => {
+  const taxonomy = [
+    { id: 'knotless', name: 'Knotless braids' },
+    { id: 'box-braids', name: 'Box braids' },
+    { id: 'cornrows', name: 'Cornrows' },
+  ];
+  it('reads the style from how she named the service', () => {
+    const { styleForService } = jest.requireActual('../format');
+    expect(styleForService('Knotless braids', taxonomy)).toBe('knotless');
+    expect(styleForService('Boho knotless', taxonomy)).toBe('knotless');
+    expect(styleForService('Cornrows', taxonomy)).toBe('cornrows');
+    expect(styleForService('Take down and wash', taxonomy)).toBeUndefined();
+  });
+});

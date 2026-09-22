@@ -20,6 +20,46 @@ const STYLES = [
 
 type StoredLook = (typeof db.looks)[number];
 
+/** The style a service is, when its name says so: "Knotless braids" is knotless. */
+export function styleForService(serviceName: string) {
+  const name = serviceName.toLowerCase();
+  const words = (s: string) =>
+    s
+      .toLowerCase()
+      .split(/[^a-z]+/)
+      .filter(w => w.length > 3);
+  return (
+    STYLES.find(s => name.includes(s.name.toLowerCase()) || s.name.toLowerCase().includes(name)) ??
+    // "Boho knotless" still reads as knotless: match on a distinctive word.
+    STYLES.find(s => words(s.name).some(w => w !== 'braids' && name.includes(w)))
+  )?.id;
+}
+
+/**
+ * A portfolio photo shared to Looks as it's added. Only a photo tagged with a
+ * service whose style we can tell is shared: a look nobody can find by style is
+ * just noise in the feed. Returns the new look's id, or nothing.
+ */
+export function lookFromPortfolio(stylistId: string, uri: string, serviceId?: string) {
+  const service = (db.menus.get(stylistId) ?? []).find(s => s.id === serviceId);
+  const style = service && styleForService(service.name);
+  if (!service || !style) return undefined;
+  const look: StoredLook = {
+    id: `look_${Date.now()}_${db.looks.length}`,
+    authorId: stylistId,
+    photoUri: uri,
+    serviceId: service.id,
+    serviceName: service.name,
+    price: service.price,
+    fromPrice: service.fromPrice,
+    stylistId,
+    styles: [style],
+    createdAt: new Date().toISOString(),
+  };
+  db.looks.unshift(look);
+  return look.id;
+}
+
 /** Everyone this account has blocked, created empty the first time. */
 function blocksOf(accountId: string) {
   const blocked = db.blocks.get(accountId) ?? new Set<string>();
