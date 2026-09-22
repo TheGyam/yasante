@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
-import { ActivityIndicator, RefreshControl, View } from 'react-native';
+import { RefreshControl, View } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import Animated, {
   useAnimatedStyle,
@@ -24,6 +24,7 @@ import { GUTTER, makeStyles, space, timing, useTheme } from '@/shared/theme';
 import { IconButton } from '@/shared/ui/IconButton';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { useContentInsets } from '@/shared/ui/layout';
+import { FEED_LIST, ListFooter } from '@/shared/ui/ListFooter';
 import { Screen, ScreenTitle, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
@@ -175,15 +176,12 @@ function LooksFeed() {
           />
         )
       }
-      ListFooterComponent={
-        feed.isFetchingNextPage ? (
-          <ActivityIndicator color={theme.colors.accent} style={styles.footer} />
-        ) : null
-      }
+      ListFooterComponent={<ListFooter more={!!feed.hasNextPage} />}
       onEndReached={() => {
         if (feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
       }}
-      onEndReachedThreshold={0.6}
+      onEndReachedThreshold={FEED_LIST.onEndReachedThreshold}
+      drawDistance={FEED_LIST.drawDistance}
       onScroll={onScroll}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, RefreshControl, View } from 'react-native';
+import { RefreshControl, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { useScrollToTop } from '@react-navigation/native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
@@ -28,6 +28,7 @@ import { GUTTER, makeStyles, radius, space, timing, useTheme } from '@/shared/th
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
 import { useContentInsets } from '@/shared/ui/layout';
+import { FEED_LIST, ListFooter } from '@/shared/ui/ListFooter';
 import { Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { SearchField } from '@/shared/ui/SearchField';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
@@ -166,21 +167,26 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
     [opacity, tile]
   );
 
-  const header = (
-    <View style={styles.header}>
-      <GreetingBanner firstName={firstName} />
-      {isAuthenticated && <BookingNudge />}
-      <SearchField
-        placeholder="Search styles, tips and care"
-        onPress={() => router.push('/search')}
-      />
-      <TipOfTheDay />
-      <View style={styles.feedHead}>
-        <SectionHeader title="Looks" />
-        <LookFilterBar />
+  // Built only when what's in it changes: the list re-renders its header otherwise.
+  const loading = feed.isLoading;
+  const header = useMemo(
+    () => (
+      <View style={styles.header}>
+        <GreetingBanner firstName={firstName} />
+        {isAuthenticated && <BookingNudge />}
+        <SearchField
+          placeholder="Search styles, tips and care"
+          onPress={() => router.push('/search')}
+        />
+        <TipOfTheDay />
+        <View style={styles.feedHead}>
+          <SectionHeader title="Looks" />
+          <LookFilterBar />
+        </View>
+        {loading && <FeedSkeleton />}
       </View>
-      {feed.isLoading && <FeedSkeleton />}
-    </View>
+    ),
+    [styles, firstName, isAuthenticated, router, loading]
   );
 
   return (
@@ -232,15 +238,12 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
             />
           )
         }
-        ListFooterComponent={
-          feed.isFetchingNextPage ? (
-            <ActivityIndicator color={theme.colors.accent} style={styles.footer} />
-          ) : null
-        }
+        ListFooterComponent={<ListFooter more={!!feed.hasNextPage} />}
         onEndReached={() => {
           if (feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
         }}
-        onEndReachedThreshold={0.6}
+        onEndReachedThreshold={FEED_LIST.onEndReachedThreshold}
+        drawDistance={FEED_LIST.drawDistance}
         onScroll={onScroll}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}

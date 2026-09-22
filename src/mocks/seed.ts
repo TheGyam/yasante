@@ -819,7 +819,7 @@ for (const look of db.looks) {
   // A few looks take off; most get a modest amount.
   const popular = chance(0.12);
   if (!db.likes.has(look.id)) likes(look.id, popular ? int(40, 70) : int(0, 18));
-  const threads = popular ? int(8, 20) : chance(0.6) ? int(1, 6) : 0;
+  const threads = popular ? int(25, 70) : chance(0.6) ? int(1, 6) : 0;
   const base = new Date(look.createdAt).getTime();
   for (let t = 0; t < threads; t++) {
     const root = {
