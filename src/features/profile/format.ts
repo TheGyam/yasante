@@ -38,7 +38,7 @@ export function hairTraits(profile?: HairProfile | null): string[] {
   if (!profile) return [];
   return [
     profile.texture && TEXTURE[profile.texture],
-    profile.length && LENGTH[profile.length],
+    (profile.length ?? profile.shrunkLength) && LENGTH[(profile.length ?? profile.shrunkLength)!],
     profile.density && DENSITY[profile.density],
     profile.porosity && POROSITY[profile.porosity],
   ].filter((trait): trait is string => !!trait);
