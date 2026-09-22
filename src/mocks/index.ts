@@ -17,6 +17,8 @@ import './bookings';
 import './shelf';
 import './verification';
 import './invites';
+// Last: a full, lived-in app on top of the fixed data the tests use.
+import './seed';
 
 installMocks(apiClient);
 
