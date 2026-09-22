@@ -195,6 +195,8 @@ class BookingListCreateView(APIView):
                 policy=profile.policies,
                 policy_version=str(data["policy_version"])[:50],
             )
+            # She's asked now: stop telling her a slot opened with this stylist.
+            SlotInterest.objects.filter(client=request.user, stylist=profile.account).delete()
         return _ok(booking, request, 201)
 
 

@@ -248,6 +248,16 @@ def test_a_cancellation_opens_the_slot_to_the_waitlist_but_not_the_canceller(api
     assert api(waiter).delete(f"/api/slot-interests/{watched['id']}/").status_code == 404
 
 
+def test_booking_her_ends_the_wait_for_a_slot_with_her(api, setup, book):
+    profile, client = setup
+    now = timezone.now()
+    body = {"stylistId": str(profile.account_id), "from": _iso(now), "to": _iso(now + timedelta(days=7))}
+    api(client).post("/api/slot-interests/", body)
+    assert len(api(client).get("/api/slot-interests/").json()) == 1
+    book(client, profile)
+    assert api(client).get("/api/slot-interests/").json() == []
+
+
 def test_close_out_rules(api, setup, book):
     profile, client = setup
     future = _confirmed(api, profile, client, book, hours_ahead=30)

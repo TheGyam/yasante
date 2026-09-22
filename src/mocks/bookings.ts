@@ -343,6 +343,10 @@ defineMocks({
     };
     db.bookings.unshift(booking);
     db.pendingRequests.set(stylistId, (db.pendingRequests.get(stylistId) ?? 0) + 1);
+    // She's asked now: stop telling her a slot opened with this stylist.
+    db.slotInterests = db.slotInterests.filter(
+      i => !(i.clientId === accountId && i.stylistId === stylistId)
+    );
     return forRole(booking, accountId);
   },
 
