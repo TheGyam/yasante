@@ -60,6 +60,9 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { StarRating } from '@/shared/ui/StarRating';
 import { Text } from '@/shared/ui/Text';
 
+/** One shared empty list, so the store selector returns the same value when nothing is ticked. */
+const NONE_TICKED: string[] = [];
+
 const useStyles = makeStyles(() => ({
   body: { gap: space.xl },
   head: { gap: space.xs },
@@ -109,7 +112,7 @@ export default function BookingScreen() {
   const attending = useConfirmAttendance();
   const answerMove = useAnswerMove();
   const onTime = useStartedOnTime();
-  const ticked = usePrepStore(s => s.done[id] ?? []);
+  const ticked = usePrepStore(s => s.done[id]) ?? NONE_TICKED;
   const tick = usePrepStore(s => s.toggle);
   const contest = useContest();
 
