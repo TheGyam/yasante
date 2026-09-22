@@ -1,0 +1,82 @@
+"""The user, her hair profile, consent, analytics, export and deletion."""
+
+import pytest
+
+pytestmark = pytest.mark.django_db
+
+
+def test_get_and_update_a_user(api, make_user):
+    user = make_user(texture="coily")
+    me = api(user).get(f"/api/users/{user.pk}/").json()
+    assert me["name"] == user.name
+    assert me["hairProfile"]["texture"] == "coily"
+    changed = api(user).patch(f"/api/users/{user.pk}/", {"name": "New Name"})
+    assert changed.status_code == 200 and changed.json()["name"] == "New Name"
+    other = make_user()
+    assert api(other).patch(f"/api/users/{user.pk}/", {"name": "x"}).status_code == 403
+
+
+def test_hair_profile_keeps_two_lengths_and_a_snapshot_each_change(api, make_user):
+    from apps.profiles.models import HairProfileSnapshot
+
+    user = make_user()
+    url = f"/api/users/{user.pk}/hair-profile/"
+    first = api(user).patch(url, {"texture": "kinky", "length": "mid-back", "shrunkLength": "shoulder"})
+    assert first.status_code == 200
+    assert first.json()["length"] == "mid-back" and first.json()["shrunkLength"] == "shoulder"
+    api(user).patch(url, {"chemicals": []})
+    assert HairProfileSnapshot.objects.filter(user=user).count() == 2
+    bad = api(user).patch(url, {"texture": "spiky"})
+    assert bad.status_code == 400
+
+
+def test_empty_fields_are_left_out_not_sent_blank(api, make_user):
+    user = make_user()
+    body = api(user).get(f"/api/users/{user.pk}/").json()
+    assert "avatarUri" not in body
+
+
+def test_consents_are_kept_as_a_history(api, make_user):
+    from apps.profiles.models import ConsentRecord
+
+    user = make_user()
+    body = {
+        "consents": [
+            {"purpose": "analytics", "granted": True, "policyVersion": "v1", "recordedAt": "2026-09-01T10:00:00Z", "source": "ios"},
+            {"purpose": "analytics", "granted": False, "policyVersion": "v1", "recordedAt": "2026-09-02T10:00:00Z"},
+        ]
+    }
+    assert api(user).post("/api/consents/", body).status_code == 201
+    assert ConsentRecord.objects.filter(user=user).count() == 2
+
+
+def test_events_are_dropped_once_analytics_consent_is_withdrawn(api, make_user):
+    from apps.profiles.models import AnalyticsEvent, ConsentRecord
+
+    user = make_user()
+    event = {"events": [{"name": "view_look", "at": "2026-09-22T10:00:00Z", "localAt": "2026-09-22T11:00:00+01:00"}]}
+    assert api().post("/api/events/", {**event, "anonymousId": "anon_1"}).status_code == 201
+    assert api(user).post("/api/events/", event).status_code == 201
+    assert AnalyticsEvent.objects.count() == 2
+    ConsentRecord.objects.create(user=user, purpose="analytics", granted=False, policy_version="v1", recorded_at="2026-09-22T12:00:00Z")
+    assert api(user).post("/api/events/", event).status_code == 202
+    assert AnalyticsEvent.objects.count() == 2
+
+
+def test_export_and_delete_are_hers_alone(api, make_user, make_stylist, book):
+    from apps.accounts.models import User
+    from apps.bookings.models import Booking
+
+    user = make_user()
+    other = make_user()
+    assert api(other).post(f"/api/users/{user.pk}/export/").status_code == 403
+    assert "requestedAt" in api(user).post(f"/api/users/{user.pk}/export/").json()
+
+    profile = make_stylist()
+    booking = book(user, profile)
+    assert api(other).delete(f"/api/users/{user.pk}/").status_code == 403
+    assert api(user).delete(f"/api/users/{user.pk}/").status_code == 204
+    assert not User.objects.filter(pk=user.pk).exists()
+    # Bookings stay for the stylist's records, with the name taken off.
+    kept = Booking.objects.get(pk=booking["id"])
+    assert kept.client_name == "Deleted account"

@@ -73,6 +73,7 @@
     "jest": "^29.7.0",
     "jest-expo": "~54.0.18",
     "prettier": "^3.3.3",
+    "tsx": "^4.23.15",
     "typescript": "~5.9.2"
   },
   "private": true,
