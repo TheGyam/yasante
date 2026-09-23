@@ -43,8 +43,8 @@ A beautiful, modern mobile app for hairstyle planning and education built with E
 1. Clone the repository
 
 ```bash
-git clone https://github.com/ElPrinceD/Yasante.git
-cd Yasante
+git clone https://github.com/TheGyam/yasante.git
+cd yasante
 ```
 
 2. Install dependencies
