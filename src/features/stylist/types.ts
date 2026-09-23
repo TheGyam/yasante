@@ -183,6 +183,15 @@ export interface StylistNumbers {
   timing: ServiceTiming[];
 }
 
+/** A live page as search lists it: enough to recognise her and open it. */
+export interface StylistSearchResult {
+  accountId: string;
+  handle: string;
+  displayName: string;
+  avatarUri?: string;
+  baseArea: string;
+}
+
 export interface StylistSummary {
   pendingRequests: number;
   appointmentsToday: number;

@@ -1,6 +1,7 @@
 import { apiClient } from '@/shared/lib/api/client';
 import { uploadImage } from '@/shared/lib/imageService';
 import type {
+  StylistSearchResult,
   MenuItem,
   MenuItemDraft,
   PortfolioPhoto,
@@ -20,6 +21,10 @@ export interface HandleCheck {
 }
 
 export const stylistApi = {
+  /** GET /api/stylists/?q= — live pages matching a name, handle or area. */
+  search: async (q: string) =>
+    (await apiClient.get<StylistSearchResult[]>('/api/stylists/', { params: { q } })).data,
+
   /** GET /api/stylists/me/ — 404 when the account has no stylist profile yet. */
   getMine: async () => (await apiClient.get<StylistProfile>('/api/stylists/me/')).data,
 

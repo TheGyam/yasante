@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useCallback, useRef, type RefObject } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import {
@@ -19,6 +19,7 @@ import { PressableScale } from '@/shared/ui/PressableScale';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
 import { bookable, postedLabel } from '../format';
+import { openWithHero } from '../heroTransition';
 import type { Look } from '../types';
 import { LikeButton } from './LikeButton';
 import { usePhotoTaps } from './usePhotoTaps';
@@ -41,6 +42,9 @@ export interface LookCardProps {
   onShare: (look: Look) => void;
   onBook?: (look: Look) => void;
   onMore: (look: Look) => void;
+  /** On the look's own page: where the photo lands, for the opening animation. */
+  photoRef?: RefObject<View | null>;
+  onPhotoLayout?: () => void;
 }
 
 const useStyles = makeStyles(t => ({
@@ -98,6 +102,8 @@ export const LookCard = memo(function LookCard({
   onShare,
   onBook,
   onMore,
+  photoRef,
+  onPhotoLayout,
 }: LookCardProps) {
   const styles = useStyles();
   const theme = useTheme();
@@ -105,7 +111,16 @@ export const LookCard = memo(function LookCard({
     ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
     : undefined;
 
-  const { gesture: photoGesture, heart } = usePhotoTaps(look, onOpen, onLike);
+  // In a feed the photo grows out of this card into the look's page.
+  const ownPhoto = useRef<View>(null);
+  const media = photoRef ?? ownPhoto;
+  const openFromHere = useCallback(
+    (l: Look) =>
+      onOpen &&
+      openWithHero(media.current, { lookId: l.id, uri: l.thumbUri ?? l.photoUri }, () => onOpen(l)),
+    [onOpen, media]
+  );
+  const { gesture: photoGesture, heart } = usePhotoTaps(look, onOpen && openFromHere, onLike);
   const open = () => onOpen?.(look);
 
   const author = (
@@ -156,7 +171,7 @@ export const LookCard = memo(function LookCard({
         />
       </View>
 
-      <View style={styles.media}>
+      <View ref={media} style={styles.media} onLayout={onPhotoLayout}>
         {/* Only the photo takes the taps: the buttons over it are siblings, so pressing
             one can never open or like the look as well. */}
         <GestureDetector gesture={photoGesture}>
@@ -171,6 +186,9 @@ export const LookCard = memo(function LookCard({
               uri={look.photoUri}
               style={StyleSheet.absoluteFill}
               recyclingKey={look.id}
+              // The grid's copy while the full photo loads: no flash when the
+              // opening animation hands over to this image.
+              placeholderUri={look.thumbUri}
             />
             {heart}
           </View>

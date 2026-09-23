@@ -10,6 +10,8 @@ export interface RemoteImageProps {
   recyclingKey?: string;
   accessibilityLabel?: string;
   priority?: 'low' | 'normal' | 'high';
+  /** A smaller copy already cached (the grid's), shown until this one has loaded. */
+  placeholderUri?: string;
 }
 
 const useStyles = makeStyles(t => ({
@@ -28,11 +30,14 @@ export function RemoteImage({
   recyclingKey,
   accessibilityLabel,
   priority = 'normal',
+  placeholderUri,
 }: RemoteImageProps) {
   const styles = useStyles();
   return (
     <Image
       source={uri ? { uri } : undefined}
+      placeholder={placeholderUri ? { uri: placeholderUri } : undefined}
+      placeholderContentFit={contentFit}
       style={[styles.base, style]}
       contentFit={contentFit}
       transition={recyclingKey ? 0 : 180}

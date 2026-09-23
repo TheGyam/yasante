@@ -45,7 +45,7 @@ const useHydrated = (
 function RootNavigator() {
   const theme = useTheme();
   const router = useRouter();
-  const { push, modal, fade } = useStackPresets();
+  const { push, modal, fade, overlay } = useStackPresets();
   const { isAuthenticated, isLoading, user } = useAuth();
   const phoneDeferred = useAuthStore(s => s.phoneDeferred);
   const onboarded = useUserStore(s => s.onboardingCompleted);
@@ -126,7 +126,7 @@ function RootNavigator() {
         <Stack.Screen name="hair-profile/[section]" options={modal} />
         <Stack.Screen name="looks/index" />
         <Stack.Screen name="looks/area" options={modal} />
-        <Stack.Screen name="looks/[id]" />
+        <Stack.Screen name="looks/[id]" options={overlay} />
         <Stack.Screen name="stylist/[handle]" />
 
         {/* Doing anything needs an account; a guest's tap is sent to sign up instead

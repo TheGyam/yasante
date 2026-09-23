@@ -264,6 +264,25 @@ defineMocks({
     return { pendingRequests: db.pendingRequests.get(accountId) ?? 0, appointmentsToday: 0 };
   },
 
+  'GET /api/stylists/': request => {
+    const words = (request.query.get('q') ?? '').toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return [];
+    return [...db.stylists.values()]
+      .filter(p => p.published)
+      .filter(p => {
+        const text = `${p.displayName} ${p.handle} ${p.baseArea}`.toLowerCase();
+        return words.every(word => text.includes(word));
+      })
+      .slice(0, 20)
+      .map(p => ({
+        accountId: p.accountId,
+        handle: p.handle,
+        displayName: p.displayName,
+        avatarUri: p.avatarUri,
+        baseArea: p.baseArea,
+      }));
+  },
+
   'POST /api/stylists/': request => {
     const accountId = requireAccount(request);
     if (db.stylists.has(accountId)) throw new MockError(400, 'You already have a stylist page');

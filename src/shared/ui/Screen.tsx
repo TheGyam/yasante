@@ -45,6 +45,12 @@ export interface ScreenProps {
   /** Apply the page gutter (default true). */
   padded?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
+  /** Draw the theme's ground colour (default). Off for a screen that paints its own,
+   *  like a look opening over the feed. */
+  opaque?: boolean;
+  /** Show the big title at the top (default). Off when the page names itself in its
+   *  own content; the bar still shows the title once scrolled. */
+  titleBlock?: boolean;
   testID?: string;
 }
 
@@ -111,6 +117,8 @@ export function Screen({
   headerRight,
   scroll = true,
   keyboard = false,
+  opaque = true,
+  titleBlock: showTitleBlock = true,
   refreshing,
   onRefresh,
   padded = true,
@@ -149,7 +157,7 @@ export function Screen({
     contentStyle,
   ];
 
-  const titleBlock = largeTitle && scroll !== 'list' && (
+  const titleBlock = largeTitle && showTitleBlock && scroll !== 'list' && (
     <ScreenTitle title={title} subtitle={subtitle} />
   );
 
@@ -203,7 +211,7 @@ export function Screen({
     <ScrollContext.Provider value={scrollY}>
       {/* A flat ground colour: cheap to paint, unlike a full-screen SVG gradient,
           which Android draws on the CPU for every screen in a transition. */}
-      <View style={[styles.fill, { backgroundColor: theme.colors.bg }]} testID={testID}>
+      <View style={[styles.fill, opaque && { backgroundColor: theme.colors.bg }]} testID={testID}>
         {body}
         {hasBar && (
           <View pointerEvents="box-none" style={[styles.bar, { height: top + HEADER_HEIGHT }]}>

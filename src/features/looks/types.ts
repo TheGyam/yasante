@@ -104,6 +104,8 @@ export interface LookFilters {
   hair?: HairTexture;
   style?: string;
   area?: string;
+  /** Words to search for: caption, style, service, the stylist or who posted it. */
+  q?: string;
 }
 
 /** Why someone reported a look. The wording is what the reporter sees. */

@@ -5,6 +5,7 @@ import {
   BarChart3,
   Clock,
   MapPin,
+  Pencil,
   Settings,
   Store,
   WifiOff,
@@ -84,6 +85,15 @@ export default function StylistAccountScreen() {
                 icon={BadgeCheck}
                 iconTone={profile.verificationTier > 0 ? 'success' : 'neutral'}
               />
+              {profile.published && (
+                <ListRow
+                  title="Edit your page"
+                  subtitle="Name, photo, bio, area and your terms"
+                  icon={Pencil}
+                  onPress={() => router.push('/stylist-setup')}
+                  testID="account-edit-page"
+                />
+              )}
             </Section>
             <Section>
               <ListRow

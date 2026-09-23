@@ -133,6 +133,8 @@ export default function StylistSetupScreen() {
   };
 
   const saving = createProfile.isPending || updateProfile.isPending || publish.isPending;
+  // Changing a page that's already live, rather than setting one up.
+  const editingLive = !!existing?.published;
 
   return (
     <Screen
@@ -285,7 +287,7 @@ export default function StylistSetupScreen() {
 
         <View style={styles.footer}>
           <Button
-            label={isLast ? 'Put my page live' : 'Continue'}
+            label={isLast ? (editingLive ? 'Save changes' : 'Put my page live') : 'Continue'}
             onPress={isLast ? goLive : () => go(1)}
             disabled={!ready}
             loading={saving}
@@ -293,9 +295,21 @@ export default function StylistSetupScreen() {
             fullWidth
             testID="setup-next"
           />
-          {!isLast && (
-            <Button label="Finish later" variant="ghost" onPress={() => router.back()} fullWidth />
-          )}
+          {!isLast &&
+            (editingLive ? (
+              // A live page stays as it is: leaving drops the unsaved edits.
+              <Button
+                label="Cancel"
+                variant="ghost"
+                onPress={() => {
+                  reset();
+                  router.back();
+                }}
+                fullWidth
+              />
+            ) : (
+              <Button label="Finish later" variant="ghost" onPress={() => router.back()} fullWidth />
+            ))}
         </View>
       </View>
 

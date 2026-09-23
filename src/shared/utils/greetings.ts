@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const GREETINGS = [
   'Hey, glow-getter',
   'Looking fabulous today — same vibes!',
-  'Hair goals loading...',
+  // Not 'Hair goals loading...': under a greeting it reads as the app being stuck.
+  'Your crown, your rules.',
   'Top of the hair, top of the world.',
   'Ready to slay today?',
   'Crown check — looking iconic.',

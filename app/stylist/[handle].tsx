@@ -109,6 +109,8 @@ export default function StylistPageScreen() {
     <Screen
       back
       title={profile.displayName}
+      // Her name is already under her photo; the bar shows it once she's scrolled past.
+      titleBlock={false}
       headerRight={
         profile.accountId === user?.id ? undefined : (
           <IconButton

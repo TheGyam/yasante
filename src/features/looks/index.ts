@@ -16,3 +16,4 @@ export { useLookFilters } from './filters';
 export * from './format';
 export * from './hooks';
 export * from './components';
+export * from './heroTransition';
