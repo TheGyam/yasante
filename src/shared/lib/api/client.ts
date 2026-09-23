@@ -149,8 +149,8 @@ apiClient.interceptors.response.use(
         } catch (refreshError) {
           processQueue(refreshError, null);
           isRefreshing = false;
-          // Logout on refresh failure
-          authBridge?.logout();
+          // Only a refusal ends the session; no answer (offline) keeps her signed in.
+          if ((refreshError as AxiosError)?.response) authBridge?.logout();
           return Promise.reject(refreshError);
         }
       } else {
