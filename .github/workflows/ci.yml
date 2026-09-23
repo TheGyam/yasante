@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  # The deploy workflow runs this first and only ships what passes.
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_call' }}
+
+jobs:
+  app:
+    name: App (types, lint, tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npx jest --ci
+
+  backend:
+    name: Backend (tests, migrations)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: yasante
+          POSTGRES_PASSWORD: yasante
+          POSTGRES_DB: yasante
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U yasante" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      SECRET_KEY: ci-only-not-a-secret
+      DATABASE_URL: postgres://yasante:yasante@localhost:5432/yasante
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Migrations match the models
+        run: python manage.py makemigrations --check --dry-run
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+      - run: python -m pytest -q -p no:cacheprovider --create-db
