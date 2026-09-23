@@ -28,7 +28,7 @@ jobs:
       name: production
       url: https://yasante.com/api/docs/swagger/
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Package the backend
         run: git archive --format=tar -o backend.tar HEAD:backend
