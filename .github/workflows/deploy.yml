@@ -1,0 +1,64 @@
+name: Deploy backend
+
+on:
+  push:
+    branches: [master]
+    paths: ['backend/**', '.github/workflows/deploy.yml', '.github/workflows/ci.yml']
+  workflow_dispatch:
+
+# One deploy at a time; a newer push waits rather than racing the last one.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  DEPLOY_HOST: 13.49.44.212
+  DEPLOY_USER: ec2-user
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Ship to yasante.com
+    needs: ci
+    runs-on: ubuntu-latest
+    # Settings → Environments → production can require an approval before this runs.
+    environment:
+      name: production
+      url: https://yasante.com/api/docs/swagger/
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package the backend
+        run: git archive --format=tar -o backend.tar HEAD:backend
+
+      - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          test -n "$DEPLOY_SSH_KEY" || { echo "::error::Add the DEPLOY_SSH_KEY secret (see backend/deploy/README.md)"; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Pinned, not scanned: only the real server is trusted.
+          cp .github/deploy_known_hosts ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          ssh_opts="-i $HOME/.ssh/deploy_key -o BatchMode=yes"
+          scp $ssh_opts backend.tar backend/deploy/deploy.sh "$DEPLOY_USER@$DEPLOY_HOST:/tmp/"
+          ssh $ssh_opts "$DEPLOY_USER@$DEPLOY_HOST" 'bash /tmp/deploy.sh /tmp/backend.tar'
+
+      - name: Check it from outside
+        run: |
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://yasante.com/api/styles/ || true)
+            [ "$code" = 200 ] && { echo "https://yasante.com is answering"; exit 0; }
+            sleep 3
+          done
+          echo "::error::https://yasante.com/api/styles/ answered $code"; exit 1
+
+      - name: Forget the key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
