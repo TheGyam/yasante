@@ -1,7 +1,0 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-  <!-- Debug builds only: allows plain HTTP and proxy certificates against the API host
-       so the backend can be inspected locally. Never merged into release builds. -->
-  <application
-    android:usesCleartextTraffic="true"
-    android:networkSecurityConfig="@xml/network_security_config" />
-</manifest>

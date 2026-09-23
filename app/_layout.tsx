@@ -21,7 +21,7 @@ import { ModeSwitchOverlay, useActiveMode, useModeStore } from '@/features/styli
 import { useNotifications } from '@/shared/hooks/useNotifications';
 import { useConsentSync } from '@/shared/config/consentSync';
 import { startAnalytics, track } from '@/shared/lib/analytics';
-import { ThemeProvider, useTheme } from '@/shared/theme';
+import { ThemeProvider, useTheme, useThemePreference } from '@/shared/theme';
 import { DialogHost } from '@/shared/ui/DialogHost';
 import { useStackPresets } from '@/shared/ui/stackOptions';
 import { queryClient } from '@/queryClient';
@@ -38,8 +38,9 @@ startAnalytics();
 
 export const unstable_settings = { anchor: '(client)' };
 
-const useHydrated = (store: typeof useUserStore | typeof useModeStore) =>
-  useSyncExternalStore(store.persist.onFinishHydration, store.persist.hasHydrated);
+const useHydrated = (
+  store: typeof useUserStore | typeof useModeStore | typeof useThemePreference
+) => useSyncExternalStore(store.persist.onFinishHydration, store.persist.hasHydrated);
 
 function RootNavigator() {
   const theme = useTheme();
@@ -51,7 +52,10 @@ function RootNavigator() {
   const mode = useActiveMode();
   const userHydrated = useHydrated(useUserStore);
   const modeHydrated = useHydrated(useModeStore);
-  const ready = userHydrated && modeHydrated && !isLoading;
+  // The chosen Appearance too: until it's read back, a Light choice would flash the
+  // phone's dark (or the reverse) between the splash and the first screen.
+  const themeHydrated = useHydrated(useThemePreference);
+  const ready = userHydrated && modeHydrated && themeHydrated && !isLoading;
 
   // Answers given before signing up reach the account once there is one; so do
   // consent choices, which are recorded on the device first.

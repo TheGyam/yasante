@@ -1,14 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { RefreshControl, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { useScrollToTop, useIsFocused } from '@react-navigation/native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  type SharedValue,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { Images, Plus, Search, SearchX, WifiOff } from 'lucide-react-native';
 import { AuthPromptModal, GreetingBanner, useAuth } from '@/features/auth';
 import { BookingNudge } from '@/features/booking';
@@ -24,7 +19,7 @@ import {
   type Look,
 } from '@/features/looks';
 import { useUser } from '@/features/profile';
-import { GUTTER, makeStyles, radius, space, timing, useTheme } from '@/shared/theme';
+import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
 import { useContentInsets } from '@/shared/ui/layout';
@@ -109,12 +104,6 @@ function FeedSkeleton() {
   );
 }
 
-/** Dims a tile while a new filter loads, from one shared value — no re-renders. */
-function Dim({ opacity, children }: { opacity: SharedValue<number>; children: ReactNode }) {
-  const style = useAnimatedStyle(() => ({ opacity: opacity.get() }));
-  return <Animated.View style={style}>{children}</Animated.View>;
-}
-
 /**
  * Home is the looks people post: real hair, and who did it. Everything in the
  * grid was put up by someone on Yasante — a stylist's work, or a client's hair.
@@ -130,7 +119,9 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
 
   const { user: authUser, isAuthenticated } = useAuth();
   const { data: user } = useUser(authUser?.id, { enabled: !!authUser?.id });
-  const firstName = user?.name?.split(' ')[0];
+  // The name saved with the sign-in first, so the greeting doesn't flip from
+  // "there" to her name once the profile arrives; the profile wins if it's newer.
+  const firstName = (user?.name ?? authUser?.name)?.split(' ')[0];
 
   const actions = useLookActions({ onNeedsAccount });
 
@@ -146,11 +137,9 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
   const fallback = useLooks({}, { enabled: emptyFiltered });
   const fallbackLooks = (fallback.data?.pages[0]?.data ?? []).slice(0, 6);
 
-  // Old results stay up, dimmed, while a new filter loads.
-  const opacity = useSharedValue(1);
-  useEffect(() => {
-    opacity.set(withTiming(feed.isPlaceholderData ? 0.45 : 1, timing.state));
-  }, [feed.isPlaceholderData, opacity]);
+  // Old results stay up, dimmed, while a new filter loads. Rare, so re-rendering the
+  // tiles then is cheaper than an animated wrapper around every tile while scrolling.
+  const dimmed = feed.isPlaceholderData;
 
   const tile = useCallback(
     (look: Look) => (
@@ -159,14 +148,12 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
         onOpen={actions.onOpen}
         onLike={actions.onLike}
         onSave={look.mine ? undefined : actions.onSave}
+        dimmed={dimmed}
       />
     ),
-    [actions]
+    [actions, dimmed]
   );
-  const renderItem = useCallback(
-    ({ item }: { item: Look }) => <Dim opacity={opacity}>{tile(item)}</Dim>,
-    [opacity, tile]
-  );
+  const renderItem = useCallback(({ item }: { item: Look }) => tile(item), [tile]);
 
   // Built only when what's in it changes: the list re-renders its header otherwise.
   const loading = feed.isLoading;

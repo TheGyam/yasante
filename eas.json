@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 13.2.0"
+    "version": ">= 13.2.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -14,7 +15,7 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://staging-api.yasante.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://yasante.com"
       }
     },
     "preview": {
@@ -25,9 +26,8 @@
       "android": {
         "buildType": "apk"
       },
-      "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://staging-api.yasante.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://yasante.com"
       }
     },
     "production": {
@@ -38,10 +38,10 @@
       "android": {
         "buildType": "apk"
       },
-      "channel": "production",
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.yasante.com"
-      }
+        "EXPO_PUBLIC_API_BASE_URL": "https://yasante.com"
+      },
+      "autoIncrement": true
     }
   },
   "submit": {

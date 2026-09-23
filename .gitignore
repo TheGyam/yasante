@@ -35,3 +35,7 @@ coverage/
 # Misc
 *.log
 *.pem
+
+# Native projects are generated from app.json at build time (Continuous Native Generation).
+/android
+/ios

@@ -7,16 +7,12 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "scheme": "yasante",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0B0709"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yasante.app",
       "infoPlist": {
-        "CADisableMinimumFrameDurationOnPhone": true
+        "CADisableMinimumFrameDurationOnPhone": true,
+        "ITSAppUsesNonExemptEncryption": false
       },
       "associatedDomains": [
         "applinks:yasante.com",
@@ -80,7 +76,20 @@
       "expo-video",
       "expo-font",
       "expo-secure-store",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-wordmark-light.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#F7F2F4",
+          "dark": {
+            "image": "./assets/splash-wordmark-dark.png",
+            "backgroundColor": "#0B0709"
+          }
+        }
+      ]
     ],
     "extra": {
       "router": {},
