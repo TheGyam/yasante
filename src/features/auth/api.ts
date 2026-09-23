@@ -55,6 +55,46 @@ export interface AuthResponse {
   user: User;
 }
 
+type RefreshedTokens = { accessToken: string; refreshToken?: string; expiresAt: number };
+
+let inFlightRefresh: { token: string; promise: Promise<ApiResponse<RefreshedTokens>> } | undefined;
+
+async function sendRefresh(refreshToken: string): Promise<ApiResponse<RefreshedTokens>> {
+  const url = '/api/auth/refresh-token/';
+  if (__DEV__) console.log('📡 Refresh Token Request:', { method: 'POST', url });
+
+  try {
+    // Its own client: the refresh call must not pass through the 401 interceptor.
+    const refreshClient = axios.create({
+      baseURL: apiConfig.baseURL,
+      timeout: apiConfig.timeout,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const response = await refreshClient.post<any>(url, { refreshToken });
+    // A server that rotates refresh tokens sends the new one back; the old is revoked.
+    const data: RefreshedTokens = response.data?.data ?? response.data;
+    if (!data?.accessToken) throw new Error('Refresh token response missing accessToken');
+    if (__DEV__) console.log('✅ Refresh Token Success');
+    return { data };
+  } catch (error: any) {
+    if (__DEV__) {
+      // Refused means the session is over (expired, revoked, or from another server):
+      // she signs in again. That's routine, not an error worth a red screen.
+      if (error.response?.status === 401) {
+        console.log('🔒 Session ended, sign in again:', error.response?.data?.message);
+      } else {
+        console.error('❌ Refresh Token Error:', {
+          url,
+          error: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+      }
+    }
+    throw error;
+  }
+}
+
 export const authApi = {
   /**
    * Login - Authenticate user and return JWT tokens
@@ -195,81 +235,17 @@ export const authApi = {
    * Refresh Token - Get new access token using refresh token
    * POST /api/auth/refresh-token/
    */
-  refreshToken: async (
-    refreshToken: string
-  ): Promise<ApiResponse<{ accessToken: string; refreshToken?: string; expiresAt: number }>> => {
-    const url = '/api/auth/refresh-token/';
-
-    if (__DEV__) {
-      console.log('📡 Refresh Token Request:', {
-        method: 'POST',
-        url,
-        hasRefreshToken: !!refreshToken,
-        refreshTokenLength: refreshToken?.length,
+  refreshToken: (refreshToken: string): Promise<ApiResponse<RefreshedTokens>> => {
+    // One refresh per token. The server accepts a refresh token once and revokes it,
+    // so a second caller sending the same one (start-up's check and a 401 retry, say)
+    // would be refused and sign her out. It waits for the first answer instead.
+    if (inFlightRefresh?.token !== refreshToken) {
+      const promise = sendRefresh(refreshToken).finally(() => {
+        if (inFlightRefresh?.promise === promise) inFlightRefresh = undefined;
       });
+      inFlightRefresh = { token: refreshToken, promise };
     }
-
-    try {
-      // Create a temporary axios instance without auth interceptor to avoid circular dependency
-      // The refresh token endpoint should not require authentication
-      const refreshClient = axios.create({
-        baseURL: apiConfig.baseURL,
-        timeout: apiConfig.timeout,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      // Backend returns { data: { accessToken, expiresAt } }
-      // Try both field names: refreshToken and refresh (some backends use different names)
-      const response = await refreshClient.post<any>(url, {
-        refreshToken, // Primary field name from API docs
-      });
-
-      if (__DEV__) {
-        console.log('✅ Refresh Token Response:', {
-          url,
-          status: response.status,
-          hasData: !!response.data,
-          responseKeys: response.data ? Object.keys(response.data) : [],
-        });
-      }
-
-      // Handle wrapped response format
-      // A server that rotates refresh tokens sends the new one back; the old is revoked.
-      let data: { accessToken: string; refreshToken?: string; expiresAt: number };
-      if ((response.data as any).data) {
-        data = (response.data as any).data;
-      } else {
-        data = response.data as { accessToken: string; refreshToken?: string; expiresAt: number };
-      }
-
-      if (!data.accessToken) {
-        throw new Error('Refresh token response missing accessToken');
-      }
-
-      if (__DEV__) {
-        console.log('✅ Refresh Token Success:', {
-          hasAccessToken: !!data.accessToken,
-          expiresAt: data.expiresAt,
-          expiresAtType: typeof data.expiresAt,
-        });
-      }
-
-      return { data };
-    } catch (error: any) {
-      if (__DEV__) {
-        console.error('❌ Refresh Token Error:', {
-          url,
-          error: error.message,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          requestPayload: { hasRefreshToken: !!refreshToken },
-        });
-      }
-      throw error;
-    }
+    return inFlightRefresh.promise;
   },
 
   /**

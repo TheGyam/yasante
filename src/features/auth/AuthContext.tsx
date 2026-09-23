@@ -125,15 +125,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return true;
     } catch (error: any) {
-      if (__DEV__) {
-        console.error('❌ Token refresh failed:', {
-          error: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-        });
-      }
-      // Token refresh failed, logout user
-      logoutStore();
+      // No answer (offline, server down) isn't a verdict: keep her signed in and try
+      // again later. Only a server that refuses the token ends the session.
+      if (error.response) logoutStore();
       return false;
     }
   }, [tokens, isTokenExpired, logoutStore]);
