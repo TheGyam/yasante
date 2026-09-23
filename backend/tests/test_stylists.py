@@ -236,3 +236,16 @@ def test_timing_label_needs_ten_and_sixty_percent(api, make_stylist, make_user):
         )
     page = api().get(f"/api/stylists/by-handle/{profile.handle}/").json()
     assert page["timingLabel"] == {"outcome": "on_time", "count": 7, "sample": 10}
+
+
+def test_search_lists_live_pages_by_name_handle_or_area(api, make_stylist):
+    live = make_stylist()
+    body = api().get("/api/stylists/", q=live.handle[:5]).json()
+    assert [s["handle"] for s in body] == [live.handle]
+    assert set(body[0]) >= {"accountId", "handle", "displayName", "baseArea"}
+    assert "address" not in body[0]
+    assert api().get("/api/stylists/", q="Peckham").json()[0]["handle"] == live.handle
+    live.published = False
+    live.save(update_fields=["published"])
+    assert api().get("/api/stylists/", q=live.handle).json() == []
+    assert api().get("/api/stylists/").json() == []

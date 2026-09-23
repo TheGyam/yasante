@@ -72,7 +72,7 @@ def _is_uuid(value):
 
 
 class FeedView(APIView):
-    """GET /api/looks/?cursor=&limit=&hair=&style=&area= — also POST, to post a look."""
+    """GET /api/looks/?cursor=&limit=&hair=&style=&area=&q= — also POST, to post a look."""
 
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -95,6 +95,15 @@ class FeedView(APIView):
         area = request.query_params.get("area")
         if area:
             qs = qs.filter(area=area)
+        # Search: every word has to appear somewhere a person would look for it.
+        for word in (request.query_params.get("q") or "").split()[:6]:
+            qs = qs.filter(
+                Q(caption__icontains=word)
+                | Q(service_name__icontains=word)
+                | Q(stylist_name__icontains=word)
+                | Q(author__name__icontains=word)
+                | Q(styles__name__icontains=word)
+            ).distinct()
 
         items, next_cursor = keyset_page(qs, request)
         return Response({"data": present_looks(items, viewer), "next_cursor": next_cursor})

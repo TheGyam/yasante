@@ -198,3 +198,25 @@ def test_saving_counts_each_person_once(api, make_user, make_look):
     assert api(make_user()).get(f"/api/looks/{look.pk}/").json()["saveCount"] == 1
     assert me.get(f"/api/looks/{look.pk}/").json()["saved"] is True
     assert me.get("/api/looks/").json()["data"][0]["saved"] is True
+
+
+def test_search_finds_looks_by_caption_style_and_people(api, make_user, make_stylist, make_look):
+    profile = make_stylist()
+    author = make_user(name="Zainab Bello")
+    by_caption = make_look(author, caption="Waist length boho for the summer")
+    by_style = make_look(author, style="cornrows")
+    by_stylist = make_look(author, stylist=profile)
+    make_look(author, caption="Wash day")
+    found = lambda q: set(ids(api().get("/api/looks/", q=q)))
+    assert found("boho summer") == {str(by_caption.pk)}
+    assert str(by_style.pk) in found("cornrows")
+    assert str(by_stylist.pk) in found(profile.display_name.split()[0])
+    assert len(found("zainab")) == 4
+    assert found("nothing-like-this") == set()
+
+
+def test_search_hides_people_you_have_blocked(api, make_user, make_look):
+    author, viewer = make_user(), make_user()
+    look = make_look(author, caption="Silk press")
+    api(viewer).post("/api/blocks/", {"accountId": str(author.pk)})
+    assert str(look.pk) not in ids(api(viewer).get("/api/looks/", q="silk"))

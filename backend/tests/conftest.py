@@ -142,7 +142,15 @@ def styles(db):
 
 @pytest.fixture
 def make_look(styles):
+    import itertools
+    from datetime import timedelta
+
     from apps.looks.models import Look
+    from django.utils import timezone
+
+    # Each look a second after the last: created in the same instant, feed order
+    # would fall back to random ids and tests that expect newest-first would flake.
+    start, ticks = timezone.now() - timedelta(days=1), itertools.count()
 
     def make(author, style="knotless", visibility="public", stylist=None, **extra):
         look = Look.objects.create(
@@ -150,9 +158,12 @@ def make_look(styles):
             photo_uri="https://example.com/photo.jpg",
             visibility=visibility,
             stylist_id=str(stylist.account_id) if stylist else "",
+            stylist_name=stylist.display_name if stylist else "",
             area=stylist.base_area if stylist else "",
             **extra,
         )
+        Look.objects.filter(pk=look.pk).update(created_at=start + timedelta(seconds=next(ticks)))
+        look.refresh_from_db()
         look.styles.add(styles[style])
         return look
 
