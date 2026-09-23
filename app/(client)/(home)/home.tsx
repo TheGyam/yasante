@@ -163,7 +163,7 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
         <GreetingBanner firstName={firstName} />
         {isAuthenticated && <BookingNudge />}
         <SearchField
-          placeholder="Search styles, tips and care"
+          placeholder="Search looks, stylists and tips"
           onPress={() => router.push('/search')}
         />
         <TipOfTheDay />

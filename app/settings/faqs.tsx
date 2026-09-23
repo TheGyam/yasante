@@ -10,24 +10,32 @@ import { Text } from '@/shared/ui/Text';
 
 const FAQS = [
   {
-    q: 'What is a board?',
-    a: 'A board keeps everything about one look together: inspiration photos, your appointment, the stylist, where it is and what it costs. Create one from the Planner tab, or save any picture from Home straight into a board.',
+    q: 'What is a look?',
+    a: 'A photo of real hair, posted by the person wearing it or the stylist who did it. When a look was booked through Yasante, it credits the stylist and the service, so you can book the same. Double-tap a photo to like it.',
   },
   {
-    q: 'How do I save styles and articles?',
-    a: 'Tap the bookmark on any post or article. Everything you save is in Profile, under Saved styles and articles.',
+    q: 'How do I save looks?',
+    a: 'Tap the bookmark on any look and pick a collection, or start a new one. Your collections are in the Planner tab. Private ones are seen by you alone.',
+  },
+  {
+    q: 'How do I book a stylist?',
+    a: 'Open her page from a look, choose Request a booking, then pick the service and a time she’s free. She has 48 hours to reply. Any deposit is paid straight to her; Yasante never handles money.',
+  },
+  {
+    q: 'When do I see the stylist’s address?',
+    a: 'Once she confirms your booking. Until then her page shows the district only.',
+  },
+  {
+    q: 'She’s fully booked. Can I wait for a slot?',
+    a: 'Yes. On her page, choose Tell me if a slot opens and pick the days you could do. If someone cancels, you’ll see it on your home screen.',
   },
   {
     q: 'How do I change my hair profile?',
-    a: 'Tap the Your hair card on your profile to retake the quiz. It takes about two minutes, and what you see adapts to your answers.',
+    a: 'Tap the Your hair card on your profile. You can update any answer, and what you see adapts to it.',
   },
   {
-    q: 'Who can see my boards?',
-    a: 'Only you, unless you share one. Boards marked private are never shown to anyone else, even if they have the link.',
-  },
-  {
-    q: 'How do treatment reminders work?',
-    a: 'Add a treatment in the Planner under Treatments, choose how often and when, and turn on Remind me.',
+    q: 'What is a care plan?',
+    a: 'Your routine, written down: the steps and how often you do them. Start one in the Planner tab, under Care plans, and tick off each session as you go.',
   },
   {
     q: 'How do I download or delete my data?',

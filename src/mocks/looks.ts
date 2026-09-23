@@ -209,6 +209,21 @@ defineMocks({
     const hair = request.query.get('hair');
     const style = request.query.get('style');
     const area = request.query.get('area');
+    const words = (request.query.get('q') ?? '').toLowerCase().split(/\s+/).filter(Boolean);
+    const matches = (look: (typeof db.looks)[number]) => {
+      const stylist = look.stylistId ? db.stylists.get(look.stylistId) : undefined;
+      const author = db.accounts.get(look.authorId);
+      const text = [
+        look.caption,
+        look.serviceName,
+        stylist?.displayName,
+        author?.name,
+        ...look.styles,
+      ]
+        .join(' ')
+        .toLowerCase();
+      return words.every(word => text.includes(word));
+    };
 
     const visible = db.looks.filter(
       look =>
@@ -217,7 +232,8 @@ defineMocks({
         look.visibility !== 'private' &&
         (!hair || look.hairTexture === hair) &&
         (!style || look.styles.includes(style)) &&
-        (!area || (look.stylistId && db.stylists.get(look.stylistId)?.baseArea === area))
+        (!area || (look.stylistId && db.stylists.get(look.stylistId)?.baseArea === area)) &&
+        (!words.length || matches(look))
     );
     const start = cursor ? visible.findIndex(look => look.id === cursor) + 1 : 0;
     const page = visible.slice(start, start + limit);

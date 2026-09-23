@@ -55,7 +55,7 @@ export const looksApi = {
   comments: async (id: string, cursor?: string) =>
     (
       await apiClient.get<CommentsPage>(`/api/looks/${id}/comments/`, {
-        params: { cursor, limit: 20 },
+        params: { cursor, limit: 10 },
       })
     ).data,
 

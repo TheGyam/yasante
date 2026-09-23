@@ -1,9 +1,18 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useIsFocused } from '@react-navigation/native';
-import { ActivityIndicator, TextInput, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
+import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { Image } from 'expo-image';
 import { FlashList, useRecyclingState, type FlashListRef } from '@shopify/flash-list';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowUp, ImageOff, MoreHorizontal, X } from 'lucide-react-native';
@@ -12,6 +21,7 @@ import {
   LikeButton,
   LookCard,
   postedLabel,
+  takeHero,
   useAddComment,
   useComments,
   useLook,
@@ -22,7 +32,16 @@ import {
 } from '@/features/looks';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
-import { fonts, GUTTER, makeStyles, radius, space, timing, useTheme } from '@/shared/theme';
+import {
+  EASE_OUT,
+  fonts,
+  GUTTER,
+  makeStyles,
+  radius,
+  space,
+  timing,
+  useTheme,
+} from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { notify } from '@/shared/ui/dialog';
@@ -98,36 +117,187 @@ const useStyles = makeStyles(t => ({
   },
 }));
 
-/** One look, whole: the picture, the conversation under it, and a way to join in. */
+/** Photo growing from its tile into place; a little quicker back, as leaving should be. */
+const OPEN_MS = 340;
+const CLOSE_MS = 280;
+
+/**
+ * One look, whole: the picture, the conversation under it, and a way to join in.
+ *
+ * Opened from a feed, the photo grows out of the tile that was tapped while the
+ * page fades in around it over the feed (the route is a transparent overlay), and
+ * shrinks back into the tile on the way out. Opened any other way, or with reduced
+ * motion, the page just fades.
+ */
 export default function LookScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: look, isLoading } = useLook(id);
+  const navigation = useNavigation();
+  const theme = useTheme();
+  const reduced = useReducedMotion();
+  const { height: screenHeight } = useWindowDimensions();
   useEffect(() => {
     track('view_look', { lookId: id });
   }, [id]);
 
-  if (!look) {
-    return (
-      <Screen back testID="look-screen">
-        {isLoading ? (
-          <Skeleton height={420} />
-        ) : (
-          <EmptyState
-            icon={ImageOff}
-            title="This look is gone"
-            message="It may have been taken down."
-          />
-        )}
-      </Screen>
+  // Taken once: the tile's photo and where it sat.
+  const [hero] = useState(() => (reduced ? null : takeHero(id)));
+  const photo = useRef<View>(null);
+  // 0 = still the feed, 1 = the look's page.
+  const progress = useSharedValue(0);
+  const x = useSharedValue(hero?.from.x ?? 0);
+  const y = useSharedValue(hero?.from.y ?? 0);
+  const w = useSharedValue(hero?.from.width ?? 0);
+  const h = useSharedValue(hero?.from.height ?? 0);
+  // The flying copy exists only while it moves; the real photo sits under it.
+  const [flying, setFlying] = useState(!!hero);
+  // Comments are built once the page has arrived, so the opening frames only carry
+  // the photo and the look's details.
+  const [settled, setSettled] = useState(false);
+  const started = useRef(false);
+  const closing = useRef(false);
+
+  const land = useCallback(() => {
+    setFlying(false);
+    setSettled(true);
+  }, []);
+
+  const fadeIn = useCallback(() => {
+    if (started.current) return;
+    started.current = true;
+    progress.set(
+      withTiming(1, { duration: 220, easing: EASE_OUT }, done => {
+        if (done) scheduleOnRN(land);
+      })
     );
-  }
+  }, [progress, land]);
+
+  // Once the real photo has a place, fly the tile's copy onto it.
+  const onPhotoLayout = useCallback(() => {
+    if (!hero || started.current) return;
+    photo.current?.measureInWindow((tx, ty, tw, th) => {
+      if (started.current) return;
+      if (!tw || !th) return fadeIn();
+      started.current = true;
+      const move = { duration: OPEN_MS, easing: EASE_OUT };
+      x.set(withTiming(tx, move));
+      y.set(withTiming(ty, move));
+      w.set(withTiming(tw, move));
+      h.set(withTiming(th, move));
+      progress.set(
+        withTiming(1, move, done => {
+          if (done) scheduleOnRN(land);
+        })
+      );
+    });
+  }, [hero, fadeIn, land, progress, x, y, w, h]);
+
+  // Nothing to grow from (a link, a notification, reduced motion), or the photo
+  // never laid out (still loading): fade in rather than wait.
+  useEffect(() => {
+    if (!hero) return fadeIn();
+    const fallback = setTimeout(() => {
+      setFlying(false);
+      fadeIn();
+    }, 500);
+    return () => clearTimeout(fallback);
+  }, [hero, fadeIn]);
+
+  // Leaving by any route (back button, hardware back, a gesture) plays it in reverse.
+  useEffect(
+    () =>
+      navigation.addListener('beforeRemove', e => {
+        if (closing.current) return;
+        e.preventDefault();
+        closing.current = true;
+        const leave = () => navigation.dispatch(e.data.action);
+        const fadeOut = () =>
+          progress.set(
+            withTiming(0, { duration: 180, easing: EASE_OUT }, done => {
+              if (done) scheduleOnRN(leave);
+            })
+          );
+        if (!hero || !photo.current) return fadeOut();
+        photo.current.measureInWindow((px, py, pw, ph) => {
+          // Scrolled away from the photo: there's nothing to shrink back.
+          if (!pw || py + ph < 0 || py > screenHeight) return fadeOut();
+          x.set(px);
+          y.set(py);
+          w.set(pw);
+          h.set(ph);
+          setFlying(true);
+          const move = { duration: CLOSE_MS, easing: EASE_OUT };
+          x.set(withTiming(hero.from.x, move));
+          y.set(withTiming(hero.from.y, move));
+          w.set(withTiming(hero.from.width, move));
+          h.set(withTiming(hero.from.height, move));
+          progress.set(
+            withTiming(0, move, done => {
+              if (done) scheduleOnRN(leave);
+            })
+          );
+        });
+      }),
+    [navigation, hero, progress, screenHeight, x, y, w, h]
+  );
+
+  const backdrop = useAnimatedStyle(() => ({ opacity: progress.get() }));
+  // The photo leads; everything else follows it in, and leaves first.
+  const content = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.get(), [0.35, 1], [0, 1], Extrapolation.CLAMP),
+  }));
+  const flight = useAnimatedStyle(() => ({
+    left: x.get(),
+    top: y.get(),
+    width: w.get(),
+    height: h.get(),
+  }));
 
   return (
-    <Screen back title={look.authorName} scroll="list" testID="look-screen">
-      <LookThread id={id} />
-    </Screen>
+    <View style={heroStyles.fill}>
+      <Animated.View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.bg }, backdrop]}
+      />
+      <Animated.View style={[heroStyles.fill, content]}>
+        {look ? (
+          <Screen back title={look.authorName} scroll="list" opaque={false} testID="look-screen">
+            <LookThread id={id} settled={settled} photoRef={photo} onPhotoLayout={onPhotoLayout} />
+          </Screen>
+        ) : (
+          <Screen back opaque={false} testID="look-screen">
+            {isLoading ? (
+              <Skeleton height={420} />
+            ) : (
+              <EmptyState
+                icon={ImageOff}
+                title="This look is gone"
+                message="It may have been taken down."
+              />
+            )}
+          </Screen>
+        )}
+      </Animated.View>
+      {flying && hero && (
+        // Absolute, and nothing inside but its image: moving its frame lays out this
+        // one view, not the page.
+        <Animated.View pointerEvents="none" style={[heroStyles.flight, flight]}>
+          <Image
+            source={{ uri: hero.uri }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
+        </Animated.View>
+      )}
+    </View>
   );
 }
+
+const heroStyles = StyleSheet.create({
+  fill: { flex: 1 },
+  flight: { position: 'absolute', overflow: 'hidden', borderRadius: radius.lg },
+});
 
 interface CommentHandlers {
   onReply: (comment: LookComment) => void;
@@ -275,7 +445,18 @@ function Thread({
   );
 }
 
-function LookThread({ id }: { id: string }) {
+function LookThread({
+  id,
+  settled,
+  photoRef,
+  onPhotoLayout,
+}: {
+  id: string;
+  /** False while the page is still arriving: comments wait until it has. */
+  settled: boolean;
+  photoRef: RefObject<View | null>;
+  onPhotoLayout: () => void;
+}) {
   const styles = useStyles();
   const insets = useContentInsets();
   const safe = useSafeAreaInsets();
@@ -289,9 +470,10 @@ function LookThread({ id }: { id: string }) {
   const { data: look } = useLook(id);
   const thread = useComments(id);
   const focused = useIsFocused();
+  // Fetched straight away, built only once the page has arrived.
   const comments = useMemo(
-    () => thread.data?.pages.flatMap(page => page.data) ?? [],
-    [thread.data]
+    () => (settled ? (thread.data?.pages.flatMap(page => page.data) ?? []) : []),
+    [thread.data, settled]
   );
 
   const onOptions = useCallback(
@@ -338,17 +520,19 @@ function LookThread({ id }: { id: string }) {
               {...actions}
               onOpen={undefined}
               onSave={look.mine ? undefined : actions.onSave}
+              photoRef={photoRef}
+              onPhotoLayout={onPhotoLayout}
             />
             <Text variant="overline" tone="tertiary" style={styles.heading}>
               {look.commentCount
                 ? `${look.commentCount} ${look.commentCount === 1 ? 'comment' : 'comments'}`
                 : 'Comments'}
             </Text>
-            {thread.isLoading && <Skeleton height={60} />}
+            {(thread.isLoading || !settled) && <Skeleton height={60} />}
           </View>
         }
         ListEmptyComponent={
-          thread.isLoading ? null : (
+          thread.isLoading || !settled ? null : (
             <Text variant="subhead" tone="secondary">
               No comments yet. Say what you love about it.
             </Text>
@@ -357,9 +541,12 @@ function LookThread({ id }: { id: string }) {
         ListFooterComponent={<ListFooter more={!!thread.hasNextPage} />}
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
-          if (focused && thread.hasNextPage && !thread.isFetchingNextPage) thread.fetchNextPage();
+          if (settled && focused && thread.hasNextPage && !thread.isFetchingNextPage) {
+            thread.fetchNextPage();
+          }
         }}
-        onEndReachedThreshold={FEED_LIST.onEndReachedThreshold}
+        // The next batch only as she nears the end of this one, not screens ahead.
+        onEndReachedThreshold={0.5}
         drawDistance={FEED_LIST.drawDistance}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"

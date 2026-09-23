@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useCallback, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { BookmarkPlus } from 'lucide-react-native';
@@ -8,6 +8,7 @@ import { Avatar } from '@/shared/ui/Avatar';
 import { IconButton } from '@/shared/ui/IconButton';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
+import { openWithHero } from '../heroTransition';
 import type { Look } from '../types';
 import { LikeButton } from './LikeButton';
 import { usePhotoTaps } from './usePhotoTaps';
@@ -73,14 +74,21 @@ export const LookTile = memo(function LookTile({
   dimmed,
 }: LookTileProps) {
   const styles = useStyles();
-  const { gesture, heart } = usePhotoTaps(look, onOpen, onLike, 64);
+  // The photo grows out of this tile into the look's page (see heroTransition).
+  const photo = useRef<View>(null);
+  const openFromHere = useCallback(
+    (l: Look) =>
+      openWithHero(photo.current, { lookId: l.id, uri: l.thumbUri ?? l.photoUri }, () => onOpen(l)),
+    [onOpen]
+  );
+  const { gesture, heart } = usePhotoTaps(look, openFromHere, onLike, 64);
   const price = look.price
     ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
     : undefined;
 
   return (
     <View style={[styles.tile, dimmed && styles.dimmed]}>
-      <View style={[styles.media, { aspectRatio: 1 / heightRatio(look) }]}>
+      <View ref={photo} style={[styles.media, { aspectRatio: 1 / heightRatio(look) }]}>
         {/* Only the photo takes taps: the save button over it is a sibling. */}
         <GestureDetector gesture={gesture}>
           <View

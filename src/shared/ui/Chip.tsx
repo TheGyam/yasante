@@ -1,3 +1,4 @@
+import { View } from 'react-native';
 import { Lock, type LucideIcon } from 'lucide-react-native';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { PressableScale } from './PressableScale';
@@ -43,21 +44,41 @@ export function Chip({
   const theme = useTheme();
   const color = selected ? theme.colors.accent : theme.colors.text.secondary;
 
-  return (
-    <PressableScale
-      // Not `disabled`: that fades it, and a locked choice is chosen, not unavailable.
-      onPress={locked ? undefined : onPress}
-      haptic={locked ? undefined : 'selection'}
-      scaleTo={locked ? 1 : undefined}
-      accessibilityRole="button"
-      accessibilityState={{ selected, disabled: locked }}
-      accessibilityLabel={accessibilityLabel ?? label}
-      style={[styles.chip, selected ? styles.selected : styles.idle]}
-    >
+  const inner = (
+    <>
       {Icon && <Icon size={15} color={color} strokeWidth={2.2} />}
       <Text variant="callout" style={{ color }} numberOfLines={1}>
         {label}
       </Text>
+    </>
+  );
+
+  // Nothing to do on press (a trait on a card, a locked choice): a plain label. A
+  // pressable with no action still takes the touch, so a card around it would never
+  // hear the tap.
+  if (!onPress || locked) {
+    return (
+      <View
+        accessible
+        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityState={{ selected }}
+        style={[styles.chip, selected ? styles.selected : styles.idle]}
+      >
+        {inner}
+      </View>
+    );
+  }
+
+  return (
+    <PressableScale
+      onPress={onPress}
+      haptic="selection"
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={accessibilityLabel ?? label}
+      style={[styles.chip, selected ? styles.selected : styles.idle]}
+    >
+      {inner}
     </PressableScale>
   );
 }

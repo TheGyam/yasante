@@ -37,7 +37,7 @@ export default function SettingsScreen() {
     haptics.medium();
     const ok = await confirm({
       title: 'Sign out?',
-      message: 'Your boards stay safe in your account.',
+      message: 'Your collections and bookings stay safe in your account.',
       confirmLabel: 'Sign out',
       destructive: true,
     });

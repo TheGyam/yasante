@@ -30,6 +30,16 @@ export function useMyStylistProfile() {
   });
 }
 
+/** Stylists whose name, handle or area matches what's typed. */
+export function useStylistSearch(q: string, { enabled = true } = {}) {
+  return useQuery({
+    queryKey: [KEY, 'search', q],
+    queryFn: () => stylistApi.search(q),
+    enabled: enabled && !!q,
+    staleTime: 60 * 1000,
+  });
+}
+
 /** Her page, by handle — what a client opens from a look or a shared link. */
 export function useStylistPage(handle?: string) {
   return useQuery({

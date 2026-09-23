@@ -27,7 +27,14 @@ function build(theme: Theme, reduced: boolean) {
     gestureEnabled: true,
   };
   const fade: Options = { animation: 'fade', animationDuration: 220 };
-  return { push, modal, fade };
+  // Over the screen below, which stays visible: the screen animates itself in (a
+  // look growing out of its tile in the feed).
+  const overlay: Options = {
+    presentation: 'transparentModal',
+    animation: 'none',
+    contentStyle: { backgroundColor: 'transparent' },
+  };
+  return { push, modal, fade, overlay };
 }
 
 // Built once per scheme and motion setting, so navigators always get the same objects.
@@ -36,7 +43,7 @@ const PRESETS = {
   light: { full: build(lightTheme, false), reduced: build(lightTheme, true) },
 } as const;
 
-/** `push` is every stack's screenOptions; `modal` and `fade` are per-screen options. */
+/** `push` is every stack's screenOptions; `modal`, `fade` and `overlay` are per-screen options. */
 export function useStackPresets() {
   const theme = useTheme();
   const reduced = useReducedMotion();

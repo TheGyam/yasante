@@ -12,6 +12,7 @@ import {
   useRemoveFromCollection,
   useUpdateCollection,
 } from '@/features/planner';
+import { useTransitionDone } from '@/shared/hooks/useTransitionDone';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -22,6 +23,7 @@ import { IconButton } from '@/shared/ui/IconButton';
 import { Input } from '@/shared/ui/Input';
 import { useContentInsets } from '@/shared/ui/layout';
 import { ListRow } from '@/shared/ui/ListRow';
+import { PressableScale } from '@/shared/ui/PressableScale';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Screen, ScreenTitle, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
@@ -70,6 +72,9 @@ function CollectionItems() {
   const { data: collections } = useCollections();
   const collection = collections?.find(item => item.id === id);
   const { data: items = [], isLoading, isRefetching, refetch } = useCollectionItems(id);
+  // The grid waits for the slide-in to finish: building it mid-slide made opening stutter.
+  const arrived = useTransitionDone();
+  const showGrid = arrived && !isLoading;
 
   const [name, setName] = useState('');
   const update = useUpdateCollection();
@@ -131,19 +136,29 @@ function CollectionItems() {
           }
         />
       </Section>
-      {isLoading && <Skeleton height={160} />}
+      {!showGrid && <Skeleton height={160} />}
     </View>
   );
 
   return (
     <AnimatedFlashList
-      data={isLoading ? [] : items}
+      data={showGrid ? items : []}
       numColumns={COLUMNS}
       keyExtractor={item => item.id}
       renderItem={({ item, index }) => (
         <View style={styles.cell}>
           <View>
-            <View style={styles.photo}>
+            {/* Opens what was saved: the look, or the article in Learn. */}
+            <PressableScale
+              scaleTo={0.97}
+              accessibilityLabel={`Open ${item.title ?? `item ${index + 1}`}`}
+              onPress={() =>
+                router.push(
+                  item.kind === 'look' ? `/looks/${item.refId}` : `/content/${item.refId}`
+                )
+              }
+              style={styles.photo}
+            >
               {!!item.imageUri && (
                 <RemoteImage
                   uri={item.imageUri}
@@ -151,7 +166,7 @@ function CollectionItems() {
                   recyclingKey={item.id}
                 />
               )}
-            </View>
+            </PressableScale>
             <IconButton
               icon={X}
               variant="overlay"
@@ -170,7 +185,7 @@ function CollectionItems() {
       )}
       ListHeaderComponent={header}
       ListEmptyComponent={
-        isLoading ? null : (
+        !showGrid ? null : (
           <EmptyState
             icon={Images}
             title="Nothing in here yet"

@@ -14,6 +14,7 @@ export type {
   StylistPolicies,
   StylistProfile,
   StylistProfileDraft,
+  StylistSearchResult,
   StylistSummary,
   StylistNumbers,
   WeekCounts,

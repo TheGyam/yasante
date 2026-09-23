@@ -18,7 +18,7 @@ const COPY: Record<AuthPromptFeature, { icon: LucideIcon; title: string; body: s
   moodboard: {
     icon: CalendarHeart,
     title: 'Plan your next look',
-    body: 'Create a free account to build mood boards and keep your appointments in one place.',
+    body: 'Create a free account to save looks into collections and keep your appointments in one place.',
   },
   favorites: {
     icon: Bookmark,
