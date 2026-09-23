@@ -15,32 +15,18 @@ A deploy copies the backend to the server and runs `deploy.sh` there, which:
 Migrations are not undone on rollback, so keep them backwards-compatible (add columns
 before code uses them; drop them a release after code stops).
 
-## One-time setup (repo owner)
+## One-time setup (done)
 
-GitHub only lets the repository owner add secrets.
-
-1. Copy the deploy key from the server:
-
-   ```bash
-   ssh ec2-user@13.49.44.212 cat ~/.ssh/github_deploy
-   ```
-
-2. GitHub → the repo → Settings → Secrets and variables → Actions → New repository
-   secret. Name: `DEPLOY_SSH_KEY`. Value: the whole key, including the
-   `-----BEGIN` and `-----END` lines.
-
-3. Optional: Settings → Environments → `production` → Required reviewers, so each
-   deploy waits for a click.
-
-4. Optional: Settings → Branches → protect `master` and require the **CI** checks, so
-   nothing reaches it (or the server) without passing.
-
-After step 2 you can delete the copy on the server: `rm ~/.ssh/github_deploy`
-(the public half stays in `authorized_keys`, which is what lets GitHub in).
+- The `DEPLOY_SSH_KEY` repository secret holds a key made only for GitHub
+  (`~/.ssh/github_deploy` on the server; its public half is in `authorized_keys`).
+- Optional: Settings → Environments → `production` → Required reviewers, so each
+  deploy waits for a click.
+- Optional: Settings → Branches → protect `master` and require the **CI** checks, so
+  nothing reaches it (or the server) without passing.
 
 ## Revoking
 
-Remove the line ending `github-actions-deploy (ElPrinceD/Kalon)` from
+Remove the line containing `github-actions-deploy` from
 `~/.ssh/authorized_keys` on the server, and delete the `DEPLOY_SSH_KEY` secret.
 
 ## Server layout
