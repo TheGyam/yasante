@@ -8,10 +8,11 @@ from datetime import timedelta
 from zoneinfo import ZoneInfo
 
 from apps.bookings.models import Booking, Review
-from apps.common.blocks import is_blocked
+from apps.common.blocks import blocked_account_ids, is_blocked
 from apps.common.permissions import IsPhoneVerified
 from django.conf import settings
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -105,9 +106,44 @@ class HandleCheckView(APIView):
 
 
 class StylistCreateView(APIView):
-    """POST /api/stylists/ — her page, as a draft only she can see."""
+    """
+    GET /api/stylists/?q= — search live pages by name, handle or area.
+    POST /api/stylists/ — her page, as a draft only she can see.
+    """
 
-    permission_classes = [permissions.IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
+    def get(self, request):
+        words = (request.query_params.get("q") or "").split()[:6]
+        if not words:
+            return Response([])
+        qs = StylistProfile.objects.filter(published=True)
+        for word in words:
+            qs = qs.filter(
+                Q(display_name__icontains=word)
+                | Q(handle__icontains=word)
+                | Q(base_area__icontains=word)
+            )
+        viewer = request.user if request.user.is_authenticated else None
+        blocked = blocked_account_ids(viewer) if viewer else set()
+        if blocked:
+            qs = qs.exclude(account_id__in=blocked)
+        qs = qs.order_by("-rating_count", "display_name")[:20]
+        return Response(
+            [
+                {
+                    "account_id": str(p.account_id),
+                    "handle": p.handle,
+                    "display_name": p.display_name,
+                    "avatar_uri": p.avatar_uri,
+                    "base_area": p.base_area,
+                }
+                for p in qs
+            ]
+        )
 
     def post(self, request):
         if StylistProfile.objects.filter(account=request.user).exists():
