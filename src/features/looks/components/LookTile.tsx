@@ -18,6 +18,8 @@ export interface LookTileProps {
   onLike: (look: Look, liked: boolean) => void;
   /** Absent for her own looks. */
   onSave?: (look: Look) => void;
+  /** Faded while newer results load. */
+  dimmed?: boolean;
 }
 
 // A mix of heights so the grid reads as a wall of photos, not a spreadsheet. The
@@ -32,6 +34,7 @@ function heightRatio(look: Look) {
 
 const useStyles = makeStyles(t => ({
   tile: { paddingHorizontal: space.xs + 1, paddingBottom: space.lg },
+  dimmed: { opacity: 0.45 },
   media: {
     overflow: 'hidden',
     borderRadius: radius.lg,
@@ -62,7 +65,13 @@ const useStyles = makeStyles(t => ({
  * A look in the home grid: the photo, who posted it, and the heart. One tap opens
  * it — comments, booking and the rest — and a double tap likes it.
  */
-export const LookTile = memo(function LookTile({ look, onOpen, onLike, onSave }: LookTileProps) {
+export const LookTile = memo(function LookTile({
+  look,
+  onOpen,
+  onLike,
+  onSave,
+  dimmed,
+}: LookTileProps) {
   const styles = useStyles();
   const { gesture, heart } = usePhotoTaps(look, onOpen, onLike, 64);
   const price = look.price
@@ -70,7 +79,7 @@ export const LookTile = memo(function LookTile({ look, onOpen, onLike, onSave }:
     : undefined;
 
   return (
-    <View style={styles.tile}>
+    <View style={[styles.tile, dimmed && styles.dimmed]}>
       <View style={[styles.media, { aspectRatio: 1 / heightRatio(look) }]}>
         {/* Only the photo takes taps: the save button over it is a sibling. */}
         <GestureDetector gesture={gesture}>

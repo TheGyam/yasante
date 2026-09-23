@@ -15,7 +15,6 @@ import { useRouter } from '@/shared/lib/navigation';
 import { useScrollToTop } from '@react-navigation/native';
 import { ChevronLeft, X } from 'lucide-react-native';
 import { GUTTER, fonts, makeStyles, space, useTheme } from '@/shared/theme';
-import { AmbientBackground } from './AmbientBackground';
 import { Glass } from './Glass';
 import { IconButton } from './IconButton';
 import { HEADER_HEIGHT, sheetTop, useContentInsets } from './layout';
@@ -98,7 +97,7 @@ export function ScreenTitle({ title, subtitle }: { title: string; subtitle?: str
 }
 
 /**
- * Every screen's frame: ambient background, a glass bar that fades in as content
+ * Every screen's frame: a plain background, a glass bar that fades in as content
  * scrolls under it, a large title that hands over to the bar, and safe-area and
  * tab-bar insets. All scroll-linked motion runs on the UI thread.
  */
@@ -202,8 +201,9 @@ export function Screen({
 
   return (
     <ScrollContext.Provider value={scrollY}>
-      <View style={styles.fill} testID={testID}>
-        <AmbientBackground />
+      {/* A flat ground colour: cheap to paint, unlike a full-screen SVG gradient,
+          which Android draws on the CPU for every screen in a transition. */}
+      <View style={[styles.fill, { backgroundColor: theme.colors.bg }]} testID={testID}>
         {body}
         {hasBar && (
           <View pointerEvents="box-none" style={[styles.bar, { height: top + HEADER_HEIGHT }]}>

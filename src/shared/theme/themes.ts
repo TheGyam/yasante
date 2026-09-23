@@ -15,8 +15,6 @@ export interface Theme {
   blurTint: BlurTint;
   colors: {
     bg: string;
-    /** Soft light sources painted behind content. */
-    ambient: readonly [string, string, string];
     glass: {
       /** Cards and grouped lists. */
       fill: string;
@@ -56,7 +54,6 @@ export const darkTheme: Theme = {
   blurTint: 'systemThinMaterialDark',
   colors: {
     bg: '#0B0709',
-    ambient: ['#6B1F3D', '#B8456E', '#C98A3E'],
     glass: {
       fill: 'rgba(255,255,255,0.06)',
       fillStrong: 'rgba(255,255,255,0.12)',
@@ -91,7 +88,6 @@ export const lightTheme: Theme = {
   blurTint: 'systemThinMaterialLight',
   colors: {
     bg: '#F7F2F4',
-    ambient: ['#F2C3D3', '#F8D9C0', '#E9CDD8'],
     glass: {
       fill: 'rgba(255,255,255,0.62)',
       fillStrong: 'rgba(255,255,255,0.9)',

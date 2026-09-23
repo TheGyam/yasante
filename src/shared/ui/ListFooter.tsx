@@ -22,8 +22,10 @@ export function ListFooter({ more }: { more: boolean }) {
 
 /** How far ahead of the viewport an endless list renders and asks for more. */
 export const FEED_LIST = {
-  /** Pixels rendered beyond the viewport, above and below — about a screen and a half. */
-  drawDistance: 1200,
+  /** Pixels rendered beyond the viewport, above and below — under a screen. More meant
+   *  each flick swapped in a big batch of tiles at once, which stuttered on Android;
+   *  photos for what's next are prefetched anyway. */
+  drawDistance: 600,
   /** Ask for the next page this many screens before the end. */
   onEndReachedThreshold: 2,
 } as const;
