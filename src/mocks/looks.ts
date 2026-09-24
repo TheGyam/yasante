@@ -335,9 +335,22 @@ defineMocks({
     const accountId = request.accountId ?? '';
     const look = visibleLook(request.params.id, accountId);
     const blocked = blocksOf(accountId);
-    const threads = db.comments
-      .filter(c => c.lookId === look.id && !c.parentId && !blocked.has(c.authorId))
-      .reverse();
+    const all = db.comments.filter(
+      c => c.lookId === look.id && !c.parentId && !blocked.has(c.authorId)
+    );
+    // Newest first on request; otherwise ranked like the server (a simpler version):
+    // likes, replies counting double, faded by age, her own fresh one first for her.
+    const now = Date.now();
+    const score = (c: (typeof all)[number]) => {
+      const hours = Math.max(0, (now - Date.parse(c.createdAt)) / 3_600_000);
+      const replies = db.comments.filter(r => r.parentId === c.id).length;
+      const mineFresh = c.authorId === accountId && hours < 1 ? 1e9 : 0;
+      return (commentLikesOf(c.id).size + 2 * replies + 1) / Math.pow(hours + 2, 1.2) + mineFresh;
+    };
+    const threads =
+      request.query.get('sort') === 'new'
+        ? [...all].reverse()
+        : [...all].sort((a, b) => score(b) - score(a));
     const { items, nextCursor } = page(
       threads,
       request.query.get('cursor'),

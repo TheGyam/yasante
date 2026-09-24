@@ -112,7 +112,8 @@ export default function ShelfItemScreen() {
   const inUse = isInUse(item);
 
   return (
-    <Screen back title={item.product.name} testID="shelf-item-screen">
+    // The name is in the page's own heading; the bar shows it once scrolled past.
+    <Screen back title={item.product.name} titleBlock={false} testID="shelf-item-screen">
       <View style={styles.body}>
         <View style={styles.head}>
           <Text variant="overline" tone="tertiary">
