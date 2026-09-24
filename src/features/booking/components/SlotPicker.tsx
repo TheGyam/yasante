@@ -8,12 +8,16 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import type { FreeSlots } from '../types';
 
+/** A day's width, and the step the strip snaps to (the day plus its gap). */
+const DAY_WIDTH = 60;
+const DAY_STEP = DAY_WIDTH + space.sm;
+
 const useStyles = makeStyles(t => ({
   body: { gap: space.lg },
   strip: { marginHorizontal: -GUTTER },
   days: { flexDirection: 'row', gap: space.sm, paddingHorizontal: GUTTER },
   day: {
-    width: 60,
+    width: DAY_WIDTH,
     paddingVertical: space.sm,
     alignItems: 'center',
     gap: 2,
@@ -110,6 +114,10 @@ export function SlotPicker({
     <View style={[styles.body, refreshing && styles.refreshing]}>
       <ScrollView
         horizontal
+        // Stops quickly, on a whole day. While a list is still gliding, a tap only
+        // stops it and presses nothing: a long glide made days feel dead to tap.
+        snapToInterval={DAY_STEP}
+        decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         style={styles.strip}
         contentContainerStyle={styles.days}
