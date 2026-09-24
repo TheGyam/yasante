@@ -117,7 +117,7 @@ function ProfileForm({ user }: { user: User }) {
         <Input
           label="Username"
           value={username}
-          onChangeText={text => setUsername(text.replace(/s/g, ''))}
+          onChangeText={text => setUsername(text.replace(/\s/g, ''))}
           icon={AtSign}
           hint={usernameTaken ? undefined : usernameHint}
           error={usernameTaken ? usernameHint : undefined}

@@ -173,7 +173,16 @@ function CollectionItems() {
               size={28}
               style={styles.drop}
               accessibilityLabel={`Remove item ${index + 1}`}
-              onPress={() => removeItem.mutate(item.id)}
+              onPress={async () => {
+                // A small X on a photo is easy to hit by mistake, and removal can't be undone.
+                const yes = await confirm({
+                  title: `Remove from ${collection?.name ?? 'this collection'}?`,
+                  message: 'It stays wherever else you saved it.',
+                  confirmLabel: 'Remove',
+                  destructive: true,
+                });
+                if (yes) removeItem.mutate(item.id);
+              }}
             />
           </View>
           {!!item.title && (
