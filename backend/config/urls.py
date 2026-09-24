@@ -25,19 +25,27 @@ admin.site.site_header = settings.ADMIN_SITE_HEADER
 admin.site.site_title = settings.ADMIN_SITE_TITLE
 admin.site.index_title = "Dashboard"
 
-urlpatterns = [
+# The schema and its docs describe every endpoint: fine in development, not something
+# to publish from production (SHOW_API_DOCS=True turns them on anywhere).
+API_DOCS = (
+    [
+        path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+        path(
+            "api/docs/swagger/",
+            SpectacularSwaggerView.as_view(url_name="schema"),
+            name="swagger-ui",
+        ),
+        path(
+            "api/docs/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"
+        ),
+    ]
+    if settings.SHOW_API_DOCS
+    else []
+)
+
+urlpatterns = API_DOCS + [
     # Admin
     path("admin/", admin.site.urls),
-    # Swagger / OpenAPI
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path(
-        "api/docs/swagger/",
-        SpectacularSwaggerView.as_view(url_name="schema"),
-        name="swagger-ui",
-    ),
-    path(
-        "api/docs/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"
-    ),
     # API
     path("api/auth/", include("apps.accounts.urls")),
     path("api/invites/<str:code>/", InviteDetailView.as_view(), name="invite-detail"),

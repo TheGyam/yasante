@@ -24,6 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent  # backend/
 SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+# The OpenAPI schema and docs pages: on with DEBUG, off in production unless asked for.
+SHOW_API_DOCS = config("SHOW_API_DOCS", default=DEBUG, cast=bool)
 
 # ──────────────────────────────────────────────
 # Installed apps
@@ -198,6 +200,9 @@ REST_FRAMEWORK = {
         "signup": "3/min",
         "phone_code": "2/min",
         "posting": "30/hour",
+        "commenting": "60/hour",
+        "reviewing": "20/day",
+        "booking": "20/day",
         "reporting": "10/hour",
         "default": "100/min",
     },

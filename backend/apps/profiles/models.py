@@ -194,7 +194,13 @@ class AnalyticsEvent(models.Model):
     anonymous_id = models.CharField(max_length=100, blank=True, default="")
     name = models.CharField(max_length=100, db_index=True)
     at = models.DateTimeField()
-    local_at = models.DateTimeField()
+    # The phone's own wall-clock time as it sent it, never converted: a DateTimeField
+    # would turn "Sunday 9am in London" into UTC and lose the very thing it's for.
+    local_at = models.CharField(max_length=40, blank=True, default="")
+    local_weekday = models.PositiveSmallIntegerField(null=True, blank=True, db_index=True)
+    local_hour = models.PositiveSmallIntegerField(null=True, blank=True, db_index=True)
+    properties = models.JSONField(default=dict, blank=True)
+    app_version = models.CharField(max_length=30, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

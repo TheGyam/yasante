@@ -319,11 +319,12 @@ def test_reviews_follow_a_completed_appointment_once(api, setup, book):
     assert api(client).post(url, {"rating": 6}).status_code == 400
     assert api(profile.account).post(url, {"rating": 5}).status_code == 403
     review = api(client).post(url, {"rating": 5, "body": "Neat parts"}).json()
-    assert review["status"] == "pending" and review["authorName"] == client.name.split()[0]
+    assert review["status"] == "published" and review["authorName"] == client.name.split()[0]
     assert api(client).post(url, {"rating": 4}).status_code == 409
-    assert api(client).get(f"/api/bookings/{done}/").json()["review"] == {"rating": 5, "status": "pending"}
-    # Pending reviews never reach her page.
-    assert api().get(f"/api/stylists/by-handle/{profile.handle}/").json()["reviews"] == []
+    assert api(client).get(f"/api/bookings/{done}/").json()["review"] == {"rating": 5, "status": "published"}
+    # A review shows on her page at once; moderation follows reports, not approval.
+    shown = api().get(f"/api/stylists/by-handle/{profile.handle}/").json()["reviews"]
+    assert [r["id"] for r in shown] == [review["id"]]
     report = api(profile.account).post(f"/api/reviews/{review['id']}/report/", {"reason": "not-real"})
     assert report.status_code == 204
 
