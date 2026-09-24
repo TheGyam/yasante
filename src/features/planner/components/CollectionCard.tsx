@@ -19,6 +19,8 @@ export interface CollectionCardProps {
   onPress: (collection: Collection) => void;
 }
 
+const FRAME = 3;
+
 /**
  * How each card in the deck sits, back to front. The front card is straight; the
  * ones behind lean alternately, like photos dropped in a pile.
@@ -37,17 +39,16 @@ const useStyles = makeStyles(t => ({
     position: 'absolute',
     width: '72%',
     aspectRatio: 0.8,
+    // The white frame is the card's own background, and the picture rounds its own
+    // corners: no clipping and no shadow. On rotated cards both are costly for Android
+    // to redraw, and with twenty on screen they made the planner stutter on scroll.
+    padding: FRAME,
     borderRadius: radius.md,
-    borderWidth: 3,
-    borderColor: t.colors.text.primary,
-    overflow: 'hidden',
-    backgroundColor: t.colors.glass.fillStrong,
-    // A still shadow: painted once, never animated (Android redraws animated elevation).
-    shadowColor: '#000',
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    backgroundColor: t.colors.text.primary,
+  },
+  picture: {
+    flex: 1,
+    borderRadius: radius.md - FRAME,
   },
   empty: {
     width: '72%',
@@ -88,7 +89,7 @@ function DeckCard({
   });
   return (
     <Animated.View style={[styles.photo, style]}>
-      <RemoteImage uri={uri} style={{ flex: 1 }} recyclingKey={recyclingKey} />
+      <RemoteImage uri={uri} style={styles.picture} recyclingKey={recyclingKey} />
     </Animated.View>
   );
 }
