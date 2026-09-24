@@ -7,6 +7,7 @@ likes, saves, blocks and her own. Blocking runs both ways.
 
 import logging
 import uuid
+from datetime import datetime, timedelta
 
 from apps.bookings.models import Booking
 from apps.common.blocks import blocked_account_ids, is_blocked
@@ -18,7 +19,20 @@ from apps.shelf.models import Product
 from apps.stylists.models import StylistProfile
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError, transaction
-from django.db.models import F, Q
+from django.db.models import (
+    Case,
+    DurationField,
+    Exists,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    OuterRef,
+    Q,
+    Value,
+    When,
+)
+from django.db.models.functions import Cast, Extract, Greatest, Power
+from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -239,9 +253,92 @@ class LookLikeView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# How "top" comments are ranked, the way social apps rank them:
+# engagement (a reply counts double a like: a conversation says more than a tap),
+# the creator's involvement (she replied to it, liked it, or wrote it), faded by age
+# so a newer comment gathering likes can climb past an old one. Her own new comment
+# comes first for her for a while, so posting never loses it down the list.
+TOP_WEIGHTS = {"like": 1, "reply": 2, "creator_liked": 3, "creator_replied": 3, "by_creator": 5}
+TOP_GRAVITY = 1.2
+OWN_FRESH = timedelta(hours=1)
+
+
+def top_comments_page(qs, request, look, viewer, default=10):
+    """
+    One page of a look's threads, best first. Keyset on (score, id) with the clock
+    fixed for the whole scroll (it rides in the cursor), so later pages never repeat
+    or skip a comment as scores drift with time.
+    """
+    import base64
+    import json
+
+    try:
+        limit = max(1, min(int(request.query_params.get("limit", default)), 50))
+    except (TypeError, ValueError):
+        limit = default
+
+    now, after = timezone.now(), None
+    cursor = request.query_params.get("cursor")
+    if cursor:
+        try:
+            data = json.loads(base64.urlsafe_b64decode(cursor.encode()).decode())
+            now = datetime.fromisoformat(data["now"])
+            after = (float(data["score"]), uuid.UUID(data["id"]))
+        except (ValueError, TypeError, KeyError):
+            pass  # A bad cursor starts from the top rather than failing.
+
+    creator = look.author_id
+    creators = [creator] + ([look.stylist_id] if look.stylist_id else [])
+    age_hours = Extract(
+        ExpressionWrapper(Value(now) - F("created_at"), output_field=DurationField()), "epoch"
+    ) / Value(3600.0)
+    engagement = (
+        F("like_count") * TOP_WEIGHTS["like"]
+        + F("reply_total") * TOP_WEIGHTS["reply"]
+        + Case(When(creator_liked=True, then=Value(TOP_WEIGHTS["creator_liked"])), default=Value(0))
+        + Case(When(creator_replied=True, then=Value(TOP_WEIGHTS["creator_replied"])), default=Value(0))
+        + Case(When(author_id__in=creators, then=Value(TOP_WEIGHTS["by_creator"])), default=Value(0))
+        + Value(1)
+    )
+    own_fresh = (
+        Case(
+            When(author_id=viewer.pk, created_at__gte=now - OWN_FRESH, then=Value(1e9)),
+            default=Value(0.0),
+        )
+        if viewer is not None
+        else Value(0.0)
+    )
+    qs = qs.annotate(
+        creator_liked=Exists(CommentLike.objects.filter(user_id=creator, comment=OuterRef("pk"))),
+        creator_replied=Exists(
+            LookComment.objects.filter(parent=OuterRef("pk"), author_id=creator)
+        ),
+    ).annotate(
+        score=ExpressionWrapper(
+            Cast(engagement, FloatField())
+            / Power(Greatest(age_hours, Value(0.0)) + Value(2.0), Value(TOP_GRAVITY))
+            + own_fresh,
+            output_field=FloatField(),
+        )
+    )
+    if after:
+        score, last_id = after
+        qs = qs.filter(Q(score__lt=score) | Q(score=score, pk__lt=last_id))
+    items = list(qs.order_by("-score", "-pk")[: limit + 1])
+    next_cursor = None
+    if len(items) > limit:
+        items = items[:limit]
+        last = items[-1]
+        next_cursor = base64.urlsafe_b64encode(
+            json.dumps({"now": now.isoformat(), "score": last.score, "id": str(last.pk)}).encode()
+        ).decode()
+    return items, next_cursor
+
+
 class CommentListCreateView(APIView):
     """
-    GET  /api/looks/:id/comments/ — the top of each thread, newest first.
+    GET  /api/looks/:id/comments/?sort=top|new — the top of each thread, best first
+         (sort=new: newest first).
     POST /api/looks/:id/comments/ — { body, replyTo? }
     """
 
@@ -256,7 +353,10 @@ class CommentListCreateView(APIView):
         qs = comment_queryset(viewer, blocked).filter(look=look, parent__isnull=True)
         if blocked:
             qs = qs.exclude(author_id__in=blocked)
-        items, next_cursor = keyset_page(qs, request)
+        if request.query_params.get("sort") == "new":
+            items, next_cursor = keyset_page(qs, request)
+        else:
+            items, next_cursor = top_comments_page(qs, request, look, viewer)
         return Response(
             {"data": present_comments(items, viewer), "next_cursor": next_cursor}
         )
