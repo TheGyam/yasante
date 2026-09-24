@@ -14,6 +14,7 @@ from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -31,10 +32,20 @@ from .models import (
 from .numbers import numbers_for, timing_label_for
 from .pricing import clean_options
 from .serializers import (
+    FreeSlotsSerializer,
+    HandleCheckResponseSerializer,
+    MenuImportRequestSerializer,
+    MenuItemDraftSerializer,
     MenuItemSerializer,
+    NumbersSerializer,
+    PortfolioAddRequestSerializer,
+    PortfolioPatchRequestSerializer,
     PortfolioPhotoSerializer,
+    StylistPageResponseSerializer,
     StylistProfileDraftSerializer,
     StylistProfileSerializer,
+    StylistSearchResultSerializer,
+    StylistSummarySerializer,
 )
 from .slots import compute_free_slots
 from .style_match import style_for_service
@@ -86,6 +97,7 @@ def _valid_availability(value):
     return isinstance(value.get("blocked", []), list)
 
 
+@extend_schema_view(get=extend_schema(responses=HandleCheckResponseSerializer))
 class HandleCheckView(APIView):
     """GET /api/stylists/handle-available/?handle="""
 
@@ -120,6 +132,7 @@ def _checks_on_setup(user, profile):
         record_check(user.pk, "proof_photo", "pending", profile.proof_photo_uri)
 
 
+@extend_schema_view(get=extend_schema(responses=StylistSearchResultSerializer(many=True)), post=extend_schema(request=StylistProfileDraftSerializer, responses={201: StylistProfileSerializer}))
 class StylistCreateView(APIView):
     """
     GET /api/stylists/?q= — search live pages by name, handle or area.
@@ -236,6 +249,7 @@ class StylistCreateView(APIView):
         return Response(StylistProfileSerializer(profile).data, status=201)
 
 
+@extend_schema_view(get=extend_schema(responses=StylistProfileSerializer), patch=extend_schema(request=StylistProfileDraftSerializer(partial=True), responses=StylistProfileSerializer))
 class StylistMeView(APIView):
     """GET / PATCH /api/stylists/me/"""
 
@@ -325,6 +339,7 @@ class StylistMeView(APIView):
         return Response(StylistProfileSerializer(profile).data)
 
 
+@extend_schema_view(post=extend_schema(request=None, responses=StylistProfileSerializer))
 class StylistPublishView(APIView):
     """POST /api/stylists/me/publish/ — refused until her phone is verified."""
 
@@ -344,6 +359,7 @@ class StylistPublishView(APIView):
         return Response(StylistProfileSerializer(profile).data)
 
 
+@extend_schema_view(get=extend_schema(responses=StylistPageResponseSerializer))
 class StylistByHandleView(APIView):
     """GET /api/stylists/by-handle/:handle/ — her public page."""
 
@@ -441,6 +457,7 @@ def _menu_draft(body, partial=False, current=None):
     }, None
 
 
+@extend_schema_view(get=extend_schema(responses=MenuItemSerializer(many=True)), post=extend_schema(request=MenuItemDraftSerializer, responses={201: MenuItemSerializer}))
 class MenuListCreateView(APIView):
     """GET / POST /api/stylists/me/menu/"""
 
@@ -463,6 +480,7 @@ class MenuListCreateView(APIView):
         return Response(MenuItemSerializer(item).data, status=201)
 
 
+@extend_schema_view(patch=extend_schema(request=MenuItemDraftSerializer(partial=True), responses=MenuItemSerializer), delete=extend_schema(responses={204: None}))
 class MenuDetailView(APIView):
     """PATCH / DELETE /api/stylists/me/menu/:id/"""
 
@@ -490,6 +508,7 @@ class MenuDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(post=extend_schema(request=MenuImportRequestSerializer, responses={201: MenuItemSerializer(many=True)}))
 class MenuImportView(APIView):
     """POST /api/stylists/me/menu/import/ — many services at once, from a pasted list."""
 
@@ -516,6 +535,7 @@ class MenuImportView(APIView):
 # ── Portfolio ─────────────────────────────────────────
 
 
+@extend_schema_view(get=extend_schema(responses=PortfolioPhotoSerializer(many=True)), post=extend_schema(request=PortfolioAddRequestSerializer, responses={201: PortfolioPhotoSerializer(many=True)}))
 class PortfolioListCreateView(APIView):
     """GET / POST /api/stylists/me/portfolio/"""
 
@@ -591,6 +611,7 @@ class PortfolioListCreateView(APIView):
         return look.pk
 
 
+@extend_schema_view(patch=extend_schema(request=PortfolioPatchRequestSerializer, responses=PortfolioPhotoSerializer), delete=extend_schema(responses={204: None}))
 class PortfolioDetailView(APIView):
     """PATCH / DELETE /api/stylists/me/portfolio/:id/"""
 
@@ -618,6 +639,7 @@ class PortfolioDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(get=extend_schema(responses=FreeSlotsSerializer))
 class StylistSlotsView(APIView):
     """GET /api/stylists/by-handle/:handle/slots/?service=&options= — her free times."""
 
@@ -641,6 +663,7 @@ class StylistSlotsView(APIView):
         return Response(compute_free_slots(profile, service, option_ids))
 
 
+@extend_schema_view(get=extend_schema(responses=NumbersSerializer))
 class StylistNumbersView(APIView):
     """GET /api/stylists/me/numbers/"""
 
@@ -653,6 +676,7 @@ class StylistNumbersView(APIView):
         return Response(numbers_for(profile))
 
 
+@extend_schema_view(get=extend_schema(responses=StylistSummarySerializer))
 class StylistSummaryView(APIView):
     """GET /api/stylists/me/summary/ — the badge on the mode switch."""
 

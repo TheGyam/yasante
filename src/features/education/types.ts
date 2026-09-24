@@ -12,7 +12,7 @@ export type ContentTopic =
 export interface Content {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   type: ContentType;
   topic: ContentTopic;
   hairTypes: string[]; // Array of hair type identifiers

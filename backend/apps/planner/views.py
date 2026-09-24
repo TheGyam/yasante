@@ -8,11 +8,22 @@ from apps.looks.models import Look
 from django.db import transaction
 from django.db.models import Count
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import CarePlan, CarePlanSession, CarePlanStep, Collection, CollectionItem
+from .serializers import (
+    CarePlanRequestSerializer,
+    CarePlanResponseSerializer,
+    CarePlanSessionRequestSerializer,
+    CarePlanSessionResponseSerializer,
+    CollectionItemRequestSerializer,
+    CollectionItemResponseSerializer,
+    CollectionRequestSerializer,
+    CollectionResponseSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +65,7 @@ def _gone():
     return Response({"message": "That collection is gone"}, status=404)
 
 
+@extend_schema_view(get=extend_schema(responses=CollectionResponseSerializer(many=True)), post=extend_schema(request=CollectionRequestSerializer, responses={201: CollectionResponseSerializer}))
 class CollectionListCreateView(APIView):
     """GET / POST /api/collections/"""
 
@@ -82,6 +94,7 @@ class CollectionListCreateView(APIView):
         return Response(present_collection(collection), status=201)
 
 
+@extend_schema_view(get=extend_schema(responses=CollectionResponseSerializer), patch=extend_schema(request=CollectionRequestSerializer(partial=True), responses=CollectionResponseSerializer), delete=extend_schema(responses={204: None}))
 class CollectionDetailView(APIView):
     """GET / PATCH / DELETE /api/collections/:id/"""
 
@@ -142,6 +155,7 @@ def _refresh_save_counts(look_ids):
             continue
 
 
+@extend_schema_view(get=extend_schema(responses=CollectionItemResponseSerializer(many=True)), post=extend_schema(request=CollectionItemRequestSerializer, responses={200: CollectionItemResponseSerializer, 201: CollectionItemResponseSerializer}))
 class CollectionItemsView(APIView):
     """GET / POST /api/collections/:id/items/"""
 
@@ -203,6 +217,7 @@ class CollectionItemsView(APIView):
         return Response(present_item(item), status=201)
 
 
+@extend_schema_view(delete=extend_schema(responses={204: None}))
 class CollectionItemDeleteView(APIView):
     """DELETE /api/collections/:id/items/:item_id/"""
 
@@ -278,6 +293,7 @@ def _plan(request, pk):
     return CarePlan.objects.filter(pk=pk, user=request.user).first()
 
 
+@extend_schema_view(get=extend_schema(responses=CarePlanResponseSerializer(many=True)), post=extend_schema(request=CarePlanRequestSerializer, responses={201: CarePlanResponseSerializer}))
 class CarePlanListCreateView(APIView):
     """GET / POST /api/care-plans/"""
 
@@ -304,6 +320,7 @@ class CarePlanListCreateView(APIView):
         return Response(present_plan(plan), status=201)
 
 
+@extend_schema_view(get=extend_schema(responses=CarePlanResponseSerializer), patch=extend_schema(request=CarePlanRequestSerializer(partial=True), responses=CarePlanResponseSerializer), delete=extend_schema(responses={204: None}))
 class CarePlanDetailView(APIView):
     """GET / PATCH / DELETE /api/care-plans/:id/"""
 
@@ -349,6 +366,7 @@ def present_session(s):
     return {"id": str(s.pk), "completed_at": s.completed_at, "notes": s.notes}
 
 
+@extend_schema_view(get=extend_schema(responses=CarePlanSessionResponseSerializer(many=True)), post=extend_schema(request=CarePlanSessionRequestSerializer, responses={201: CarePlanSessionResponseSerializer}))
 class CarePlanSessionView(APIView):
     """GET / POST /api/care-plans/:id/sessions/ — appended, never edited."""
 

@@ -149,3 +149,205 @@ def present_review(review):
         "service_name": review.service_name,
         "created_at": review.created_at,
     }
+
+
+# ── Shapes for the schema the app's types are generated from ─────────────────────
+from rest_framework import serializers  # noqa: E402
+
+from apps.common.schema import optional  # noqa: E402
+
+from .models import BOOKING_STATUS_CHOICES  # noqa: E402
+from .state_machine import VALID_TIMING_REASONS  # noqa: E402
+
+
+class ClientRecordSerializer(serializers.Serializer):
+    attended = serializers.IntegerField()
+    no_shows = serializers.IntegerField()
+    late_cancellations = serializers.IntegerField()
+
+
+class MoneyMethodSerializer(serializers.Serializer):
+    amount = serializers.FloatField()
+    method = serializers.CharField()
+
+
+class DepositSerializer(MoneyMethodSerializer):
+    status = serializers.ChoiceField(choices=["awaiting", "received"])
+
+
+class ProposalSerializer(serializers.Serializer):
+    scheduled_for = serializers.DateTimeField()
+    deposit = optional(MoneyMethodSerializer())
+
+
+class MoveRequestSerializer(serializers.Serializer):
+    by = serializers.ChoiceField(choices=["client", "stylist"])
+    scheduled_for = serializers.DateTimeField()
+
+
+class BookingPolicySerializer(serializers.Serializer):
+    """Her policies as they were when the request was made."""
+
+    notice_hours = serializers.IntegerField()
+    deposit_type = serializers.ChoiceField(choices=["none", "fixed", "percent"])
+    deposit_amount = optional(serializers.FloatField())
+    reschedule_free_once = serializers.BooleanField()
+
+
+class TimingSerializer(serializers.Serializer):
+    outcome = serializers.ChoiceField(choices=["early", "on_time", "over"])
+    bucket = optional(serializers.ChoiceField(choices=["under_30", "30_60", "1_2h", "2h_plus"]))
+    reason = optional(serializers.ChoiceField(choices=sorted(VALID_TIMING_REASONS)))
+
+
+class ContestedSerializer(serializers.Serializer):
+    no_show = optional(serializers.BooleanField())
+    timing = optional(serializers.BooleanField())
+
+
+class ReviewStateSerializer(serializers.Serializer):
+    rating = serializers.IntegerField()
+    status = serializers.ChoiceField(choices=["pending", "published", "removed"])
+
+
+class BookingSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    status = serializers.ChoiceField(choices=[c for c, _ in BOOKING_STATUS_CHOICES])
+    client_id = optional(serializers.CharField())
+    client_name = serializers.CharField()
+    client_hair = optional(serializers.CharField())
+    client_record = optional(ClientRecordSerializer())
+    stylist_id = optional(serializers.CharField())
+    stylist_name = serializers.CharField()
+    stylist_handle = optional(serializers.CharField())
+    service_id = serializers.CharField()
+    service_name = serializers.CharField()
+    option_labels = optional(serializers.ListField(child=serializers.CharField()))
+    price = serializers.FloatField()
+    from_price = serializers.BooleanField()
+    duration_minutes = optional(serializers.IntegerField())
+    bringing_own_hair = serializers.BooleanField()
+    hair_included = optional(serializers.BooleanField())
+    notes = optional(serializers.CharField())
+    calendar_url = optional(serializers.CharField())
+    requested_times = serializers.ListField(child=serializers.DateTimeField())
+    scheduled_for = optional(serializers.DateTimeField())
+    expires_at = optional(serializers.DateTimeField())
+    proposal = optional(ProposalSerializer())
+    attendance_confirmed_at = optional(serializers.DateTimeField())
+    moves = serializers.IntegerField()
+    move_request = optional(MoveRequestSerializer())
+    deposit = optional(DepositSerializer())
+    area = serializers.CharField()
+    address = optional(serializers.CharField())
+    policy = BookingPolicySerializer()
+    policy_version = serializers.CharField()
+    reason = optional(serializers.CharField())
+    completed_at = optional(serializers.DateTimeField())
+    actual_price = optional(serializers.FloatField())
+    timing = optional(TimingSerializer())
+    started_on_time = optional(serializers.BooleanField())
+    contested = optional(ContestedSerializer())
+    review = optional(ReviewStateSerializer())
+    check_in_due = optional(serializers.ChoiceField(choices=[2, 4]))
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()
+
+
+class SlotInterestSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    stylist_id = serializers.CharField()
+    stylist_name = serializers.CharField()
+    stylist_handle = optional(serializers.CharField())
+    opened_on = optional(serializers.DateField())
+    created_at = serializers.DateTimeField()
+
+    def get_fields(self):
+        # "from" and "to" are Python keywords, so they're added by name.
+        fields = super().get_fields()
+        fields["from"] = serializers.DateField()
+        fields["to"] = serializers.DateField()
+        return fields
+
+
+class ReviewSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    booking_id = serializers.CharField()
+    rating = serializers.IntegerField()
+    body = optional(serializers.CharField())
+    status = serializers.ChoiceField(choices=["pending", "published", "removed"])
+    author_name = serializers.CharField()
+    service_name = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
+# ── Request shapes ───────────────────────────────────────────────────────────────
+class BookingCreateRequestSerializer(serializers.Serializer):
+    stylist_id = serializers.CharField()
+    service_id = serializers.CharField()
+    options = serializers.DictField(
+        child=serializers.CharField(), required=False, help_text="Chosen option id by group id"
+    )
+    bringing_own_hair = serializers.BooleanField()
+    requested_times = serializers.ListField(child=serializers.DateTimeField())
+    notes = serializers.CharField(required=False)
+    policy_version = serializers.CharField()
+
+
+class AcceptRequestSerializer(serializers.Serializer):
+    scheduled_for = serializers.DateTimeField()
+    deposit = MoneyMethodSerializer(required=False)
+
+
+class AnswerRequestSerializer(serializers.Serializer):
+    accept = serializers.BooleanField()
+    reason = serializers.CharField(required=False)
+
+
+class ReasonRequestSerializer(serializers.Serializer):
+    reason = serializers.CharField(required=False)
+
+
+class CloseRequestSerializer(serializers.Serializer):
+    outcome = serializers.ChoiceField(choices=["attended", "no_show"])
+    actual_price = serializers.FloatField(required=False)
+    timing = TimingSerializer(required=False)
+
+
+class MoveRequestBodySerializer(serializers.Serializer):
+    scheduled_for = serializers.DateTimeField()
+
+
+class StartedOnTimeRequestSerializer(serializers.Serializer):
+    on_time = serializers.BooleanField()
+
+
+class ContestRequestSerializer(serializers.Serializer):
+    what = serializers.ChoiceField(choices=["no_show", "timing"])
+
+
+class ReviewCreateRequestSerializer(serializers.Serializer):
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    body = serializers.CharField(required=False)
+
+
+class CheckInRequestSerializer(serializers.Serializer):
+    week = serializers.ChoiceField(choices=[2, 4])
+    holding = serializers.ChoiceField(choices=["fresh", "okay", "tired"])
+    scalp = serializers.ChoiceField(choices=["comfortable", "itchy", "sore"])
+    again = serializers.ChoiceField(choices=["yes", "maybe", "no"])
+
+
+class ReviewReportRequestSerializer(serializers.Serializer):
+    reason = serializers.CharField()
+    note = serializers.CharField(required=False)
+
+
+class SlotInterestRequestSerializer(serializers.Serializer):
+    stylist_id = serializers.CharField()
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fields["from"] = serializers.DateField()
+        fields["to"] = serializers.DateField()
+        return fields

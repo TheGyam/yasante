@@ -3,6 +3,9 @@ import type { Booking, CheckInAnswers, CheckInWeek, Review } from '@/features/bo
 import type { ShelfItem } from '@/features/shelf';
 import type { MenuItem, PortfolioPhoto, StylistProfile } from '@/features/stylist';
 
+/** The mock backend never deletes accounts, so both sides of a booking always exist. */
+export type MockBooking = Booking & { clientId: string; stylistId: string };
+
 /**
  * An in-memory stand-in for the backend, seeded with two accounts:
  *   client@yasante.dev — a client
@@ -296,7 +299,7 @@ export const db = {
    * Bookings, newest first. The status field is the whole point: the app reflects
    * it and never sets it, so every transition is checked in one place.
    */
-  bookings: [] as Booking[],
+  bookings: [] as MockBooking[],
 
   /** Clients waiting for a slot with a stylist on any day in a range. */
   slotInterests: [] as {
@@ -406,7 +409,7 @@ export const findAccountByEmail = (email: string) =>
  * hang off: Efua's from a fortnight ago (her week-2 check-in is due and she hasn't
  * reviewed it), and Zainab's, reviewed and through moderation.
  */
-function seedCompleted(id: string, clientId: string, daysAgo: number): Booking {
+function seedCompleted(id: string, clientId: string, daysAgo: number): MockBooking {
   const at = new Date(Date.now() - daysAgo * 86_400_000).toISOString();
   const ama = db.stylists.get('acc_ama')!;
   return {

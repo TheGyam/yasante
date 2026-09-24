@@ -14,6 +14,9 @@ from django.db.models import CharField, Count, Exists, OuterRef, Q, Value
 from django.db.models.functions import Cast
 from rest_framework import serializers
 
+from apps.common.schema import optional
+from apps.profiles.models import TEXTURE_CHOICES
+
 from .models import CommentLike, LookComment, LookLike
 
 REPORT_REASONS = ("not-their-work", "nudity", "hate", "scam", "other")
@@ -168,3 +171,117 @@ class AppealRequestSerializer(serializers.Serializer):
 class AppealResponseSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     status = serializers.CharField()
+
+
+# ── Response shapes, for the schema the app's types are generated from ──────────
+# The renderer leaves out None and "" values, so anything that can be empty is
+# declared nullable, which the schema hook turns into an optional field.
+
+
+class LookStylistSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    handle = optional(serializers.CharField())
+
+
+class TaggedProductSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    brand = serializers.CharField()
+    name = serializers.CharField()
+
+
+class LookSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    author_id = serializers.CharField()
+    author_name = serializers.CharField()
+    author_handle = optional(serializers.CharField())
+    author_avatar_uri = optional(serializers.CharField())
+    photo_uri = serializers.CharField()
+    thumb_uri = optional(serializers.CharField())
+    feed_uri = optional(serializers.CharField())
+    photo_aspect = optional(serializers.FloatField())
+    caption = optional(serializers.CharField())
+    stylist = optional(LookStylistSerializer())
+    service_id = optional(serializers.CharField())
+    service_name = optional(serializers.CharField())
+    price = optional(serializers.FloatField())
+    from_price = optional(serializers.BooleanField())
+    styles = serializers.ListField(child=serializers.CharField())
+    hair_texture = optional(serializers.ChoiceField(choices=TEXTURE_CHOICES))
+    area = optional(serializers.CharField())
+    products = TaggedProductSerializer(many=True)
+    visibility = serializers.ChoiceField(choices=["public", "private"])
+    like_count = serializers.IntegerField()
+    liked = serializers.BooleanField()
+    comment_count = serializers.IntegerField()
+    save_count = serializers.IntegerField()
+    saved = serializers.BooleanField()
+    created_at = serializers.DateTimeField()
+    mine = serializers.BooleanField()
+
+
+class LooksPageSerializer(serializers.Serializer):
+    data = LookSerializer(many=True)
+    next_cursor = optional(serializers.CharField())
+
+
+class CommentSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    look_id = serializers.CharField()
+    author_id = serializers.CharField()
+    author_name = serializers.CharField()
+    author_avatar_uri = optional(serializers.CharField())
+    body = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    mine = serializers.BooleanField()
+    parent_id = optional(serializers.CharField())
+    reply_to_name = optional(serializers.CharField())
+    reply_count = optional(serializers.IntegerField())
+    like_count = serializers.IntegerField()
+    liked = serializers.BooleanField()
+
+
+class CommentsPageSerializer(serializers.Serializer):
+    data = CommentSerializer(many=True)
+    next_cursor = optional(serializers.CharField())
+
+
+class StyleSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+
+
+class BlockSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    account_id = serializers.CharField()
+    name = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
+# ── Request shapes ───────────────────────────────────────────────────────────────
+class LookCreateRequestSerializer(serializers.Serializer):
+    photo_uri = serializers.CharField()
+    thumb_uri = serializers.CharField(required=False)
+    feed_uri = serializers.CharField(required=False)
+    photo_aspect = serializers.FloatField(required=False)
+    caption = serializers.CharField(required=False)
+    styles = serializers.ListField(child=serializers.CharField(), help_text="Style slugs; at least one")
+    booking_id = serializers.CharField(required=False, help_text="Credits her stylist through this booking")
+    service_id = serializers.CharField(required=False)
+    product_ids = serializers.ListField(child=serializers.CharField(), required=False)
+    visibility = serializers.ChoiceField(choices=["public", "private"], required=False)
+    hair_texture = serializers.CharField(required=False)
+
+
+class CommentCreateRequestSerializer(serializers.Serializer):
+    body = serializers.CharField(max_length=500)
+    reply_to = serializers.CharField(required=False, help_text="The comment being answered")
+
+
+class ReportRequestSerializer(serializers.Serializer):
+    reason = serializers.ChoiceField(choices=list(LOOK_REPORT_REASONS))
+    note = serializers.CharField(required=False, max_length=500)
+
+
+class BlockRequestSerializer(serializers.Serializer):
+    account_id = serializers.CharField()

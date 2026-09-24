@@ -20,12 +20,15 @@ from django.http import FileResponse, HttpResponse
 from PIL import Image, ImageOps, UnidentifiedImageError
 from rest_framework.authentication import SessionAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework import permissions
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import permissions, serializers
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Media
+from .schema import optional
 
 MAX_BYTES = 15 * 1024 * 1024
 MAX_EDGE = 2048
@@ -87,6 +90,22 @@ def media_url(request, media, path):
     return request.build_absolute_uri(default_storage.url(path))
 
 
+class UploadRequestSerializer(serializers.Serializer):
+    file = serializers.ImageField()
+    kind = serializers.ChoiceField(choices=["look", "portfolio", "avatar", "proof", "other"], required=False)
+    visibility = serializers.ChoiceField(choices=["public", "private"], required=False)
+    source = serializers.CharField(required=False)
+
+
+class UploadResponseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    uri = serializers.CharField()
+    feed_uri = optional(serializers.CharField())
+    thumb_uri = optional(serializers.CharField())
+    photo_aspect = serializers.FloatField()
+
+
+@extend_schema_view(post=extend_schema(request={"multipart/form-data": UploadRequestSerializer}, responses={201: UploadResponseSerializer}))
 class UploadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser]
@@ -143,6 +162,7 @@ class UploadView(APIView):
         )
 
 
+@extend_schema_view(get=extend_schema(responses={(200, "image/jpeg"): OpenApiTypes.BINARY}))
 class PrivateMediaView(APIView):
     """GET /api/media/:id/ — only its owner or an admin sees a private photo."""
 
@@ -162,3 +182,4 @@ class PrivateMediaView(APIView):
             response["X-Accel-Redirect"] = f"/protected/{media.full_path.removeprefix('private/')}"
             return response
         return FileResponse(default_storage.open(media.full_path, "rb"), content_type="image/jpeg")
+

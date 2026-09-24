@@ -182,7 +182,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / POST /api/blocks/ — { accountId }. Mutual from that moment. */
-        get: operations["blocks_retrieve"];
+        get: operations["blocks_list"];
         put?: never;
         /** @description GET / POST /api/blocks/ — { accountId }. Mutual from that moment. */
         post: operations["blocks_create"];
@@ -217,7 +217,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/bookings/?role=&status= · POST /api/bookings/ */
-        get: operations["bookings_retrieve"];
+        get: operations["bookings_list"];
         put?: never;
         /** @description GET /api/bookings/?role=&status= · POST /api/bookings/ */
         post: operations["bookings_create"];
@@ -235,7 +235,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/bookings/:id/ */
-        get: operations["bookings_retrieve_2"];
+        get: operations["bookings_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -490,7 +490,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / POST /api/care-plans/ */
-        get: operations["care_plans_retrieve"];
+        get: operations["care_plans_list"];
         put?: never;
         /** @description GET / POST /api/care-plans/ */
         post: operations["care_plans_create"];
@@ -508,7 +508,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / PATCH / DELETE /api/care-plans/:id/ */
-        get: operations["care_plans_retrieve_2"];
+        get: operations["care_plans_retrieve"];
         put?: never;
         post?: never;
         /** @description GET / PATCH / DELETE /api/care-plans/:id/ */
@@ -527,7 +527,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / POST /api/care-plans/:id/sessions/ — appended, never edited. */
-        get: operations["care_plans_sessions_retrieve"];
+        get: operations["care_plans_sessions_list"];
         put?: never;
         /** @description GET / POST /api/care-plans/:id/sessions/ — appended, never edited. */
         post: operations["care_plans_sessions_create"];
@@ -545,7 +545,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / POST /api/collections/ */
-        get: operations["collections_retrieve"];
+        get: operations["collections_list"];
         put?: never;
         /** @description GET / POST /api/collections/ */
         post: operations["collections_create"];
@@ -563,7 +563,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / PATCH / DELETE /api/collections/:id/ */
-        get: operations["collections_retrieve_2"];
+        get: operations["collections_retrieve"];
         put?: never;
         post?: never;
         /** @description GET / PATCH / DELETE /api/collections/:id/ */
@@ -582,7 +582,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / POST /api/collections/:id/items/ */
-        get: operations["collections_items_retrieve"];
+        get: operations["collections_items_list"];
         put?: never;
         /** @description GET / POST /api/collections/:id/items/ */
         post: operations["collections_items_create"];
@@ -695,40 +695,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/content/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description GET /api/content/ */
-        get: operations["content_retrieve"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/content/{slug}/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description GET /api/content/:slug/ */
-        get: operations["content_retrieve_2"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/content/content/": {
         parameters: {
             query?: never;
@@ -737,7 +703,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/content/content/?topic=&type=&search= — the library, newest first. */
-        get: operations["content_content_retrieve"];
+        get: operations["content_content_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -754,7 +720,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/content/content/:id/ */
-        get: operations["content_content_retrieve_2"];
+        get: operations["content_content_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -771,7 +737,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/content/content/:id/products/ — none are linked yet. */
-        get: operations["content_content_products_retrieve"];
+        get: operations["content_content_products_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -788,7 +754,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/content/content/search/?q= */
-        get: operations["content_content_search_retrieve"];
+        get: operations["content_content_search_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -860,7 +826,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/favorites/favorites/ */
-        get: operations["favorites_favorites_retrieve"];
+        get: operations["favorites_favorites_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1042,7 +1008,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/looks/areas/ — districts that have public looks in them. */
-        get: operations["looks_areas_retrieve"];
+        get: operations["looks_areas_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1059,7 +1025,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/looks/mine/ — her own, private ones included. */
-        get: operations["looks_mine_retrieve"];
+        get: operations["looks_mine_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1144,7 +1110,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/policies/ — the current version of each published policy. */
-        get: operations["policies_retrieve"];
+        get: operations["policies_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1161,7 +1127,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/policies/:type/?version= — the current one, or a named version. */
-        get: operations["policies_retrieve_2"];
+        get: operations["policies_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1178,7 +1144,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/products/?q=&limit= — every word must match brand, name or category. */
-        get: operations["products_retrieve"];
+        get: operations["products_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1228,7 +1194,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / POST /api/shelf/ */
-        get: operations["shelf_retrieve"];
+        get: operations["shelf_list"];
         put?: never;
         /** @description GET / POST /api/shelf/ */
         post: operations["shelf_create"];
@@ -1264,7 +1230,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / POST /api/slot-interests/ — the waitlist. */
-        get: operations["slot_interests_retrieve"];
+        get: operations["slot_interests_list"];
         put?: never;
         /** @description GET / POST /api/slot-interests/ — the waitlist. */
         post: operations["slot_interests_create"];
@@ -1299,7 +1265,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/styles/ — the taxonomy looks are tagged from: [{ id, name }]. */
-        get: operations["styles_retrieve"];
+        get: operations["styles_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1319,7 +1285,7 @@ export interface paths {
          * @description GET /api/stylists/?q= — search live pages by name, handle or area.
          *     POST /api/stylists/ — her page, as a draft only she can see.
          */
-        get: operations["stylists_retrieve"];
+        get: operations["stylists_list"];
         put?: never;
         /**
          * @description GET /api/stylists/?q= — search live pages by name, handle or area.
@@ -1426,7 +1392,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / POST /api/stylists/me/menu/ */
-        get: operations["stylists_me_menu_retrieve"];
+        get: operations["stylists_me_menu_list"];
         put?: never;
         /** @description GET / POST /api/stylists/me/menu/ */
         post: operations["stylists_me_menu_create"];
@@ -1496,7 +1462,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / POST /api/stylists/me/portfolio/ */
-        get: operations["stylists_me_portfolio_retrieve"];
+        get: operations["stylists_me_portfolio_list"];
         put?: never;
         /** @description GET / POST /api/stylists/me/portfolio/ */
         post: operations["stylists_me_portfolio_create"];
@@ -1582,7 +1548,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET /api/users/ — returns the current user (array for compat). */
-        get: operations["users_retrieve"];
+        get: operations["users_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1599,7 +1565,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET / PATCH / DELETE /api/users/:id/ */
-        get: operations["users_retrieve_2"];
+        get: operations["users_retrieve"];
         put?: never;
         post?: never;
         /** @description GET / PATCH / DELETE /api/users/:id/ */
@@ -1652,6 +1618,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AcceptRequestRequest: {
+            /** Format: date-time */
+            scheduledFor: string;
+            deposit?: components["schemas"]["MoneyMethodRequest"];
+        };
         /**
          * @description * `hide` - hide
          *     * `remove` - remove
@@ -1659,6 +1630,17 @@ export interface components {
          * @enum {string}
          */
         ActionEnum: "hide" | "remove" | "unpublish";
+        /**
+         * @description * `yes` - yes
+         *     * `maybe` - maybe
+         *     * `no` - no
+         * @enum {string}
+         */
+        AgainEnum: "yes" | "maybe" | "no";
+        AnswerRequestRequest: {
+            accept: boolean;
+            reason?: string;
+        };
         AppealRequestRequest: {
             body: string;
         };
@@ -1679,6 +1661,385 @@ export interface components {
          * @enum {string}
          */
         AppealStateStatusEnum: "open" | "upheld" | "overturned";
+        AuthResponse: {
+            user: components["schemas"]["UserResponse"];
+            accessToken: string;
+            refreshToken: string;
+            /** @description Milliseconds since the epoch */
+            expiresAt: number;
+        };
+        Availability: {
+            week: [
+                {
+                    start: string;
+                    end: string;
+                } | null,
+                {
+                    start: string;
+                    end: string;
+                } | null,
+                {
+                    start: string;
+                    end: string;
+                } | null,
+                {
+                    start: string;
+                    end: string;
+                } | null,
+                {
+                    start: string;
+                    end: string;
+                } | null,
+                {
+                    start: string;
+                    end: string;
+                } | null,
+                {
+                    start: string;
+                    end: string;
+                } | null
+            ];
+            blocked: string[];
+        };
+        /** @enum {unknown} */
+        BlankEnum: "";
+        Block: {
+            id: string;
+            accountId: string;
+            name: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        BlockRequestRequest: {
+            accountId: string;
+        };
+        Booking: {
+            id: string;
+            status: components["schemas"]["BookingStatusEnum"];
+            clientId?: string;
+            clientName: string;
+            clientHair?: string;
+            clientRecord?: components["schemas"]["ClientRecord"];
+            stylistId?: string;
+            stylistName: string;
+            stylistHandle?: string;
+            serviceId: string;
+            serviceName: string;
+            optionLabels?: string[];
+            /** Format: double */
+            price: number;
+            fromPrice: boolean;
+            durationMinutes?: number;
+            bringingOwnHair: boolean;
+            hairIncluded?: boolean;
+            notes?: string;
+            calendarUrl?: string;
+            requestedTimes: string[];
+            /** Format: date-time */
+            scheduledFor?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+            proposal?: components["schemas"]["Proposal"];
+            /** Format: date-time */
+            attendanceConfirmedAt?: string;
+            moves: number;
+            moveRequest?: components["schemas"]["MoveRequest"];
+            deposit?: components["schemas"]["Deposit"];
+            area: string;
+            address?: string;
+            policy: components["schemas"]["BookingPolicy"];
+            policyVersion: string;
+            reason?: string;
+            /** Format: date-time */
+            completedAt?: string;
+            /** Format: double */
+            actualPrice?: number;
+            timing?: components["schemas"]["Timing"];
+            startedOnTime?: boolean;
+            contested?: components["schemas"]["Contested"];
+            review?: components["schemas"]["ReviewState"];
+            checkInDue?: components["schemas"]["CheckInDueEnum"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        BookingCreateRequestRequest: {
+            stylistId: string;
+            serviceId: string;
+            /** @description Chosen option id by group id */
+            options?: {
+                [key: string]: string;
+            };
+            bringingOwnHair: boolean;
+            requestedTimes: string[];
+            notes?: string;
+            policyVersion: string;
+        };
+        /** @description Her policies as they were when the request was made. */
+        BookingPolicy: {
+            noticeHours: number;
+            depositType: components["schemas"]["DepositTypeEnum"];
+            /** Format: double */
+            depositAmount?: number;
+            rescheduleFreeOnce: boolean;
+        };
+        /**
+         * @description * `requested` - requested
+         *     * `awaiting_deposit` - awaiting_deposit
+         *     * `confirmed` - confirmed
+         *     * `completed` - completed
+         *     * `declined` - declined
+         *     * `expired` - expired
+         *     * `cancelled_in_time` - cancelled_in_time
+         *     * `cancelled_late` - cancelled_late
+         *     * `cancelled_by_stylist` - cancelled_by_stylist
+         *     * `no_show` - no_show
+         * @enum {string}
+         */
+        BookingStatusEnum: "requested" | "awaiting_deposit" | "confirmed" | "completed" | "declined" | "expired" | "cancelled_in_time" | "cancelled_late" | "cancelled_by_stylist" | "no_show";
+        /**
+         * @description * `under_30` - under_30
+         *     * `30_60` - 30_60
+         *     * `1_2h` - 1_2h
+         *     * `2h_plus` - 2h_plus
+         * @enum {string}
+         */
+        BucketEnum: "under_30" | "30_60" | "1_2h" | "2h_plus";
+        /**
+         * @description * `under_50` - Under £50
+         *     * `50_100` - £50–100
+         *     * `100_150` - £100–150
+         *     * `150_plus` - £150+
+         * @enum {string}
+         */
+        BudgetEnum: "under_50" | "50_100" | "100_150" | "150_plus";
+        /**
+         * @description * `client` - client
+         *     * `stylist` - stylist
+         * @enum {string}
+         */
+        ByEnum: "client" | "stylist";
+        CarePlanRequestRequest: {
+            name: string;
+            frequency: components["schemas"]["FrequencyEnum"];
+            specificDays?: number[];
+            timeOfDay: components["schemas"]["TimeOfDayEnum"];
+            remindersOn?: boolean;
+            steps?: string[];
+        };
+        CarePlanResponse: {
+            id: string;
+            name: string;
+            frequency: components["schemas"]["FrequencyEnum"];
+            specificDays?: number[];
+            timeOfDay: components["schemas"]["TimeOfDayEnum"];
+            remindersOn: boolean;
+            steps: components["schemas"]["CarePlanStepResponse"][];
+            /** Format: date-time */
+            lastDoneAt?: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        CarePlanSessionRequestRequest: {
+            notes?: string;
+        };
+        CarePlanSessionResponse: {
+            id: string;
+            /** Format: date-time */
+            completedAt: string;
+            notes?: string;
+        };
+        CarePlanStepResponse: {
+            id: string;
+            text: string;
+        };
+        /**
+         * @description * `shampoo` - Shampoo
+         *     * `conditioner` - Conditioner
+         *     * `leave-in` - Leave-in
+         *     * `oil` - Oil
+         *     * `styler` - Styler
+         *     * `treatment` - Treatment
+         * @enum {string}
+         */
+        CategoryEnum: "shampoo" | "conditioner" | "leave-in" | "oil" | "styler" | "treatment";
+        /**
+         * @description * `2` - 2
+         *     * `4` - 4
+         * @enum {integer}
+         */
+        CheckInDueEnum: 2 | 4;
+        CheckInRequestRequest: {
+            week: components["schemas"]["WeekEnum"];
+            holding: components["schemas"]["HoldingEnum"];
+            scalp: components["schemas"]["CheckInRequestScalpEnum"];
+            again: components["schemas"]["AgainEnum"];
+        };
+        /**
+         * @description * `comfortable` - comfortable
+         *     * `itchy` - itchy
+         *     * `sore` - sore
+         * @enum {string}
+         */
+        CheckInRequestScalpEnum: "comfortable" | "itchy" | "sore";
+        /**
+         * @description * `relaxer` - Relaxer
+         *     * `texturiser` - Texturiser
+         *     * `colour` - Colour
+         *     * `bleach` - Bleach
+         *     * `keratin` - Keratin
+         * @enum {string}
+         */
+        ChemicalsEnum: "relaxer" | "texturiser" | "colour" | "bleach" | "keratin";
+        ClientRecord: {
+            attended: number;
+            noShows: number;
+            lateCancellations: number;
+        };
+        /**
+         * @description * `attended` - attended
+         *     * `no_show` - no_show
+         * @enum {string}
+         */
+        CloseRequestOutcomeEnum: "attended" | "no_show";
+        CloseRequestRequest: {
+            outcome: components["schemas"]["CloseRequestOutcomeEnum"];
+            /** Format: double */
+            actualPrice?: number;
+            timing?: components["schemas"]["TimingRequest"];
+        };
+        CollectionItemRequestRequest: {
+            kind: components["schemas"]["CollectionKindEnum"];
+            refId: string;
+            imageUri?: string;
+            title?: string;
+        };
+        CollectionItemResponse: {
+            id: string;
+            kind: components["schemas"]["CollectionKindEnum"];
+            refId: string;
+            imageUri?: string;
+            title?: string;
+            /** Format: date-time */
+            addedAt: string;
+        };
+        /**
+         * @description * `look` - look
+         *     * `content` - content
+         * @enum {string}
+         */
+        CollectionKindEnum: "look" | "content";
+        CollectionRequestRequest: {
+            name: string;
+            isPrivate?: boolean;
+        };
+        CollectionResponse: {
+            id: string;
+            name: string;
+            isPrivate: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            itemCount: number;
+            coverUri?: string;
+        };
+        Comment: {
+            id: string;
+            lookId: string;
+            authorId: string;
+            authorName: string;
+            authorAvatarUri?: string;
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            mine: boolean;
+            parentId?: string;
+            replyToName?: string;
+            replyCount?: number;
+            likeCount: number;
+            liked: boolean;
+        };
+        CommentCreateRequestRequest: {
+            body: string;
+            /** @description The comment being answered */
+            replyTo?: string;
+        };
+        CommentsPage: {
+            data: components["schemas"]["Comment"][];
+            nextCursor?: string;
+        };
+        /** @description POST /api/consents/ */
+        ConsentBatchRequest: {
+            consents: components["schemas"]["ConsentRequest"][];
+        };
+        /** @description Single consent record within a batch. */
+        ConsentRequest: {
+            purpose: string;
+            granted: boolean;
+            policyVersion: string;
+            /** Format: date-time */
+            recordedAt: string;
+            /** @default app */
+            source: string;
+        };
+        ContentResponse: {
+            id: string;
+            title: string;
+            description?: string;
+            type: components["schemas"]["ContentResponseTypeEnum"];
+            topic: components["schemas"]["TopicEnum"];
+            hairTypes: string[];
+            thumbnailUri?: string;
+            videoUri?: string;
+            articleContent?: string;
+            duration?: number;
+            author?: string;
+            /** Format: date-time */
+            publishedAt: string;
+        };
+        /**
+         * @description * `article` - article
+         *     * `video` - video
+         * @enum {string}
+         */
+        ContentResponseTypeEnum: "article" | "video";
+        ContestRequestRequest: {
+            what: components["schemas"]["WhatEnum"];
+        };
+        Contested: {
+            noShow?: boolean;
+            timing?: boolean;
+        };
+        DataExportResponse: {
+            /** Format: date-time */
+            requestedAt: string;
+        };
+        /**
+         * @description * `fine` - Fine
+         *     * `medium` - Medium
+         *     * `thick` - Thick
+         * @enum {string}
+         */
+        DensityEnum: "fine" | "medium" | "thick";
+        Deposit: {
+            /** Format: double */
+            amount: number;
+            method: string;
+            status: components["schemas"]["DepositStatusEnum"];
+        };
+        /**
+         * @description * `awaiting` - awaiting
+         *     * `received` - received
+         * @enum {string}
+         */
+        DepositStatusEnum: "awaiting" | "received";
+        /**
+         * @description * `none` - none
+         *     * `fixed` - fixed
+         *     * `percent` - percent
+         * @enum {string}
+         */
+        DepositTypeEnum: "none" | "fixed" | "percent";
         DeviceToken: {
             /** Format: uuid */
             readonly id: string;
@@ -1688,6 +2049,286 @@ export interface components {
         DeviceTokenRequest: {
             token: string;
             platform: string;
+        };
+        /** @description POST /api/events/ */
+        EventBatchRequest: {
+            events: components["schemas"]["EventRequest"][];
+            /** @default  */
+            anonymousId: string;
+        };
+        /** @description Single analytics event. */
+        EventRequest: {
+            name: string;
+            /** Format: date-time */
+            at: string;
+            /** @default  */
+            localAt: string;
+            properties?: {
+                [key: string]: unknown;
+            };
+            /** @default  */
+            appVersion: string;
+        };
+        FavoriteResponse: {
+            id: string;
+            userId: string;
+            contentId: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        FavoriteState: {
+            isFavorite: boolean;
+            favorite?: components["schemas"]["FavoriteResponse"];
+        };
+        FavoriteToggleRequestRequest: {
+            contentId: string;
+        };
+        /** @description POST /api/auth/forgot-password/ */
+        ForgotPasswordRequest: {
+            /** Format: email */
+            email: string;
+        };
+        FreeDay: {
+            /** Format: date */
+            date: string;
+            times: string[];
+        };
+        FreeSlots: {
+            minutes: number;
+            days: components["schemas"]["FreeDay"][];
+        };
+        /**
+         * @description * `daily` - daily
+         *     * `every-2-days` - every-2-days
+         *     * `weekly` - weekly
+         *     * `specific-days` - specific-days
+         * @enum {string}
+         */
+        FrequencyEnum: "daily" | "every-2-days" | "weekly" | "specific-days";
+        /**
+         * @description * `growth` - Growth
+         *     * `health` - Health
+         *     * `moisture` - Moisture
+         *     * `strength` - Strength
+         *     * `color` - Color
+         *     * `style` - Style
+         * @enum {string}
+         */
+        GoalsEnum: "growth" | "health" | "moisture" | "strength" | "color" | "style";
+        /**
+         * @description * `length` - length
+         *     * `size` - size
+         * @enum {string}
+         */
+        GroupEnum: "length" | "size";
+        /**
+         * @description For output-only model serializers: a model field that may be blank or null can be
+         *     left out of the JSON (the renderer drops empty values), so say so in the schema.
+         */
+        HairProfileResponse: {
+            texture?: components["schemas"]["TextureEnum"] | components["schemas"]["BlankEnum"];
+            length?: components["schemas"]["LengthEnum"] | components["schemas"]["BlankEnum"];
+            shrunkLength?: components["schemas"]["ShrunkLengthEnum"] | components["schemas"]["BlankEnum"];
+            density?: components["schemas"]["DensityEnum"] | components["schemas"]["BlankEnum"];
+            porosity?: components["schemas"]["PorosityEnum"] | components["schemas"]["BlankEnum"];
+            goals: components["schemas"]["GoalsEnum"][];
+            scalp: components["schemas"]["HairProfileResponseScalpEnum"][];
+            chemicals: components["schemas"]["ChemicalsEnum"][];
+            area?: string;
+            budget?: components["schemas"]["BudgetEnum"] | components["schemas"]["BlankEnum"];
+            photoUri?: string;
+            /** Format: date-time */
+            lengthMeasuredAt?: string;
+            /** Format: date-time */
+            completedAt?: string;
+            /** Format: date-time */
+            readonly updatedAt: string;
+        };
+        /**
+         * @description * `balanced` - Balanced
+         *     * `dry` - Dry
+         *     * `oily` - Oily
+         *     * `flaky` - Flaky
+         *     * `sensitive` - Sensitive
+         * @enum {string}
+         */
+        HairProfileResponseScalpEnum: "balanced" | "dry" | "oily" | "flaky" | "sensitive";
+        /**
+         * @description * `straight` - Straight
+         *     * `wavy` - Wavy
+         *     * `curly` - Curly
+         *     * `coily` - Coily
+         *     * `kinky` - Kinky
+         * @enum {string}
+         */
+        HairTextureEnum: "straight" | "wavy" | "curly" | "coily" | "kinky";
+        HandleCheckResponse: {
+            handle: string;
+            available: boolean;
+            suggestions?: string[];
+        };
+        /**
+         * @description * `fresh` - fresh
+         *     * `okay` - okay
+         *     * `tired` - tired
+         * @enum {string}
+         */
+        HoldingEnum: "fresh" | "okay" | "tired";
+        /**
+         * @description For output-only model serializers: a model field that may be blank or null can be
+         *     left out of the JSON (the renderer drops empty values), so say so in the schema.
+         */
+        InviteResponse: {
+            readonly code: string;
+            readonly role: string;
+            /** @description e.g. "Akua from Yasante" */
+            readonly invitedBy: string;
+            /** Format: date-time */
+            readonly expiresAt: string;
+        };
+        /**
+         * @description * `cropped` - Cropped
+         *     * `ear` - Ear
+         *     * `chin` - Chin
+         *     * `shoulder` - Shoulder
+         *     * `armpit` - Armpit
+         *     * `bra-strap` - Bra strap
+         *     * `mid-back` - Mid-back
+         *     * `waist` - Waist
+         *     * `hip` - Hip
+         *     * `tailbone` - Tailbone
+         * @enum {string}
+         */
+        LengthEnum: "cropped" | "ear" | "chin" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
+        /** @description POST /api/auth/login/ */
+        LoginRequest: {
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        LogoutRequestRequest: {
+            refreshToken?: string;
+        };
+        Look: {
+            id: string;
+            authorId: string;
+            authorName: string;
+            authorHandle?: string;
+            authorAvatarUri?: string;
+            photoUri: string;
+            thumbUri?: string;
+            feedUri?: string;
+            /** Format: double */
+            photoAspect?: number;
+            caption?: string;
+            stylist?: components["schemas"]["LookStylist"];
+            serviceId?: string;
+            serviceName?: string;
+            /** Format: double */
+            price?: number;
+            fromPrice?: boolean;
+            styles: string[];
+            hairTexture?: components["schemas"]["HairTextureEnum"];
+            area?: string;
+            products: components["schemas"]["TaggedProduct"][];
+            visibility: components["schemas"]["VisibilityEnum"];
+            likeCount: number;
+            liked: boolean;
+            commentCount: number;
+            saveCount: number;
+            saved: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            mine: boolean;
+        };
+        LookCreateRequestRequest: {
+            photoUri: string;
+            thumbUri?: string;
+            feedUri?: string;
+            /** Format: double */
+            photoAspect?: number;
+            caption?: string;
+            /** @description Style slugs; at least one */
+            styles: string[];
+            /** @description Credits her stylist through this booking */
+            bookingId?: string;
+            serviceId?: string;
+            productIds?: string[];
+            visibility?: components["schemas"]["VisibilityEnum"];
+            hairTexture?: string;
+        };
+        LookStylist: {
+            id: string;
+            name: string;
+            handle?: string;
+        };
+        LooksPage: {
+            data: components["schemas"]["Look"][];
+            nextCursor?: string;
+        };
+        MenuImportRequestRequest: {
+            items: components["schemas"]["MenuItemDraftRequest"][];
+        };
+        /**
+         * @description For output-only model serializers: a model field that may be blank or null can be
+         *     left out of the JSON (the renderer drops empty values), so say so in the schema.
+         */
+        MenuItem: {
+            /** Format: uuid */
+            readonly id: string;
+            name: string;
+            /** Format: double */
+            price: number;
+            fromPrice: boolean;
+            durationMinutes?: number;
+            note?: string;
+            hairIncluded?: boolean;
+            readonly options: components["schemas"]["MenuOption"][];
+        };
+        /** @description For creating/updating menu items. */
+        MenuItemDraftRequest: {
+            name: string;
+            /** Format: double */
+            price: number;
+            /** @default false */
+            fromPrice: boolean;
+            durationMinutes?: number | null;
+            /** @default  */
+            note: string;
+            hairIncluded?: boolean | null;
+            options?: {
+                [key: string]: unknown;
+            }[];
+        };
+        MenuOption: {
+            id: string;
+            group: components["schemas"]["GroupEnum"];
+            label: string;
+            /** Format: double */
+            add: number;
+            addMinutes?: number;
+        };
+        Message: {
+            message: string;
+        };
+        MoneyMethod: {
+            /** Format: double */
+            amount: number;
+            method: string;
+        };
+        MoneyMethodRequest: {
+            /** Format: double */
+            amount: number;
+            method: string;
+        };
+        MoveRequest: {
+            by: components["schemas"]["ByEnum"];
+            /** Format: date-time */
+            scheduledFor: string;
+        };
+        MoveRequestBodyRequest: {
+            /** Format: date-time */
+            scheduledFor: string;
         };
         MyModeration: {
             /** Format: uuid */
@@ -1699,7 +2340,7 @@ export interface components {
             targetId: string;
             /** Format: date-time */
             createdAt: string;
-            appeal?: components["schemas"]["AppealState"] | null;
+            appeal?: components["schemas"]["AppealState"];
         };
         MyReport: {
             /** Format: uuid */
@@ -1708,11 +2349,11 @@ export interface components {
             target: string;
             reason: string;
             status: components["schemas"]["MyReportStatusEnum"];
-            resolution?: string | null;
+            resolution?: string;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
-            handledAt?: string | null;
+            handledAt?: string;
         };
         /**
          * @description * `open` - open
@@ -1721,6 +2362,660 @@ export interface components {
          * @enum {string}
          */
         MyReportStatusEnum: "open" | "actioned" | "dismissed";
+        NotificationCategory: {
+            id: string;
+            label: string;
+            on: boolean;
+        };
+        NotificationPreferences: {
+            categories: components["schemas"]["NotificationCategory"][];
+        };
+        NotificationPreferencesRequestRequest: {
+            /** @description [{id, on}] */
+            categories?: {
+                [key: string]: unknown;
+            }[];
+            muted?: string[];
+        };
+        /** @enum {unknown} */
+        NullEnum: null;
+        Numbers: {
+            /** Format: date-time */
+            weekOf: string;
+            thisWeek: components["schemas"]["WeekCounts"];
+            lastWeek: components["schemas"]["WeekCounts"];
+            timing: components["schemas"]["ServiceTiming"][];
+        };
+        PageReview: {
+            id: string;
+            bookingId: string;
+            rating: number;
+            body?: string;
+            status: string;
+            authorName: string;
+            serviceName: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        PatchedCarePlanRequestRequest: {
+            name?: string;
+            frequency?: components["schemas"]["FrequencyEnum"];
+            specificDays?: number[];
+            timeOfDay?: components["schemas"]["TimeOfDayEnum"];
+            remindersOn?: boolean;
+            steps?: string[];
+        };
+        PatchedCollectionRequestRequest: {
+            name?: string;
+            isPrivate?: boolean;
+        };
+        PatchedHairProfileRequestRequest: {
+            texture?: string;
+            length?: string;
+            shrunkLength?: string;
+            density?: string;
+            porosity?: string;
+            goals?: string[];
+            scalp?: string[];
+            chemicals?: string[];
+            area?: string;
+            budget?: string;
+            photoUri?: string;
+            /** Format: date-time */
+            lengthMeasuredAt?: string | null;
+            /** Format: date-time */
+            completedAt?: string | null;
+        };
+        /** @description For creating/updating menu items. */
+        PatchedMenuItemDraftRequest: {
+            name?: string;
+            /** Format: double */
+            price?: number;
+            /** @default false */
+            fromPrice: boolean;
+            durationMinutes?: number | null;
+            /** @default  */
+            note: string;
+            hairIncluded?: boolean | null;
+            options?: {
+                [key: string]: unknown;
+            }[];
+        };
+        PatchedPortfolioPatchRequestRequest: {
+            serviceId?: string | null;
+        };
+        PatchedShelfPatchRequestRequest: {
+            status?: components["schemas"]["ShelfStatusEnum"];
+            rating?: number;
+        };
+        /** @description For creating / updating a stylist profile. */
+        PatchedStylistProfileDraftRequest: {
+            displayName?: string;
+            handle?: string;
+            /** @default  */
+            bio: string;
+            serviceModels?: components["schemas"]["ServiceModelEnum"][];
+            baseArea?: string;
+            /** Format: double */
+            travelRadiusMiles?: number | null;
+            /** @default  */
+            instagramHandle: string;
+            policies?: components["schemas"]["PoliciesRequest"];
+            proofPhotoUri?: string;
+            availability?: {
+                [key: string]: unknown;
+            };
+            paymentMethods?: components["schemas"]["PaymentMethodRequest"][];
+        };
+        /** @description PATCH /api/users/:id/ */
+        PatchedUserUpdateRequest: {
+            name?: string;
+            /** Format: email */
+            email?: string;
+            avatarUri?: string;
+        };
+        /**
+         * @description For output-only model serializers: a model field that may be blank or null can be
+         *     left out of the JSON (the renderer drops empty values), so say so in the schema.
+         */
+        PaymentMethod: {
+            /** Format: uuid */
+            readonly id: string;
+            label: string;
+            details: string;
+        };
+        /**
+         * @description For output-only model serializers: a model field that may be blank or null can be
+         *     left out of the JSON (the renderer drops empty values), so say so in the schema.
+         */
+        PaymentMethodRequest: {
+            label: string;
+            details: string;
+        };
+        /** @description POST /api/auth/phone/start/ */
+        PhoneStartRequest: {
+            phone: string;
+        };
+        PhoneStartResponse: {
+            resendInSeconds: number;
+            expiresInSeconds: number;
+        };
+        /** @description POST /api/auth/phone/verify/ */
+        PhoneVerifyRequest: {
+            phone: string;
+            code: string;
+        };
+        Policies: {
+            noticeHours: number;
+            depositType: components["schemas"]["DepositTypeEnum"];
+            /** Format: double */
+            depositAmount?: number;
+            /** @default true */
+            rescheduleFreeOnce: boolean;
+        };
+        PoliciesRequest: {
+            noticeHours: number;
+            depositType: components["schemas"]["DepositTypeEnum"];
+            /** Format: double */
+            depositAmount?: number | null;
+            /** @default true */
+            rescheduleFreeOnce: boolean;
+        };
+        Policy: {
+            type: components["schemas"]["PolicyTypeEnum"];
+            version: string;
+            title: string;
+            /** Format: date-time */
+            effectiveAt: string;
+            body: string;
+        };
+        /**
+         * @description * `terms` - terms
+         *     * `stylist_terms` - stylist_terms
+         *     * `privacy` - privacy
+         *     * `guidelines` - guidelines
+         * @enum {string}
+         */
+        PolicyTypeEnum: "terms" | "stylist_terms" | "privacy" | "guidelines";
+        /**
+         * @description * `low` - Low
+         *     * `medium` - Medium
+         *     * `high` - High
+         * @enum {string}
+         */
+        PorosityEnum: "low" | "medium" | "high";
+        PortfolioAddRequestRequest: {
+            /** @description [{uri, thumbUri?, serviceId?}] */
+            photos: {
+                [key: string]: unknown;
+            }[];
+            postAsLooks?: boolean;
+        };
+        /**
+         * @description For output-only model serializers: a model field that may be blank or null can be
+         *     left out of the JSON (the renderer drops empty values), so say so in the schema.
+         */
+        PortfolioPhoto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uri */
+            uri: string;
+            /** Format: uri */
+            readonly thumbUri?: string;
+            /** Format: uuid */
+            readonly serviceId?: string;
+            /** Format: uuid */
+            readonly lookId?: string;
+            /** Format: date-time */
+            readonly createdAt: string;
+        };
+        ProductResponse: {
+            id: string;
+            brand: string;
+            name: string;
+            category: components["schemas"]["CategoryEnum"];
+        };
+        Proposal: {
+            /** Format: date-time */
+            scheduledFor: string;
+            deposit?: components["schemas"]["MoneyMethod"];
+        };
+        /** @description Her page's profile: no proof photo, payment details or address, plus the checks held. */
+        PublicProfile: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly accountId: string;
+            displayName: string;
+            handle: string;
+            bio?: string;
+            avatarUri?: string;
+            serviceModels: components["schemas"]["ServiceModelsBafEnum"][];
+            baseArea: string;
+            /** Format: double */
+            travelRadiusMiles?: number;
+            instagramHandle?: string;
+            readonly policies: components["schemas"]["Policies"];
+            readonly availability?: components["schemas"]["Availability"];
+            readonly verificationTier: components["schemas"]["VerificationTierEnum"];
+            published: boolean;
+            /** Format: date-time */
+            readonly createdAt: string;
+            /** @description phone, work, met_in_person, met_on_video, insurance */
+            checks: string[];
+        };
+        Rating: {
+            /** Format: double */
+            average: number;
+            count: number;
+        };
+        ReasonRequestRequest: {
+            reason?: string;
+        };
+        /** @description POST /api/auth/refresh-token/ */
+        RefreshTokenRequest: {
+            refreshToken: string;
+        };
+        /**
+         * @description * `not-their-work` - not-their-work
+         *     * `nudity` - nudity
+         *     * `hate` - hate
+         *     * `scam` - scam
+         *     * `other` - other
+         *     * `not-hair` - not-hair
+         * @enum {string}
+         */
+        ReportRequestReasonEnum: "not-their-work" | "nudity" | "hate" | "scam" | "other" | "not-hair";
+        ReportRequestRequest: {
+            reason: components["schemas"]["ReportRequestReasonEnum"];
+            note?: string;
+        };
+        /** @description POST /api/auth/reset-password/ */
+        ResetPasswordRequest: {
+            token: string;
+            password: string;
+        };
+        Review: {
+            id: string;
+            bookingId: string;
+            rating: number;
+            body?: string;
+            status: components["schemas"]["ReviewStatusEnum"];
+            authorName: string;
+            serviceName: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        ReviewCreateRequestRequest: {
+            rating: number;
+            body?: string;
+        };
+        ReviewReportRequestRequest: {
+            reason: string;
+            note?: string;
+        };
+        ReviewState: {
+            rating: number;
+            status: components["schemas"]["ReviewStatusEnum"];
+        };
+        /**
+         * @description * `pending` - pending
+         *     * `published` - published
+         *     * `removed` - removed
+         * @enum {string}
+         */
+        ReviewStatusEnum: "pending" | "published" | "removed";
+        /**
+         * @description * `client` - client
+         *     * `stylist` - stylist
+         * @enum {string}
+         */
+        RoleEnum: "client" | "stylist";
+        /**
+         * @description * `client` - client
+         *     * `stylist` - stylist
+         *     * `admin` - admin
+         * @enum {string}
+         */
+        RolesEnum: "client" | "stylist" | "admin";
+        /**
+         * @description * `salon` - salon
+         *     * `home` - home
+         *     * `mobile` - mobile
+         * @enum {string}
+         */
+        ServiceModelEnum: "salon" | "home" | "mobile";
+        /**
+         * @description * `salon` - Salon
+         *     * `home` - Home
+         *     * `mobile` - Mobile
+         * @enum {string}
+         */
+        ServiceModelsBafEnum: "salon" | "home" | "mobile";
+        ServiceTiming: {
+            serviceId: string;
+            serviceName: string;
+            quotedMinutes?: number;
+            typicalMinutes?: number;
+            sample: number;
+            early: number;
+            onTime: number;
+            over: number;
+            clientSide: number;
+        };
+        ShelfAddRequestRequest: {
+            productId: string;
+        };
+        ShelfItemResponse: {
+            id: string;
+            product: components["schemas"]["ProductResponse"];
+            status: components["schemas"]["ShelfStatusEnum"];
+            rating?: number;
+            timesBought: number;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            finishedAt?: string;
+        };
+        /**
+         * @description * `using` - using
+         *     * `finished` - finished
+         *     * `repurchased` - repurchased
+         * @enum {string}
+         */
+        ShelfStatusEnum: "using" | "finished" | "repurchased";
+        /**
+         * @description * `cropped` - Cropped
+         *     * `ear` - Ear
+         *     * `chin` - Chin
+         *     * `shoulder` - Shoulder
+         *     * `armpit` - Armpit
+         *     * `bra-strap` - Bra strap
+         *     * `mid-back` - Mid-back
+         *     * `waist` - Waist
+         *     * `hip` - Hip
+         *     * `tailbone` - Tailbone
+         * @enum {string}
+         */
+        ShrunkLengthEnum: "cropped" | "ear" | "chin" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
+        /**
+         * @description POST /api/auth/signup/
+         *
+         *     Validates email uniqueness, password strength, age confirmation,
+         *     and optional invite code.
+         */
+        SignupRequest: {
+            /** Format: email */
+            email: string;
+            name: string;
+            password: string;
+            passwordConfirm: string;
+            role: components["schemas"]["RoleEnum"];
+            inviteCode?: string;
+            ageConfirmed: boolean;
+            policyVersion: string;
+        };
+        SlotInterest: {
+            id: string;
+            stylistId: string;
+            stylistName: string;
+            stylistHandle?: string;
+            /** Format: date */
+            openedOn?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+        };
+        SlotInterestRequestRequest: {
+            stylistId: string;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+        };
+        StartedOnTimeRequestRequest: {
+            onTime: boolean;
+        };
+        Style: {
+            id: string;
+            name: string;
+        };
+        StylistPageResponse: {
+            profile: components["schemas"]["PublicProfile"];
+            menu: components["schemas"]["MenuItem"][];
+            photos: components["schemas"]["PortfolioPhoto"][];
+            confirmedStyles: number;
+            reviews: components["schemas"]["PageReview"][];
+            rating?: components["schemas"]["Rating"];
+            /** Format: double */
+            responseHours?: number;
+            timingLabel?: components["schemas"]["TimingLabel"];
+        };
+        /** @description Full profile for the stylist herself. */
+        StylistProfile: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly accountId: string;
+            displayName: string;
+            handle: string;
+            bio?: string;
+            avatarUri?: string;
+            serviceModels: components["schemas"]["ServiceModelsBafEnum"][];
+            baseArea: string;
+            address?: string;
+            /** Format: double */
+            travelRadiusMiles?: number;
+            instagramHandle?: string;
+            readonly policies: components["schemas"]["Policies"];
+            readonly availability?: components["schemas"]["Availability"];
+            readonly paymentMethods: components["schemas"]["PaymentMethod"][];
+            proofPhotoUri?: string;
+            readonly verificationTier: components["schemas"]["VerificationTierEnum"];
+            published: boolean;
+            /** Format: date-time */
+            readonly createdAt: string;
+        };
+        /** @description For creating / updating a stylist profile. */
+        StylistProfileDraftRequest: {
+            displayName: string;
+            handle: string;
+            /** @default  */
+            bio: string;
+            serviceModels: components["schemas"]["ServiceModelEnum"][];
+            baseArea: string;
+            /** Format: double */
+            travelRadiusMiles?: number | null;
+            /** @default  */
+            instagramHandle: string;
+            policies?: components["schemas"]["PoliciesRequest"];
+            proofPhotoUri?: string;
+            availability?: {
+                [key: string]: unknown;
+            };
+            paymentMethods?: components["schemas"]["PaymentMethodRequest"][];
+        };
+        StylistSearchResult: {
+            accountId: string;
+            handle: string;
+            displayName: string;
+            avatarUri?: string;
+            baseArea: string;
+        };
+        StylistSummary: {
+            pendingRequests: number;
+            appointmentsToday: number;
+        };
+        TaggedProduct: {
+            id: string;
+            brand: string;
+            name: string;
+        };
+        /**
+         * @description * `straight` - Straight
+         *     * `wavy` - Wavy
+         *     * `curly` - Curly
+         *     * `coily` - Coily
+         *     * `kinky` - Kinky
+         * @enum {string}
+         */
+        TextureEnum: "straight" | "wavy" | "curly" | "coily" | "kinky";
+        /**
+         * @description * `morning` - morning
+         *     * `afternoon` - afternoon
+         *     * `evening` - evening
+         *     * `night` - night
+         * @enum {string}
+         */
+        TimeOfDayEnum: "morning" | "afternoon" | "evening" | "night";
+        Timing: {
+            outcome: components["schemas"]["TimingOutcomeEnum"];
+            bucket?: components["schemas"]["BucketEnum"];
+            reason?: components["schemas"]["TimingReasonEnum"];
+        };
+        TimingLabel: {
+            outcome: components["schemas"]["TimingOutcomeEnum"];
+            count: number;
+            sample: number;
+        };
+        /**
+         * @description * `early` - early
+         *     * `on_time` - on_time
+         *     * `over` - over
+         * @enum {string}
+         */
+        TimingOutcomeEnum: "early" | "on_time" | "over";
+        /**
+         * @description * `client_late` - client_late
+         *     * `hair_not_prepped` - hair_not_prepped
+         *     * `long_breaks` - long_breaks
+         *     * `more_hair` - more_hair
+         *     * `old_style_in` - old_style_in
+         *     * `own_delay` - own_delay
+         *     * `previous_overran` - previous_overran
+         *     * `style_changed` - style_changed
+         *     * `supplies` - supplies
+         *     * `took_longer` - took_longer
+         *     * `working_alone` - working_alone
+         *     * `wrong_hair` - wrong_hair
+         * @enum {string}
+         */
+        TimingReasonEnum: "client_late" | "hair_not_prepped" | "long_breaks" | "more_hair" | "old_style_in" | "own_delay" | "previous_overran" | "style_changed" | "supplies" | "took_longer" | "working_alone" | "wrong_hair";
+        TimingRequest: {
+            outcome: components["schemas"]["TimingOutcomeEnum"];
+            bucket?: (components["schemas"]["BucketEnum"] | components["schemas"]["NullEnum"]) | null;
+            reason?: (components["schemas"]["TimingReasonEnum"] | components["schemas"]["NullEnum"]) | null;
+        };
+        TokenPair: {
+            accessToken: string;
+            refreshToken: string;
+            /** @description Milliseconds since the epoch */
+            expiresAt: number;
+        };
+        /**
+         * @description * `care` - Care
+         *     * `styling` - Styling
+         *     * `products` - Products
+         *     * `treatments` - Treatments
+         *     * `color` - Colour
+         *     * `growth` - Growth
+         *     * `health` - Health
+         *     * `tips` - Tips
+         * @enum {string}
+         */
+        TopicEnum: "care" | "styling" | "products" | "treatments" | "color" | "growth" | "health" | "tips";
+        /**
+         * @description * `look` - look
+         *     * `portfolio` - portfolio
+         *     * `avatar` - avatar
+         *     * `proof` - proof
+         *     * `other` - other
+         * @enum {string}
+         */
+        UploadRequestKindEnum: "look" | "portfolio" | "avatar" | "proof" | "other";
+        UploadRequestRequest: {
+            /** Format: binary */
+            file: string;
+            kind?: components["schemas"]["UploadRequestKindEnum"];
+            visibility?: components["schemas"]["VisibilityEnum"];
+            source?: string;
+        };
+        UploadResponse: {
+            id: string;
+            uri: string;
+            feedUri?: string;
+            thumbUri?: string;
+            /** Format: double */
+            photoAspect: number;
+        };
+        /** @description The user as sent: empty phone or avatar left out. */
+        UserDetailResponse: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly name: string;
+            /** Format: email */
+            readonly email: string;
+            readonly phone?: string;
+            readonly phoneVerified: boolean;
+            readonly roles: components["schemas"]["RolesEnum"][];
+            /** Format: uri */
+            readonly avatarUri?: string;
+            /** Format: date-time */
+            readonly createdAt: string;
+            /** Format: date-time */
+            readonly updatedAt: string;
+            readonly hairProfile?: components["schemas"]["HairProfileResponse"];
+        };
+        /** @description The user as sent: empty phone or avatar left out. */
+        UserResponse: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly name: string;
+            /** Format: email */
+            readonly email: string;
+            readonly phone?: string;
+            readonly phoneVerified: boolean;
+            readonly roles: components["schemas"]["RolesEnum"][];
+            /** Format: uri */
+            readonly avatarUri?: string;
+            /** Format: date-time */
+            readonly createdAt: string;
+            /** Format: date-time */
+            readonly updatedAt: string;
+        };
+        /** @enum {integer} */
+        VerificationTierEnum: 0 | 1 | 2;
+        /**
+         * @description * `public` - public
+         *     * `private` - private
+         * @enum {string}
+         */
+        VisibilityEnum: "public" | "private";
+        WeekCounts: {
+            views: number;
+            requests: number;
+            confirmed: number;
+            completed: number;
+            noShows: number;
+            lateCancellations: number;
+            /** Format: double */
+            earned: number;
+        };
+        /**
+         * @description * `2` - 2
+         *     * `4` - 4
+         * @enum {integer}
+         */
+        WeekEnum: 2 | 4;
+        /**
+         * @description * `no_show` - no_show
+         *     * `timing` - timing
+         * @enum {string}
+         */
+        WhatEnum: "no_show" | "timing";
     };
     responses: never;
     parameters: never;
@@ -1737,14 +3032,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
             };
         };
     };
@@ -1755,14 +3055,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AuthResponse"];
+                };
             };
         };
     };
@@ -1773,10 +3078,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["LogoutRequestRequest"];
+            };
+        };
         responses: {
             /** @description No response body */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1794,7 +3103,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description No response body */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1809,14 +3118,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhoneStartRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PhoneStartResponse"];
+                };
             };
         };
     };
@@ -1827,14 +3141,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhoneVerifyRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
             };
         };
     };
@@ -1845,14 +3164,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshTokenRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TokenPair"];
+                };
             };
         };
     };
@@ -1863,14 +3187,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Message"];
+                };
             };
         };
     };
@@ -1881,18 +3210,23 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AuthResponse"];
+                };
             };
         };
     };
-    blocks_retrieve: {
+    blocks_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -1901,12 +3235,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Block"][];
+                };
             };
         };
     };
@@ -1917,10 +3252,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlockRequestRequest"];
+            };
+        };
         responses: {
             /** @description No response body */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1948,7 +3287,7 @@ export interface operations {
             };
         };
     };
-    bookings_retrieve: {
+    bookings_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -1957,12 +3296,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"][];
+                };
             };
         };
     };
@@ -1973,18 +3313,23 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookingCreateRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
-    bookings_retrieve_2: {
+    bookings_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -1995,12 +3340,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2013,14 +3359,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2035,12 +3386,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2053,14 +3405,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2073,10 +3430,14 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckInRequestRequest"];
+            };
+        };
         responses: {
             /** @description No response body */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2093,14 +3454,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2113,14 +3479,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContestRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2133,14 +3504,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2155,12 +3531,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2173,14 +3550,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveRequestBodyRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2193,14 +3575,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2213,14 +3600,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2233,14 +3625,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
@@ -2253,14 +3650,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewCreateRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
             };
         };
     };
@@ -2273,18 +3675,23 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartedOnTimeRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
             };
         };
     };
-    care_plans_retrieve: {
+    care_plans_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -2293,12 +3700,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CarePlanResponse"][];
+                };
             };
         };
     };
@@ -2309,18 +3717,23 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CarePlanRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CarePlanResponse"];
+                };
             };
         };
     };
-    care_plans_retrieve_2: {
+    care_plans_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -2331,12 +3744,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CarePlanResponse"];
+                };
             };
         };
     };
@@ -2369,18 +3783,23 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCarePlanRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CarePlanResponse"];
+                };
             };
         };
     };
-    care_plans_sessions_retrieve: {
+    care_plans_sessions_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -2391,12 +3810,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CarePlanSessionResponse"][];
+                };
             };
         };
     };
@@ -2409,18 +3829,23 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CarePlanSessionRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CarePlanSessionResponse"];
+                };
             };
         };
     };
-    collections_retrieve: {
+    collections_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -2429,12 +3854,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CollectionResponse"][];
+                };
             };
         };
     };
@@ -2445,18 +3871,23 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CollectionResponse"];
+                };
             };
         };
     };
-    collections_retrieve_2: {
+    collections_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -2467,12 +3898,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CollectionResponse"];
+                };
             };
         };
     };
@@ -2505,18 +3937,23 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCollectionRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CollectionResponse"];
+                };
             };
         };
     };
-    collections_items_retrieve: {
+    collections_items_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -2527,12 +3964,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CollectionItemResponse"][];
+                };
             };
         };
     };
@@ -2545,14 +3983,27 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectionItemRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CollectionItemResponse"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionItemResponse"];
+                };
             };
         };
     };
@@ -2609,7 +4060,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description No response body */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2648,12 +4099,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CommentsPage"];
+                };
             };
         };
     };
@@ -2666,10 +4118,14 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequestRequest"];
+            };
+        };
         responses: {
             /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2684,10 +4140,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsentBatchRequest"];
+            };
+        };
         responses: {
             /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2695,7 +4155,7 @@ export interface operations {
             };
         };
     };
-    content_retrieve: {
+    content_content_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -2704,32 +4164,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    content_retrieve_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                slug: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["ContentResponse"][];
                 };
-                content?: never;
             };
         };
     };
@@ -2737,21 +4178,24 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ContentResponse"];
+                };
             };
         };
     };
-    content_content_retrieve_2: {
+    content_content_products_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -2762,36 +4206,19 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    content_content_products_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            200: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
                 };
-                content?: never;
             };
         };
     };
-    content_content_search_retrieve: {
+    content_content_search_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -2800,12 +4227,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ContentResponse"][];
+                };
             };
         };
     };
@@ -2859,10 +4287,21 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventBatchRequest"];
+            };
+        };
         responses: {
             /** @description No response body */
-            200: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No response body */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2870,7 +4309,7 @@ export interface operations {
             };
         };
     };
-    favorites_favorites_retrieve: {
+    favorites_favorites_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -2879,12 +4318,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FavoriteResponse"][];
+                };
             };
         };
     };
@@ -2897,12 +4337,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FavoriteState"];
+                };
             };
         };
     };
@@ -2913,14 +4354,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FavoriteToggleRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FavoriteState"];
+                };
             };
         };
     };
@@ -2935,12 +4381,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["InviteResponse"];
+                };
             };
         };
     };
@@ -2955,12 +4402,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
             };
         };
     };
@@ -2973,12 +4421,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LooksPage"];
+                };
             };
         };
     };
@@ -2989,14 +4438,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LookCreateRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Look"];
+                };
             };
         };
     };
@@ -3011,12 +4465,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CommentsPage"];
+                };
             };
         };
     };
@@ -3029,14 +4484,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentCreateRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Comment"];
+                };
             };
         };
     };
@@ -3051,12 +4511,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Look"];
+                };
             };
         };
     };
@@ -3092,7 +4553,7 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description No response body */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3129,10 +4590,14 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequestRequest"];
+            };
+        };
         responses: {
             /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3140,7 +4605,7 @@ export interface operations {
             };
         };
     };
-    looks_areas_retrieve: {
+    looks_areas_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -3149,16 +4614,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": string[];
+                };
             };
         };
     };
-    looks_mine_retrieve: {
+    looks_mine_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -3167,12 +4633,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Look"][];
+                };
             };
         };
     };
@@ -3187,12 +4654,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "image/jpeg": string;
+                };
             };
         };
     };
@@ -3249,12 +4717,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NotificationPreferences"];
+                };
             };
         };
     };
@@ -3265,18 +4734,23 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["NotificationPreferencesRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NotificationPreferences"];
+                };
             };
         };
     };
-    policies_retrieve: {
+    policies_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -3285,16 +4759,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Policy"][];
+                };
             };
         };
     };
-    policies_retrieve_2: {
+    policies_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -3305,16 +4780,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Policy"];
+                };
             };
         };
     };
-    products_retrieve: {
+    products_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -3323,12 +4799,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductResponse"][];
+                };
             };
         };
     };
@@ -3360,10 +4837,14 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewReportRequestRequest"];
+            };
+        };
         responses: {
             /** @description No response body */
-            200: {
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3371,7 +4852,7 @@ export interface operations {
             };
         };
     };
-    shelf_retrieve: {
+    shelf_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -3380,12 +4861,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ShelfItemResponse"][];
+                };
             };
         };
     };
@@ -3396,14 +4878,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShelfAddRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ShelfItemResponse"];
+                };
             };
         };
     };
@@ -3436,18 +4923,23 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedShelfPatchRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ShelfItemResponse"];
+                };
             };
         };
     };
-    slot_interests_retrieve: {
+    slot_interests_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -3456,12 +4948,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SlotInterest"][];
+                };
             };
         };
     };
@@ -3472,14 +4965,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlotInterestRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SlotInterest"];
+                };
             };
         };
     };
@@ -3503,7 +5001,7 @@ export interface operations {
             };
         };
     };
-    styles_retrieve: {
+    styles_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -3512,16 +5010,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Style"][];
+                };
             };
         };
     };
-    stylists_retrieve: {
+    stylists_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -3530,12 +5029,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StylistSearchResult"][];
+                };
             };
         };
     };
@@ -3546,14 +5046,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StylistProfileDraftRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StylistProfile"];
+                };
             };
         };
     };
@@ -3566,10 +5071,14 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequestRequest"];
+            };
+        };
         responses: {
             /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3588,12 +5097,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StylistPageResponse"];
+                };
             };
         };
     };
@@ -3608,12 +5118,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FreeSlots"];
+                };
             };
         };
     };
@@ -3626,12 +5137,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HandleCheckResponse"];
+                };
             };
         };
     };
@@ -3644,12 +5156,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StylistProfile"];
+                };
             };
         };
     };
@@ -3660,18 +5173,23 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedStylistProfileDraftRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StylistProfile"];
+                };
             };
         };
     };
-    stylists_me_menu_retrieve: {
+    stylists_me_menu_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -3680,12 +5198,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MenuItem"][];
+                };
             };
         };
     };
@@ -3696,14 +5215,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuItemDraftRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MenuItem"];
+                };
             };
         };
     };
@@ -3736,14 +5260,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedMenuItemDraftRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MenuItem"];
+                };
             };
         };
     };
@@ -3754,14 +5283,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuImportRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MenuItem"][];
+                };
             };
         };
     };
@@ -3774,16 +5308,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Numbers"];
+                };
             };
         };
     };
-    stylists_me_portfolio_retrieve: {
+    stylists_me_portfolio_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -3792,12 +5327,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PortfolioPhoto"][];
+                };
             };
         };
     };
@@ -3808,14 +5344,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PortfolioAddRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PortfolioPhoto"][];
+                };
             };
         };
     };
@@ -3848,14 +5389,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedPortfolioPatchRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PortfolioPhoto"];
+                };
             };
         };
     };
@@ -3868,12 +5414,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StylistProfile"];
+                };
             };
         };
     };
@@ -3886,12 +5433,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StylistSummary"];
+                };
             };
         };
     };
@@ -3902,18 +5450,23 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["UploadRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UploadResponse"];
+                };
             };
         };
     };
-    users_retrieve: {
+    users_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -3922,16 +5475,17 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserDetailResponse"][];
+                };
             };
         };
     };
-    users_retrieve_2: {
+    users_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -3942,12 +5496,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserDetailResponse"];
+                };
             };
         };
     };
@@ -3980,14 +5535,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedUserUpdateRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserDetailResponse"];
+                };
             };
         };
     };
@@ -4002,12 +5562,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DataExportResponse"];
+                };
             };
         };
     };
@@ -4020,14 +5581,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedHairProfileRequestRequest"];
+            };
+        };
         responses: {
-            /** @description No response body */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HairProfileResponse"];
+                };
             };
         };
     };

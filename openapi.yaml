@@ -13,35 +13,60 @@ paths:
         Always returns 200 whether the email exists or not (timing-safe).
       tags:
       - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+        required: true
       security:
       - jwtAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
   /api/auth/login/:
     post:
       operationId: auth_login_create
       description: POST /api/auth/login/
       tags:
       - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
       security:
       - jwtAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+          description: ''
   /api/auth/logout/:
     post:
       operationId: auth_logout_create
       description: POST /api/auth/logout/ — { refreshToken } ends this device's session.
       tags:
       - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequestRequest'
       security:
       - jwtAuth: []
       - {}
       responses:
-        '200':
+        '204':
           description: No response body
   /api/auth/logout-all/:
     post:
@@ -52,7 +77,7 @@ paths:
       security:
       - jwtAuth: []
       responses:
-        '200':
+        '204':
           description: No response body
   /api/auth/phone/start/:
     post:
@@ -64,11 +89,21 @@ paths:
         Rate limited: 1/30s per phone.
       tags:
       - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneStartRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneStartResponse'
+          description: ''
   /api/auth/phone/verify/:
     post:
       operationId: auth_phone_verify_create
@@ -78,11 +113,21 @@ paths:
         Verifies the phone code. 5 attempts per code, then locked.
       tags:
       - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneVerifyRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+          description: ''
   /api/auth/refresh-token/:
     post:
       operationId: auth_refresh_token_create
@@ -92,39 +137,69 @@ paths:
         Rotates the refresh token and blacklists the old one.
       tags:
       - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+        required: true
       security:
       - jwtAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+          description: ''
   /api/auth/reset-password/:
     post:
       operationId: auth_reset_password_create
       description: POST /api/auth/reset-password/
       tags:
       - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+        required: true
       security:
       - jwtAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
   /api/auth/signup/:
     post:
       operationId: auth_signup_create
       description: POST /api/auth/signup/
       tags:
       - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+        required: true
       security:
       - jwtAuth: []
       - {}
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+          description: ''
   /api/blocks/:
     get:
-      operationId: blocks_retrieve
+      operationId: blocks_list
       description: GET / POST /api/blocks/ — { accountId }. Mutual from that moment.
       tags:
       - blocks
@@ -132,16 +207,28 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Block'
+          description: ''
     post:
       operationId: blocks_create
       description: GET / POST /api/blocks/ — { accountId }. Mutual from that moment.
       tags:
       - blocks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlockRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
+        '204':
           description: No response body
   /api/blocks/{id}/:
     delete:
@@ -163,7 +250,7 @@ paths:
           description: No response body
   /api/bookings/:
     get:
-      operationId: bookings_retrieve
+      operationId: bookings_list
       description: GET /api/bookings/?role=&status= · POST /api/bookings/
       tags:
       - bookings
@@ -171,20 +258,36 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+          description: ''
     post:
       operationId: bookings_create
       description: GET /api/bookings/?role=&status= · POST /api/bookings/
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreateRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/:
     get:
-      operationId: bookings_retrieve_2
+      operationId: bookings_retrieve
       description: GET /api/bookings/:id/
       parameters:
       - in: path
@@ -199,7 +302,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/accept/:
     post:
       operationId: bookings_accept_create
@@ -213,11 +320,21 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/attending/:
     post:
       operationId: bookings_attending_create
@@ -235,7 +352,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/cancel/:
     post:
       operationId: bookings_cancel_create
@@ -249,11 +370,20 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequestRequest'
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/check-in/:
     post:
       operationId: bookings_check_in_create
@@ -268,10 +398,16 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckInRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
+        '204':
           description: No response body
   /api/bookings/{id}/close/:
     post:
@@ -286,11 +422,21 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/contest/:
     post:
       operationId: bookings_contest_create
@@ -304,11 +450,21 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContestRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/decline/:
     post:
       operationId: bookings_decline_create
@@ -322,11 +478,20 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequestRequest'
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/deposit-received/:
     post:
       operationId: bookings_deposit_received_create
@@ -344,7 +509,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/move/:
     post:
       operationId: bookings_move_create
@@ -358,11 +527,21 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequestBodyRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/move/answer/:
     post:
       operationId: bookings_move_answer_create
@@ -376,11 +555,21 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/proposal/:
     post:
       operationId: bookings_proposal_create
@@ -394,11 +583,21 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/propose/:
     post:
       operationId: bookings_propose_create
@@ -412,11 +611,21 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/bookings/{id}/review/:
     post:
       operationId: bookings_review_create
@@ -431,11 +640,21 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreateRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
   /api/bookings/{id}/started-on-time/:
     post:
       operationId: bookings_started_on_time_create
@@ -449,14 +668,24 @@ paths:
         required: true
       tags:
       - bookings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartedOnTimeRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+          description: ''
   /api/care-plans/:
     get:
-      operationId: care_plans_retrieve
+      operationId: care_plans_list
       description: GET / POST /api/care-plans/
       tags:
       - care-plans
@@ -464,20 +693,36 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CarePlanResponse'
+          description: ''
     post:
       operationId: care_plans_create
       description: GET / POST /api/care-plans/
       tags:
       - care-plans
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CarePlanRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarePlanResponse'
+          description: ''
   /api/care-plans/{id}/:
     get:
-      operationId: care_plans_retrieve_2
+      operationId: care_plans_retrieve
       description: GET / PATCH / DELETE /api/care-plans/:id/
       parameters:
       - in: path
@@ -492,7 +737,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarePlanResponse'
+          description: ''
     patch:
       operationId: care_plans_partial_update
       description: GET / PATCH / DELETE /api/care-plans/:id/
@@ -505,11 +754,20 @@ paths:
         required: true
       tags:
       - care-plans
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCarePlanRequestRequest'
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarePlanResponse'
+          description: ''
     delete:
       operationId: care_plans_destroy
       description: GET / PATCH / DELETE /api/care-plans/:id/
@@ -529,7 +787,7 @@ paths:
           description: No response body
   /api/care-plans/{id}/sessions/:
     get:
-      operationId: care_plans_sessions_retrieve
+      operationId: care_plans_sessions_list
       description: GET / POST /api/care-plans/:id/sessions/ — appended, never edited.
       parameters:
       - in: path
@@ -544,7 +802,13 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CarePlanSessionResponse'
+          description: ''
     post:
       operationId: care_plans_sessions_create
       description: GET / POST /api/care-plans/:id/sessions/ — appended, never edited.
@@ -557,14 +821,23 @@ paths:
         required: true
       tags:
       - care-plans
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CarePlanSessionRequestRequest'
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarePlanSessionResponse'
+          description: ''
   /api/collections/:
     get:
-      operationId: collections_retrieve
+      operationId: collections_list
       description: GET / POST /api/collections/
       tags:
       - collections
@@ -572,20 +845,36 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionResponse'
+          description: ''
     post:
       operationId: collections_create
       description: GET / POST /api/collections/
       tags:
       - collections
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+          description: ''
   /api/collections/{id}/:
     get:
-      operationId: collections_retrieve_2
+      operationId: collections_retrieve
       description: GET / PATCH / DELETE /api/collections/:id/
       parameters:
       - in: path
@@ -600,7 +889,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+          description: ''
     patch:
       operationId: collections_partial_update
       description: GET / PATCH / DELETE /api/collections/:id/
@@ -613,11 +906,20 @@ paths:
         required: true
       tags:
       - collections
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCollectionRequestRequest'
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+          description: ''
     delete:
       operationId: collections_destroy
       description: GET / PATCH / DELETE /api/collections/:id/
@@ -637,7 +939,7 @@ paths:
           description: No response body
   /api/collections/{id}/items/:
     get:
-      operationId: collections_items_retrieve
+      operationId: collections_items_list
       description: GET / POST /api/collections/:id/items/
       parameters:
       - in: path
@@ -652,7 +954,13 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionItemResponse'
+          description: ''
     post:
       operationId: collections_items_create
       description: GET / POST /api/collections/:id/items/
@@ -665,11 +973,27 @@ paths:
         required: true
       tags:
       - collections
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionItemRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionItemResponse'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionItemResponse'
+          description: ''
   /api/collections/{id}/items/{item_id}/:
     delete:
       operationId: collections_items_destroy
@@ -729,7 +1053,7 @@ paths:
       security:
       - jwtAuth: []
       responses:
-        '200':
+        '204':
           description: No response body
     delete:
       operationId: comments_like_destroy
@@ -766,7 +1090,11 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentsPage'
+          description: ''
   /api/comments/{id}/report/:
     post:
       operationId: comments_report_create
@@ -780,10 +1108,16 @@ paths:
         required: true
       tags:
       - comments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
+        '201':
           description: No response body
   /api/consents/:
     post:
@@ -791,42 +1125,20 @@ paths:
       description: POST /api/consents/
       tags:
       - consents
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/content/:
-    get:
-      operationId: content_retrieve
-      description: GET /api/content/
-      tags:
-      - content
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/content/{slug}/:
-    get:
-      operationId: content_retrieve_2
-      description: GET /api/content/:slug/
-      parameters:
-      - in: path
-        name: slug
-        schema:
-          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentBatchRequest'
         required: true
-      tags:
-      - content
       security:
       - jwtAuth: []
       responses:
-        '200':
+        '201':
           description: No response body
   /api/content/content/:
     get:
-      operationId: content_content_retrieve
+      operationId: content_content_list
       description: GET /api/content/content/?topic=&type=&search= — the library, newest
         first.
       tags:
@@ -836,10 +1148,16 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContentResponse'
+          description: ''
   /api/content/content/{id}/:
     get:
-      operationId: content_content_retrieve_2
+      operationId: content_content_retrieve
       description: GET /api/content/content/:id/
       parameters:
       - in: path
@@ -855,10 +1173,14 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentResponse'
+          description: ''
   /api/content/content/{id}/products/:
     get:
-      operationId: content_content_products_retrieve
+      operationId: content_content_products_list
       description: GET /api/content/content/:id/products/ — none are linked yet.
       parameters:
       - in: path
@@ -874,10 +1196,17 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: {}
+          description: ''
   /api/content/content/search/:
     get:
-      operationId: content_content_search_retrieve
+      operationId: content_content_search_list
       description: GET /api/content/content/search/?q=
       tags:
       - content
@@ -886,7 +1215,13 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContentResponse'
+          description: ''
   /api/devices/:
     post:
       operationId: devices_create
@@ -935,15 +1270,23 @@ paths:
         Drops events when analytics consent is withdrawn.
       tags:
       - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventBatchRequest'
+        required: true
       security:
       - jwtAuth: []
       - {}
       responses:
-        '200':
+        '201':
+          description: No response body
+        '202':
           description: No response body
   /api/favorites/favorites/:
     get:
-      operationId: favorites_favorites_retrieve
+      operationId: favorites_favorites_list
       description: GET /api/favorites/favorites/
       tags:
       - favorites
@@ -951,7 +1294,13 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FavoriteResponse'
+          description: ''
   /api/favorites/favorites/check/:
     get:
       operationId: favorites_favorites_check_retrieve
@@ -962,18 +1311,32 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteState'
+          description: ''
   /api/favorites/favorites/toggle/:
     post:
       operationId: favorites_favorites_toggle_create
       description: POST /api/favorites/favorites/toggle/ — { contentId }
       tags:
       - favorites
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FavoriteToggleRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteState'
+          description: ''
   /api/invites/{code}/:
     get:
       operationId: invites_retrieve
@@ -991,7 +1354,11 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InviteResponse'
+          description: ''
   /api/invites/{code}/redeem/:
     post:
       operationId: invites_redeem_create
@@ -1008,7 +1375,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+          description: ''
   /api/looks/:
     get:
       operationId: looks_retrieve
@@ -1020,18 +1391,32 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LooksPage'
+          description: ''
     post:
       operationId: looks_create
       description: GET /api/looks/?cursor=&limit=&hair=&style=&area=&q= — also POST,
         to post a look.
       tags:
       - looks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LookCreateRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Look'
+          description: ''
   /api/looks/{look_id}/comments/:
     get:
       operationId: looks_comments_retrieve
@@ -1052,7 +1437,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentsPage'
+          description: ''
     post:
       operationId: looks_comments_create
       description: |-
@@ -1068,11 +1457,21 @@ paths:
         required: true
       tags:
       - looks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentCreateRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+          description: ''
   /api/looks/{id}/:
     get:
       operationId: looks_retrieve_2
@@ -1090,7 +1489,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Look'
+          description: ''
     delete:
       operationId: looks_destroy
       description: GET / DELETE /api/looks/:id/
@@ -1124,7 +1527,7 @@ paths:
       security:
       - jwtAuth: []
       responses:
-        '200':
+        '204':
           description: No response body
     delete:
       operationId: looks_like_destroy
@@ -1156,14 +1559,20 @@ paths:
         required: true
       tags:
       - looks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
+        '201':
           description: No response body
   /api/looks/areas/:
     get:
-      operationId: looks_areas_retrieve
+      operationId: looks_areas_list
       description: GET /api/looks/areas/ — districts that have public looks in them.
       tags:
       - looks
@@ -1172,10 +1581,16 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+          description: ''
   /api/looks/mine/:
     get:
-      operationId: looks_mine_retrieve
+      operationId: looks_mine_list
       description: GET /api/looks/mine/ — her own, private ones included.
       tags:
       - looks
@@ -1183,7 +1598,13 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Look'
+          description: ''
   /api/media/{id}/:
     get:
       operationId: media_retrieve
@@ -1203,7 +1624,12 @@ paths:
       - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/moderation/{id}/appeal/:
     post:
       operationId: moderation_appeal_create
@@ -1260,21 +1686,34 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+          description: ''
     put:
       operationId: notifications_preferences_update
       description: GET/PUT /api/notifications/preferences/ — which kinds of notification
         she gets.
       tags:
       - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferencesRequestRequest'
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+          description: ''
   /api/policies/:
     get:
-      operationId: policies_retrieve
+      operationId: policies_list
       description: GET /api/policies/ — the current version of each published policy.
       tags:
       - policies
@@ -1283,10 +1722,16 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Policy'
+          description: ''
   /api/policies/{type}/:
     get:
-      operationId: policies_retrieve_2
+      operationId: policies_retrieve
       description: GET /api/policies/:type/?version= — the current one, or a named
         version.
       parameters:
@@ -1302,10 +1747,14 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Policy'
+          description: ''
   /api/products/:
     get:
-      operationId: products_retrieve
+      operationId: products_list
       description: GET /api/products/?q=&limit= — every word must match brand, name
         or category.
       tags:
@@ -1314,7 +1763,13 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductResponse'
+          description: ''
   /api/reports/mine/:
     get:
       operationId: reports_mine_list
@@ -1344,14 +1799,20 @@ paths:
         required: true
       tags:
       - reviews
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewReportRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
+        '204':
           description: No response body
   /api/shelf/:
     get:
-      operationId: shelf_retrieve
+      operationId: shelf_list
       description: GET / POST /api/shelf/
       tags:
       - shelf
@@ -1359,17 +1820,33 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShelfItemResponse'
+          description: ''
     post:
       operationId: shelf_create
       description: GET / POST /api/shelf/
       tags:
       - shelf
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShelfAddRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShelfItemResponse'
+          description: ''
   /api/shelf/{id}/:
     patch:
       operationId: shelf_partial_update
@@ -1384,11 +1861,20 @@ paths:
         required: true
       tags:
       - shelf
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedShelfPatchRequestRequest'
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShelfItemResponse'
+          description: ''
     delete:
       operationId: shelf_destroy
       description: PATCH / DELETE /api/shelf/:id/ — a rating, finishing it, or buying
@@ -1409,7 +1895,7 @@ paths:
           description: No response body
   /api/slot-interests/:
     get:
-      operationId: slot_interests_retrieve
+      operationId: slot_interests_list
       description: GET / POST /api/slot-interests/ — the waitlist.
       tags:
       - slot-interests
@@ -1417,17 +1903,33 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SlotInterest'
+          description: ''
     post:
       operationId: slot_interests_create
       description: GET / POST /api/slot-interests/ — the waitlist.
       tags:
       - slot-interests
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlotInterestRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotInterest'
+          description: ''
   /api/slot-interests/{id}/:
     delete:
       operationId: slot_interests_destroy
@@ -1448,7 +1950,7 @@ paths:
           description: No response body
   /api/styles/:
     get:
-      operationId: styles_retrieve
+      operationId: styles_list
       description: 'GET /api/styles/ — the taxonomy looks are tagged from: [{ id,
         name }].'
       tags:
@@ -1458,10 +1960,16 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Style'
+          description: ''
   /api/stylists/:
     get:
-      operationId: stylists_retrieve
+      operationId: stylists_list
       description: |-
         GET /api/stylists/?q= — search live pages by name, handle or area.
         POST /api/stylists/ — her page, as a draft only she can see.
@@ -1472,7 +1980,13 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StylistSearchResult'
+          description: ''
     post:
       operationId: stylists_create
       description: |-
@@ -1480,11 +1994,21 @@ paths:
         POST /api/stylists/ — her page, as a draft only she can see.
       tags:
       - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StylistProfileDraftRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StylistProfile'
+          description: ''
   /api/stylists/{id}/report/:
     post:
       operationId: stylists_report_create
@@ -1498,10 +2022,16 @@ paths:
         required: true
       tags:
       - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
+        '201':
           description: No response body
   /api/stylists/by-handle/{handle}/:
     get:
@@ -1520,7 +2050,11 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StylistPageResponse'
+          description: ''
   /api/stylists/by-handle/{handle}/slots/:
     get:
       operationId: stylists_by_handle_slots_retrieve
@@ -1539,7 +2073,11 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreeSlots'
+          description: ''
   /api/stylists/handle-available/:
     get:
       operationId: stylists_handle_available_retrieve
@@ -1551,7 +2089,11 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandleCheckResponse'
+          description: ''
   /api/stylists/me/:
     get:
       operationId: stylists_me_retrieve
@@ -1562,20 +2104,33 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StylistProfile'
+          description: ''
     patch:
       operationId: stylists_me_partial_update
       description: GET / PATCH /api/stylists/me/
       tags:
       - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStylistProfileDraftRequest'
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StylistProfile'
+          description: ''
   /api/stylists/me/menu/:
     get:
-      operationId: stylists_me_menu_retrieve
+      operationId: stylists_me_menu_list
       description: GET / POST /api/stylists/me/menu/
       tags:
       - stylists
@@ -1583,17 +2138,33 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MenuItem'
+          description: ''
     post:
       operationId: stylists_me_menu_create
       description: GET / POST /api/stylists/me/menu/
       tags:
       - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuItemDraftRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuItem'
+          description: ''
   /api/stylists/me/menu/{id}/:
     patch:
       operationId: stylists_me_menu_partial_update
@@ -1607,11 +2178,20 @@ paths:
         required: true
       tags:
       - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMenuItemDraftRequest'
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuItem'
+          description: ''
     delete:
       operationId: stylists_me_menu_destroy
       description: PATCH / DELETE /api/stylists/me/menu/:id/
@@ -1636,11 +2216,23 @@ paths:
         a pasted list.
       tags:
       - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuImportRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MenuItem'
+          description: ''
   /api/stylists/me/numbers/:
     get:
       operationId: stylists_me_numbers_retrieve
@@ -1651,10 +2243,14 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Numbers'
+          description: ''
   /api/stylists/me/portfolio/:
     get:
-      operationId: stylists_me_portfolio_retrieve
+      operationId: stylists_me_portfolio_list
       description: GET / POST /api/stylists/me/portfolio/
       tags:
       - stylists
@@ -1662,17 +2258,35 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PortfolioPhoto'
+          description: ''
     post:
       operationId: stylists_me_portfolio_create
       description: GET / POST /api/stylists/me/portfolio/
       tags:
       - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortfolioAddRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PortfolioPhoto'
+          description: ''
   /api/stylists/me/portfolio/{id}/:
     patch:
       operationId: stylists_me_portfolio_partial_update
@@ -1686,11 +2300,20 @@ paths:
         required: true
       tags:
       - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPortfolioPatchRequestRequest'
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioPhoto'
+          description: ''
     delete:
       operationId: stylists_me_portfolio_destroy
       description: PATCH / DELETE /api/stylists/me/portfolio/:id/
@@ -1718,7 +2341,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StylistProfile'
+          description: ''
   /api/stylists/me/summary/:
     get:
       operationId: stylists_me_summary_retrieve
@@ -1729,20 +2356,34 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StylistSummary'
+          description: ''
   /api/uploads/:
     post:
       operationId: uploads_create
       tags:
       - uploads
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+          description: ''
   /api/users/:
     get:
-      operationId: users_retrieve
+      operationId: users_list
       description: GET /api/users/ — returns the current user (array for compat).
       tags:
       - users
@@ -1750,10 +2391,16 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDetailResponse'
+          description: ''
   /api/users/{id}/:
     get:
-      operationId: users_retrieve_2
+      operationId: users_retrieve
       description: GET / PATCH / DELETE /api/users/:id/
       parameters:
       - in: path
@@ -1768,7 +2415,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailResponse'
+          description: ''
     patch:
       operationId: users_partial_update
       description: GET / PATCH / DELETE /api/users/:id/
@@ -1781,11 +2432,20 @@ paths:
         required: true
       tags:
       - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserUpdateRequest'
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailResponse'
+          description: ''
     delete:
       operationId: users_destroy
       description: GET / PATCH / DELETE /api/users/:id/
@@ -1820,7 +2480,11 @@ paths:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataExportResponse'
+          description: ''
   /api/users/{id}/hair-profile/:
     patch:
       operationId: users_hair_profile_partial_update
@@ -1837,13 +2501,32 @@ paths:
         required: true
       tags:
       - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHairProfileRequestRequest'
       security:
       - jwtAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HairProfileResponse'
+          description: ''
 components:
   schemas:
+    AcceptRequestRequest:
+      type: object
+      properties:
+        scheduledFor:
+          type: string
+          format: date-time
+        deposit:
+          $ref: '#/components/schemas/MoneyMethodRequest'
+      required:
+      - scheduledFor
     ActionEnum:
       enum:
       - hide
@@ -1854,6 +2537,26 @@ components:
         * `hide` - hide
         * `remove` - remove
         * `unpublish` - unpublish
+    AgainEnum:
+      enum:
+      - 'yes'
+      - maybe
+      - 'no'
+      type: string
+      description: |-
+        * `yes` - yes
+        * `maybe` - maybe
+        * `no` - no
+    AnswerRequestRequest:
+      type: object
+      properties:
+        accept:
+          type: boolean
+        reason:
+          type: string
+          minLength: 1
+      required:
+      - accept
     AppealRequestRequest:
       type: object
       properties:
@@ -1895,6 +2598,786 @@ components:
         * `open` - open
         * `upheld` - upheld
         * `overturned` - overturned
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresAt:
+          type: integer
+          description: Milliseconds since the epoch
+      required:
+      - accessToken
+      - expiresAt
+      - refreshToken
+      - user
+    Availability:
+      type: object
+      properties:
+        week:
+          type: array
+          items:
+            type: object
+            nullable: true
+            properties:
+              start:
+                type: string
+              end:
+                type: string
+            required:
+            - start
+            - end
+          minItems: 7
+          maxItems: 7
+        blocked:
+          type: array
+          items:
+            type: string
+            format: date
+      required:
+      - blocked
+      - week
+    BlankEnum:
+      enum:
+      - ''
+    Block:
+      type: object
+      properties:
+        id:
+          type: string
+        accountId:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - accountId
+      - createdAt
+      - id
+      - name
+    BlockRequestRequest:
+      type: object
+      properties:
+        accountId:
+          type: string
+          minLength: 1
+      required:
+      - accountId
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+        status:
+          $ref: '#/components/schemas/BookingStatusEnum'
+        clientId:
+          type: string
+        clientName:
+          type: string
+        clientHair:
+          type: string
+        clientRecord:
+          allOf:
+          - $ref: '#/components/schemas/ClientRecord'
+        stylistId:
+          type: string
+        stylistName:
+          type: string
+        stylistHandle:
+          type: string
+        serviceId:
+          type: string
+        serviceName:
+          type: string
+        optionLabels:
+          type: array
+          items:
+            type: string
+        price:
+          type: number
+          format: double
+        fromPrice:
+          type: boolean
+        durationMinutes:
+          type: integer
+        bringingOwnHair:
+          type: boolean
+        hairIncluded:
+          type: boolean
+        notes:
+          type: string
+        calendarUrl:
+          type: string
+        requestedTimes:
+          type: array
+          items:
+            type: string
+            format: date-time
+        scheduledFor:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        proposal:
+          allOf:
+          - $ref: '#/components/schemas/Proposal'
+        attendanceConfirmedAt:
+          type: string
+          format: date-time
+        moves:
+          type: integer
+        moveRequest:
+          allOf:
+          - $ref: '#/components/schemas/MoveRequest'
+        deposit:
+          allOf:
+          - $ref: '#/components/schemas/Deposit'
+        area:
+          type: string
+        address:
+          type: string
+        policy:
+          $ref: '#/components/schemas/BookingPolicy'
+        policyVersion:
+          type: string
+        reason:
+          type: string
+        completedAt:
+          type: string
+          format: date-time
+        actualPrice:
+          type: number
+          format: double
+        timing:
+          allOf:
+          - $ref: '#/components/schemas/Timing'
+        startedOnTime:
+          type: boolean
+        contested:
+          allOf:
+          - $ref: '#/components/schemas/Contested'
+        review:
+          allOf:
+          - $ref: '#/components/schemas/ReviewState'
+        checkInDue:
+          $ref: '#/components/schemas/CheckInDueEnum'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - area
+      - bringingOwnHair
+      - clientName
+      - createdAt
+      - fromPrice
+      - id
+      - moves
+      - policy
+      - policyVersion
+      - price
+      - requestedTimes
+      - serviceId
+      - serviceName
+      - status
+      - stylistName
+      - updatedAt
+    BookingCreateRequestRequest:
+      type: object
+      properties:
+        stylistId:
+          type: string
+          minLength: 1
+        serviceId:
+          type: string
+          minLength: 1
+        options:
+          type: object
+          additionalProperties:
+            type: string
+            minLength: 1
+          description: Chosen option id by group id
+        bringingOwnHair:
+          type: boolean
+        requestedTimes:
+          type: array
+          items:
+            type: string
+            format: date-time
+        notes:
+          type: string
+          minLength: 1
+        policyVersion:
+          type: string
+          minLength: 1
+      required:
+      - bringingOwnHair
+      - policyVersion
+      - requestedTimes
+      - serviceId
+      - stylistId
+    BookingPolicy:
+      type: object
+      description: Her policies as they were when the request was made.
+      properties:
+        noticeHours:
+          type: integer
+        depositType:
+          $ref: '#/components/schemas/DepositTypeEnum'
+        depositAmount:
+          type: number
+          format: double
+        rescheduleFreeOnce:
+          type: boolean
+      required:
+      - depositType
+      - noticeHours
+      - rescheduleFreeOnce
+    BookingStatusEnum:
+      enum:
+      - requested
+      - awaiting_deposit
+      - confirmed
+      - completed
+      - declined
+      - expired
+      - cancelled_in_time
+      - cancelled_late
+      - cancelled_by_stylist
+      - no_show
+      type: string
+      description: |-
+        * `requested` - requested
+        * `awaiting_deposit` - awaiting_deposit
+        * `confirmed` - confirmed
+        * `completed` - completed
+        * `declined` - declined
+        * `expired` - expired
+        * `cancelled_in_time` - cancelled_in_time
+        * `cancelled_late` - cancelled_late
+        * `cancelled_by_stylist` - cancelled_by_stylist
+        * `no_show` - no_show
+    BucketEnum:
+      enum:
+      - under_30
+      - '30_60'
+      - 1_2h
+      - 2h_plus
+      type: string
+      description: |-
+        * `under_30` - under_30
+        * `30_60` - 30_60
+        * `1_2h` - 1_2h
+        * `2h_plus` - 2h_plus
+    BudgetEnum:
+      enum:
+      - under_50
+      - '50_100'
+      - '100_150'
+      - 150_plus
+      type: string
+      description: |-
+        * `under_50` - Under £50
+        * `50_100` - £50–100
+        * `100_150` - £100–150
+        * `150_plus` - £150+
+    ByEnum:
+      enum:
+      - client
+      - stylist
+      type: string
+      description: |-
+        * `client` - client
+        * `stylist` - stylist
+    CarePlanRequestRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        specificDays:
+          type: array
+          items:
+            type: integer
+            maximum: 6
+            minimum: 0
+        timeOfDay:
+          $ref: '#/components/schemas/TimeOfDayEnum'
+        remindersOn:
+          type: boolean
+        steps:
+          type: array
+          items:
+            type: string
+            minLength: 1
+      required:
+      - frequency
+      - name
+      - timeOfDay
+    CarePlanResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        specificDays:
+          type: array
+          items:
+            type: integer
+            maximum: 6
+            minimum: 0
+        timeOfDay:
+          $ref: '#/components/schemas/TimeOfDayEnum'
+        remindersOn:
+          type: boolean
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/CarePlanStepResponse'
+        lastDoneAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - createdAt
+      - frequency
+      - id
+      - name
+      - remindersOn
+      - steps
+      - timeOfDay
+    CarePlanSessionRequestRequest:
+      type: object
+      properties:
+        notes:
+          type: string
+          minLength: 1
+    CarePlanSessionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        completedAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+      required:
+      - completedAt
+      - id
+    CarePlanStepResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+      required:
+      - id
+      - text
+    CategoryEnum:
+      enum:
+      - shampoo
+      - conditioner
+      - leave-in
+      - oil
+      - styler
+      - treatment
+      type: string
+      description: |-
+        * `shampoo` - Shampoo
+        * `conditioner` - Conditioner
+        * `leave-in` - Leave-in
+        * `oil` - Oil
+        * `styler` - Styler
+        * `treatment` - Treatment
+    CheckInDueEnum:
+      enum:
+      - 2
+      - 4
+      type: integer
+      description: |-
+        * `2` - 2
+        * `4` - 4
+    CheckInRequestRequest:
+      type: object
+      properties:
+        week:
+          $ref: '#/components/schemas/WeekEnum'
+        holding:
+          $ref: '#/components/schemas/HoldingEnum'
+        scalp:
+          $ref: '#/components/schemas/CheckInRequestScalpEnum'
+        again:
+          $ref: '#/components/schemas/AgainEnum'
+      required:
+      - again
+      - holding
+      - scalp
+      - week
+    CheckInRequestScalpEnum:
+      enum:
+      - comfortable
+      - itchy
+      - sore
+      type: string
+      description: |-
+        * `comfortable` - comfortable
+        * `itchy` - itchy
+        * `sore` - sore
+    ChemicalsEnum:
+      enum:
+      - relaxer
+      - texturiser
+      - colour
+      - bleach
+      - keratin
+      type: string
+      description: |-
+        * `relaxer` - Relaxer
+        * `texturiser` - Texturiser
+        * `colour` - Colour
+        * `bleach` - Bleach
+        * `keratin` - Keratin
+    ClientRecord:
+      type: object
+      properties:
+        attended:
+          type: integer
+        noShows:
+          type: integer
+        lateCancellations:
+          type: integer
+      required:
+      - attended
+      - lateCancellations
+      - noShows
+    CloseRequestOutcomeEnum:
+      enum:
+      - attended
+      - no_show
+      type: string
+      description: |-
+        * `attended` - attended
+        * `no_show` - no_show
+    CloseRequestRequest:
+      type: object
+      properties:
+        outcome:
+          $ref: '#/components/schemas/CloseRequestOutcomeEnum'
+        actualPrice:
+          type: number
+          format: double
+        timing:
+          $ref: '#/components/schemas/TimingRequest'
+      required:
+      - outcome
+    CollectionItemRequestRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/CollectionKindEnum'
+        refId:
+          type: string
+          minLength: 1
+        imageUri:
+          type: string
+          minLength: 1
+        title:
+          type: string
+          minLength: 1
+      required:
+      - kind
+      - refId
+    CollectionItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          $ref: '#/components/schemas/CollectionKindEnum'
+        refId:
+          type: string
+        imageUri:
+          type: string
+        title:
+          type: string
+        addedAt:
+          type: string
+          format: date-time
+      required:
+      - addedAt
+      - id
+      - kind
+      - refId
+    CollectionKindEnum:
+      enum:
+      - look
+      - content
+      type: string
+      description: |-
+        * `look` - look
+        * `content` - content
+    CollectionRequestRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        isPrivate:
+          type: boolean
+      required:
+      - name
+    CollectionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        isPrivate:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        itemCount:
+          type: integer
+        coverUri:
+          type: string
+      required:
+      - createdAt
+      - id
+      - isPrivate
+      - itemCount
+      - name
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+        lookId:
+          type: string
+        authorId:
+          type: string
+        authorName:
+          type: string
+        authorAvatarUri:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        mine:
+          type: boolean
+        parentId:
+          type: string
+        replyToName:
+          type: string
+        replyCount:
+          type: integer
+        likeCount:
+          type: integer
+        liked:
+          type: boolean
+      required:
+      - authorId
+      - authorName
+      - body
+      - createdAt
+      - id
+      - likeCount
+      - liked
+      - lookId
+      - mine
+    CommentCreateRequestRequest:
+      type: object
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 500
+        replyTo:
+          type: string
+          minLength: 1
+          description: The comment being answered
+      required:
+      - body
+    CommentsPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        nextCursor:
+          type: string
+      required:
+      - data
+    ConsentBatchRequest:
+      type: object
+      description: POST /api/consents/
+      properties:
+        consents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsentRequest'
+      required:
+      - consents
+    ConsentRequest:
+      type: object
+      description: Single consent record within a batch.
+      properties:
+        purpose:
+          type: string
+          minLength: 1
+          maxLength: 50
+        granted:
+          type: boolean
+        policyVersion:
+          type: string
+          minLength: 1
+          maxLength: 50
+        recordedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          minLength: 1
+          default: app
+          maxLength: 50
+      required:
+      - granted
+      - policyVersion
+      - purpose
+      - recordedAt
+    ContentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/ContentResponseTypeEnum'
+        topic:
+          $ref: '#/components/schemas/TopicEnum'
+        hairTypes:
+          type: array
+          items:
+            type: string
+        thumbnailUri:
+          type: string
+        videoUri:
+          type: string
+        articleContent:
+          type: string
+        duration:
+          type: integer
+        author:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+      required:
+      - hairTypes
+      - id
+      - publishedAt
+      - title
+      - topic
+      - type
+    ContentResponseTypeEnum:
+      enum:
+      - article
+      - video
+      type: string
+      description: |-
+        * `article` - article
+        * `video` - video
+    ContestRequestRequest:
+      type: object
+      properties:
+        what:
+          $ref: '#/components/schemas/WhatEnum'
+      required:
+      - what
+    Contested:
+      type: object
+      properties:
+        noShow:
+          type: boolean
+        timing:
+          type: boolean
+    DataExportResponse:
+      type: object
+      properties:
+        requestedAt:
+          type: string
+          format: date-time
+      required:
+      - requestedAt
+    DensityEnum:
+      enum:
+      - fine
+      - medium
+      - thick
+      type: string
+      description: |-
+        * `fine` - Fine
+        * `medium` - Medium
+        * `thick` - Thick
+    Deposit:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+        method:
+          type: string
+        status:
+          $ref: '#/components/schemas/DepositStatusEnum'
+      required:
+      - amount
+      - method
+      - status
+    DepositStatusEnum:
+      enum:
+      - awaiting
+      - received
+      type: string
+      description: |-
+        * `awaiting` - awaiting
+        * `received` - received
+    DepositTypeEnum:
+      enum:
+      - none
+      - fixed
+      - percent
+      type: string
+      description: |-
+        * `none` - none
+        * `fixed` - fixed
+        * `percent` - percent
     DeviceToken:
       type: object
       properties:
@@ -1926,6 +3409,644 @@ components:
       required:
       - platform
       - token
+    EventBatchRequest:
+      type: object
+      description: POST /api/events/
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventRequest'
+        anonymousId:
+          type: string
+          minLength: 1
+          default: ''
+          maxLength: 100
+      required:
+      - events
+    EventRequest:
+      type: object
+      description: Single analytics event.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        at:
+          type: string
+          format: date-time
+        localAt:
+          type: string
+          default: ''
+          maxLength: 40
+        properties:
+          type: object
+          additionalProperties: {}
+        appVersion:
+          type: string
+          default: ''
+          maxLength: 30
+      required:
+      - at
+      - name
+    FavoriteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        contentId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - contentId
+      - createdAt
+      - id
+      - userId
+    FavoriteState:
+      type: object
+      properties:
+        isFavorite:
+          type: boolean
+        favorite:
+          allOf:
+          - $ref: '#/components/schemas/FavoriteResponse'
+      required:
+      - isFavorite
+    FavoriteToggleRequestRequest:
+      type: object
+      properties:
+        contentId:
+          type: string
+          minLength: 1
+      required:
+      - contentId
+    ForgotPasswordRequest:
+      type: object
+      description: POST /api/auth/forgot-password/
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    FreeDay:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        times:
+          type: array
+          items:
+            type: string
+            format: date-time
+      required:
+      - date
+      - times
+    FreeSlots:
+      type: object
+      properties:
+        minutes:
+          type: integer
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/FreeDay'
+      required:
+      - days
+      - minutes
+    FrequencyEnum:
+      enum:
+      - daily
+      - every-2-days
+      - weekly
+      - specific-days
+      type: string
+      description: |-
+        * `daily` - daily
+        * `every-2-days` - every-2-days
+        * `weekly` - weekly
+        * `specific-days` - specific-days
+    GoalsEnum:
+      enum:
+      - growth
+      - health
+      - moisture
+      - strength
+      - color
+      - style
+      type: string
+      description: |-
+        * `growth` - Growth
+        * `health` - Health
+        * `moisture` - Moisture
+        * `strength` - Strength
+        * `color` - Color
+        * `style` - Style
+    GroupEnum:
+      enum:
+      - length
+      - size
+      type: string
+      description: |-
+        * `length` - length
+        * `size` - size
+    HairProfileResponse:
+      type: object
+      description: |-
+        For output-only model serializers: a model field that may be blank or null can be
+        left out of the JSON (the renderer drops empty values), so say so in the schema.
+      properties:
+        texture:
+          oneOf:
+          - $ref: '#/components/schemas/TextureEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        length:
+          oneOf:
+          - $ref: '#/components/schemas/LengthEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        shrunkLength:
+          oneOf:
+          - $ref: '#/components/schemas/ShrunkLengthEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        density:
+          oneOf:
+          - $ref: '#/components/schemas/DensityEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        porosity:
+          oneOf:
+          - $ref: '#/components/schemas/PorosityEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        goals:
+          type: array
+          items:
+            $ref: '#/components/schemas/GoalsEnum'
+        scalp:
+          type: array
+          items:
+            $ref: '#/components/schemas/HairProfileResponseScalpEnum'
+        chemicals:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChemicalsEnum'
+        area:
+          type: string
+          maxLength: 100
+        budget:
+          oneOf:
+          - $ref: '#/components/schemas/BudgetEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        photoUri:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        lengthMeasuredAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - chemicals
+      - goals
+      - scalp
+      - updatedAt
+    HairProfileResponseScalpEnum:
+      enum:
+      - balanced
+      - dry
+      - oily
+      - flaky
+      - sensitive
+      type: string
+      description: |-
+        * `balanced` - Balanced
+        * `dry` - Dry
+        * `oily` - Oily
+        * `flaky` - Flaky
+        * `sensitive` - Sensitive
+    HairTextureEnum:
+      enum:
+      - straight
+      - wavy
+      - curly
+      - coily
+      - kinky
+      type: string
+      description: |-
+        * `straight` - Straight
+        * `wavy` - Wavy
+        * `curly` - Curly
+        * `coily` - Coily
+        * `kinky` - Kinky
+    HandleCheckResponse:
+      type: object
+      properties:
+        handle:
+          type: string
+        available:
+          type: boolean
+        suggestions:
+          type: array
+          items:
+            type: string
+      required:
+      - available
+      - handle
+    HoldingEnum:
+      enum:
+      - fresh
+      - okay
+      - tired
+      type: string
+      description: |-
+        * `fresh` - fresh
+        * `okay` - okay
+        * `tired` - tired
+    InviteResponse:
+      type: object
+      description: |-
+        For output-only model serializers: a model field that may be blank or null can be
+        left out of the JSON (the renderer drops empty values), so say so in the schema.
+      properties:
+        code:
+          type: string
+          readOnly: true
+        role:
+          type: string
+          readOnly: true
+        invitedBy:
+          type: string
+          readOnly: true
+          description: e.g. "Akua from Yasante"
+        expiresAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - code
+      - expiresAt
+      - invitedBy
+      - role
+    LengthEnum:
+      enum:
+      - cropped
+      - ear
+      - chin
+      - shoulder
+      - armpit
+      - bra-strap
+      - mid-back
+      - waist
+      - hip
+      - tailbone
+      type: string
+      description: |-
+        * `cropped` - Cropped
+        * `ear` - Ear
+        * `chin` - Chin
+        * `shoulder` - Shoulder
+        * `armpit` - Armpit
+        * `bra-strap` - Bra strap
+        * `mid-back` - Mid-back
+        * `waist` - Waist
+        * `hip` - Hip
+        * `tailbone` - Tailbone
+    LoginRequest:
+      type: object
+      description: POST /api/auth/login/
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    LogoutRequestRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          minLength: 1
+    Look:
+      type: object
+      properties:
+        id:
+          type: string
+        authorId:
+          type: string
+        authorName:
+          type: string
+        authorHandle:
+          type: string
+        authorAvatarUri:
+          type: string
+        photoUri:
+          type: string
+        thumbUri:
+          type: string
+        feedUri:
+          type: string
+        photoAspect:
+          type: number
+          format: double
+        caption:
+          type: string
+        stylist:
+          allOf:
+          - $ref: '#/components/schemas/LookStylist'
+        serviceId:
+          type: string
+        serviceName:
+          type: string
+        price:
+          type: number
+          format: double
+        fromPrice:
+          type: boolean
+        styles:
+          type: array
+          items:
+            type: string
+        hairTexture:
+          $ref: '#/components/schemas/HairTextureEnum'
+        area:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaggedProduct'
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        likeCount:
+          type: integer
+        liked:
+          type: boolean
+        commentCount:
+          type: integer
+        saveCount:
+          type: integer
+        saved:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        mine:
+          type: boolean
+      required:
+      - authorId
+      - authorName
+      - commentCount
+      - createdAt
+      - id
+      - likeCount
+      - liked
+      - mine
+      - photoUri
+      - products
+      - saveCount
+      - saved
+      - styles
+      - visibility
+    LookCreateRequestRequest:
+      type: object
+      properties:
+        photoUri:
+          type: string
+          minLength: 1
+        thumbUri:
+          type: string
+          minLength: 1
+        feedUri:
+          type: string
+          minLength: 1
+        photoAspect:
+          type: number
+          format: double
+        caption:
+          type: string
+          minLength: 1
+        styles:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: Style slugs; at least one
+        bookingId:
+          type: string
+          minLength: 1
+          description: Credits her stylist through this booking
+        serviceId:
+          type: string
+          minLength: 1
+        productIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        hairTexture:
+          type: string
+          minLength: 1
+      required:
+      - photoUri
+      - styles
+    LookStylist:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        handle:
+          type: string
+      required:
+      - id
+      - name
+    LooksPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Look'
+        nextCursor:
+          type: string
+      required:
+      - data
+    MenuImportRequestRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuItemDraftRequest'
+      required:
+      - items
+    MenuItem:
+      type: object
+      description: |-
+        For output-only model serializers: a model field that may be blank or null can be
+        left out of the JSON (the renderer drops empty values), so say so in the schema.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        fromPrice:
+          type: boolean
+        durationMinutes:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        note:
+          type: string
+          maxLength: 500
+        hairIncluded:
+          type: boolean
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuOption'
+          readOnly: true
+      required:
+      - fromPrice
+      - id
+      - name
+      - options
+      - price
+    MenuItemDraftRequest:
+      type: object
+      description: For creating/updating menu items.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: 0.01
+          exclusiveMaximum: true
+        fromPrice:
+          type: boolean
+          default: false
+        durationMinutes:
+          type: integer
+          minimum: 1
+          nullable: true
+        note:
+          type: string
+          default: ''
+          maxLength: 500
+        hairIncluded:
+          type: boolean
+          nullable: true
+        options:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - name
+      - price
+    MenuOption:
+      type: object
+      properties:
+        id:
+          type: string
+        group:
+          $ref: '#/components/schemas/GroupEnum'
+        label:
+          type: string
+        add:
+          type: number
+          format: double
+        addMinutes:
+          type: integer
+      required:
+      - add
+      - group
+      - id
+      - label
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    MoneyMethod:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+        method:
+          type: string
+      required:
+      - amount
+      - method
+    MoneyMethodRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+        method:
+          type: string
+          minLength: 1
+      required:
+      - amount
+      - method
+    MoveRequest:
+      type: object
+      properties:
+        by:
+          $ref: '#/components/schemas/ByEnum'
+        scheduledFor:
+          type: string
+          format: date-time
+      required:
+      - by
+      - scheduledFor
+    MoveRequestBodyRequest:
+      type: object
+      properties:
+        scheduledFor:
+          type: string
+          format: date-time
+      required:
+      - scheduledFor
     MyModeration:
       type: object
       properties:
@@ -1947,7 +4068,6 @@ components:
         appeal:
           allOf:
           - $ref: '#/components/schemas/AppealState'
-          nullable: true
       required:
       - action
       - createdAt
@@ -1970,14 +4090,12 @@ components:
           $ref: '#/components/schemas/MyReportStatusEnum'
         resolution:
           type: string
-          nullable: true
         createdAt:
           type: string
           format: date-time
         handledAt:
           type: string
           format: date-time
-          nullable: true
       required:
       - createdAt
       - id
@@ -1994,6 +4112,1524 @@ components:
         * `open` - open
         * `actioned` - actioned
         * `dismissed` - dismissed
+    NotificationCategory:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        'on':
+          type: boolean
+      required:
+      - id
+      - label
+      - 'on'
+    NotificationPreferences:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationCategory'
+      required:
+      - categories
+    NotificationPreferencesRequestRequest:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: '[{id, on}]'
+        muted:
+          type: array
+          items:
+            type: string
+            minLength: 1
+    NullEnum:
+      enum:
+      - null
+    Numbers:
+      type: object
+      properties:
+        weekOf:
+          type: string
+          format: date-time
+        thisWeek:
+          $ref: '#/components/schemas/WeekCounts'
+        lastWeek:
+          $ref: '#/components/schemas/WeekCounts'
+        timing:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceTiming'
+      required:
+      - lastWeek
+      - thisWeek
+      - timing
+      - weekOf
+    PageReview:
+      type: object
+      properties:
+        id:
+          type: string
+        bookingId:
+          type: string
+        rating:
+          type: integer
+        body:
+          type: string
+        status:
+          type: string
+        authorName:
+          type: string
+        serviceName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - authorName
+      - bookingId
+      - createdAt
+      - id
+      - rating
+      - serviceName
+      - status
+    PatchedCarePlanRequestRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        specificDays:
+          type: array
+          items:
+            type: integer
+            maximum: 6
+            minimum: 0
+        timeOfDay:
+          $ref: '#/components/schemas/TimeOfDayEnum'
+        remindersOn:
+          type: boolean
+        steps:
+          type: array
+          items:
+            type: string
+            minLength: 1
+    PatchedCollectionRequestRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        isPrivate:
+          type: boolean
+    PatchedHairProfileRequestRequest:
+      type: object
+      properties:
+        texture:
+          type: string
+        length:
+          type: string
+        shrunkLength:
+          type: string
+        density:
+          type: string
+        porosity:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        scalp:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        chemicals:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        area:
+          type: string
+        budget:
+          type: string
+        photoUri:
+          type: string
+        lengthMeasuredAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PatchedMenuItemDraftRequest:
+      type: object
+      description: For creating/updating menu items.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: 0.01
+          exclusiveMaximum: true
+        fromPrice:
+          type: boolean
+          default: false
+        durationMinutes:
+          type: integer
+          minimum: 1
+          nullable: true
+        note:
+          type: string
+          default: ''
+          maxLength: 500
+        hairIncluded:
+          type: boolean
+          nullable: true
+        options:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+    PatchedPortfolioPatchRequestRequest:
+      type: object
+      properties:
+        serviceId:
+          type: string
+          nullable: true
+          minLength: 1
+    PatchedShelfPatchRequestRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ShelfStatusEnum'
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+    PatchedStylistProfileDraftRequest:
+      type: object
+      description: For creating / updating a stylist profile.
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 150
+        handle:
+          type: string
+          minLength: 1
+          maxLength: 50
+        bio:
+          type: string
+          default: ''
+          maxLength: 1000
+        serviceModels:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceModelEnum'
+        baseArea:
+          type: string
+          minLength: 1
+          maxLength: 100
+        travelRadiusMiles:
+          type: number
+          format: double
+          nullable: true
+        instagramHandle:
+          type: string
+          default: ''
+          maxLength: 50
+        policies:
+          $ref: '#/components/schemas/PoliciesRequest'
+        proofPhotoUri:
+          oneOf:
+          - type: string
+            format: uri
+            default: ''
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        availability:
+          type: object
+          additionalProperties: {}
+        paymentMethods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMethodRequest'
+    PatchedUserUpdateRequest:
+      type: object
+      description: PATCH /api/users/:id/
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          minLength: 1
+        avatarUri:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+    PaymentMethod:
+      type: object
+      description: |-
+        For output-only model serializers: a model field that may be blank or null can be
+        left out of the JSON (the renderer drops empty values), so say so in the schema.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        label:
+          type: string
+          maxLength: 40
+        details:
+          type: string
+          maxLength: 200
+      required:
+      - details
+      - id
+      - label
+    PaymentMethodRequest:
+      type: object
+      description: |-
+        For output-only model serializers: a model field that may be blank or null can be
+        left out of the JSON (the renderer drops empty values), so say so in the schema.
+      properties:
+        label:
+          type: string
+          minLength: 1
+          maxLength: 40
+        details:
+          type: string
+          minLength: 1
+          maxLength: 200
+      required:
+      - details
+      - label
+    PhoneStartRequest:
+      type: object
+      description: POST /api/auth/phone/start/
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 20
+      required:
+      - phone
+    PhoneStartResponse:
+      type: object
+      properties:
+        resendInSeconds:
+          type: integer
+        expiresInSeconds:
+          type: integer
+      required:
+      - expiresInSeconds
+      - resendInSeconds
+    PhoneVerifyRequest:
+      type: object
+      description: POST /api/auth/phone/verify/
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 20
+        code:
+          type: string
+          minLength: 1
+          maxLength: 10
+      required:
+      - code
+      - phone
+    Policies:
+      type: object
+      properties:
+        noticeHours:
+          type: integer
+          minimum: 0
+        depositType:
+          $ref: '#/components/schemas/DepositTypeEnum'
+        depositAmount:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        rescheduleFreeOnce:
+          type: boolean
+          default: true
+      required:
+      - depositType
+      - noticeHours
+    PoliciesRequest:
+      type: object
+      properties:
+        noticeHours:
+          type: integer
+          minimum: 0
+        depositType:
+          $ref: '#/components/schemas/DepositTypeEnum'
+        depositAmount:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        rescheduleFreeOnce:
+          type: boolean
+          default: true
+      required:
+      - depositType
+      - noticeHours
+    Policy:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/PolicyTypeEnum'
+        version:
+          type: string
+        title:
+          type: string
+        effectiveAt:
+          type: string
+          format: date-time
+        body:
+          type: string
+      required:
+      - body
+      - effectiveAt
+      - title
+      - type
+      - version
+    PolicyTypeEnum:
+      enum:
+      - terms
+      - stylist_terms
+      - privacy
+      - guidelines
+      type: string
+      description: |-
+        * `terms` - terms
+        * `stylist_terms` - stylist_terms
+        * `privacy` - privacy
+        * `guidelines` - guidelines
+    PorosityEnum:
+      enum:
+      - low
+      - medium
+      - high
+      type: string
+      description: |-
+        * `low` - Low
+        * `medium` - Medium
+        * `high` - High
+    PortfolioAddRequestRequest:
+      type: object
+      properties:
+        photos:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: '[{uri, thumbUri?, serviceId?}]'
+        postAsLooks:
+          type: boolean
+      required:
+      - photos
+    PortfolioPhoto:
+      type: object
+      description: |-
+        For output-only model serializers: a model field that may be blank or null can be
+        left out of the JSON (the renderer drops empty values), so say so in the schema.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        uri:
+          type: string
+          format: uri
+          maxLength: 500
+        thumbUri:
+          type: string
+          format: uri
+          readOnly: true
+        serviceId:
+          type: string
+          format: uuid
+          readOnly: true
+        lookId:
+          type: string
+          format: uuid
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - createdAt
+      - id
+      - uri
+    ProductResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        brand:
+          type: string
+        name:
+          type: string
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+      required:
+      - brand
+      - category
+      - id
+      - name
+    Proposal:
+      type: object
+      properties:
+        scheduledFor:
+          type: string
+          format: date-time
+        deposit:
+          allOf:
+          - $ref: '#/components/schemas/MoneyMethod'
+      required:
+      - scheduledFor
+    PublicProfile:
+      type: object
+      description: 'Her page''s profile: no proof photo, payment details or address,
+        plus the checks held.'
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        accountId:
+          type: string
+          format: uuid
+          readOnly: true
+        displayName:
+          type: string
+          maxLength: 150
+        handle:
+          type: string
+          maxLength: 50
+        bio:
+          type: string
+          maxLength: 1000
+        avatarUri:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        serviceModels:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceModelsBafEnum'
+        baseArea:
+          type: string
+          maxLength: 100
+        travelRadiusMiles:
+          type: number
+          format: double
+        instagramHandle:
+          type: string
+          maxLength: 50
+        policies:
+          allOf:
+          - $ref: '#/components/schemas/Policies'
+          readOnly: true
+        availability:
+          allOf:
+          - $ref: '#/components/schemas/Availability'
+          readOnly: true
+        verificationTier:
+          allOf:
+          - $ref: '#/components/schemas/VerificationTierEnum'
+          readOnly: true
+        published:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        checks:
+          type: array
+          items:
+            type: string
+          description: phone, work, met_in_person, met_on_video, insurance
+      required:
+      - accountId
+      - baseArea
+      - checks
+      - createdAt
+      - displayName
+      - handle
+      - id
+      - policies
+      - published
+      - serviceModels
+      - verificationTier
+    Rating:
+      type: object
+      properties:
+        average:
+          type: number
+          format: double
+        count:
+          type: integer
+      required:
+      - average
+      - count
+    ReasonRequestRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+    RefreshTokenRequest:
+      type: object
+      description: POST /api/auth/refresh-token/
+      properties:
+        refreshToken:
+          type: string
+          minLength: 1
+      required:
+      - refreshToken
+    ReportRequestReasonEnum:
+      enum:
+      - not-their-work
+      - nudity
+      - hate
+      - scam
+      - other
+      - not-hair
+      type: string
+      description: |-
+        * `not-their-work` - not-their-work
+        * `nudity` - nudity
+        * `hate` - hate
+        * `scam` - scam
+        * `other` - other
+        * `not-hair` - not-hair
+    ReportRequestRequest:
+      type: object
+      properties:
+        reason:
+          $ref: '#/components/schemas/ReportRequestReasonEnum'
+        note:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+      - reason
+    ResetPasswordRequest:
+      type: object
+      description: POST /api/auth/reset-password/
+      properties:
+        token:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+      required:
+      - password
+      - token
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+        bookingId:
+          type: string
+        rating:
+          type: integer
+        body:
+          type: string
+        status:
+          $ref: '#/components/schemas/ReviewStatusEnum'
+        authorName:
+          type: string
+        serviceName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - authorName
+      - bookingId
+      - createdAt
+      - id
+      - rating
+      - serviceName
+      - status
+    ReviewCreateRequestRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        body:
+          type: string
+          minLength: 1
+      required:
+      - rating
+    ReviewReportRequestRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+        note:
+          type: string
+          minLength: 1
+      required:
+      - reason
+    ReviewState:
+      type: object
+      properties:
+        rating:
+          type: integer
+        status:
+          $ref: '#/components/schemas/ReviewStatusEnum'
+      required:
+      - rating
+      - status
+    ReviewStatusEnum:
+      enum:
+      - pending
+      - published
+      - removed
+      type: string
+      description: |-
+        * `pending` - pending
+        * `published` - published
+        * `removed` - removed
+    RoleEnum:
+      enum:
+      - client
+      - stylist
+      type: string
+      description: |-
+        * `client` - client
+        * `stylist` - stylist
+    RolesEnum:
+      enum:
+      - client
+      - stylist
+      - admin
+      type: string
+      description: |-
+        * `client` - client
+        * `stylist` - stylist
+        * `admin` - admin
+    ServiceModelEnum:
+      enum:
+      - salon
+      - home
+      - mobile
+      type: string
+      description: |-
+        * `salon` - salon
+        * `home` - home
+        * `mobile` - mobile
+    ServiceModelsBafEnum:
+      enum:
+      - salon
+      - home
+      - mobile
+      type: string
+      description: |-
+        * `salon` - Salon
+        * `home` - Home
+        * `mobile` - Mobile
+    ServiceTiming:
+      type: object
+      properties:
+        serviceId:
+          type: string
+        serviceName:
+          type: string
+        quotedMinutes:
+          type: integer
+        typicalMinutes:
+          type: integer
+        sample:
+          type: integer
+        early:
+          type: integer
+        onTime:
+          type: integer
+        over:
+          type: integer
+        clientSide:
+          type: integer
+      required:
+      - clientSide
+      - early
+      - onTime
+      - over
+      - sample
+      - serviceId
+      - serviceName
+    ShelfAddRequestRequest:
+      type: object
+      properties:
+        productId:
+          type: string
+          minLength: 1
+      required:
+      - productId
+    ShelfItemResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        product:
+          $ref: '#/components/schemas/ProductResponse'
+        status:
+          $ref: '#/components/schemas/ShelfStatusEnum'
+        rating:
+          type: integer
+          maximum: 5
+          minimum: 1
+        timesBought:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - product
+      - startedAt
+      - status
+      - timesBought
+    ShelfStatusEnum:
+      enum:
+      - using
+      - finished
+      - repurchased
+      type: string
+      description: |-
+        * `using` - using
+        * `finished` - finished
+        * `repurchased` - repurchased
+    ShrunkLengthEnum:
+      enum:
+      - cropped
+      - ear
+      - chin
+      - shoulder
+      - armpit
+      - bra-strap
+      - mid-back
+      - waist
+      - hip
+      - tailbone
+      type: string
+      description: |-
+        * `cropped` - Cropped
+        * `ear` - Ear
+        * `chin` - Chin
+        * `shoulder` - Shoulder
+        * `armpit` - Armpit
+        * `bra-strap` - Bra strap
+        * `mid-back` - Mid-back
+        * `waist` - Waist
+        * `hip` - Hip
+        * `tailbone` - Tailbone
+    SignupRequest:
+      type: object
+      description: |-
+        POST /api/auth/signup/
+
+        Validates email uniqueness, password strength, age confirmation,
+        and optional invite code.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+        passwordConfirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        inviteCode:
+          type: string
+        ageConfirmed:
+          type: boolean
+        policyVersion:
+          type: string
+          minLength: 1
+          maxLength: 50
+      required:
+      - ageConfirmed
+      - email
+      - name
+      - password
+      - passwordConfirm
+      - policyVersion
+      - role
+    SlotInterest:
+      type: object
+      properties:
+        id:
+          type: string
+        stylistId:
+          type: string
+        stylistName:
+          type: string
+        stylistHandle:
+          type: string
+        openedOn:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+      required:
+      - createdAt
+      - from
+      - id
+      - stylistId
+      - stylistName
+      - to
+    SlotInterestRequestRequest:
+      type: object
+      properties:
+        stylistId:
+          type: string
+          minLength: 1
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+      required:
+      - from
+      - stylistId
+      - to
+    StartedOnTimeRequestRequest:
+      type: object
+      properties:
+        onTime:
+          type: boolean
+      required:
+      - onTime
+    Style:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+      - id
+      - name
+    StylistPageResponse:
+      type: object
+      properties:
+        profile:
+          $ref: '#/components/schemas/PublicProfile'
+        menu:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuItem'
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/PortfolioPhoto'
+        confirmedStyles:
+          type: integer
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/PageReview'
+        rating:
+          allOf:
+          - $ref: '#/components/schemas/Rating'
+        responseHours:
+          type: number
+          format: double
+        timingLabel:
+          allOf:
+          - $ref: '#/components/schemas/TimingLabel'
+      required:
+      - confirmedStyles
+      - menu
+      - photos
+      - profile
+      - reviews
+    StylistProfile:
+      type: object
+      description: Full profile for the stylist herself.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        accountId:
+          type: string
+          format: uuid
+          readOnly: true
+        displayName:
+          type: string
+          maxLength: 150
+        handle:
+          type: string
+          maxLength: 50
+        bio:
+          type: string
+          maxLength: 1000
+        avatarUri:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        serviceModels:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceModelsBafEnum'
+        baseArea:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+          maxLength: 500
+        travelRadiusMiles:
+          type: number
+          format: double
+        instagramHandle:
+          type: string
+          maxLength: 50
+        policies:
+          allOf:
+          - $ref: '#/components/schemas/Policies'
+          readOnly: true
+        availability:
+          allOf:
+          - $ref: '#/components/schemas/Availability'
+          readOnly: true
+        paymentMethods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMethod'
+          readOnly: true
+        proofPhotoUri:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        verificationTier:
+          allOf:
+          - $ref: '#/components/schemas/VerificationTierEnum'
+          readOnly: true
+        published:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - accountId
+      - baseArea
+      - createdAt
+      - displayName
+      - handle
+      - id
+      - paymentMethods
+      - policies
+      - published
+      - serviceModels
+      - verificationTier
+    StylistProfileDraftRequest:
+      type: object
+      description: For creating / updating a stylist profile.
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 150
+        handle:
+          type: string
+          minLength: 1
+          maxLength: 50
+        bio:
+          type: string
+          default: ''
+          maxLength: 1000
+        serviceModels:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceModelEnum'
+        baseArea:
+          type: string
+          minLength: 1
+          maxLength: 100
+        travelRadiusMiles:
+          type: number
+          format: double
+          nullable: true
+        instagramHandle:
+          type: string
+          default: ''
+          maxLength: 50
+        policies:
+          $ref: '#/components/schemas/PoliciesRequest'
+        proofPhotoUri:
+          oneOf:
+          - type: string
+            format: uri
+            default: ''
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        availability:
+          type: object
+          additionalProperties: {}
+        paymentMethods:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentMethodRequest'
+      required:
+      - baseArea
+      - displayName
+      - handle
+      - serviceModels
+    StylistSearchResult:
+      type: object
+      properties:
+        accountId:
+          type: string
+        handle:
+          type: string
+        displayName:
+          type: string
+        avatarUri:
+          type: string
+        baseArea:
+          type: string
+      required:
+      - accountId
+      - baseArea
+      - displayName
+      - handle
+    StylistSummary:
+      type: object
+      properties:
+        pendingRequests:
+          type: integer
+        appointmentsToday:
+          type: integer
+      required:
+      - appointmentsToday
+      - pendingRequests
+    TaggedProduct:
+      type: object
+      properties:
+        id:
+          type: string
+        brand:
+          type: string
+        name:
+          type: string
+      required:
+      - brand
+      - id
+      - name
+    TextureEnum:
+      enum:
+      - straight
+      - wavy
+      - curly
+      - coily
+      - kinky
+      type: string
+      description: |-
+        * `straight` - Straight
+        * `wavy` - Wavy
+        * `curly` - Curly
+        * `coily` - Coily
+        * `kinky` - Kinky
+    TimeOfDayEnum:
+      enum:
+      - morning
+      - afternoon
+      - evening
+      - night
+      type: string
+      description: |-
+        * `morning` - morning
+        * `afternoon` - afternoon
+        * `evening` - evening
+        * `night` - night
+    Timing:
+      type: object
+      properties:
+        outcome:
+          $ref: '#/components/schemas/TimingOutcomeEnum'
+        bucket:
+          $ref: '#/components/schemas/BucketEnum'
+        reason:
+          $ref: '#/components/schemas/TimingReasonEnum'
+      required:
+      - outcome
+    TimingLabel:
+      type: object
+      properties:
+        outcome:
+          $ref: '#/components/schemas/TimingOutcomeEnum'
+        count:
+          type: integer
+        sample:
+          type: integer
+      required:
+      - count
+      - outcome
+      - sample
+    TimingOutcomeEnum:
+      enum:
+      - early
+      - on_time
+      - over
+      type: string
+      description: |-
+        * `early` - early
+        * `on_time` - on_time
+        * `over` - over
+    TimingReasonEnum:
+      enum:
+      - client_late
+      - hair_not_prepped
+      - long_breaks
+      - more_hair
+      - old_style_in
+      - own_delay
+      - previous_overran
+      - style_changed
+      - supplies
+      - took_longer
+      - working_alone
+      - wrong_hair
+      type: string
+      description: |-
+        * `client_late` - client_late
+        * `hair_not_prepped` - hair_not_prepped
+        * `long_breaks` - long_breaks
+        * `more_hair` - more_hair
+        * `old_style_in` - old_style_in
+        * `own_delay` - own_delay
+        * `previous_overran` - previous_overran
+        * `style_changed` - style_changed
+        * `supplies` - supplies
+        * `took_longer` - took_longer
+        * `working_alone` - working_alone
+        * `wrong_hair` - wrong_hair
+    TimingRequest:
+      type: object
+      properties:
+        outcome:
+          $ref: '#/components/schemas/TimingOutcomeEnum'
+        bucket:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/BucketEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        reason:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/TimingReasonEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - outcome
+    TokenPair:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresAt:
+          type: integer
+          description: Milliseconds since the epoch
+      required:
+      - accessToken
+      - expiresAt
+      - refreshToken
+    TopicEnum:
+      enum:
+      - care
+      - styling
+      - products
+      - treatments
+      - color
+      - growth
+      - health
+      - tips
+      type: string
+      description: |-
+        * `care` - Care
+        * `styling` - Styling
+        * `products` - Products
+        * `treatments` - Treatments
+        * `color` - Colour
+        * `growth` - Growth
+        * `health` - Health
+        * `tips` - Tips
+    UploadRequestKindEnum:
+      enum:
+      - look
+      - portfolio
+      - avatar
+      - proof
+      - other
+      type: string
+      description: |-
+        * `look` - look
+        * `portfolio` - portfolio
+        * `avatar` - avatar
+        * `proof` - proof
+        * `other` - other
+    UploadRequestRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        kind:
+          $ref: '#/components/schemas/UploadRequestKindEnum'
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
+        source:
+          type: string
+          minLength: 1
+      required:
+      - file
+    UploadResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        uri:
+          type: string
+        feedUri:
+          type: string
+        thumbUri:
+          type: string
+        photoAspect:
+          type: number
+          format: double
+      required:
+      - id
+      - photoAspect
+      - uri
+    UserDetailResponse:
+      type: object
+      description: 'The user as sent: empty phone or avatar left out.'
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        phoneVerified:
+          type: boolean
+          readOnly: true
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RolesEnum'
+          readOnly: true
+        avatarUri:
+          type: string
+          format: uri
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        hairProfile:
+          allOf:
+          - $ref: '#/components/schemas/HairProfileResponse'
+          readOnly: true
+      required:
+      - createdAt
+      - email
+      - id
+      - name
+      - phoneVerified
+      - roles
+      - updatedAt
+    UserResponse:
+      type: object
+      description: 'The user as sent: empty phone or avatar left out.'
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        phoneVerified:
+          type: boolean
+          readOnly: true
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RolesEnum'
+          readOnly: true
+        avatarUri:
+          type: string
+          format: uri
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - createdAt
+      - email
+      - id
+      - name
+      - phoneVerified
+      - roles
+      - updatedAt
+    VerificationTierEnum:
+      type: integer
+      enum:
+      - 0
+      - 1
+      - 2
+    VisibilityEnum:
+      enum:
+      - public
+      - private
+      type: string
+      description: |-
+        * `public` - public
+        * `private` - private
+    WeekCounts:
+      type: object
+      properties:
+        views:
+          type: integer
+        requests:
+          type: integer
+        confirmed:
+          type: integer
+        completed:
+          type: integer
+        noShows:
+          type: integer
+        lateCancellations:
+          type: integer
+        earned:
+          type: number
+          format: double
+      required:
+      - completed
+      - confirmed
+      - earned
+      - lateCancellations
+      - noShows
+      - requests
+      - views
+    WeekEnum:
+      enum:
+      - 2
+      - 4
+      type: integer
+      description: |-
+        * `2` - 2
+        * `4` - 4
+    WhatEnum:
+      enum:
+      - no_show
+      - timing
+      type: string
+      description: |-
+        * `no_show` - no_show
+        * `timing` - timing
   securitySchemes:
     cookieAuth:
       type: apiKey

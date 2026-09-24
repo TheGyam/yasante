@@ -49,9 +49,39 @@ class ShelfItemSerializer(serializers.ModelSerializer):
 
 class ShelfItemUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(
-        choices=["using", "finished", "repurchased", "discarded"], required=False
+        choices=["using", "finished", "repurchased"], required=False
     )
     rating = serializers.IntegerField(
         min_value=1, max_value=5, required=False, allow_null=True
     )
     review = serializers.CharField(max_length=500, required=False, allow_blank=True)
+
+
+# ── Shapes for the schema the app's types are generated from ─────────────────────
+from apps.common.schema import optional  # noqa: E402
+
+
+class ProductResponseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    brand = serializers.CharField()
+    name = serializers.CharField()
+    category = serializers.ChoiceField(choices=Product.CATEGORY_CHOICES)
+
+
+class ShelfItemResponseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    product = ProductResponseSerializer()
+    status = serializers.ChoiceField(choices=["using", "finished", "repurchased"])
+    rating = optional(serializers.IntegerField(min_value=1, max_value=5))
+    times_bought = serializers.IntegerField()
+    started_at = serializers.DateTimeField()
+    finished_at = optional(serializers.DateTimeField())
+
+
+class ShelfAddRequestSerializer(serializers.Serializer):
+    product_id = serializers.CharField()
+
+
+class ShelfPatchRequestSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["using", "finished", "repurchased"], required=False)
+    rating = serializers.IntegerField(min_value=1, max_value=5, required=False)

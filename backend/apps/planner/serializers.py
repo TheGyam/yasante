@@ -90,3 +90,73 @@ class CarePlanSessionDraftSerializer(serializers.Serializer):
     notes = serializers.CharField(
         max_length=1000, required=False, allow_blank=True, default=""
     )
+
+
+# ── Shapes for the schema the app's types are generated from ─────────────────────
+from apps.common.schema import optional  # noqa: E402
+
+
+class CollectionResponseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    is_private = serializers.BooleanField()
+    created_at = serializers.DateTimeField()
+    item_count = serializers.IntegerField()
+    cover_uri = optional(serializers.CharField())
+
+
+class CollectionItemResponseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    kind = serializers.ChoiceField(choices=["look", "content"])
+    ref_id = serializers.CharField()
+    image_uri = optional(serializers.CharField())
+    title = optional(serializers.CharField())
+    added_at = serializers.DateTimeField()
+
+
+class CarePlanStepResponseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    text = serializers.CharField()
+
+
+class CarePlanResponseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    frequency = serializers.ChoiceField(choices=["daily", "every-2-days", "weekly", "specific-days"])
+    specific_days = optional(serializers.ListField(child=serializers.IntegerField(min_value=0, max_value=6)))
+    time_of_day = serializers.ChoiceField(choices=["morning", "afternoon", "evening", "night"])
+    reminders_on = serializers.BooleanField()
+    steps = CarePlanStepResponseSerializer(many=True)
+    last_done_at = optional(serializers.DateTimeField())
+    created_at = serializers.DateTimeField()
+
+
+class CarePlanSessionResponseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    completed_at = serializers.DateTimeField()
+    notes = optional(serializers.CharField())
+
+
+class CollectionRequestSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=150)
+    is_private = serializers.BooleanField(required=False)
+
+
+class CollectionItemRequestSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=["look", "content"])
+    ref_id = serializers.CharField()
+    image_uri = serializers.CharField(required=False)
+    title = serializers.CharField(required=False)
+
+
+class CarePlanRequestSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=150)
+    frequency = serializers.ChoiceField(choices=["daily", "every-2-days", "weekly", "specific-days"])
+    specific_days = serializers.ListField(child=serializers.IntegerField(min_value=0, max_value=6), required=False)
+    time_of_day = serializers.ChoiceField(choices=["morning", "afternoon", "evening", "night"])
+    reminders_on = serializers.BooleanField(required=False)
+    steps = serializers.ListField(child=serializers.CharField(), required=False)
+
+
+class CarePlanSessionRequestSerializer(serializers.Serializer):
+    notes = serializers.CharField(required=False)

@@ -35,7 +35,7 @@ from django.db.models import (
 from django.db.models.functions import Cast, Extract, Greatest, Power
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
-from rest_framework import permissions, status
+from rest_framework import serializers, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -52,6 +52,16 @@ from .models import (
 )
 from .serializers import (
     AppealRequestSerializer,
+    BlockRequestSerializer,
+    CommentCreateRequestSerializer,
+    LookCreateRequestSerializer,
+    ReportRequestSerializer,
+    BlockSerializer,
+    CommentSerializer,
+    CommentsPageSerializer,
+    LookSerializer,
+    LooksPageSerializer,
+    StyleSerializer,
     AppealResponseSerializer,
     COMMENT_REPORT_REASONS,
     MyModerationSerializer,
@@ -116,6 +126,7 @@ class FeedView(APIView):
     def get_throttles(self):
         return [PostingThrottle()] if self.request.method == "POST" else []
 
+    @extend_schema(responses=LooksPageSerializer)
     def get(self, request):
         viewer = _viewer(request)
         qs = _looks(viewer).filter(visibility="public", status="live")
@@ -150,6 +161,7 @@ class FeedView(APIView):
             log_search(request, "looks", q, filters, len(items))
         return Response({"data": present_looks(items, viewer), "next_cursor": next_cursor})
 
+    @extend_schema(request=LookCreateRequestSerializer, responses={201: LookSerializer})
     def post(self, request):
         return create_look(request)
 
@@ -230,6 +242,7 @@ class MyLooksView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=LookSerializer(many=True))
     def get(self, request):
         looks = _looks(request.user).filter(author=request.user).order_by("-created_at")
         return Response(present_looks(looks, request.user))
@@ -240,6 +253,7 @@ class LookDetailView(APIView):
 
     permission_classes = [IsAuthenticatedOrReadOnly]
 
+    @extend_schema(responses=LookSerializer)
     def get(self, request, pk):
         viewer = _viewer(request)
         if _visible_look(pk, viewer) is None:
@@ -247,6 +261,7 @@ class LookDetailView(APIView):
         look = _looks(viewer).get(pk=pk)
         return Response(present_looks([look], viewer)[0])
 
+    @extend_schema(responses={204: None})
     def delete(self, request, pk):
         look = Look.objects.filter(pk=pk).first()
         if look is None:
@@ -262,6 +277,7 @@ class LookLikeView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(request=None, responses={204: None})
     def post(self, request, pk):
         look = _visible_look(pk, request.user)
         if look is None:
@@ -272,6 +288,7 @@ class LookLikeView(APIView):
                 Look.objects.filter(pk=pk).update(like_count=F("like_count") + 1)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @extend_schema(responses={204: None})
     def delete(self, request, pk):
         with transaction.atomic():
             deleted, _ = LookLike.objects.filter(user=request.user, look_id=pk).delete()
@@ -376,6 +393,7 @@ class CommentListCreateView(APIView):
     def get_throttles(self):
         return [CommentThrottle()] if self.request.method == "POST" else []
 
+    @extend_schema(responses=CommentsPageSerializer)
     def get(self, request, look_id):
         viewer = _viewer(request)
         look = _visible_look(look_id, viewer)
@@ -393,6 +411,7 @@ class CommentListCreateView(APIView):
             {"data": present_comments(items, viewer), "next_cursor": next_cursor}
         )
 
+    @extend_schema(request=CommentCreateRequestSerializer, responses={201: CommentSerializer})
     def post(self, request, look_id):
         user = request.user
         look = _visible_look(look_id, user)
@@ -436,6 +455,7 @@ class CommentRepliesView(APIView):
 
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(responses=CommentsPageSerializer)
     def get(self, request, pk):
         viewer = _viewer(request)
         root = LookComment.objects.filter(pk=pk, parent__isnull=True).first()
@@ -456,6 +476,7 @@ class CommentDeleteView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses={204: None})
     def delete(self, request, pk):
         comment = LookComment.objects.filter(pk=pk).first()
         if comment is None:
@@ -478,6 +499,7 @@ class CommentLikeView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(request=None, responses={204: None})
     def post(self, request, pk):
         comment = LookComment.objects.filter(pk=pk).first()
         if comment is None or _visible_look(comment.look_id, request.user) is None:
@@ -488,6 +510,7 @@ class CommentLikeView(APIView):
                 LookComment.objects.filter(pk=pk).update(like_count=F("like_count") + 1)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @extend_schema(responses={204: None})
     def delete(self, request, pk):
         with transaction.atomic():
             deleted, _ = CommentLike.objects.filter(user=request.user, comment_id=pk).delete()
@@ -503,6 +526,7 @@ class StyleListView(APIView):
 
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(responses=StyleSerializer(many=True))
     def get(self, request):
         return Response(
             [{"id": s.slug, "name": s.name} for s in Style.objects.order_by("sort_order", "name")]
@@ -514,6 +538,7 @@ class AreaListView(APIView):
 
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(responses=serializers.ListSerializer(child=serializers.CharField()))
     def get(self, request):
         areas = (
             Look.objects.filter(visibility="public")
@@ -545,6 +570,7 @@ class LookReportView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [ReportThrottle]
 
+    @extend_schema(request=ReportRequestSerializer, responses={201: None})
     def post(self, request, pk):
         if not Look.objects.filter(pk=pk).exists():
             return _not_found("That look is already gone")
@@ -557,6 +583,7 @@ class CommentReportView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [ReportThrottle]
 
+    @extend_schema(request=ReportRequestSerializer, responses={201: None})
     def post(self, request, pk):
         if not LookComment.objects.filter(pk=pk).exists():
             return Response({"message": "That comment is already gone"}, status=404)
@@ -570,6 +597,7 @@ class StylistReportView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [ReportThrottle]
 
+    @extend_schema(request=ReportRequestSerializer, responses={201: None})
     def post(self, request, pk):
         if not StylistProfile.objects.filter(account_id=pk).exists():
             return Response({"message": "No page to report"}, status=404)
@@ -581,6 +609,7 @@ class BlockListCreateView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=BlockSerializer(many=True))
     def get(self, request):
         blocks = Block.objects.filter(blocker=request.user).select_related("blocked")
         return Response(
@@ -595,6 +624,7 @@ class BlockListCreateView(APIView):
             ]
         )
 
+    @extend_schema(request=BlockRequestSerializer, responses={204: None})
     def post(self, request):
         blocked_id = request.data.get("account_id") or request.data.get("blocked_id")
         if not blocked_id or not _is_uuid(blocked_id) or str(blocked_id) == str(request.user.pk):
@@ -615,6 +645,7 @@ class BlockDeleteView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses={204: None})
     def delete(self, request, pk):
         deleted, _ = Block.objects.filter(
             Q(pk=pk) | Q(blocked_id=pk), blocker=request.user

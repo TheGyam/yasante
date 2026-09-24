@@ -18,6 +18,7 @@ from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -26,15 +27,24 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import DeviceToken, Invite, PhoneChallenge, User
 from .serializers import (
+    AuthResponseSerializer,
     DeviceTokenSerializer,
     ForgotPasswordSerializer,
+    InviteResponseSerializer,
     InviteSerializer,
     LoginSerializer,
+    LogoutRequestSerializer,
+    MessageSerializer,
+    NotificationPreferencesRequestSerializer,
+    NotificationPreferencesSerializer,
+    PhoneStartResponseSerializer,
     PhoneStartSerializer,
     PhoneVerifySerializer,
     RefreshTokenSerializer,
     ResetPasswordSerializer,
     SignupSerializer,
+    TokenPairSerializer,
+    UserResponseSerializer,
     UserSerializer,
     build_auth_response,
 )
@@ -42,6 +52,7 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 
 
+@extend_schema_view(post=extend_schema(request=SignupSerializer, responses={201: AuthResponseSerializer}))
 class SignupView(APIView):
     """POST /api/auth/signup/"""
 
@@ -55,6 +66,7 @@ class SignupView(APIView):
         return Response(build_auth_response(user), status=status.HTTP_201_CREATED)
 
 
+@extend_schema_view(post=extend_schema(request=LoginSerializer, responses=AuthResponseSerializer))
 class LoginView(APIView):
     """POST /api/auth/login/"""
 
@@ -68,6 +80,7 @@ class LoginView(APIView):
         return Response(build_auth_response(user))
 
 
+@extend_schema_view(post=extend_schema(request=RefreshTokenSerializer, responses=TokenPairSerializer))
 class RefreshTokenView(APIView):
     """
     POST /api/auth/refresh-token/
@@ -115,6 +128,7 @@ class RefreshTokenView(APIView):
             )
 
 
+@extend_schema_view(post=extend_schema(request=ForgotPasswordSerializer, responses=MessageSerializer))
 class ForgotPasswordView(APIView):
     """
     POST /api/auth/forgot-password/
@@ -153,6 +167,7 @@ class ForgotPasswordView(APIView):
         )
 
 
+@extend_schema_view(post=extend_schema(request=ResetPasswordSerializer, responses=MessageSerializer))
 class ResetPasswordView(APIView):
     """POST /api/auth/reset-password/"""
 
@@ -205,6 +220,7 @@ def revoke_all_sessions(user):
         BlacklistedToken.objects.get_or_create(token=token)
 
 
+@extend_schema_view(post=extend_schema(request=LogoutRequestSerializer, responses={204: None}))
 class LogoutView(APIView):
     """POST /api/auth/logout/ — { refreshToken } ends this device's session."""
 
@@ -223,6 +239,7 @@ class LogoutView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(post=extend_schema(request=None, responses={204: None}))
 class LogoutEverywhereView(APIView):
     """POST /api/auth/logout-all/ — every device signs out, this one included."""
 
@@ -233,6 +250,7 @@ class LogoutEverywhereView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(post=extend_schema(request=PhoneStartSerializer, responses=PhoneStartResponseSerializer))
 class PhoneStartView(APIView):
     """
     POST /api/auth/phone/start/
@@ -297,6 +315,7 @@ class PhoneStartView(APIView):
         )
 
 
+@extend_schema_view(post=extend_schema(request=PhoneVerifySerializer, responses=UserResponseSerializer))
 class PhoneVerifyView(APIView):
     """
     POST /api/auth/phone/verify/
@@ -372,6 +391,7 @@ class PhoneVerifyView(APIView):
         return Response(UserSerializer(request.user).data)
 
 
+@extend_schema_view(get=extend_schema(responses=InviteResponseSerializer))
 class InviteDetailView(APIView):
     """GET /api/invites/:code/"""
 
@@ -395,6 +415,7 @@ class InviteDetailView(APIView):
         return Response(InviteSerializer(invite).data)
 
 
+@extend_schema_view(post=extend_schema(request=None, responses=UserResponseSerializer))
 class InviteRedeemView(APIView):
     """POST /api/invites/:code/redeem/"""
 
@@ -451,6 +472,7 @@ class DeviceTokenDeleteView(generics.DestroyAPIView):
         return DeviceToken.objects.filter(user=self.request.user)
 
 
+@extend_schema_view(get=extend_schema(responses=NotificationPreferencesSerializer), put=extend_schema(request=NotificationPreferencesRequestSerializer, responses=NotificationPreferencesSerializer))
 class NotificationPreferencesView(APIView):
     """GET/PUT /api/notifications/preferences/ — which kinds of notification she gets."""
 

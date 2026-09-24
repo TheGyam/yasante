@@ -15,7 +15,15 @@ class Product(TimeStampedModel):
 
     brand = models.CharField(max_length=150)
     name = models.CharField(max_length=150)
-    category = models.CharField(max_length=100)
+    CATEGORY_CHOICES = [
+        ("shampoo", "Shampoo"),
+        ("conditioner", "Conditioner"),
+        ("leave-in", "Leave-in"),
+        ("oil", "Oil"),
+        ("styler", "Styler"),
+        ("treatment", "Treatment"),
+    ]
+    category = models.CharField(max_length=100, choices=CATEGORY_CHOICES)
     description = models.TextField(max_length=2000, blank=True, default="")
     ingredients = models.TextField(max_length=2000, blank=True, default="")
     photo_uri = models.URLField(max_length=500, blank=True, default="")
@@ -42,7 +50,6 @@ class ShelfItem(TimeStampedModel):
         ("using", "Currently using"),
         ("finished", "Finished"),
         ("repurchased", "Repurchased"),
-        ("discarded", "Discarded"),
     ]
 
     user = models.ForeignKey(

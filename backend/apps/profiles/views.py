@@ -7,6 +7,7 @@ import logging
 from apps.bookings.models import Booking
 from django.db import transaction
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,8 +21,13 @@ from .models import (
 )
 from .serializers import (
     ConsentBatchSerializer,
+    DataExportResponseSerializer,
     EventBatchSerializer,
+    HairProfileRequestSerializer,
+    HairProfileResponseSerializer,
     HairProfileSerializer,
+    PolicySerializer,
+    UserDetailResponseSerializer,
     UserDetailSerializer,
     UserUpdateSerializer,
 )
@@ -30,6 +36,7 @@ from .tasks import generate_data_export
 logger = logging.getLogger(__name__)
 
 
+@extend_schema_view(get=extend_schema(responses=UserDetailResponseSerializer(many=True)))
 class UserListView(APIView):
     """GET /api/users/ — returns the current user (array for compat)."""
 
@@ -39,6 +46,7 @@ class UserListView(APIView):
         return Response([UserDetailSerializer(request.user).data])
 
 
+@extend_schema_view(get=extend_schema(responses=UserDetailResponseSerializer), patch=extend_schema(request=UserUpdateSerializer, responses=UserDetailResponseSerializer), delete=extend_schema(responses={204: None}))
 class UserDetailView(APIView):
     """GET / PATCH / DELETE /api/users/:id/"""
 
@@ -91,6 +99,7 @@ class UserDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(patch=extend_schema(request=HairProfileRequestSerializer, responses=HairProfileResponseSerializer))
 class HairProfileUpdateView(APIView):
     """
     PATCH /api/users/:id/hair-profile/
@@ -125,6 +134,7 @@ class HairProfileUpdateView(APIView):
         return Response(HairProfileSerializer(profile).data)
 
 
+@extend_schema_view(post=extend_schema(request=None, responses=DataExportResponseSerializer))
 class DataExportView(APIView):
     """POST /api/users/:id/export/"""
 
@@ -147,6 +157,7 @@ class DataExportView(APIView):
 
 
 
+@extend_schema_view(post=extend_schema(request=ConsentBatchSerializer, responses={201: None}))
 class ConsentBatchView(APIView):
     """POST /api/consents/"""
 
@@ -171,6 +182,7 @@ class ConsentBatchView(APIView):
         return Response(status=status.HTTP_201_CREATED)
 
 
+@extend_schema_view(post=extend_schema(request=EventBatchSerializer, responses={201: None, 202: None}))
 class EventBatchView(APIView):
     """
     POST /api/events/
@@ -243,6 +255,7 @@ def present_policy(doc):
     }
 
 
+@extend_schema_view(get=extend_schema(responses=PolicySerializer(many=True)))
 class PolicyListView(APIView):
     """GET /api/policies/ — the current version of each published policy."""
 
@@ -253,6 +266,7 @@ class PolicyListView(APIView):
         return Response([present_policy(d) for d in current if d])
 
 
+@extend_schema_view(get=extend_schema(responses=PolicySerializer))
 class PolicyDetailView(APIView):
     """GET /api/policies/:type/?version= — the current one, or a named version."""
 

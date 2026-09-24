@@ -222,6 +222,15 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    # Readable names where the same field name has different choices in different places.
+    "ENUM_NAME_OVERRIDES": {
+        "CollectionKindEnum": ["look", "content"],
+        "TimingOutcomeEnum": ["early", "on_time", "over"],
+        "ServiceModelEnum": ["salon", "home", "mobile"],
+        "ReviewStatusEnum": ["pending", "published", "removed"],
+        "ShelfStatusEnum": ["using", "finished", "repurchased"],
+        "CheckInWeekEnum": [(2, "Week 2"), (4, "Week 4")],
+    },
     "POSTPROCESSING_HOOKS": [
         "drf_spectacular.hooks.postprocess_schema_enums",
         "apps.common.schema.camelize_schema",

@@ -198,3 +198,62 @@ def build_auth_response(user: User) -> dict:
             * 1000
         ),
     }
+
+
+# ── Shapes for the schema the app's types are generated from ─────────────────────
+from apps.common.schema import BlankIsOptional  # noqa: E402
+
+
+class UserResponseSerializer(BlankIsOptional, UserSerializer):
+    """The user as sent: empty phone or avatar left out."""
+
+    roles = serializers.ListField(
+        child=serializers.ChoiceField(choices=["client", "stylist", "admin"]), read_only=True
+    )
+
+
+class AuthResponseSerializer(serializers.Serializer):
+    user = UserResponseSerializer()
+    access_token = serializers.CharField()
+    refresh_token = serializers.CharField()
+    expires_at = serializers.IntegerField(help_text="Milliseconds since the epoch")
+
+
+class TokenPairSerializer(serializers.Serializer):
+    access_token = serializers.CharField()
+    refresh_token = serializers.CharField()
+    expires_at = serializers.IntegerField(help_text="Milliseconds since the epoch")
+
+
+class MessageSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
+class PhoneStartResponseSerializer(serializers.Serializer):
+    resend_in_seconds = serializers.IntegerField()
+    expires_in_seconds = serializers.IntegerField()
+
+
+class LogoutRequestSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField(required=False)
+
+
+class InviteResponseSerializer(BlankIsOptional, InviteSerializer):
+    pass
+
+
+class NotificationCategorySerializer(serializers.Serializer):
+    id = serializers.CharField()
+    label = serializers.CharField()
+    on = serializers.BooleanField()
+
+
+class NotificationPreferencesSerializer(serializers.Serializer):
+    categories = NotificationCategorySerializer(many=True)
+
+
+class NotificationPreferencesRequestSerializer(serializers.Serializer):
+    categories = serializers.ListField(
+        child=serializers.DictField(), required=False, help_text="[{id, on}]"
+    )
+    muted = serializers.ListField(child=serializers.CharField(), required=False)
