@@ -7,6 +7,8 @@ import { guestRedirect } from './accountGate';
 import { User } from '@/features/profile';
 import { queryClient } from '@/queryClient';
 import { api } from '@/api';
+import { apiClient } from '@/shared/lib/api';
+import { unregisterPush } from '@/shared/lib/push';
 
 interface AuthContextType {
   user: User | null;

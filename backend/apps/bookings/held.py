@@ -58,6 +58,7 @@ def expire_if_due(booking) -> Booking:
     ):
         booking.status = "expired"
         booking.save(update_fields=["status", "updated_at"])
+        release(booking)
     return booking
 
 
@@ -84,6 +85,17 @@ def release(booking):
     ).exclude(client_id=booking.client_id):
         interest.opened_on = day
         interest.save(update_fields=["opened_on", "updated_at"])
+        from apps.common.notifications import notify
+
+        notify(
+            interest.client_id,
+            "waitlist",
+            f"slot:{interest.pk}:{day.isoformat()}",
+            f"A slot opened with {interest.stylist_name}",
+            f"{day:%a} {day.day} {day:%b}. Ask before someone else does.",
+            url=f"/book/{interest.stylist_handle}?date={day.isoformat()}",
+            mode="client",
+        )
 
 
 def sweep(qs=None, now=None):

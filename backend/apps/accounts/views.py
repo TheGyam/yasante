@@ -449,3 +449,37 @@ class DeviceTokenDeleteView(generics.DestroyAPIView):
 
     def get_queryset(self):
         return DeviceToken.objects.filter(user=self.request.user)
+
+
+class NotificationPreferencesView(APIView):
+    """GET/PUT /api/notifications/preferences/ — which kinds of notification she gets."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _present(self, muted):
+        from apps.common.models import NOTIFICATION_CATEGORIES
+
+        return {
+            "categories": [
+                {"id": key, "label": label, "on": key not in muted}
+                for key, label in NOTIFICATION_CATEGORIES
+            ]
+        }
+
+    def get(self, request):
+        from apps.common.notifications import muted_categories
+
+        return Response(self._present(muted_categories(request.user.pk)))
+
+    def put(self, request):
+        from apps.common.models import NOTIFICATION_CATEGORIES, NotificationPreference
+
+        known = {key for key, _ in NOTIFICATION_CATEGORIES}
+        # { categories: [{id, on}] } or { muted: [ids] }; "account" can't be muted.
+        if "categories" in request.data:
+            muted = [c.get("id") for c in request.data["categories"] if not c.get("on", True)]
+        else:
+            muted = list(request.data.get("muted") or [])
+        muted = sorted({m for m in muted if m in known and m != "account"})
+        NotificationPreference.objects.update_or_create(user=request.user, defaults={"muted": muted})
+        return Response(self._present(set(muted)))

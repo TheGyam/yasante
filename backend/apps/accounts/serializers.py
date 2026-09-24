@@ -182,6 +182,8 @@ class DeviceTokenSerializer(serializers.ModelSerializer):
         model = DeviceToken
         fields = ["id", "token", "platform"]
         read_only_fields = ["id"]
+        # The view moves an existing token to whoever registers it, so no uniqueness check here.
+        extra_kwargs = {"token": {"validators": []}}
 
 
 def build_auth_response(user: User) -> dict:

@@ -99,3 +99,53 @@ class Media(models.Model):
 
     def paths(self):
         return [p for p in (self.full_path, self.feed_path, self.thumb_path) if p]
+
+
+NOTIFICATION_CATEGORIES = [
+    ("booking_updates", "Booking requests and replies"),
+    ("reminders", "Appointment reminders"),
+    ("waitlist", "Slots opening up"),
+    ("after_appointment", "After an appointment"),
+    ("check_ins", "Style check-ins"),
+    ("weekly_digest", "Your weekly numbers"),
+    ("account", "Your account and badges"),
+]
+
+
+class NotificationPreference(models.Model):
+    """The categories she's switched off. Everything is on until she says otherwise."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notification_preference"
+    )
+    muted = models.JSONField(default=list, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class NotificationLog(models.Model):
+    """
+    Every notification, once: the event key is unique, so a retried job or a double
+    click can never send the same thing twice. Also the delivery record for debugging.
+    """
+
+    STATUS_CHOICES = [
+        ("queued", "Queued"),
+        ("sent", "Sent"),
+        ("muted", "Muted by preference"),
+        ("no_device", "No device"),
+        ("failed", "Failed"),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
+    category = models.CharField(max_length=30, choices=NOTIFICATION_CATEGORIES, db_index=True)
+    event_key = models.CharField(max_length=200, unique=True)
+    title = models.CharField(max_length=200)
+    body = models.CharField(max_length=500)
+    data = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="queued", db_index=True)
+    error = models.CharField(max_length=300, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
