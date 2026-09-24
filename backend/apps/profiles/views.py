@@ -16,6 +16,7 @@ from .models import (
     ConsentRecord,
     HairProfile,
     HairProfileSnapshot,
+    PolicyDocument,
 )
 from .serializers import (
     ConsentBatchSerializer,
@@ -229,3 +230,41 @@ class EventBatchView(APIView):
             )
         AnalyticsEvent.objects.bulk_create(events)
         return Response(status=status.HTTP_201_CREATED)
+
+
+
+def present_policy(doc):
+    return {
+        "type": doc.type,
+        "version": doc.version,
+        "title": doc.title,
+        "effective_at": doc.effective_at,
+        "body": doc.body,
+    }
+
+
+class PolicyListView(APIView):
+    """GET /api/policies/ — the current version of each published policy."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        current = [PolicyDocument.current(t) for t, _ in PolicyDocument.TYPE_CHOICES]
+        return Response([present_policy(d) for d in current if d])
+
+
+class PolicyDetailView(APIView):
+    """GET /api/policies/:type/?version= — the current one, or a named version."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, type):
+        version = request.query_params.get("version")
+        doc = (
+            PolicyDocument.objects.filter(type=type, version=version, published=True).first()
+            if version
+            else PolicyDocument.current(type)
+        )
+        if doc is None:
+            return Response({"message": "Not published yet"}, status=404)
+        return Response(present_policy(doc))

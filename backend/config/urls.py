@@ -6,7 +6,9 @@ Admin panel at /admin/.
 """
 
 from apps.accounts.views import InviteDetailView, InviteRedeemView
-from apps.common.uploads import UploadView
+from apps.common.uploads import PrivateMediaView, UploadView
+from apps.looks import views as looks_views
+from apps.profiles import views as profile_views
 from apps.content import compat as content
 from apps.looks.views import StylistReportView
 from apps.profiles.views import ConsentBatchView, EventBatchView
@@ -67,6 +69,16 @@ urlpatterns = API_DOCS + [
     path("api/shelf/", include("apps.shelf.shelf_urls")),
     path("api/products/", include("apps.shelf.product_urls")),
     path("api/uploads/", UploadView.as_view(), name="uploads"),
+    path("api/reports/mine/", looks_views.MyReportsView.as_view(), name="my-reports"),
+    path("api/moderation/mine/", looks_views.MyModerationView.as_view(), name="my-moderation"),
+    path(
+        "api/moderation/<uuid:pk>/appeal/",
+        looks_views.AppealCreateView.as_view(),
+        name="moderation-appeal",
+    ),
+    path("api/policies/", profile_views.PolicyListView.as_view(), name="policies"),
+    path("api/policies/<str:type>/", profile_views.PolicyDetailView.as_view(), name="policy"),
+    path("api/media/<uuid:pk>/", PrivateMediaView.as_view(), name="private-media"),
     # The education library and favourites, on the paths the app calls.
     path("api/content/content/", content.ContentListView.as_view(), name="content-list-compat"),
     path(

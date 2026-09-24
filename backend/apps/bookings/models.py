@@ -185,6 +185,17 @@ class ReviewReport(models.Model):
     reason = models.CharField(max_length=30)
     note = models.TextField(max_length=500, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=10,
+        choices=[("open", "Open"), ("actioned", "Actioned"), ("dismissed", "Dismissed")],
+        default="open",
+        db_index=True,
+    )
+    handled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    handled_at = models.DateTimeField(null=True, blank=True)
+    resolution = models.CharField(max_length=300, blank=True, default="")
 
     class Meta:
         db_table = "bookings_review_report"

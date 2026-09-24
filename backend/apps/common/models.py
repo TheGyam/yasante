@@ -52,3 +52,50 @@ def log_search(request, surface, query="", filters=None, result_count=0):
         )
     except Exception:  # noqa: BLE001 - analytics must never fail a request
         pass
+
+
+class Media(models.Model):
+    """
+    Every uploaded photo and its copies. Private unless it's for something public
+    (a Look, a portfolio, an avatar): a stylist's proof-of-work photo never is.
+    Deleting a Media row deletes its files (see apps.common.signals).
+    """
+
+    KIND_CHOICES = [
+        ("look", "Look"),
+        ("portfolio", "Portfolio"),
+        ("avatar", "Avatar"),
+        ("proof", "Proof of work"),
+        ("other", "Other"),
+    ]
+    VISIBILITY_CHOICES = [("public", "Public"), ("private", "Private")]
+    SOURCE_CHOICES = [("camera_roll", "Camera roll"), ("instagram", "Instagram"), ("manual", "Manual")]
+    MODERATION_CHOICES = [("ok", "OK"), ("flagged", "Flagged"), ("removed", "Removed")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="media")
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES, default="other", db_index=True)
+    visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default="private")
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default="camera_roll")
+    # Storage paths of the copies: full (long edge 2048), feed (1080 wide), thumb (400 wide).
+    full_path = models.CharField(max_length=300)
+    feed_path = models.CharField(max_length=300, blank=True, default="")
+    thumb_path = models.CharField(max_length=300, blank=True, default="")
+    width = models.PositiveIntegerField(default=0)
+    height = models.PositiveIntegerField(default=0)
+    exif_stripped = models.BooleanField(default=True)
+    # 64-bit difference hash, hex: near-identical photos differ in only a few bits.
+    phash = models.CharField(max_length=16, blank=True, default="", db_index=True)
+    moderation_status = models.CharField(
+        max_length=10, choices=MODERATION_CHOICES, default="ok", db_index=True
+    )
+    duplicate_of = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="duplicates"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def paths(self):
+        return [p for p in (self.full_path, self.feed_path, self.thumb_path) if p]

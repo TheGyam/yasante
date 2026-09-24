@@ -1,8 +1,25 @@
-"""Looks admin — look browser, comment moderation, report queue, blocks, style taxonomy."""
+"""
+Looks admin: the report queue, content moderation, appeals, blocks, style taxonomy.
+Every hide, remove or restore goes through apps.looks.moderation, so it's audited
+and the reports on it are answered.
+"""
 
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.utils import timezone
 
-from .models import Block, CommentLike, Look, LookComment, LookLike, Report, Style
+from .models import Appeal, Block, Look, LookComment, LookLike, ModerationAction, Report, Style
+from .moderation import moderate
+
+
+def _moderate_selected(modeladmin, request, queryset, action):
+    done = 0
+    for obj in queryset:
+        target = obj.content_object if isinstance(obj, Report) else obj
+        if target is None:
+            continue
+        moderate(target, action, moderator=request.user)
+        done += 1
+    modeladmin.message_user(request, f"{action.title()}: {done}", messages.SUCCESS)
 
 
 @admin.register(Style)
@@ -13,35 +30,103 @@ class StyleAdmin(admin.ModelAdmin):
 
 @admin.register(Look)
 class LookAdmin(admin.ModelAdmin):
-    list_display = (
-        "author",
-        "visibility",
-        "like_count",
-        "comment_count",
-        "save_count",
-        "created_at",
-    )
-    list_filter = ("visibility",)
+    list_display = ("author", "caption", "status", "visibility", "like_count", "comment_count", "created_at")
+    list_filter = ("status", "visibility", "type")
     search_fields = ("author__name", "caption")
+    actions = ["hide", "remove", "restore"]
+
+    @admin.action(description="Hide (the author can appeal)")
+    def hide(self, request, queryset):
+        _moderate_selected(self, request, queryset, "hide")
+
+    @admin.action(description="Remove")
+    def remove(self, request, queryset):
+        _moderate_selected(self, request, queryset, "remove")
+
+    @admin.action(description="Restore")
+    def restore(self, request, queryset):
+        _moderate_selected(self, request, queryset, "restore")
 
 
 @admin.register(LookComment)
-class LookCommentAdmin(admin.ModelAdmin):
-    list_display = ("author", "look", "body", "like_count", "created_at")
+class LookCommentAdmin(LookAdmin):
+    list_display = ("author", "look", "body", "status", "like_count", "created_at")
+    list_filter = ("status",)
     search_fields = ("body", "author__name")
 
 
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
-    list_display = ("reporter", "reason", "content_type", "object_id", "created_at")
-    list_filter = ("reason", "content_type")
+    """The queue: open reports first; one click acts on the reported thing."""
+
+    list_display = ("created_at", "reason", "content_type", "object_id", "status", "handled_by")
+    list_filter = ("status", "reason", "content_type")
     search_fields = ("note",)
+    readonly_fields = ("handled_by", "handled_at")
+    actions = ["hide_target", "remove_target", "dismiss"]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("content_type", "handled_by")
+
+    def changelist_view(self, request, extra_context=None):
+        # Open by default: the queue is what needs a person today.
+        if "status__exact" not in request.GET and not request.GET.get("_changelist_filters"):
+            q = request.GET.copy()
+            q["status__exact"] = "open"
+            request.GET = q
+            request.META["QUERY_STRING"] = q.urlencode()
+        return super().changelist_view(request, extra_context)
+
+    @admin.action(description="Hide what was reported")
+    def hide_target(self, request, queryset):
+        _moderate_selected(self, request, queryset, "hide")
+
+    @admin.action(description="Remove what was reported")
+    def remove_target(self, request, queryset):
+        _moderate_selected(self, request, queryset, "remove")
+
+    @admin.action(description="Dismiss (it doesn't break the guidelines)")
+    def dismiss(self, request, queryset):
+        _moderate_selected(self, request, queryset, "dismiss")
+
+
+@admin.register(ModerationAction)
+class ModerationActionAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "action", "content_type", "object_id", "author", "moderator", "reason")
+    list_filter = ("action", "content_type")
+    readonly_fields = [f.name for f in ModerationAction._meta.fields]
+
+    def has_add_permission(self, request):
+        return False  # The audit trail is written by actions, never by hand.
+
+
+@admin.register(Appeal)
+class AppealAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "author", "action", "status", "decided_by")
+    list_filter = ("status",)
+    actions = ["uphold", "overturn"]
+
+    def _decide(self, request, queryset, status):
+        for appeal in queryset.filter(status="open"):
+            if status == "overturned" and appeal.action.target is not None:
+                moderate(appeal.action.target, "restore", moderator=request.user, reason="Appeal upheld")
+            appeal.status = status
+            appeal.decided_by = request.user
+            appeal.decided_at = timezone.now()
+            appeal.save(update_fields=["status", "decided_by", "decided_at"])
+
+    @admin.action(description="Keep the action (appeal refused)")
+    def uphold(self, request, queryset):
+        self._decide(request, queryset, "upheld")
+
+    @admin.action(description="Overturn and restore the content")
+    def overturn(self, request, queryset):
+        self._decide(request, queryset, "overturned")
 
 
 @admin.register(Block)
 class BlockAdmin(admin.ModelAdmin):
     list_display = ("blocker", "blocked", "created_at")
-    search_fields = ("blocker__name", "blocked__name")
 
 
 @admin.register(LookLike)

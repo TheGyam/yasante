@@ -2,7 +2,17 @@
 
 from django.contrib import admin
 
-from .models import MenuItem, PageView, PaymentMethod, PortfolioPhoto, StylistProfile
+from django.utils import timezone
+
+from .models import (
+    MenuItem,
+    PageView,
+    PaymentMethod,
+    PortfolioPhoto,
+    StylistProfile,
+    Verification,
+    recompute_tier,
+)
 
 
 class PaymentMethodInline(admin.TabularInline):
@@ -96,3 +106,33 @@ class PortfolioPhotoAdmin(admin.ModelAdmin):
 class PageViewAdmin(admin.ModelAdmin):
     list_display = ("stylist", "viewer", "viewed_at")
     list_filter = ("viewed_at",)
+
+
+@admin.register(Verification)
+class VerificationAdmin(admin.ModelAdmin):
+    """The verification queue: pending checks first. Approving re-derives her tier."""
+
+    list_display = ("created_at", "account", "type", "status", "evidence", "expires_at", "verified_by")
+    list_filter = ("status", "type")
+    search_fields = ("account__name", "account__email", "evidence")
+    actions = ["approve", "reject"]
+
+    def _decide(self, request, queryset, status):
+        for check in queryset:
+            check.status = status
+            check.verified_by = request.user
+            check.verified_at = timezone.now() if status == "verified" else None
+            check.save(update_fields=["status", "verified_by", "verified_at"])
+            recompute_tier(check.account_id)
+
+    @admin.action(description="Approve (grants the badge it earns)")
+    def approve(self, request, queryset):
+        self._decide(request, queryset, "verified")
+
+    @admin.action(description="Reject")
+    def reject(self, request, queryset):
+        self._decide(request, queryset, "rejected")
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        recompute_tier(obj.account_id)
