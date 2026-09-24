@@ -75,3 +75,10 @@ def test_style_and_area_pages(make_stylist, make_user, make_look):
     page = web.get(f"/areas/{profile.base_area.lower().replace(' ', '-')}")
     assert page.status_code == 200 and profile.display_name in page.content.decode()
     assert "/styles/knotless" in web.get("/sitemap.xml").content.decode()
+
+
+def test_terms_and_privacy_are_published():
+    web = Client()
+    for path, title in (("/terms", "Terms of use"), ("/privacy", "Privacy policy")):
+        page = web.get(path)
+        assert page.status_code == 200 and title in page.content.decode()
