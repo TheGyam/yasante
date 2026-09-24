@@ -638,7 +638,7 @@ defineMocks({
     if (week !== checkInDue(booking.completedAt, answered)) {
       throw new MockError(409, 'That check-in isn’t open');
     }
-    const { holding, scalp, again } = request.body ?? {};
+    const { holding, scalp, again, stillIn } = request.body ?? {};
     if (!RATINGS.includes(holding) || !SCALP.includes(scalp) || !AGAIN.includes(again)) {
       throw new MockError(400, 'Answer all three');
     }
@@ -646,6 +646,7 @@ defineMocks({
       bookingId: booking.id,
       accountId,
       week: week as CheckInWeek,
+      stillIn: stillIn === false ? 'no' : 'yes',
       holding,
       scalp,
       again,

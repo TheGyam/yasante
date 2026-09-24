@@ -8,6 +8,7 @@ from apps.common.models import TimeStampedModel
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.utils import timezone
 
 BOOKING_STATUS_CHOICES = [
     ("requested", "Requested"),
@@ -76,6 +77,8 @@ class Booking(TimeStampedModel):
     # Service snapshot (frozen at booking time)
     service_id = models.UUIDField()
     service_name = models.CharField(max_length=150)
+    # Style slugs, copied from her menu at booking time: "braids six times this year".
+    styles = ArrayField(models.CharField(max_length=100), default=list, blank=True)
     option_labels = ArrayField(
         models.CharField(max_length=100), default=list, blank=True
     )
@@ -201,6 +204,34 @@ class ReviewReport(models.Model):
         db_table = "bookings_review_report"
 
 
+class BookingEvent(models.Model):
+    """
+    The audit trail: every change of status, proposal or move, who made it and when.
+    Appended, never edited, so lead times, no-show hours and repeat rates can be
+    worked out for any booking, ever.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="events")
+    action = models.CharField(max_length=30, db_index=True)  # created, status, proposed, move_requested
+    from_status = models.CharField(max_length=30, blank=True, default="")
+    to_status = models.CharField(max_length=30, blank=True, default="")
+    # Who did it; null is the system (a lapse, an auto-complete) or a deleted account.
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    actor_role = models.CharField(max_length=10, blank=True, default="")  # client, stylist, system
+    data = models.JSONField(default=dict, blank=True)
+    at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "bookings_event"
+        ordering = ["at"]
+
+    def __str__(self):
+        return f"{self.booking_id} {self.action} {self.from_status}->{self.to_status}"
+
+
 class CheckIn(models.Model):
     """Week 2 and week 4 check-ins after completion."""
 
@@ -212,6 +243,8 @@ class CheckIn(models.Model):
     holding = models.CharField(max_length=20)  # fresh, okay, tired
     scalp = models.CharField(max_length=20)  # comfortable, itchy, sore
     again = models.CharField(max_length=10)  # yes, maybe, no
+    # Is the style still in? No means it came out around now: how long styles last.
+    still_in = models.BooleanField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

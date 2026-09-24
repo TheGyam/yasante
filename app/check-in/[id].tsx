@@ -7,6 +7,7 @@ import {
   CircleHelp,
   Flame,
   Heart,
+  Scissors,
   Smile,
   ThumbsDown,
   ThumbsUp,
@@ -31,12 +32,23 @@ type Key = keyof CheckInAnswers;
 
 const QUESTIONS: {
   key: Key;
-  title: (style: string) => string;
+  title: (style: string, answers: Partial<CheckInAnswers>) => string;
   options: { value: string; label: string; icon: LucideIcon }[];
 }[] = [
   {
+    key: 'stillIn',
+    title: style => `Are your ${style} still in?`,
+    options: [
+      { value: 'yes', label: 'Still in', icon: Check },
+      { value: 'no', label: 'Taken out', icon: Scissors },
+    ],
+  },
+  {
     key: 'holding',
-    title: style => `How are your ${style} holding up?`,
+    title: (style, answers) =>
+      answers.stillIn === 'no'
+        ? `How did your ${style} hold up?`
+        : `How are your ${style} holding up?`,
     options: [
       { value: 'fresh', label: 'Still fresh', icon: Smile },
       { value: 'okay', label: 'A bit fuzzy', icon: Wind },
@@ -63,7 +75,7 @@ const QUESTIONS: {
   },
 ];
 
-// Each answer moves on by itself: three questions, three taps.
+// Each answer moves on by itself: four questions, four taps.
 const NEXT = FadeInRight.duration(260).easing(EASE_OUT);
 
 const useStyles = makeStyles(t => ({
@@ -194,7 +206,7 @@ export default function CheckInScreen() {
               Week {due} · {booking.stylistName}
             </Text>
             <Text variant="title1" accessibilityRole="header">
-              {question.title(style)}
+              {question.title(style, answers)}
             </Text>
           </View>
           <View style={styles.options}>

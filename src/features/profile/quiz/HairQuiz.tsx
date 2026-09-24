@@ -9,6 +9,7 @@ import { EASE_OUT, makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { notify } from '@/shared/ui/dialog';
 import { Chip } from '@/shared/ui/Chip';
+import { MeasuredLength } from './MeasuredLength';
 import { ProgressBar } from '@/shared/ui/ProgressBar';
 import { Screen } from '@/shared/ui/Screen';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
@@ -189,6 +190,7 @@ export function HairQuiz({ mode, section }: HairQuizProps) {
                 value={lengthMode === 'stretched' ? answers.length : answers.shrunkLength}
                 onChange={v => set(lengthMode === 'stretched' ? 'length' : 'shrunkLength', v)}
               />
+              <MeasuredLength cm={answers.lengthCm} onChange={cm => set('lengthCm', cm)} />
             </>
           )}
           {key === 'density' && (

@@ -209,6 +209,7 @@ class BookingListCreateView(APIView):
                 duration_minutes=minutes,
                 bringing_own_hair=bool(data.get("bringing_own_hair")),
                 hair_included=bool(service.hair_included),
+                styles=list(service.styles),
                 notes=str(data.get("notes") or "").strip()[:1000],
                 requested_times=starts,
                 expires_at=timezone.now() + settings.BOOKING_REQUEST_LAPSE_HOURS * HOUR,
@@ -247,6 +248,7 @@ class _BookingAction(APIView):
         booking = _find(pk)
         if booking is None:
             return _err("That booking is gone", 404)
+        booking._actor = request.user  # for the audit trail
         return self.act(request, booking)
 
 
@@ -557,7 +559,14 @@ class CheckInView(_BookingAction):
         answers = {k: request.data.get(k) for k in CHECK_IN_ANSWERS}
         if any(answers[k] not in allowed for k, allowed in CHECK_IN_ANSWERS.items()):
             return _err("Answer all three", 400)
-        CheckIn.objects.create(booking=booking, week=week, **answers)
+        still_in = request.data.get("still_in")
+        still_in = None if still_in is None else bool(still_in)
+        CheckIn.objects.create(booking=booking, week=week, still_in=still_in, **answers)
+        if still_in is False:
+            # It's come out: how long styles last, the way she lives with them.
+            from apps.profiles.models import log_hair
+
+            log_hair(request.user, "take_down", request.data.get("local_at"), booking_id=booking.pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

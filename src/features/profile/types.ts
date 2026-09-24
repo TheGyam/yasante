@@ -9,6 +9,7 @@ export type HairLength =
   | 'cropped'
   | 'ear'
   | 'chin'
+  | 'neck'
   | 'shoulder'
   | 'armpit'
   | 'bra-strap'
@@ -32,6 +33,8 @@ export interface HairProfile {
   goals?: HairGoal[];
   /** When the length was last answered, so it can be asked again a month on. */
   lengthMeasuredAt?: string;
+  /** For people who measure. Never asked for; always stored in centimetres. */
+  lengthCm?: number;
   scalp?: ScalpType[];
   /** Empty means none, ever — which is an answer, unlike not saying. */
   chemicals?: ChemicalTreatment[];

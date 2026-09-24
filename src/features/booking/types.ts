@@ -158,6 +158,8 @@ export type CheckInWeek = 2 | 4;
 
 /** Three taps on how a style is holding up — the start of the outcome data. */
 export interface CheckInAnswers {
+  /** Is the style still in? "no" dates when it came out: how long styles last. */
+  stillIn: 'yes' | 'no';
   holding: 'fresh' | 'okay' | 'tired';
   scalp: 'comfortable' | 'itchy' | 'sore';
   again: 'yes' | 'maybe' | 'no';

@@ -11,9 +11,10 @@ const TEXTURE: Record<HairTexture, string> = {
 export const TEXTURE_LABELS = TEXTURE;
 
 const LENGTH: Record<HairLength, string> = {
-  cropped: 'Cropped',
+  cropped: 'TWA',
   ear: 'Ear length',
   chin: 'Chin length',
+  neck: 'Neck length',
   shoulder: 'Shoulder length',
   armpit: 'Armpit length',
   'bra-strap': 'Bra-strap length',

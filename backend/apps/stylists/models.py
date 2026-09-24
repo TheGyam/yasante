@@ -178,7 +178,18 @@ class MenuItem(TimeStampedModel):
     hair_included = models.BooleanField(null=True, blank=True)
     # Options stored as JSON array: [{ id, group, label, add, addMinutes }]
     options = models.JSONField(default=list, blank=True)
+    # Style slugs from the taxonomy; guessed from the name when she doesn't pick.
+    styles = ArrayField(models.CharField(max_length=100), default=list, blank=True)
     sort_order = models.PositiveIntegerField(default=0)
+
+    def save(self, *args, **kwargs):
+        if not self.styles:
+            from .pricing import guess_styles
+
+            self.styles = guess_styles(self.name)
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = {*kwargs["update_fields"], "styles"}
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = "stylists_menu_item"

@@ -496,6 +496,8 @@ class MenuDetailView(APIView):
         draft, error = _menu_draft(request.data, current=current)
         if error:
             return Response({"message": error}, status=400)
+        if draft["name"] != item.name:
+            item.styles = []  # renamed: tag it again from the new name
         for field, value in draft.items():
             setattr(item, field, value)
         item.save()

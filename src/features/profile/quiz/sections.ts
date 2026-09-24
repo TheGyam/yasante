@@ -111,9 +111,10 @@ export function progressOf(profile?: HairProfile | null) {
 }
 
 const LENGTH_WORDS: Record<HairLength, string> = {
-  cropped: 'Cropped',
+  cropped: 'TWA',
   ear: 'Ear',
   chin: 'Chin',
+  neck: 'Neck',
   shoulder: 'Shoulder',
   armpit: 'Armpit',
   'bra-strap': 'Bra strap',

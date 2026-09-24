@@ -1,4 +1,5 @@
 import { apiClient } from '@/shared/lib/api/client';
+import { localTimestamp } from '@/shared/lib/analytics';
 import type {
   CarePlan,
   CarePlanDraft,
@@ -74,5 +75,11 @@ export const plannerApi = {
 
   /** POST /api/care-plans/:id/sessions/ — done, with an optional note. Appended, never edited. */
   logSession: async (id: string, notes?: string) =>
-    (await apiClient.post<CarePlanSession>(`/api/care-plans/${id}/sessions/`, { notes })).data,
+    (
+      await apiClient.post<CarePlanSession>(`/api/care-plans/${id}/sessions/`, {
+        notes,
+        // Her own clock, so "you do this on Sundays" is her Sunday.
+        localAt: localTimestamp(),
+      })
+    ).data,
 };

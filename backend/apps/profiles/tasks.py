@@ -72,3 +72,40 @@ def generate_data_export(self, user_id: str):
     )
 
     logger.info("Data export sent to %s", user.email)
+
+
+
+@shared_task
+def prompt_length(now=None):
+    """
+    Monthly: "has it grown?" to anyone whose length hasn't changed in 30 days. The
+    growth curve is only as good as how often it's answered (plan, section 13).
+    """
+    from datetime import timedelta
+
+    from django.db.models import Max
+    from django.utils import timezone
+
+    from apps.common.notifications import notify
+
+    from .models import HairProfile, HairProfileSnapshot
+
+    now = now or timezone.now()
+    with_length = HairProfile.objects.exclude(length="", shrunk_length="").values_list("user_id", flat=True)
+    last = dict(
+        HairProfileSnapshot.objects.filter(user_id__in=with_length)
+        .exclude(length="", shrunk_length="")
+        .values_list("user_id")
+        .annotate(at=Max("recorded_at"))
+    )
+    for user_id, at in last.items():
+        if at <= now - timedelta(days=30):
+            notify(
+                user_id,
+                "reminders",
+                f"length:{user_id}:{now:%Y-%m}",
+                "Has it grown?",
+                "One drag to update your length. Over a year, it’s your growth curve.",
+                url="/hair-profile/length",
+                mode="client",
+            )

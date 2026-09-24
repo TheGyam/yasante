@@ -1,9 +1,11 @@
 import { View } from 'react-native';
-import { Check, Plus, Ruler } from 'lucide-react-native';
+import { Check, Droplets, Plus, Ruler, Scissors } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space, useTheme } from '@/shared/theme';
+import { haptics } from '@/shared/lib/haptics';
 import { Card } from '@/shared/ui/Card';
+import { notify } from '@/shared/ui/dialog';
 import { ListRow } from '@/shared/ui/ListRow';
 import { ProgressBar } from '@/shared/ui/ProgressBar';
 import { Rise } from '@/shared/ui/Rise';
@@ -11,6 +13,7 @@ import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Text } from '@/shared/ui/Text';
 import { hairTraits } from '../format';
+import { sinceLast, useHairLog, useLogHair, type HairLogKind } from '../hairLog';
 import { useUser } from '../hooks';
 import { useUserStore } from '../store';
 import { lengthIsStale, progressOf, sectionSummary, SECTIONS } from './sections';
@@ -32,7 +35,9 @@ export function HairProfileHub() {
   const styles = useStyles();
   const theme = useTheme();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const log = useHairLog(isAuthenticated);
+  const logHair = useLogHair();
   const { data: account } = useUser(user?.id);
   const local = useUserStore(s => s.hairProfile);
   const profile = { ...local, ...account?.hairProfile };
@@ -40,6 +45,16 @@ export function HairProfileHub() {
   const stale = lengthIsStale(profile);
 
   const open = (key: string) => router.push(`/hair-profile/${key}`);
+
+  // One tap, dated by the phone: time since a trim, and which day she washes.
+  const note = (kind: HairLogKind) =>
+    logHair.mutate(kind, {
+      onSuccess: () => haptics.success(),
+      onError: () => {
+        haptics.error();
+        notify({ title: 'Couldn’t save that', message: 'Check your connection and try again.' });
+      },
+    });
 
   return (
     <Screen title="Your hair" modal testID="hair-profile-hub">
@@ -89,6 +104,34 @@ export function HairProfileHub() {
             );
           })}
         </Section>
+
+        {isAuthenticated && (
+          <Section
+            title="Between appointments"
+            footer="Tap when it happens. Over time it shows how often you trim and wash."
+          >
+            <ListRow
+              title="I had a trim"
+              subtitle={
+                sinceLast(log.data, 'trim') ? `Last: ${sinceLast(log.data, 'trim')}` : undefined
+              }
+              icon={Scissors}
+              iconTone="neutral"
+              onPress={() => note('trim')}
+              testID="log-trim"
+            />
+            <ListRow
+              title="Wash day done"
+              subtitle={
+                sinceLast(log.data, 'wash') ? `Last: ${sinceLast(log.data, 'wash')}` : undefined
+              }
+              icon={Droplets}
+              iconTone="neutral"
+              onPress={() => note('wash')}
+              testID="log-wash"
+            />
+          </Section>
+        )}
       </View>
     </Screen>
   );

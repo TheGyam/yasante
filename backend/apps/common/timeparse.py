@@ -19,3 +19,12 @@ def parse_iso(value):
     if timezone.is_naive(dt):
         dt = timezone.make_aware(dt, dt_timezone.utc)
     return dt
+
+
+def local_parts(text):
+    """The phone's own clock, "2026-09-27T09:15:00" (offset or not) -> (weekday 1-7, hour)."""
+    try:
+        when = datetime.fromisoformat(str(text).replace("Z", "+00:00"))
+        return when.isoweekday(), when.hour
+    except (ValueError, AttributeError):
+        return None, None
