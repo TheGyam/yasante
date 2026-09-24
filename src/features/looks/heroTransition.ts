@@ -1,4 +1,4 @@
-import type { View } from 'react-native';
+import { Keyboard, type View } from 'react-native';
 
 export interface HeroRect {
   x: number;
@@ -24,6 +24,9 @@ let pending: Hero | null = null;
  * measured the page simply fades in.
  */
 export function openWithHero(photo: View | null, hero: Omit<Hero, 'from'>, open: () => void) {
+  // The screen underneath stays alive under the look (it opens as an overlay), so a
+  // focused field there, like search, would keep its keyboard up over the look.
+  Keyboard.dismiss();
   if (!photo) return open();
   photo.measureInWindow((x, y, width, height) => {
     pending = width > 0 && height > 0 ? { ...hero, from: { x, y, width, height } } : null;

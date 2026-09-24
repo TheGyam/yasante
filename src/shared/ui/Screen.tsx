@@ -12,7 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter } from '@/shared/lib/navigation';
-import { useScrollToTop } from '@react-navigation/native';
+import { useIsFocused, useScrollToTop } from '@react-navigation/native';
 import { ChevronLeft, X } from 'lucide-react-native';
 import { GUTTER, fonts, makeStyles, space, useTheme } from '@/shared/theme';
 import { Glass } from './Glass';
@@ -127,6 +127,7 @@ export function Screen({
 }: ScreenProps) {
   const styles = useStyles();
   const theme = useTheme();
+  const focused = useIsFocused();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const scrollY = useSharedValue(0);
@@ -211,7 +212,14 @@ export function Screen({
     <ScrollContext.Provider value={scrollY}>
       {/* A flat ground colour: cheap to paint, unlike a full-screen SVG gradient,
           which Android draws on the CPU for every screen in a transition. */}
-      <View style={[styles.fill, opaque && { backgroundColor: theme.colors.bg }]} testID={testID}>
+      <View
+        style={[styles.fill, opaque && { backgroundColor: theme.colors.bg }]}
+        testID={testID}
+        // A screen covered by another (a look opening over the feed keeps the feed
+        // alive underneath) is hidden from screen readers, so they can't wander into it.
+        importantForAccessibility={focused ? 'auto' : 'no-hide-descendants'}
+        accessibilityElementsHidden={!focused}
+      >
         {body}
         {hasBar && (
           <View pointerEvents="box-none" style={[styles.bar, { height: top + HEADER_HEIGHT }]}>
