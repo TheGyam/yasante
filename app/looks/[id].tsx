@@ -143,6 +143,12 @@ export default function LookScreen() {
   // Taken once: the tile's photo and where it sat.
   const [hero] = useState(() => (reduced ? null : takeHero(id)));
   const photo = useRef<View>(null);
+  // Positions are measured in window coordinates, but the moving copy is drawn inside
+  // this page, which on Android starts below the status bar. Where the page sits in
+  // the window is subtracted when drawing, so the copy lands exactly on the photo.
+  const page = useRef<View>(null);
+  const originX = useSharedValue(0);
+  const originY = useSharedValue(0);
   // 0 = still the feed, 1 = the look's page.
   const progress = useSharedValue(0);
   const x = useSharedValue(hero?.from.x ?? 0);
@@ -216,8 +222,16 @@ export default function LookScreen() {
   // its first layout comes before the page's own top spacing has settled.
   const onPhotoLayout = useCallback(() => {
     if (!hero || started.current) return;
-    requestAnimationFrame(() => requestAnimationFrame(() => photo.current?.measureInWindow(flyTo)));
-  }, [hero, flyTo]);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        page.current?.measureInWindow((px, py) => {
+          originX.set(px);
+          originY.set(py);
+          photo.current?.measureInWindow(flyTo);
+        })
+      )
+    );
+  }, [hero, flyTo, originX, originY]);
 
   // Nothing to grow from (a link, a notification, reduced motion), or the photo
   // never laid out (still loading): fade in rather than wait.
@@ -276,14 +290,14 @@ export default function LookScreen() {
     opacity: interpolate(progress.get(), [0.35, 1], [0, 1], Extrapolation.CLAMP),
   }));
   const flight = useAnimatedStyle(() => ({
-    left: x.get(),
-    top: y.get(),
+    left: x.get() - originX.get(),
+    top: y.get() - originY.get(),
     width: w.get(),
     height: h.get(),
   }));
 
   return (
-    <View style={heroStyles.fill}>
+    <View ref={page} collapsable={false} style={heroStyles.fill}>
       <Animated.View
         pointerEvents="none"
         style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.bg }, backdrop]}
