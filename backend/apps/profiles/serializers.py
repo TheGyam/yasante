@@ -52,7 +52,10 @@ class EventSerializer(serializers.Serializer):
 
     name = serializers.CharField(max_length=100)
     at = serializers.DateTimeField()
-    local_at = serializers.DateTimeField()
+    # Kept as the phone wrote it (see AnalyticsEvent.local_at).
+    local_at = serializers.CharField(max_length=40, required=False, allow_blank=True, default="")
+    properties = serializers.DictField(required=False, default=dict)
+    app_version = serializers.CharField(max_length=30, required=False, allow_blank=True, default="")
 
 
 class EventBatchSerializer(serializers.Serializer):

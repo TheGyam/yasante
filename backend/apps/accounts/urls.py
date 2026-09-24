@@ -18,4 +18,6 @@ urlpatterns = [
     ),
     path("phone/start/", views.PhoneStartView.as_view(), name="auth-phone-start"),
     path("phone/verify/", views.PhoneVerifyView.as_view(), name="auth-phone-verify"),
+    path("logout/", views.LogoutView.as_view(), name="auth-logout"),
+    path("logout-all/", views.LogoutEverywhereView.as_view(), name="auth-logout-all"),
 ]

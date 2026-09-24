@@ -31,6 +31,10 @@ class Look(TimeStampedModel):
     """A look posting — the main feed content."""
 
     VISIBILITY_CHOICES = [("public", "Public"), ("private", "Private")]
+    # One table for every kind of post, so comments, likes, reports and the feed
+    # never need a second path when text posts and questions arrive.
+    TYPE_CHOICES = [("look", "Look"), ("text", "Text"), ("question", "Question")]
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="look", db_index=True)
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="looks"

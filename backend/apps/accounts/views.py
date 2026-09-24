@@ -189,7 +189,48 @@ class ResetPasswordView(APIView):
 
         user.set_password(password)
         user.save(update_fields=["password"])
+        # A reset is often someone locking a stranger out: every session ends.
+        revoke_all_sessions(user)
         return Response({"message": "Your password has been reset."})
+
+
+def revoke_all_sessions(user):
+    """Blacklist every refresh token the account holds, so every device signs out."""
+    from rest_framework_simplejwt.token_blacklist.models import (
+        BlacklistedToken,
+        OutstandingToken,
+    )
+
+    for token in OutstandingToken.objects.filter(user=user):
+        BlacklistedToken.objects.get_or_create(token=token)
+
+
+class LogoutView(APIView):
+    """POST /api/auth/logout/ — { refreshToken } ends this device's session."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        from rest_framework_simplejwt.exceptions import TokenError
+        from rest_framework_simplejwt.tokens import RefreshToken
+
+        raw = request.data.get("refresh_token") or request.data.get("refresh")
+        if raw:
+            try:
+                RefreshToken(raw).blacklist()
+            except TokenError:
+                pass  # Already invalid: signed out either way.
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class LogoutEverywhereView(APIView):
+    """POST /api/auth/logout-all/ — every device signs out, this one included."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        revoke_all_sessions(request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class PhoneStartView(APIView):

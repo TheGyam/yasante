@@ -4,8 +4,6 @@ User profile and analytics views.
 
 import logging
 
-from apps.accounts.models import User
-from apps.accounts.serializers import UserSerializer
 from apps.bookings.models import Booking
 from django.db import transaction
 from django.utils import timezone
@@ -198,15 +196,36 @@ class EventBatchView(APIView):
                 # Consent withdrawn — drop events silently
                 return Response(status=status.HTTP_202_ACCEPTED)
 
-        events = [
-            AnalyticsEvent(
-                user=user,
-                anonymous_id=serializer.validated_data.get("anonymous_id", ""),
-                name=e["name"],
-                at=e["at"],
-                local_at=e["local_at"],
+        def local_parts(text):
+            # "2026-09-27T09:15:00" (with or without an offset) -> (weekday, hour).
+            from datetime import datetime
+
+            try:
+                when = datetime.fromisoformat(text.replace("Z", "+00:00"))
+                return when.isoweekday(), when.hour
+            except (ValueError, AttributeError):
+                return None, None
+
+        events = []
+        for e in serializer.validated_data["events"]:
+            weekday, hour = local_parts(e.get("local_at", ""))
+            events.append(
+                AnalyticsEvent(
+                    user=user,
+                    anonymous_id=serializer.validated_data.get("anonymous_id", ""),
+                    name=e["name"],
+                    at=e["at"],
+                    local_at=e.get("local_at", "")[:40],
+                    local_weekday=weekday,
+                    local_hour=hour,
+                    # Small and flat: nothing nested, nothing huge.
+                    properties={
+                        str(k)[:40]: v
+                        for k, v in list(e.get("properties", {}).items())[:20]
+                        if v is None or isinstance(v, (str, int, float, bool))
+                    },
+                    app_version=e.get("app_version", "")[:30],
+                )
             )
-            for e in serializer.validated_data["events"]
-        ]
         AnalyticsEvent.objects.bulk_create(events)
         return Response(status=status.HTTP_201_CREATED)

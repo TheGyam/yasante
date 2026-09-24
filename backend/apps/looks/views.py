@@ -11,10 +11,11 @@ from datetime import datetime, timedelta
 
 from apps.bookings.models import Booking
 from apps.common.blocks import blocked_account_ids, is_blocked
+from apps.common.models import log_search
 from apps.common.pagination import keyset_page
 from apps.common.people import person
 from apps.common.permissions import IsAuthenticatedOrReadOnly
-from apps.common.throttling import PostingThrottle, ReportThrottle
+from apps.common.throttling import CommentThrottle, PostingThrottle, ReportThrottle
 from apps.shelf.models import Product
 from apps.stylists.models import StylistProfile
 from django.contrib.contenttypes.models import ContentType
@@ -120,6 +121,11 @@ class FeedView(APIView):
             ).distinct()
 
         items, next_cursor = keyset_page(qs, request)
+        q = request.query_params.get("q", "")
+        filters = {"hair": hair, "style": style, "area": area}
+        # Log what people search or filter for, on the first page only (not every scroll).
+        if (q or any(filters.values())) and not request.query_params.get("cursor"):
+            log_search(request, "looks", q, filters, len(items))
         return Response({"data": present_looks(items, viewer), "next_cursor": next_cursor})
 
     def post(self, request):
@@ -343,6 +349,9 @@ class CommentListCreateView(APIView):
     """
 
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_throttles(self):
+        return [CommentThrottle()] if self.request.method == "POST" else []
 
     def get(self, request, look_id):
         viewer = _viewer(request)

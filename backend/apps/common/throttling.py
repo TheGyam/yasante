@@ -31,6 +31,18 @@ class PostingThrottle(UserRateThrottle):
     rate = "30/hour"
 
 
+class CommentThrottle(UserRateThrottle):
+    scope = "commenting"
+
+
+class ReviewThrottle(UserRateThrottle):
+    scope = "reviewing"
+
+
+class BookingRequestThrottle(UserRateThrottle):
+    scope = "booking"
+
+
 class ReportThrottle(UserRateThrottle):
     scope = "reporting"
     rate = "10/hour"

@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 from apps.bookings.models import Booking, Review
 from apps.common.blocks import blocked_account_ids, is_blocked
+from apps.common.models import log_search
 from apps.common.permissions import IsPhoneVerified
 from django.conf import settings
 from django.db import IntegrityError, transaction
@@ -122,10 +123,33 @@ class StylistCreateView(APIView):
         return [permissions.IsAuthenticated()]
 
     def get(self, request):
-        words = (request.query_params.get("q") or "").split()[:6]
-        if not words:
+        params = request.query_params
+        words = (params.get("q") or "").split()[:6]
+        style = params.get("style", "")
+        service_model = params.get("service_model", "")
+        area = params.get("area", "")
+        try:
+            min_tier = int(params.get("tier") or 0)
+        except ValueError:
+            min_tier = 0
+        if not (words or style or service_model or area or min_tier):
             return Response([])
         qs = StylistProfile.objects.filter(published=True)
+        if style:
+            # Her work tagged with it, or a service on her menu named after it.
+            from apps.looks.models import Look, Style
+
+            name = Style.objects.filter(slug=style).values_list("name", flat=True).first() or style
+            tagged = Look.objects.filter(styles__slug=style).values_list("stylist_id", flat=True)
+            qs = qs.filter(
+                Q(account_id__in=[t for t in tagged if t]) | Q(menu_items__name__icontains=name)
+            ).distinct()
+        if service_model in ("salon", "home", "mobile"):
+            qs = qs.filter(service_models__contains=[service_model])
+        if area:
+            qs = qs.filter(base_area__iexact=area)
+        if min_tier:
+            qs = qs.filter(verification_tier__gte=min_tier)
         for word in words:
             qs = qs.filter(
                 Q(display_name__icontains=word)
@@ -136,7 +160,14 @@ class StylistCreateView(APIView):
         blocked = blocked_account_ids(viewer) if viewer else set()
         if blocked:
             qs = qs.exclude(account_id__in=blocked)
-        qs = qs.order_by("-rating_count", "display_name")[:20]
+        qs = list(qs.order_by("-verification_tier", "-rating_count", "display_name")[:20])
+        log_search(
+            request,
+            "stylists",
+            params.get("q", ""),
+            {"style": style, "service_model": service_model, "area": area, "tier": min_tier},
+            len(qs),
+        )
         return Response(
             [
                 {

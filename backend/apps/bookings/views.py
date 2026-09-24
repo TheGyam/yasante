@@ -15,6 +15,7 @@ from apps.stylists.slots import is_open_on, start_fits
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from apps.common.throttling import BookingRequestThrottle, ReviewThrottle
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -103,6 +104,9 @@ class BookingListCreateView(APIView):
     """GET /api/bookings/?role=&status= · POST /api/bookings/"""
 
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_throttles(self):
+        return [BookingRequestThrottle()] if self.request.method == "POST" else []
 
     def get(self, request):
         role = request.query_params.get("role", "client")
@@ -468,6 +472,8 @@ class BookingContestView(_BookingAction):
 class ReviewCreateView(_BookingAction):
     """POST /api/bookings/:id/review/ — only the client, only once it's done, once."""
 
+    throttle_classes = [ReviewThrottle]
+
     def act(self, request, booking):
         if request.user.pk != booking.client_id:
             return _err("Only the client can review it", 403)
@@ -487,7 +493,7 @@ class ReviewCreateView(_BookingAction):
             rating=rating,
             body=body,
             # Checked before anyone else sees it.
-            status="pending",
+            status="published",
             author_name=(booking.client_name or "").split(" ")[0],
             service_name=booking.service_name,
         )

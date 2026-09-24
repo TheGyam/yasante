@@ -4,6 +4,7 @@ calls: /api/content/content/… and /api/favorites/favorites/….
 """
 
 from django.db.models import Q
+from apps.common.models import log_search
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -53,7 +54,16 @@ class ContentListView(APIView):
                     | Q(description__icontains=word)
                     | Q(body__icontains=word)
                 )
-        return Response([present_content(c) for c in qs[:100]])
+        # Paged on the server (?limit=&offset=), never the whole library at once.
+        try:
+            limit = max(1, min(int(request.query_params.get("limit", 20)), 50))
+            offset = max(0, int(request.query_params.get("offset", 0)))
+        except ValueError:
+            limit, offset = 20, 0
+        items = list(qs[offset : offset + limit])
+        if (search or topic or kind) and not offset:
+            log_search(request, "content", search or "", {"topic": topic, "type": kind}, len(items))
+        return Response([present_content(c) for c in items])
 
 
 class ContentSearchView(ContentListView):
