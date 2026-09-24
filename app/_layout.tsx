@@ -19,6 +19,7 @@ import { ATTENDANCE_CATEGORY, bookingApi } from '@/features/booking';
 import { useHairProfileSync, useUserStore } from '@/features/profile';
 import { ModeSwitchOverlay, useActiveMode, useModeStore } from '@/features/stylist';
 import { useNotifications } from '@/shared/hooks/useNotifications';
+import { registerPush } from '@/shared/lib/push';
 import { useConsentSync } from '@/shared/config/consentSync';
 import { startAnalytics, track } from '@/shared/lib/analytics';
 import { ThemeProvider, useTheme, useThemePreference } from '@/shared/theme';
@@ -61,6 +62,11 @@ function RootNavigator() {
   // consent choices, which are recorded on the device first.
   useHairProfileSync();
   useConsentSync(isAuthenticated);
+
+  // Where the server sends her notifications: this phone, once she's signed in.
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) registerPush();
+  }, [isAuthenticated, isLoading, user?.id]);
 
   useNotifications(
     async target => {

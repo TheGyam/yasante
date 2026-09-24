@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react';
+import { askPermission } from '@/shared/lib/push';
 
 // expo-notifications needs a development build; in Expo Go it's absent.
 let Notifications: typeof import('expo-notifications') | null = null;
-let requestPermissions: () => Promise<boolean> = async () => false;
 try {
   Notifications = require('expo-notifications');
-  requestPermissions = require('@/shared/lib/notificationService').requestNotificationPermissions;
 } catch {
   Notifications = null;
 }
@@ -44,7 +43,7 @@ export function useNotifications(
   useEffect(() => {
     if (!Notifications) return;
     const api = Notifications;
-    requestPermissions().catch(() => {});
+    askPermission();
 
     for (const category of registered.current) {
       api

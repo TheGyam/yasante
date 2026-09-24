@@ -7,6 +7,7 @@ Admin panel at /admin/.
 
 from apps.accounts.views import InviteDetailView, InviteRedeemView
 from apps.common.uploads import PrivateMediaView, UploadView
+from apps.accounts import views as account_views
 from apps.looks import views as looks_views
 from apps.profiles import views as profile_views
 from apps.content import compat as content
@@ -109,6 +110,11 @@ urlpatterns = API_DOCS + [
     ),
     path("api/content/", include("apps.content.urls")),
     path("api/devices/", include("apps.accounts.device_urls")),
+    path(
+        "api/notifications/preferences/",
+        account_views.NotificationPreferencesView.as_view(),
+        name="notification-preferences",
+    ),
 ]
 
 # Serve media in development

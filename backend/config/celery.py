@@ -18,30 +18,28 @@ app.autodiscover_tasks()
 # ──────────────────────────────────────────────
 # Periodic tasks (Celery Beat)
 # ──────────────────────────────────────────────
+# Times are UTC; London is UTC or UTC+1, so "morning" jobs run at 8 UTC.
 app.conf.beat_schedule = {
-    # Expire stale booking requests (48h)
-    "expire-stale-requests": {
-        "task": "apps.bookings.tasks.expire_stale_requests",
+    # Lapse requests and unpaid deposits, complete old appointments.
+    "sweep-bookings": {
+        "task": "apps.bookings.tasks.sweep_bookings",
         "schedule": crontab(minute="*/5"),
     },
-    # Expire unpaid deposits (24h)
-    "expire-unpaid-deposits": {
-        "task": "apps.bookings.tasks.expire_unpaid_deposits",
-        "schedule": crontab(minute="*/5"),
+    # Prep (3 days), attendance (24h), stylist heads-up (12h), morning-of.
+    "send-reminders": {
+        "task": "apps.bookings.tasks.send_reminders",
+        "schedule": crontab(minute="*/15"),
     },
-    # Auto-complete bookings (24h after appointment end)
-    "auto-complete-bookings": {
-        "task": "apps.bookings.tasks.auto_complete_bookings",
-        "schedule": crontab(minute="*/10"),
-    },
-    # Send attendance reminders (day before)
-    "send-attendance-reminders": {
-        "task": "apps.bookings.tasks.send_attendance_reminders",
-        "schedule": crontab(hour=9, minute=0),  # 9 AM UTC daily
-    },
-    # Open check-ins (day 14 and 28)
     "open-check-ins": {
         "task": "apps.bookings.tasks.open_check_ins",
-        "schedule": crontab(hour=8, minute=0),  # 8 AM UTC daily
+        "schedule": crontab(hour=10, minute=0),
+    },
+    "weekly-digest": {
+        "task": "apps.bookings.tasks.weekly_digest",
+        "schedule": crontab(hour=8, minute=0, day_of_week="mon"),
+    },
+    "insurance-reminders": {
+        "task": "apps.bookings.tasks.insurance_reminders",
+        "schedule": crontab(hour=9, minute=0),
     },
 }

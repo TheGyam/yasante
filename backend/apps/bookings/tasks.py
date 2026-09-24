@@ -1,144 +1,193 @@
-import logging
+"""
+Background tasks for bookings.
+
+Every reminder is sent through `notify` with an event key, so the windows below can
+be generous: a job that runs late or twice still sends each message once.
+"""
+
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 from celery import shared_task
 from django.conf import settings
+from django.db.models import Count, Q
 from django.utils import timezone
 
-from .models import Booking, SlotInterest
+from apps.common.notifications import notify
 
-"""
-Background tasks for bookings.
-"""
-
-
-logger = logging.getLogger(__name__)
+from .held import release, sweep
+from .models import Booking
+from .notify import _when, to_client, to_stylist
 
 
 @shared_task
+def sweep_bookings():
+    """Lapse requests and unpaid deposits (telling the waitlist), complete old appointments."""
+    sweep()
+
+
+# Older beat entries in the database still name these; they do the same sweep.
+@shared_task
 def expire_stale_requests():
-    """Expire booking requests older than 48 hours."""
-
-    now = timezone.now()
-    expired = Booking.objects.filter(
-        status="requested",
-        expires_at__lte=now,
-    ).update(status="expired")
-
-    if expired:
-        logger.info("Expired %d stale booking requests", expired)
+    sweep()
 
 
 @shared_task
 def expire_unpaid_deposits():
-    """Expire bookings awaiting deposit for more than 24 hours."""
-
-    now = timezone.now()
-    expired = Booking.objects.filter(
-        status="awaiting_deposit",
-        expires_at__lte=now,
-    ).update(status="expired")
-
-    if expired:
-        logger.info("Expired %d unpaid deposits", expired)
+    sweep()
 
 
 @shared_task
 def auto_complete_bookings():
-    """Auto-complete bookings 24 hours after appointment end if nobody closed them."""
+    sweep()
 
-    now = timezone.now()
-    cutoff = now - timedelta(hours=settings.BOOKING_AUTO_COMPLETE_HOURS)
 
-    bookings = Booking.objects.filter(
-        status="confirmed",
-        scheduled_for__lte=cutoff,
+def _local(dt):
+    return dt.astimezone(ZoneInfo(settings.STYLIST_TIME_ZONE))
+
+
+@shared_task
+def send_reminders(now=None):
+    """Every 15 minutes: prep, attendance, the stylist's heads-up, and the morning-of."""
+    now = now or timezone.now()
+    upcoming = Booking.objects.filter(
+        status="confirmed", scheduled_for__gt=now, scheduled_for__lte=now + timedelta(hours=72)
     )
+    today = _local(now).date()
+    for b in upcoming:
+        until = b.scheduled_for - now
+        if until > timedelta(hours=48):
+            to_client(
+                b,
+                "prep",
+                f"{_when(b.scheduled_for)} with {b.stylist_name}",
+                "Three days to go. Check what to do with your hair before you arrive.",
+                category="reminders",
+            )
+        elif timedelta(hours=12) < until <= timedelta(hours=24) and not b.attendance_confirmed_at:
+            to_client(
+                b,
+                "attendance",
+                "Still coming tomorrow?",
+                f"{b.service_name} with {b.stylist_name}, {_when(b.scheduled_for)}.",
+                category="reminders",
+                action_category="attendance",
+            )
+        elif until <= timedelta(hours=12) and not b.attendance_confirmed_at:
+            first = (b.client_name or "Your client").split()[0]
+            to_stylist(
+                b,
+                "unconfirmed",
+                f"{first} hasn’t confirmed",
+                f"{_when(b.scheduled_for)}. You might message her to check.",
+                category="reminders",
+            )
+        local = _local(b.scheduled_for)
+        if local.date() == today and _local(now).hour >= 7:
+            to_client(
+                b,
+                "today",
+                f"Today at {local:%H:%M}",
+                f"{b.service_name} with {b.stylist_name}. The address is in your booking.",
+                category="reminders",
+            )
+            to_stylist(
+                b,
+                "today",
+                f"Today at {local:%H:%M}",
+                f"{(b.client_name or 'A client').split()[0]}, {b.service_name}.",
+                category="reminders",
+            )
 
-    count = 0
-    for booking in bookings:
-        end_time = booking.scheduled_for + timedelta(
-            minutes=booking.duration_minutes or 120
-        )
-        if end_time + timedelta(hours=settings.BOOKING_AUTO_COMPLETE_HOURS) <= now:
-            booking.status = "completed"
-            booking.completed_at = now
-            booking.save(update_fields=["status", "completed_at"])
-            count += 1
 
-    if count:
-        logger.info("Auto-completed %d bookings", count)
+@shared_task
+def open_check_ins(now=None):
+    """Week 2 and week 4 after a style: ask how it's holding up."""
+    now = now or timezone.now()
+    for week in (2, 4):
+        due = Booking.objects.filter(
+            status="completed",
+            completed_at__lte=now - timedelta(days=7 * week),
+            completed_at__gt=now - timedelta(days=7 * week + 7),
+        ).exclude(check_ins__week=week)
+        for b in due:
+            notify(
+                b.client_id,
+                "check_ins",
+                f"booking:{b.pk}:checkin:{week}",
+                f"Week {week}: how’s your {b.service_name.lower()}?",
+                "Three taps. It helps you and others with hair like yours.",
+                url=f"/check-in/{b.pk}",
+                mode="client",
+                bookingId=str(b.pk),
+            )
 
 
+# Kept for the old beat entry; the day-before reminder now lives in send_reminders.
 @shared_task
 def send_attendance_reminders():
-    """Send day-before attendance reminders."""
+    send_reminders()
 
-    tomorrow = timezone.now().date() + timedelta(days=1)
-    bookings = Booking.objects.filter(
-        status="confirmed",
-        scheduled_for__date=tomorrow,
-        attendance_confirmed_at__isnull=True,
+
+@shared_task
+def weekly_digest(now=None):
+    """Monday morning: each stylist's week ahead, and requests still waiting."""
+    now = now or timezone.now()
+    week_end = now + timedelta(days=7)
+    rows = (
+        Booking.objects.filter(
+            Q(status="confirmed", scheduled_for__gte=now, scheduled_for__lt=week_end)
+            | Q(status="requested")
+        )
+        .values("stylist_id")
+        .annotate(
+            booked=Count("id", filter=Q(status="confirmed")),
+            waiting=Count("id", filter=Q(status="requested")),
+        )
     )
-
-    for booking in bookings:
-        # TODO: Send push notification
-        logger.info(
-            "Attendance reminder for booking %s (client: %s)",
-            booking.pk,
-            booking.client_name,
+    week = _local(now).date().isocalendar()
+    for row in rows:
+        parts = []
+        if row["booked"]:
+            parts.append(f"{row['booked']} appointment{'s' if row['booked'] != 1 else ''} this week")
+        if row["waiting"]:
+            parts.append(f"{row['waiting']} request{'s' if row['waiting'] != 1 else ''} waiting")
+        notify(
+            row["stylist_id"],
+            "weekly_digest",
+            f"digest:{row['stylist_id']}:{week[0]}-{week[1]}",
+            "Your week",
+            ", ".join(parts).capitalize() + ".",
+            url="/requests",
+            mode="stylist",
         )
 
 
 @shared_task
-def open_check_ins():
-    """Open check-ins at day 14 and day 28 after completion."""
+def insurance_reminders(now=None):
+    """A month, then a week, before a stylist's insurance runs out."""
+    from apps.stylists.models import Verification
 
-    now = timezone.now()
-    # Week 2: 14 days ago
-    day_14 = now - timedelta(days=14)
-    bookings_w2 = Booking.objects.filter(
-        status="completed",
-        completed_at__date=day_14.date(),
-    ).exclude(check_ins__week=2)
-
-    for booking in bookings_w2:
-        logger.info("Week 2 check-in open for booking %s", booking.pk)
-        # TODO: Send push notification
-
-    # Week 4: 28 days ago
-    day_28 = now - timedelta(days=28)
-    bookings_w4 = Booking.objects.filter(
-        status="completed",
-        completed_at__date=day_28.date(),
-    ).exclude(check_ins__week=4)
-
-    for booking in bookings_w4:
-        logger.info("Week 4 check-in open for booking %s", booking.pk)
+    now = now or timezone.now()
+    for check in Verification.objects.filter(
+        type="insurance", status="verified", expires_at__gt=now, expires_at__lte=now + timedelta(days=30)
+    ):
+        left = (check.expires_at - now).days
+        stage = "week" if left <= 7 else "month"
+        notify(
+            check.account_id,
+            "account",
+            f"insurance:{check.pk}:{check.expires_at.date()}:{stage}",
+            "Your insurance ends soon",
+            f"It runs out on {check.expires_at:%d %b}. Upload the new certificate to keep your badge.",
+            url="/stylist-setup",
+            mode="stylist",
+        )
 
 
 @shared_task
 def release_slots_to_waitlist(booking_id: str):
-    """Notify waitlist when a slot opens from cancellation/expiry."""
-
-    try:
-        booking = Booking.objects.get(pk=booking_id)
-    except Booking.DoesNotExist:
-        return
-
-    if not booking.scheduled_for:
-        return
-
-    date = booking.scheduled_for.date()
-    interests = SlotInterest.objects.filter(
-        stylist_id=booking.stylist_id,
-        from_date__lte=date,
-        to_date__gte=date,
-        opened_on__isnull=True,
-    ).exclude(client_id=booking.client_id)
-
-    for interest in interests:
-        interest.opened_on = date
-        interest.save(update_fields=["opened_on"])
-        logger.info("Slot opened for waitlist entry %s", interest.pk)
-        # TODO: Send push notification
+    """Tell the waitlist when a slot opens from a cancellation or expiry."""
+    booking = Booking.objects.filter(pk=booking_id).first()
+    if booking:
+        release(booking)
