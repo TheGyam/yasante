@@ -72,11 +72,12 @@ function CollectionItems() {
   const { data: collections } = useCollections();
   const collection = collections?.find(item => item.id === id);
   const { data: items = [], isLoading, isRefetching, refetch } = useCollectionItems(id);
-  // Items already cached are built with the page, before it slides in. Ones that
-  // arrive mid-slide wait for it to finish: building the grid then made it stutter.
-  const [cachedAtOpen] = useState(() => !isLoading);
+  // The grid is built once the page has slid in: building it with the page, even
+  // from the cache, made the slide start late and stutter (a third of frames late
+  // on a Note10+). Cached items are there the moment it lands; only a real wait for
+  // the network shows a placeholder.
   const arrived = useTransitionDone();
-  const showGrid = (cachedAtOpen || arrived) && !isLoading;
+  const showGrid = arrived && !isLoading;
 
   const [name, setName] = useState('');
   const update = useUpdateCollection();
@@ -138,7 +139,7 @@ function CollectionItems() {
           }
         />
       </Section>
-      {!showGrid && <Skeleton height={160} />}
+      {isLoading && <Skeleton height={160} />}
     </View>
   );
 

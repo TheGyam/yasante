@@ -168,7 +168,6 @@ export default function LookScreen() {
   // it has landed. A shared value, not state: handing over at either end of the
   // animation never re-renders the page.
   const cover = useSharedValue(hero ? 1 : 0);
-  const landed = useRef(false);
   // Comments are built once the page has arrived, so the opening frames only carry
   // the photo and the look's details.
   const [settled, setSettled] = useState(false);
@@ -176,7 +175,6 @@ export default function LookScreen() {
   const closing = useRef(false);
 
   const finish = useCallback(() => {
-    landed.current = true;
     cover.set(0);
     setSettled(true);
   }, [cover]);
@@ -231,25 +229,22 @@ export default function LookScreen() {
     [fadeIn, land, progress, x, y, w, h]
   );
 
-  // As soon as the real photo has a place, fly the tile's copy onto it. The page's top
-  // spacing can settle a moment later and move the photo: that lays it out again, and
-  // the copy, already on its way, is steered to the new place in the time it has left.
+  // Once the real photo has a place, fly the tile's copy onto it. Two frames later,
+  // once the page has finished building: its first layout comes before the page's
+  // top spacing has settled, and starting while the page is still being mounted
+  // drops frames (measured on a Note10+: 100ms+ frames, against none this way).
   const onPhotoLayout = useCallback(() => {
-    if (!hero || landed.current) return;
-    page.current?.measureInWindow((px, py) => {
-      originX.set(px);
-      originY.set(py);
-      photo.current?.measureInWindow((tx, ty, tw, th) => {
-        if (!started.current) return flyTo(tx, ty, tw, th);
-        if (!tw || !th) return;
-        const move = { duration: OPEN_MS * (1 - progress.get()), easing: EASE_OUT };
-        x.set(withTiming(tx, move));
-        y.set(withTiming(ty, move));
-        w.set(withTiming(tw, move));
-        h.set(withTiming(th, move));
-      });
-    });
-  }, [hero, flyTo, originX, originY, progress, x, y, w, h]);
+    if (!hero || started.current) return;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        page.current?.measureInWindow((px, py) => {
+          originX.set(px);
+          originY.set(py);
+          photo.current?.measureInWindow(flyTo);
+        })
+      )
+    );
+  }, [hero, flyTo, originX, originY]);
 
   // Nothing to grow from (a link, a notification, reduced motion), or the photo
   // never laid out (still loading): fade in rather than wait.
