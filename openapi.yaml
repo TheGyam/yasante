@@ -1,0 +1,2005 @@
+openapi: 3.0.3
+info:
+  title: Yasante API
+  version: 1.0.0
+  description: Backend APIs for Yasante.
+paths:
+  /api/auth/forgot-password/:
+    post:
+      operationId: auth_forgot_password_create
+      description: |-
+        POST /api/auth/forgot-password/
+
+        Always returns 200 whether the email exists or not (timing-safe).
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: POST /api/auth/login/
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: POST /api/auth/logout/ — { refreshToken } ends this device's session.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/logout-all/:
+    post:
+      operationId: auth_logout_all_create
+      description: POST /api/auth/logout-all/ — every device signs out, this one included.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/phone/start/:
+    post:
+      operationId: auth_phone_start_create
+      description: |-
+        POST /api/auth/phone/start/
+
+        Sends a 6-digit verification code via SMS.
+        Rate limited: 1/30s per phone.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/phone/verify/:
+    post:
+      operationId: auth_phone_verify_create
+      description: |-
+        POST /api/auth/phone/verify/
+
+        Verifies the phone code. 5 attempts per code, then locked.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/refresh-token/:
+    post:
+      operationId: auth_refresh_token_create
+      description: |-
+        POST /api/auth/refresh-token/
+
+        Rotates the refresh token and blacklists the old one.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/reset-password/:
+    post:
+      operationId: auth_reset_password_create
+      description: POST /api/auth/reset-password/
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/auth/signup/:
+    post:
+      operationId: auth_signup_create
+      description: POST /api/auth/signup/
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/blocks/:
+    get:
+      operationId: blocks_retrieve
+      description: GET / POST /api/blocks/ — { accountId }. Mutual from that moment.
+      tags:
+      - blocks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: blocks_create
+      description: GET / POST /api/blocks/ — { accountId }. Mutual from that moment.
+      tags:
+      - blocks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/blocks/{id}/:
+    delete:
+      operationId: blocks_destroy
+      description: DELETE /api/blocks/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - blocks
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/bookings/:
+    get:
+      operationId: bookings_retrieve
+      description: GET /api/bookings/?role=&status= · POST /api/bookings/
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: bookings_create
+      description: GET /api/bookings/?role=&status= · POST /api/bookings/
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/:
+    get:
+      operationId: bookings_retrieve_2
+      description: GET /api/bookings/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/accept/:
+    post:
+      operationId: bookings_accept_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/attending/:
+    post:
+      operationId: bookings_attending_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/cancel/:
+    post:
+      operationId: bookings_cancel_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/check-in/:
+    post:
+      operationId: bookings_check_in_create
+      description: POST /api/bookings/:id/check-in/ — only while that week's check-in
+        is open.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/close/:
+    post:
+      operationId: bookings_close_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/contest/:
+    post:
+      operationId: bookings_contest_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/decline/:
+    post:
+      operationId: bookings_decline_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/deposit-received/:
+    post:
+      operationId: bookings_deposit_received_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/move/:
+    post:
+      operationId: bookings_move_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/move/answer/:
+    post:
+      operationId: bookings_move_answer_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/proposal/:
+    post:
+      operationId: bookings_proposal_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/propose/:
+    post:
+      operationId: bookings_propose_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/review/:
+    post:
+      operationId: bookings_review_create
+      description: POST /api/bookings/:id/review/ — only the client, only once it's
+        done, once.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/bookings/{id}/started-on-time/:
+    post:
+      operationId: bookings_started_on_time_create
+      description: 'Shared lookup: the booking must exist, with lapses applied first.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - bookings
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/care-plans/:
+    get:
+      operationId: care_plans_retrieve
+      description: GET / POST /api/care-plans/
+      tags:
+      - care-plans
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: care_plans_create
+      description: GET / POST /api/care-plans/
+      tags:
+      - care-plans
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/care-plans/{id}/:
+    get:
+      operationId: care_plans_retrieve_2
+      description: GET / PATCH / DELETE /api/care-plans/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - care-plans
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: care_plans_partial_update
+      description: GET / PATCH / DELETE /api/care-plans/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - care-plans
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: care_plans_destroy
+      description: GET / PATCH / DELETE /api/care-plans/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - care-plans
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/care-plans/{id}/sessions/:
+    get:
+      operationId: care_plans_sessions_retrieve
+      description: GET / POST /api/care-plans/:id/sessions/ — appended, never edited.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - care-plans
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: care_plans_sessions_create
+      description: GET / POST /api/care-plans/:id/sessions/ — appended, never edited.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - care-plans
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/collections/:
+    get:
+      operationId: collections_retrieve
+      description: GET / POST /api/collections/
+      tags:
+      - collections
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: collections_create
+      description: GET / POST /api/collections/
+      tags:
+      - collections
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/collections/{id}/:
+    get:
+      operationId: collections_retrieve_2
+      description: GET / PATCH / DELETE /api/collections/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - collections
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: collections_partial_update
+      description: GET / PATCH / DELETE /api/collections/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - collections
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: collections_destroy
+      description: GET / PATCH / DELETE /api/collections/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - collections
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/collections/{id}/items/:
+    get:
+      operationId: collections_items_retrieve
+      description: GET / POST /api/collections/:id/items/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - collections
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: collections_items_create
+      description: GET / POST /api/collections/:id/items/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - collections
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/collections/{id}/items/{item_id}/:
+    delete:
+      operationId: collections_items_destroy
+      description: DELETE /api/collections/:id/items/:item_id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: item_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - collections
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/comments/{id}/:
+    delete:
+      operationId: comments_destroy
+      description: DELETE /api/comments/:id/ — her own. A thread goes with its first
+        comment.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - comments
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/comments/{id}/like/:
+    post:
+      operationId: comments_like_create
+      description: POST / DELETE /api/comments/:id/like/ — idempotent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - comments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: comments_like_destroy
+      description: POST / DELETE /api/comments/:id/like/ — idempotent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - comments
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/comments/{id}/replies/:
+    get:
+      operationId: comments_replies_retrieve
+      description: GET /api/comments/:id/replies/ — one thread's replies, oldest first.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - comments
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/comments/{id}/report/:
+    post:
+      operationId: comments_report_create
+      description: POST /api/comments/:id/report/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - comments
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/consents/:
+    post:
+      operationId: consents_create
+      description: POST /api/consents/
+      tags:
+      - consents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/content/:
+    get:
+      operationId: content_retrieve
+      description: GET /api/content/
+      tags:
+      - content
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/content/{slug}/:
+    get:
+      operationId: content_retrieve_2
+      description: GET /api/content/:slug/
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - content
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/content/content/:
+    get:
+      operationId: content_content_retrieve
+      description: GET /api/content/content/?topic=&type=&search= — the library, newest
+        first.
+      tags:
+      - content
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/content/content/{id}/:
+    get:
+      operationId: content_content_retrieve_2
+      description: GET /api/content/content/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - content
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/content/content/{id}/products/:
+    get:
+      operationId: content_content_products_retrieve
+      description: GET /api/content/content/:id/products/ — none are linked yet.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - content
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/content/content/search/:
+    get:
+      operationId: content_content_search_retrieve
+      description: GET /api/content/content/search/?q=
+      tags:
+      - content
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/devices/:
+    post:
+      operationId: devices_create
+      description: POST /api/devices/
+      tags:
+      - devices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceTokenRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceToken'
+          description: ''
+  /api/devices/{id}/:
+    delete:
+      operationId: devices_destroy
+      description: DELETE /api/devices/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - devices
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/events/:
+    post:
+      operationId: events_create
+      description: |-
+        POST /api/events/
+
+        Drops events when analytics consent is withdrawn.
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/favorites/favorites/:
+    get:
+      operationId: favorites_favorites_retrieve
+      description: GET /api/favorites/favorites/
+      tags:
+      - favorites
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/favorites/favorites/check/:
+    get:
+      operationId: favorites_favorites_check_retrieve
+      description: GET /api/favorites/favorites/check/?contentId=
+      tags:
+      - favorites
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/favorites/favorites/toggle/:
+    post:
+      operationId: favorites_favorites_toggle_create
+      description: POST /api/favorites/favorites/toggle/ — { contentId }
+      tags:
+      - favorites
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/invites/{code}/:
+    get:
+      operationId: invites_retrieve
+      description: GET /api/invites/:code/
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - invites
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/invites/{code}/redeem/:
+    post:
+      operationId: invites_redeem_create
+      description: POST /api/invites/:code/redeem/
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - invites
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/looks/:
+    get:
+      operationId: looks_retrieve
+      description: GET /api/looks/?cursor=&limit=&hair=&style=&area=&q= — also POST,
+        to post a look.
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: looks_create
+      description: GET /api/looks/?cursor=&limit=&hair=&style=&area=&q= — also POST,
+        to post a look.
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/looks/{look_id}/comments/:
+    get:
+      operationId: looks_comments_retrieve
+      description: |-
+        GET  /api/looks/:id/comments/?sort=top|new — the top of each thread, best first
+             (sort=new: newest first).
+        POST /api/looks/:id/comments/ — { body, replyTo? }
+      parameters:
+      - in: path
+        name: look_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: looks_comments_create
+      description: |-
+        GET  /api/looks/:id/comments/?sort=top|new — the top of each thread, best first
+             (sort=new: newest first).
+        POST /api/looks/:id/comments/ — { body, replyTo? }
+      parameters:
+      - in: path
+        name: look_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/looks/{id}/:
+    get:
+      operationId: looks_retrieve_2
+      description: GET / DELETE /api/looks/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: looks_destroy
+      description: GET / DELETE /api/looks/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/looks/{id}/like/:
+    post:
+      operationId: looks_like_create
+      description: POST / DELETE /api/looks/:id/like/ — idempotent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: looks_like_destroy
+      description: POST / DELETE /api/looks/:id/like/ — idempotent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/looks/{id}/report/:
+    post:
+      operationId: looks_report_create
+      description: POST /api/looks/:id/report/ — into moderation, never to the author.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/looks/areas/:
+    get:
+      operationId: looks_areas_retrieve
+      description: GET /api/looks/areas/ — districts that have public looks in them.
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/looks/mine/:
+    get:
+      operationId: looks_mine_retrieve
+      description: GET /api/looks/mine/ — her own, private ones included.
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/media/{id}/:
+    get:
+      operationId: media_retrieve
+      description: GET /api/media/:id/ — only its owner or an admin sees a private
+        photo.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - media
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/moderation/{id}/appeal/:
+    post:
+      operationId: moderation_appeal_create
+      description: POST /api/moderation/:id/appeal/ — { body } once, by the author
+        only.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - moderation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppealRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppealResponse'
+          description: ''
+  /api/moderation/mine/:
+    get:
+      operationId: moderation_mine_list
+      tags:
+      - moderation
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MyModeration'
+          description: ''
+  /api/notifications/preferences/:
+    get:
+      operationId: notifications_preferences_retrieve
+      description: GET/PUT /api/notifications/preferences/ — which kinds of notification
+        she gets.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: notifications_preferences_update
+      description: GET/PUT /api/notifications/preferences/ — which kinds of notification
+        she gets.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/policies/:
+    get:
+      operationId: policies_retrieve
+      description: GET /api/policies/ — the current version of each published policy.
+      tags:
+      - policies
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/policies/{type}/:
+    get:
+      operationId: policies_retrieve_2
+      description: GET /api/policies/:type/?version= — the current one, or a named
+        version.
+      parameters:
+      - in: path
+        name: type
+        schema:
+          type: string
+        required: true
+      tags:
+      - policies
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/products/:
+    get:
+      operationId: products_retrieve
+      description: GET /api/products/?q=&limit= — every word must match brand, name
+        or category.
+      tags:
+      - products
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/reports/mine/:
+    get:
+      operationId: reports_mine_list
+      tags:
+      - reports
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MyReport'
+          description: ''
+  /api/reviews/{id}/report/:
+    post:
+      operationId: reviews_report_create
+      description: POST /api/reviews/:id/report/ — to moderation.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - reviews
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/shelf/:
+    get:
+      operationId: shelf_retrieve
+      description: GET / POST /api/shelf/
+      tags:
+      - shelf
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: shelf_create
+      description: GET / POST /api/shelf/
+      tags:
+      - shelf
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/shelf/{id}/:
+    patch:
+      operationId: shelf_partial_update
+      description: PATCH / DELETE /api/shelf/:id/ — a rating, finishing it, or buying
+        it again.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - shelf
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: shelf_destroy
+      description: PATCH / DELETE /api/shelf/:id/ — a rating, finishing it, or buying
+        it again.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - shelf
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/slot-interests/:
+    get:
+      operationId: slot_interests_retrieve
+      description: GET / POST /api/slot-interests/ — the waitlist.
+      tags:
+      - slot-interests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: slot_interests_create
+      description: GET / POST /api/slot-interests/ — the waitlist.
+      tags:
+      - slot-interests
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/slot-interests/{id}/:
+    delete:
+      operationId: slot_interests_destroy
+      description: DELETE /api/slot-interests/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - slot-interests
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/styles/:
+    get:
+      operationId: styles_retrieve
+      description: 'GET /api/styles/ — the taxonomy looks are tagged from: [{ id,
+        name }].'
+      tags:
+      - styles
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/:
+    get:
+      operationId: stylists_retrieve
+      description: |-
+        GET /api/stylists/?q= — search live pages by name, handle or area.
+        POST /api/stylists/ — her page, as a draft only she can see.
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: stylists_create
+      description: |-
+        GET /api/stylists/?q= — search live pages by name, handle or area.
+        POST /api/stylists/ — her page, as a draft only she can see.
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/{id}/report/:
+    post:
+      operationId: stylists_report_create
+      description: POST /api/stylists/:accountId/report/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/by-handle/{handle}/:
+    get:
+      operationId: stylists_by_handle_retrieve
+      description: GET /api/stylists/by-handle/:handle/ — her public page.
+      parameters:
+      - in: path
+        name: handle
+        schema:
+          type: string
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/by-handle/{handle}/slots/:
+    get:
+      operationId: stylists_by_handle_slots_retrieve
+      description: GET /api/stylists/by-handle/:handle/slots/?service=&options= —
+        her free times.
+      parameters:
+      - in: path
+        name: handle
+        schema:
+          type: string
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/handle-available/:
+    get:
+      operationId: stylists_handle_available_retrieve
+      description: GET /api/stylists/handle-available/?handle=
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/me/:
+    get:
+      operationId: stylists_me_retrieve
+      description: GET / PATCH /api/stylists/me/
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: stylists_me_partial_update
+      description: GET / PATCH /api/stylists/me/
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/me/menu/:
+    get:
+      operationId: stylists_me_menu_retrieve
+      description: GET / POST /api/stylists/me/menu/
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: stylists_me_menu_create
+      description: GET / POST /api/stylists/me/menu/
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/me/menu/{id}/:
+    patch:
+      operationId: stylists_me_menu_partial_update
+      description: PATCH / DELETE /api/stylists/me/menu/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: stylists_me_menu_destroy
+      description: PATCH / DELETE /api/stylists/me/menu/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/stylists/me/menu/import/:
+    post:
+      operationId: stylists_me_menu_import_create
+      description: POST /api/stylists/me/menu/import/ — many services at once, from
+        a pasted list.
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/me/numbers/:
+    get:
+      operationId: stylists_me_numbers_retrieve
+      description: GET /api/stylists/me/numbers/
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/me/portfolio/:
+    get:
+      operationId: stylists_me_portfolio_retrieve
+      description: GET / POST /api/stylists/me/portfolio/
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: stylists_me_portfolio_create
+      description: GET / POST /api/stylists/me/portfolio/
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/me/portfolio/{id}/:
+    patch:
+      operationId: stylists_me_portfolio_partial_update
+      description: PATCH / DELETE /api/stylists/me/portfolio/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: stylists_me_portfolio_destroy
+      description: PATCH / DELETE /api/stylists/me/portfolio/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/stylists/me/publish/:
+    post:
+      operationId: stylists_me_publish_create
+      description: POST /api/stylists/me/publish/ — refused until her phone is verified.
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/stylists/me/summary/:
+    get:
+      operationId: stylists_me_summary_retrieve
+      description: GET /api/stylists/me/summary/ — the badge on the mode switch.
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/uploads/:
+    post:
+      operationId: uploads_create
+      tags:
+      - uploads
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/:
+    get:
+      operationId: users_retrieve
+      description: GET /api/users/ — returns the current user (array for compat).
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/{id}/:
+    get:
+      operationId: users_retrieve_2
+      description: GET / PATCH / DELETE /api/users/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: users_partial_update
+      description: GET / PATCH / DELETE /api/users/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: users_destroy
+      description: GET / PATCH / DELETE /api/users/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/{id}/export/:
+    post:
+      operationId: users_export_create
+      description: POST /api/users/:id/export/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/users/{id}/hair-profile/:
+    patch:
+      operationId: users_hair_profile_partial_update
+      description: |-
+        PATCH /api/users/:id/hair-profile/
+
+        Merges fields into the profile and creates an append-only snapshot.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    ActionEnum:
+      enum:
+      - hide
+      - remove
+      - unpublish
+      type: string
+      description: |-
+        * `hide` - hide
+        * `remove` - remove
+        * `unpublish` - unpublish
+    AppealRequestRequest:
+      type: object
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 1000
+      required:
+      - body
+    AppealResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+      required:
+      - id
+      - status
+    AppealState:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/AppealStateStatusEnum'
+        createdAt:
+          type: string
+          format: date-time
+      required:
+      - createdAt
+      - status
+    AppealStateStatusEnum:
+      enum:
+      - open
+      - upheld
+      - overturned
+      type: string
+      description: |-
+        * `open` - open
+        * `upheld` - upheld
+        * `overturned` - overturned
+    DeviceToken:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        token:
+          type: string
+          maxLength: 500
+        platform:
+          type: string
+          maxLength: 20
+      required:
+      - id
+      - platform
+      - token
+    DeviceTokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 500
+        platform:
+          type: string
+          minLength: 1
+          maxLength: 20
+      required:
+      - platform
+      - token
+    MyModeration:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        reason:
+          type: string
+        target:
+          type: string
+          description: look, lookcomment, stylistprofile or review
+        targetId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        appeal:
+          allOf:
+          - $ref: '#/components/schemas/AppealState'
+          nullable: true
+      required:
+      - action
+      - createdAt
+      - id
+      - reason
+      - target
+      - targetId
+    MyReport:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        target:
+          type: string
+          description: look, lookcomment, stylistprofile or review
+        reason:
+          type: string
+        status:
+          $ref: '#/components/schemas/MyReportStatusEnum'
+        resolution:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        handledAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - createdAt
+      - id
+      - reason
+      - status
+      - target
+    MyReportStatusEnum:
+      enum:
+      - open
+      - actioned
+      - dismissed
+      type: string
+      description: |-
+        * `open` - open
+        * `actioned` - actioned
+        * `dismissed` - dismissed
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

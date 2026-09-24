@@ -113,6 +113,7 @@ export interface LookFilters {
 /** Why someone reported a look. The wording is what the reporter sees. */
 export const REPORT_REASONS = [
   { value: 'not-their-work', label: "It isn't their work" },
+  { value: 'not-hair', label: 'It’s not about hair' },
   { value: 'nudity', label: 'Nudity or sexual content' },
   { value: 'hate', label: 'Hateful or abusive' },
   { value: 'scam', label: 'A scam, or selling something else' },

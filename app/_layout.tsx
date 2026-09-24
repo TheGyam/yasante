@@ -140,6 +140,8 @@ function RootNavigator() {
         <Stack.Protected guard={isAuthenticated}>
           <Stack.Screen name="settings/report" />
           <Stack.Screen name="settings/notifications" />
+          <Stack.Screen name="settings/reports" />
+          <Stack.Screen name="settings/appeal" options={modal} />
           <Stack.Screen name="stylist-setup" options={modal} />
           <Stack.Screen name="availability" options={modal} />
           <Stack.Screen name="payment-methods" options={modal} />

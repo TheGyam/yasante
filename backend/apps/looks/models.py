@@ -162,6 +162,7 @@ class Report(TimeStampedModel):
 
     REASON_CHOICES = [
         ("not-their-work", "Not their work"),
+        ("not-hair", "Not about hair"),
         ("nudity", "Nudity"),
         ("hate", "Hate"),
         ("scam", "Scam"),

@@ -12,10 +12,14 @@ from apps.common.people import load_people
 from apps.planner.models import CollectionItem
 from django.db.models import CharField, Count, Exists, OuterRef, Q, Value
 from django.db.models.functions import Cast
+from rest_framework import serializers
 
 from .models import CommentLike, LookComment, LookLike
 
 REPORT_REASONS = ("not-their-work", "nudity", "hate", "scam", "other")
+# A look can also be off-topic: Yasante is for hair.
+LOOK_REPORT_REASONS = REPORT_REASONS + ("not-hair",)
+COMMENT_REPORT_REASONS = REPORT_REASONS[1:]
 
 
 def _uuid(value):
@@ -129,3 +133,38 @@ def present_comments(comments, viewer):
             }
         )
     return out
+
+
+# Response shapes for the reporter's and author's views of moderation, for the schema.
+class MyReportSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    target = serializers.CharField(help_text="look, lookcomment, stylistprofile or review")
+    reason = serializers.CharField()
+    status = serializers.ChoiceField(choices=["open", "actioned", "dismissed"])
+    resolution = serializers.CharField(allow_null=True)
+    created_at = serializers.DateTimeField()
+    handled_at = serializers.DateTimeField(allow_null=True)
+
+
+class AppealStateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["open", "upheld", "overturned"])
+    created_at = serializers.DateTimeField()
+
+
+class MyModerationSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    action = serializers.ChoiceField(choices=["hide", "remove", "unpublish"])
+    reason = serializers.CharField()
+    target = serializers.CharField(help_text="look, lookcomment, stylistprofile or review")
+    target_id = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    appeal = AppealStateSerializer(allow_null=True)
+
+
+class AppealRequestSerializer(serializers.Serializer):
+    body = serializers.CharField(max_length=1000)
+
+
+class AppealResponseSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    status = serializers.CharField()

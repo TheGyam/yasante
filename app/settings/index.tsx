@@ -1,7 +1,15 @@
 import { Linking, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import Constants from 'expo-constants';
-import { Bell, FileText, LifeBuoy, LogOut, MessageCircleQuestion, Shield } from 'lucide-react-native';
+import {
+  Bell,
+  FileText,
+  Flag,
+  LifeBuoy,
+  LogOut,
+  MessageCircleQuestion,
+  Shield,
+} from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { PRIVACY_URL, TERMS_URL } from '@/shared/config/policies';
 import { haptics } from '@/shared/lib/haptics';
@@ -63,6 +71,14 @@ export default function SettingsScreen() {
               title="Notifications"
               icon={Bell}
               onPress={() => router.push('/settings/notifications')}
+            />
+          )}
+          {isAuthenticated && (
+            <ListRow
+              title="Reports and appeals"
+              icon={Flag}
+              iconTone="neutral"
+              onPress={() => router.push('/settings/reports')}
             />
           )}
           {isAuthenticated && (

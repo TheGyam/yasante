@@ -52,6 +52,22 @@ class UserAdmin(BaseUserAdmin):
         ),
     )
 
+    actions = ["mark_phone_checked"]
+
+    @admin.action(description="Mark phone as checked (after a call or video check)")
+    def mark_phone_checked(self, request, queryset):
+        """Phone verification by hand while texts aren't sent: counts towards her badge."""
+        from apps.stylists.models import record_check
+
+        done = 0
+        for user in queryset.exclude(phone=""):
+            user.phone_verified = True
+            user.save(update_fields=["phone_verified"])
+            record_check(user.pk, "phone", evidence=user.phone, by=request.user)
+            done += 1
+        skipped = queryset.count() - done
+        self.message_user(request, f"Phone checked: {done}" + (f"; {skipped} had no number" if skipped else ""))
+
     @admin.display(description="Roles")
     def roles_display(self, obj):
         return ", ".join(obj.roles) if obj.roles else "—"
