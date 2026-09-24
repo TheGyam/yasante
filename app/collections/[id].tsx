@@ -3,7 +3,7 @@ import { RefreshControl, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import Animated from 'react-native-reanimated';
-import { Images, Trash2, X } from 'lucide-react-native';
+import { Images, Pencil, Trash2, X } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
   useCollectionItems,
@@ -40,6 +40,8 @@ const AnimatedFlashList = Animated.createAnimatedComponent(
 
 const useStyles = makeStyles(t => ({
   header: { gap: space.xl, marginBottom: space.lg },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  titleText: { flex: 1 },
   cell: { flex: 1, paddingHorizontal: 3, paddingBottom: space.sm, gap: 4 },
   photo: {
     width: '100%',
@@ -80,6 +82,9 @@ function CollectionItems() {
   const showGrid = arrived && !isLoading;
 
   const [name, setName] = useState('');
+  // The name field exists only while renaming: creating a text field is one of the
+  // costliest things a page can do as it opens on Android (a third of frames late).
+  const [renaming, setRenaming] = useState(false);
   const update = useUpdateCollection();
   const removeItem = useRemoveFromCollection(id);
   const remove = useDeleteCollection();
@@ -89,6 +94,7 @@ function CollectionItems() {
   }, [collection]);
 
   const rename = () => {
+    setRenaming(false);
     const next = name.trim();
     if (!next || next === collection?.name) return;
     update.mutate({ id, name: next });
@@ -117,16 +123,32 @@ function CollectionItems() {
 
   const header = (
     <View style={styles.header}>
-      <ScreenTitle title={collection?.name ?? 'Collection'} />
-      <Input
-        label="Name"
-        value={name}
-        onChangeText={setName}
-        onBlur={rename}
-        onSubmitEditing={rename}
-        returnKeyType="done"
-        autoCapitalize="sentences"
-      />
+      <View style={styles.titleRow}>
+        <View style={styles.titleText}>
+          <ScreenTitle title={collection?.name ?? 'Collection'} />
+        </View>
+        {!renaming && (
+          <IconButton
+            icon={Pencil}
+            variant="plain"
+            size={36}
+            accessibilityLabel="Rename this collection"
+            onPress={() => setRenaming(true)}
+          />
+        )}
+      </View>
+      {renaming && (
+        <Input
+          label="Name"
+          value={name}
+          onChangeText={setName}
+          onBlur={rename}
+          onSubmitEditing={rename}
+          returnKeyType="done"
+          autoCapitalize="sentences"
+          autoFocus
+        />
+      )}
       <Section footer="Private collections are yours alone.">
         <ListRow
           title="Keep it private"
