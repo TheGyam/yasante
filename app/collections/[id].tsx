@@ -72,9 +72,11 @@ function CollectionItems() {
   const { data: collections } = useCollections();
   const collection = collections?.find(item => item.id === id);
   const { data: items = [], isLoading, isRefetching, refetch } = useCollectionItems(id);
-  // The grid waits for the slide-in to finish: building it mid-slide made opening stutter.
+  // Items already cached are built with the page, before it slides in. Ones that
+  // arrive mid-slide wait for it to finish: building the grid then made it stutter.
+  const [cachedAtOpen] = useState(() => !isLoading);
   const arrived = useTransitionDone();
-  const showGrid = arrived && !isLoading;
+  const showGrid = (cachedAtOpen || arrived) && !isLoading;
 
   const [name, setName] = useState('');
   const update = useUpdateCollection();

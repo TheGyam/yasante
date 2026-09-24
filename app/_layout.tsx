@@ -2,7 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { SplashScreen, Stack } from 'expo-router';
 import { useRouter } from '@/shared/lib/navigation';
 import { StatusBar } from 'expo-status-bar';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -26,6 +26,7 @@ import { ThemeProvider, useTheme, useThemePreference } from '@/shared/theme';
 import { DialogHost } from '@/shared/ui/DialogHost';
 import { useStackPresets } from '@/shared/ui/stackOptions';
 import { queryClient } from '@/queryClient';
+import { persistOptions } from '@/shared/utils/cachePersistence';
 
 // Dev only: answer API calls from src/mocks until the backend is live. The env check is
 // inlined at build time, so production bundles never include the mocks.
@@ -211,13 +212,14 @@ export default function RootLayout() {
       <KeyboardProvider>
         <SafeAreaProvider>
           <ThemeProvider>
-            <QueryClientProvider client={queryClient}>
+            {/* Last session's screens open straight away while fresh copies load. */}
+            <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
               <AuthProvider>
                 <BottomSheetModalProvider>
                   <RootNavigator />
                 </BottomSheetModalProvider>
               </AuthProvider>
-            </QueryClientProvider>
+            </PersistQueryClientProvider>
           </ThemeProvider>
         </SafeAreaProvider>
       </KeyboardProvider>

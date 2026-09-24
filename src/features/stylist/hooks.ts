@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
@@ -43,12 +44,28 @@ export function useStylistSearch(q: string, { enabled = true } = {}) {
 /** Her page, by handle — what a client opens from a look or a shared link. */
 export function useStylistPage(handle?: string) {
   return useQuery({
-    queryKey: [KEY, 'page', handle],
-    queryFn: () => stylistApi.getPage(handle!),
+    ...pageQuery(handle!),
     enabled: !!handle,
-    staleTime: 5 * 60 * 1000,
     retry: (count, error) => !isNotFound(error) && count < 2,
   });
+}
+
+const pageQuery = (handle: string) => ({
+  queryKey: [KEY, 'page', handle],
+  queryFn: () => stylistApi.getPage(handle),
+  staleTime: 5 * 60 * 1000,
+});
+
+/**
+ * Loads a stylist's page ahead of the tap most likely to come next (her name or
+ * Book, from one of her looks), so it opens with everything in place. Once per
+ * handle, and not at all if a fresh copy is cached.
+ */
+export function usePrefetchStylistPage(handle?: string) {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (handle) queryClient.prefetchQuery(pageQuery(handle));
+  }, [handle, queryClient]);
 }
 
 /** Counts shown on the mode switch. */

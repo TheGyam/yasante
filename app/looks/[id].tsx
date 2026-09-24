@@ -1,6 +1,14 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useIsFocused } from '@react-navigation/native';
-import { ActivityIndicator, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  TextInput,
+  useWindowDimensions,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { Image } from 'expo-image';
 import { FlashList, useRecyclingState, type FlashListRef } from '@shopify/flash-list';
@@ -30,6 +38,7 @@ import {
   useToggleCommentLike,
   type LookComment,
 } from '@/features/looks';
+import { usePrefetchStylistPage } from '@/features/stylist';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import {
@@ -155,8 +164,11 @@ export default function LookScreen() {
   const y = useSharedValue(hero?.from.y ?? 0);
   const w = useSharedValue(hero?.from.width ?? 0);
   const h = useSharedValue(hero?.from.height ?? 0);
-  // The flying copy exists only while it moves; the real photo sits under it.
-  const [flying, setFlying] = useState(!!hero);
+  // 1 while the moving copy covers the photo (the real one hidden under it), 0 once
+  // it has landed. A shared value, not state: handing over at either end of the
+  // animation never re-renders the page.
+  const cover = useSharedValue(hero ? 1 : 0);
+  const landed = useRef(false);
   // Comments are built once the page has arrived, so the opening frames only carry
   // the photo and the look's details.
   const [settled, setSettled] = useState(false);
@@ -164,9 +176,10 @@ export default function LookScreen() {
   const closing = useRef(false);
 
   const finish = useCallback(() => {
-    setFlying(false);
+    landed.current = true;
+    cover.set(0);
     setSettled(true);
-  }, []);
+  }, [cover]);
 
   // The page's top spacing can arrive after the photo was measured, moving it without
   // telling it. So check where it really is before handing over: if it moved, glide
@@ -218,20 +231,25 @@ export default function LookScreen() {
     [fadeIn, land, progress, x, y, w, h]
   );
 
-  // Once the real photo has a place, fly the tile's copy onto it. Two frames later:
-  // its first layout comes before the page's own top spacing has settled.
+  // As soon as the real photo has a place, fly the tile's copy onto it. The page's top
+  // spacing can settle a moment later and move the photo: that lays it out again, and
+  // the copy, already on its way, is steered to the new place in the time it has left.
   const onPhotoLayout = useCallback(() => {
-    if (!hero || started.current) return;
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() =>
-        page.current?.measureInWindow((px, py) => {
-          originX.set(px);
-          originY.set(py);
-          photo.current?.measureInWindow(flyTo);
-        })
-      )
-    );
-  }, [hero, flyTo, originX, originY]);
+    if (!hero || landed.current) return;
+    page.current?.measureInWindow((px, py) => {
+      originX.set(px);
+      originY.set(py);
+      photo.current?.measureInWindow((tx, ty, tw, th) => {
+        if (!started.current) return flyTo(tx, ty, tw, th);
+        if (!tw || !th) return;
+        const move = { duration: OPEN_MS * (1 - progress.get()), easing: EASE_OUT };
+        x.set(withTiming(tx, move));
+        y.set(withTiming(ty, move));
+        w.set(withTiming(tw, move));
+        h.set(withTiming(th, move));
+      });
+    });
+  }, [hero, flyTo, originX, originY, progress, x, y, w, h]);
 
   // Nothing to grow from (a link, a notification, reduced motion), or the photo
   // never laid out (still loading): fade in rather than wait.
@@ -240,11 +258,11 @@ export default function LookScreen() {
     // Only if the flight never started; once it has, it lands on its own.
     const fallback = setTimeout(() => {
       if (started.current) return;
-      setFlying(false);
+      cover.set(0);
       fadeIn();
     }, 500);
     return () => clearTimeout(fallback);
-  }, [hero, fadeIn]);
+  }, [hero, fadeIn, cover]);
 
   // Leaving by any route (back button, hardware back, a gesture) plays it in reverse.
   useEffect(
@@ -268,7 +286,7 @@ export default function LookScreen() {
           y.set(py);
           w.set(pw);
           h.set(ph);
-          setFlying(true);
+          cover.set(1);
           const move = { duration: CLOSE_MS, easing: EASE_OUT };
           x.set(withTiming(hero.from.x, move));
           y.set(withTiming(hero.from.y, move));
@@ -281,7 +299,7 @@ export default function LookScreen() {
           );
         });
       }),
-    [navigation, hero, progress, screenHeight, x, y, w, h]
+    [navigation, hero, progress, screenHeight, x, y, w, h, cover]
   );
 
   const backdrop = useAnimatedStyle(() => ({ opacity: progress.get() }));
@@ -290,11 +308,13 @@ export default function LookScreen() {
     opacity: interpolate(progress.get(), [0.35, 1], [0, 1], Extrapolation.CLAMP),
   }));
   const flight = useAnimatedStyle(() => ({
+    opacity: cover.get(),
     left: x.get() - originX.get(),
     top: y.get() - originY.get(),
     width: w.get(),
     height: h.get(),
   }));
+  const photoStyle = useAnimatedStyle(() => ({ opacity: 1 - cover.get() }));
 
   return (
     <View ref={page} collapsable={false} style={heroStyles.fill}>
@@ -311,7 +331,7 @@ export default function LookScreen() {
               photoRef={photo}
               onPhotoLayout={onPhotoLayout}
               // Hidden under the moving copy, so there's only ever one photo on screen.
-              photoHidden={flying}
+              photoStyle={photoStyle}
             />
           </Screen>
         ) : (
@@ -328,9 +348,10 @@ export default function LookScreen() {
           </Screen>
         )}
       </Animated.View>
-      {flying && hero && (
+      {hero && (
         // Absolute, and nothing inside but its image: moving its frame lays out this
-        // one view, not the page.
+        // one view, not the page. It stays mounted, invisible between the two flights,
+        // so closing starts on the UI thread without waiting for React.
         <Animated.View pointerEvents="none" style={[heroStyles.flight, flight]}>
           <Image
             source={{ uri: hero.uri }}
@@ -500,14 +521,14 @@ function LookThread({
   settled,
   photoRef,
   onPhotoLayout,
-  photoHidden,
+  photoStyle,
 }: {
   id: string;
   /** False while the page is still arriving: comments wait until it has. */
   settled: boolean;
   photoRef: RefObject<View | null>;
   onPhotoLayout: () => void;
-  photoHidden: boolean;
+  photoStyle: StyleProp<ViewStyle>;
 }) {
   const styles = useStyles();
   const insets = useContentInsets();
@@ -520,6 +541,7 @@ function LookThread({
   const [replyingTo, setReplyingTo] = useState<LookComment>();
 
   const { data: look } = useLook(id);
+  usePrefetchStylistPage(settled ? look?.stylist?.handle : undefined);
   const thread = useComments(id);
   const focused = useIsFocused();
   // Fetched straight away, built only once the page has arrived.
@@ -574,7 +596,7 @@ function LookThread({
               onSave={look.mine ? undefined : actions.onSave}
               photoRef={photoRef}
               onPhotoLayout={onPhotoLayout}
-              photoHidden={photoHidden}
+              photoStyle={photoStyle}
             />
             <Text variant="overline" tone="tertiary" style={styles.heading}>
               {look.commentCount

@@ -1,5 +1,6 @@
 import { memo, useCallback, useRef, type RefObject } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
 import {
   Bookmark,
@@ -45,8 +46,12 @@ export interface LookCardProps {
   /** On the look's own page: where the photo lands, for the opening animation. */
   photoRef?: RefObject<View | null>;
   onPhotoLayout?: () => void;
-  /** While the opening animation's copy of the photo sits on top of it. */
-  photoHidden?: boolean;
+  /**
+   * On the look's own page: an animated style that hides the photo while the opening
+   * animation's copy sits on top of it. Animated rather than a prop, so opening and
+   * closing never re-render the page.
+   */
+  photoStyle?: StyleProp<ViewStyle>;
 }
 
 const useStyles = makeStyles(t => ({
@@ -61,7 +66,6 @@ const useStyles = makeStyles(t => ({
     aspectRatio: 0.8,
     backgroundColor: t.colors.glass.fillStrong,
   },
-  hidden: { opacity: 0 },
   service: {
     position: 'absolute',
     left: space.sm,
@@ -117,7 +121,7 @@ export const LookCard = memo(function LookCard({
   onMore,
   photoRef,
   onPhotoLayout,
-  photoHidden,
+  photoStyle,
 }: LookCardProps) {
   const styles = useStyles();
   const theme = useTheme();
@@ -185,56 +189,56 @@ export const LookCard = memo(function LookCard({
         />
       </View>
 
-      <View
-        ref={media}
-        style={[styles.media, photoHidden && styles.hidden]}
-        onLayout={onPhotoLayout}
-      >
-        {/* Only the photo takes the taps: the buttons over it are siblings, so pressing
+      {/* The measured box stays a plain view (every platform can measure it); the
+          animated hide wraps it. */}
+      <Animated.View style={photoStyle}>
+        <View ref={media} style={styles.media} onLayout={onPhotoLayout}>
+          {/* Only the photo takes the taps: the buttons over it are siblings, so pressing
             one can never open or like the look as well. */}
-        <GestureDetector gesture={photoGesture}>
-          <View
-            style={StyleSheet.absoluteFill}
-            accessible
-            accessibilityRole={detail ? 'image' : 'button'}
-            accessibilityLabel={look.caption ?? look.serviceName ?? 'A look'}
-            accessibilityHint={detail ? 'Double tap to like' : 'Opens the look. Double tap to like'}
-          >
-            <RemoteImage
-              // A feed doesn't need the full-size photo; the look's own page does.
-              uri={(detail ? undefined : look.feedUri) ?? look.photoUri}
+          <GestureDetector gesture={photoGesture}>
+            <View
               style={StyleSheet.absoluteFill}
-              recyclingKey={look.id}
-              // The grid's copy while the full photo loads: no flash when the
-              // opening animation hands over to this image.
-              placeholderUri={look.thumbUri}
+              accessible
+              accessibilityRole={detail ? 'image' : 'button'}
+              accessibilityLabel={look.caption ?? look.serviceName ?? 'A look'}
+              accessibilityHint={detail ? 'Double tap to like' : 'Opens the look'}
+            >
+              <RemoteImage
+                // A feed doesn't need the full-size photo; the look's own page does.
+                uri={(detail ? undefined : look.feedUri) ?? look.photoUri}
+                style={StyleSheet.absoluteFill}
+                recyclingKey={look.id}
+                // The grid's copy while the full photo loads: no flash when the
+                // opening animation hands over to this image.
+                placeholderUri={look.thumbUri}
+              />
+              {heart}
+            </View>
+          </GestureDetector>
+          {onSave && (
+            <IconButton
+              icon={BookmarkPlus}
+              variant="overlay"
+              size={32}
+              accessibilityLabel="Save to a collection"
+              onPress={() => onSave(look)}
+              style={styles.save}
             />
-            {heart}
-          </View>
-        </GestureDetector>
-        {onSave && (
-          <IconButton
-            icon={BookmarkPlus}
-            variant="overlay"
-            size={32}
-            accessibilityLabel="Save to a collection"
-            onPress={() => onSave(look)}
-            style={styles.save}
-          />
-        )}
-        {!!look.serviceName && (
-          <View style={styles.service} pointerEvents="none">
-            <Text variant="footnote" style={styles.serviceText} numberOfLines={1}>
-              {look.serviceName}
-            </Text>
-            {!!price && (
-              <Text variant="footnote" style={styles.serviceText}>
-                · {price}
+          )}
+          {!!look.serviceName && (
+            <View style={styles.service} pointerEvents="none">
+              <Text variant="footnote" style={styles.serviceText} numberOfLines={1}>
+                {look.serviceName}
               </Text>
-            )}
-          </View>
-        )}
-      </View>
+              {!!price && (
+                <Text variant="footnote" style={styles.serviceText}>
+                  · {price}
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+      </Animated.View>
 
       <View style={styles.actions}>
         <LikeButton

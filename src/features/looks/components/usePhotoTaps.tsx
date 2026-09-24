@@ -66,9 +66,12 @@ function HeartBurst({ size, onDone }: { size: number; onDone: () => void }) {
 }
 
 /**
- * One tap opens a look, two like it, with a heart bursting over the photo. The
- * first tap waits a beat to see if a second follows — the same wait a double-tap
- * recogniser has, written out so it behaves identically on every platform.
+ * In a feed (given `onOpen`), one tap opens the look at once. On the look's own page
+ * two taps like it, with a heart bursting over the photo.
+ *
+ * Both on one photo would make every open wait a beat to see if a second tap follows:
+ * 280ms before anything moved, the slowest part of opening a look. The feed has a
+ * heart under each photo for liking, so its taps open straight away.
  */
 export function usePhotoTaps(
   look: Look,
@@ -79,15 +82,13 @@ export function usePhotoTaps(
   // Which burst is playing; a new number restarts it on a quick second double tap.
   // Reset when a recycled tile shows another look, so a heart never jumps across.
   const [burst, setBurst] = useRecyclingState(0, [look.id]);
-  const pendingOpen = useRef<ReturnType<typeof setTimeout>>(undefined);
   const lastTapAt = useRef(0);
-  useEffect(() => () => clearTimeout(pendingOpen.current), []);
 
   const onTap = () => {
+    if (onOpen) return onOpen(look);
     const now = Date.now();
     if (now - lastTapAt.current < DOUBLE_TAP_MS) {
       lastTapAt.current = 0;
-      clearTimeout(pendingOpen.current);
       setBurst(n => n + 1);
       haptics.light();
       // A double tap only ever likes. Taking a like back is a deliberate tap on the heart.
@@ -95,7 +96,6 @@ export function usePhotoTaps(
       return;
     }
     lastTapAt.current = now;
-    if (onOpen) pendingOpen.current = setTimeout(() => onOpen(look), DOUBLE_TAP_MS);
   };
 
   // Built once, calling the latest onTap: a new gesture each render makes the
