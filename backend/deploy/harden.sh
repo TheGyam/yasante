@@ -13,7 +13,10 @@ if ! grep -q "location /protected/" "$CONF"; then
 fi
 
 ENV=/srv/yasante/backend/.env
-for kv in PRIVATE_MEDIA_ACCEL=True PUSH_DELIVERY=expo; do
+# The Android cert is EAS's signing key (read from the preview APK); once on the Play
+# Store, add Play's app-signing key too, comma-separated.
+for kv in PRIVATE_MEDIA_ACCEL=True PUSH_DELIVERY=expo \
+  ANDROID_CERT_SHA256=64:C5:38:45:08:7D:15:96:49:E0:16:69:D0:53:92:B4:2D:7E:A6:88:55:23:FE:F0:D7:30:B9:6A:9B:EA:16:F1; do
   key=${kv%%=*}
   sudo grep -q "^$key=" "$ENV" && sudo sed -i "s#^$key=.*#$kv#" "$ENV" || echo "$kv" | sudo tee -a "$ENV" >/dev/null
 done
