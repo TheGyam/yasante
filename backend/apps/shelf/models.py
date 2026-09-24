@@ -2,7 +2,6 @@
 Shelf models: Product (catalogue) and ShelfItem (user's shelf).
 """
 
-import uuid
 
 from apps.common.models import TimeStampedModel
 from django.conf import settings

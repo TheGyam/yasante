@@ -1,0 +1,28 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<style>
+.m-cards{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 24px}
+.m-card{border:1px solid var(--hairline-color);border-radius:8px;padding:12px 16px;min-width:170px}
+.m-card b{display:block;font-size:24px;margin-top:4px}
+.m-table td,.m-table th{text-align:right;white-space:nowrap}.m-table td:first-child,.m-table th:first-child{text-align:left}
+</style>
+<div class="m-cards">
+  <div class="m-card">Activated stylists <small>(target 50)</small><b>{{ activated }}</b></div>
+  <div class="m-card">Requests, last 30 days <small>(100)</small><b>{{ requests_30d }}</b></div>
+  <div class="m-card">Profile completion <small>(60%)</small><b>{{ completion }}</b></div>
+  <div class="m-card">Median response <small>(&lt;12h)</small><b>{{ response }}</b></div>
+</div>
+<table class="m-table">
+<thead><tr>
+<th>Week of</th><th>WAU <small>(500)</small></th><th>Bio-link visits</th><th>Waitlist</th><th>Looks, non-staff <small>(30)</small></th>
+<th>Comments / look</th><th>Requests</th><th>Confirmed <small>(70%)</small></th><th>Deposit</th><th>No-show</th>
+<th>Reports (open)</th><th>Time to resolve <small>(&lt;24h)</small></th>
+</tr></thead>
+<tbody>{% for w in weeks %}<tr>
+<td>{{ w.week|date:"j M" }}</td><td>{{ w.wau }}</td><td>{{ w.bio_clicks }}</td><td>{{ w.waitlist }}</td><td>{{ w.looks }}</td>
+<td>{{ w.comments_per_look }}</td><td>{{ w.requests }}</td><td>{{ w.confirm_rate }}</td><td>{{ w.deposit_rate }}</td><td>{{ w.no_show_rate }}</td>
+<td>{{ w.reports }} ({{ w.open_reports }})</td><td>{{ w.time_to_resolve }}</td>
+</tr>{% endfor %}</tbody>
+</table>
+<p class="help">Weeks start Monday, London time. Outreach numbers live in the outreach sheet.</p>
+{% endblock %}

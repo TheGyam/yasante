@@ -5,7 +5,6 @@ Stored responses are returned as-is for the same user + key + path.
 """
 
 import hashlib
-import json
 
 from django.core.cache import cache
 from rest_framework.response import Response

@@ -228,6 +228,8 @@ class PageView(models.Model):
         related_name="+",
     )
     viewed_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    # "web" is yasante.com/{handle}, the link in her bio; "app" is inside the app.
+    source = models.CharField(max_length=10, default="app", db_index=True)
 
     class Meta:
         db_table = "stylists_page_view"

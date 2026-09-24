@@ -6,6 +6,7 @@ Admin panel at /admin/.
 """
 
 from apps.accounts.views import InviteDetailView, InviteRedeemView
+from apps.common.metrics import metrics_view
 from apps.common.uploads import PrivateMediaView, UploadView
 from apps.accounts import views as account_views
 from apps.looks import views as looks_views
@@ -48,6 +49,7 @@ API_DOCS = (
 
 urlpatterns = API_DOCS + [
     # Admin
+    path("admin/metrics/", metrics_view, name="admin-metrics"),
     path("admin/", admin.site.urls),
     # API
     path("api/auth/", include("apps.accounts.urls")),
@@ -128,3 +130,6 @@ if settings.DEBUG:
         urlpatterns = [path("__debug__/", include(debug_toolbar.urls))] + urlpatterns
     except ImportError:
         pass
+
+# Last, so nothing above is shadowed: the public site, including yasante.com/{handle}.
+urlpatterns += [path("", include("apps.web.urls"))]

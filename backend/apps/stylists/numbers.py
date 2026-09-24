@@ -2,7 +2,6 @@
 
 from datetime import timedelta
 from datetime import timezone as dt_timezone
-from statistics import median
 
 from apps.bookings.models import Booking
 from apps.bookings.state_machine import CLIENT_SIDE_REASONS

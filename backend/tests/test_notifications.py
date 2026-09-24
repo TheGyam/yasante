@@ -138,3 +138,20 @@ def test_registering_the_same_token_again_moves_it(api, make_user):
     from apps.accounts.models import DeviceToken
 
     assert DeviceToken.objects.get().user == b
+
+
+def test_monthly_recap_goes_to_stylists_who_had_a_month(make_stylist):
+    from datetime import datetime
+    from datetime import timezone as dt_timezone
+
+    from apps.stylists.models import PageView
+    from apps.stylists.tasks import monthly_recap, nightly_stats
+
+    busy, quiet = make_stylist(), make_stylist()
+    view = PageView.objects.create(stylist=busy)
+    PageView.objects.filter(pk=view.pk).update(viewed_at=datetime(2026, 8, 15, tzinfo=dt_timezone.utc))
+    monthly_recap(now=datetime(2026, 9, 1, 9, tzinfo=dt_timezone.utc))
+    log = NotificationLog.objects.get(user=busy.account)
+    assert log.title == "Your August" and log.body.startswith("1 page view,")
+    assert not NotificationLog.objects.filter(user=quiet.account).exists()
+    nightly_stats()  # runs clean over every published page

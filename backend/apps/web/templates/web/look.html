@@ -1,0 +1,13 @@
+{% extends "web/base.html" %}
+{% block title %}{{ look.service_name|default:"A look" }}{% if look.stylist_name %} by {{ look.stylist_name }}{% endif %} · Yasante{% endblock %}
+{% block description %}{{ look.caption|default:"A look on Yasante"|truncatechars:150 }}{% endblock %}
+{% block og_title %}{{ look.service_name|default:"A look" }}{% if look.stylist_name %} by {{ look.stylist_name }}{% endif %}{% endblock %}
+{% block og_description %}{{ look.caption|default:"See it on Yasante."|truncatechars:150 }}{% endblock %}
+{% block og_image %}<meta property="og:image" content="{{ image }}">{% endblock %}
+{% block content %}
+<img src="{{ image }}" alt="{{ look.caption|truncatechars:120 }}" style="width:100%;border-radius:16px;margin:20px 0 12px;display:block">
+<div class="muted">{{ look.author.name }}{% if look.area %} · {{ look.area }}{% endif %}</div>
+{% if look.caption %}<p>{{ look.caption|linebreaksbr }}</p>{% endif %}
+{% if look.stylist_handle %}<p>Done by <a href="/{{ look.stylist_handle }}">{{ look.stylist_name|default:look.stylist_handle }}</a>{% if look.service_name %} · {{ look.service_name }}{% endif %}</p>{% endif %}
+<a class="btn" href="{{ app_link }}">Open in the app</a>
+{% endblock %}

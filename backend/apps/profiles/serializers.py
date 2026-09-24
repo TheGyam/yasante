@@ -5,7 +5,7 @@ Profile serializers.
 from apps.accounts.serializers import UserSerializer
 from rest_framework import serializers
 
-from .models import AnalyticsEvent, ConsentRecord, HairProfile
+from .models import HairProfile
 
 
 class HairProfileSerializer(serializers.ModelSerializer):

@@ -6,7 +6,7 @@ import logging
 
 from apps.looks.models import Look
 from django.db import transaction
-from django.db.models import Count, F
+from django.db.models import Count
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
