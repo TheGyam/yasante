@@ -2,7 +2,7 @@
  * Compile-time contract: what the server says it sends (generated from openapi.yaml)
  * must fit the types the screens are written against. If the backend changes a
  * response in a way the app can't take, `tsc` fails here, not on a phone.
- * Nothing in this file runs.
+ * Nothing in this file runs. It sits beside src/api.ts, the one place that may reach every feature.
  */
 import type { Booking, Review } from '@/features/booking';
 import type { Content } from '@/features/education';
@@ -11,7 +11,7 @@ import type { CarePlan, Collection } from '@/features/planner';
 import type { User } from '@/features/profile';
 import type { Product, ShelfItem } from '@/features/shelf';
 import type { MenuItem, PortfolioPhoto, StylistProfile } from '@/features/stylist';
-import type { ApiSchemas as S } from './index';
+import type { ApiSchemas as S } from '@/shared/lib/api';
 
 type Fits<Server, App> = [Server] extends [App] ? true : false;
 const ok = <T extends true>() => undefined as unknown as T;
