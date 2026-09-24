@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "961915522127",
+    "project_id": "yasante",
+    "storage_bucket": "yasante.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:961915522127:android:8f1452c776c977c9a62e3a",
+        "android_client_info": {
+          "package_name": "com.yasante.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbrDx1yf9duHJs_nf80oVuy2BB-hwR0R4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
