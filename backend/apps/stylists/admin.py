@@ -123,6 +123,8 @@ class VerificationAdmin(admin.ModelAdmin):
             check.verified_by = request.user
             check.verified_at = timezone.now() if status == "verified" else None
             check.save(update_fields=["status", "verified_by", "verified_at"])
+            if check.type == "phone" and status == "verified":
+                check.account.__class__.objects.filter(pk=check.account_id).update(phone_verified=True)
             recompute_tier(check.account_id)
 
     @admin.action(description="Approve (grants the badge it earns)")

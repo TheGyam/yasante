@@ -105,3 +105,27 @@ def test_policies_serve_the_current_published_version(api):
     assert api().get("/api/policies/privacy/").json()["version"] == "2026-09"
     assert api().get("/api/policies/privacy/", version="2026-01").json()["body"] == "v1"
     assert [p["type"] for p in api().get("/api/policies/").json()] == ["privacy"]
+
+
+def test_staff_can_check_a_phone_by_hand(make_stylist, make_user, rf):
+    from django.contrib.admin.sites import site
+    from django.contrib.messages.storage.fallback import FallbackStorage
+
+    from apps.accounts.models import User
+    from apps.stylists.models import Verification
+
+    profile = make_stylist()
+    User.objects.filter(pk=profile.account_id).update(phone="+447700900123", phone_verified=False)
+    staff = make_user(is_staff=True)
+    request = rf.post("/admin/")
+    request.user = staff
+    request.session = {}
+    request._messages = FallbackStorage(request)
+    site._registry[User].mark_phone_checked(request, User.objects.filter(pk=profile.account_id))
+    assert User.objects.get(pk=profile.account_id).phone_verified
+    assert Verification.objects.get(account_id=profile.account_id, type="phone").status == "verified"
+
+
+def test_a_look_can_be_reported_as_not_about_hair(api, make_user, make_look):
+    look = make_look(make_user())
+    assert api(make_user()).post(f"/api/looks/{look.pk}/report/", {"reason": "not-hair"}).status_code in (200, 201)

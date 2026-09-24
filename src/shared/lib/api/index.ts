@@ -7,3 +7,7 @@
  */
 export { apiClient, default as defaultApiClient, setAuthBridge } from './client';
 export type { AuthBridge } from './client';
+
+/** Shapes generated from the backend's OpenAPI schema (npm run api:types). */
+export type { components, paths } from './schema';
+export type ApiSchemas = import('./schema').components['schemas'];

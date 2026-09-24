@@ -34,6 +34,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Cast, Extract, Greatest, Power
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -50,6 +51,12 @@ from .models import (
     Style,
 )
 from .serializers import (
+    AppealRequestSerializer,
+    AppealResponseSerializer,
+    COMMENT_REPORT_REASONS,
+    MyModerationSerializer,
+    MyReportSerializer,
+    LOOK_REPORT_REASONS,
     REPORT_REASONS,
     comment_queryset,
     present_comments,
@@ -518,9 +525,8 @@ class AreaListView(APIView):
         return Response(list(areas))
 
 
-def _report(request, model, pk, allow_not_their_work=True):
+def _report(request, model, pk, allowed=REPORT_REASONS):
     reason = request.data.get("reason")
-    allowed = REPORT_REASONS if allow_not_their_work else REPORT_REASONS[1:]
     if reason not in allowed:
         return Response({"message": "Say what’s wrong with it"}, status=400)
     Report.objects.create(
@@ -542,7 +548,7 @@ class LookReportView(APIView):
     def post(self, request, pk):
         if not Look.objects.filter(pk=pk).exists():
             return _not_found("That look is already gone")
-        return _report(request, Look, pk)
+        return _report(request, Look, pk, LOOK_REPORT_REASONS)
 
 
 class CommentReportView(APIView):
@@ -555,7 +561,7 @@ class CommentReportView(APIView):
         if not LookComment.objects.filter(pk=pk).exists():
             return Response({"message": "That comment is already gone"}, status=404)
         # A comment can't be stolen work.
-        return _report(request, LookComment, pk, allow_not_their_work=False)
+        return _report(request, LookComment, pk, COMMENT_REPORT_REASONS)
 
 
 class StylistReportView(APIView):
@@ -620,10 +626,12 @@ class BlockDeleteView(APIView):
 
 
 class MyReportsView(APIView):
+    serializer_class = MyReportSerializer
     """GET /api/reports/mine/ — what she reported, and what was done about it."""
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=MyReportSerializer(many=True))
     def get(self, request):
         from apps.bookings.models import ReviewReport
 
@@ -655,10 +663,12 @@ class MyReportsView(APIView):
 
 
 class MyModerationView(APIView):
+    serializer_class = MyModerationSerializer
     """GET /api/moderation/mine/ — actions taken on her content, each appealable."""
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses=MyModerationSerializer(many=True))
     def get(self, request):
         return Response(
             [
@@ -682,6 +692,7 @@ class MyModerationView(APIView):
         )
 
 
+@extend_schema(request=AppealRequestSerializer, responses={201: AppealResponseSerializer})
 class AppealCreateView(APIView):
     """POST /api/moderation/:id/appeal/ — { body } once, by the author only."""
 

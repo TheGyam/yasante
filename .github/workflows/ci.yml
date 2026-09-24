@@ -25,6 +25,8 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm run lint
       - run: npx jest --ci
+      - name: API types match openapi.yaml
+        run: npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts
 
   backend:
     name: Backend (tests, migrations)
@@ -58,3 +60,7 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: config.settings.test
       - run: python -m pytest -q -p no:cacheprovider --create-db
+      - name: openapi.yaml matches the API (regenerate with manage.py spectacular)
+        run: python manage.py spectacular --file ../openapi.yaml && git diff --exit-code ../openapi.yaml
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test

@@ -55,8 +55,13 @@ export default function ReportOptionsScreen() {
   const close = (emptied: boolean) =>
     emptied && params.leave === '1' ? router.dismiss(2) : router.back();
   const noun = NOUN[kind];
-  // "It isn't their work" is about pictures; a comment can't be stolen work.
-  const reasons = REPORT_REASONS.filter(r => kind !== 'comment' || r.value !== 'not-their-work');
+  // "It isn't their work" is about pictures, so a comment can't be stolen work;
+  // "not about hair" is for looks only.
+  const reasons = REPORT_REASONS.filter(
+    r =>
+      !(kind === 'comment' && r.value === 'not-their-work') &&
+      !(kind !== 'look' && r.value === 'not-hair')
+  );
 
   const [reason, setReason] = useState<ReportReason>();
   const [note, setNote] = useState('');
