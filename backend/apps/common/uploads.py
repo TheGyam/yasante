@@ -18,6 +18,8 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.http import FileResponse, HttpResponse
 from PIL import Image, ImageOps, UnidentifiedImageError
+from rest_framework.authentication import SessionAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import permissions
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -144,6 +146,8 @@ class UploadView(APIView):
 class PrivateMediaView(APIView):
     """GET /api/media/:id/ — only its owner or an admin sees a private photo."""
 
+    # The app sends its token; staff open it from the admin with their session.
+    authentication_classes = [JWTAuthentication, SessionAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, pk):

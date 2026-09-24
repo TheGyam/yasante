@@ -135,6 +135,8 @@ export interface UploadedPhoto {
   uri: string;
   /** A ~400px-wide copy for grids. */
   thumbUri?: string;
+  /** A 1080-wide copy for feeds; the full size is for the photo's own page. */
+  feedUri?: string;
   /** Width ÷ height, so tiles are sized before the photo loads. */
   photoAspect?: number;
 }
@@ -144,7 +146,11 @@ export interface UploadedPhoto {
  * A photo that's already online (a portfolio photo, a seeded look) is returned as
  * it is. With the mock backend there is nowhere to send it, so the local copy stands.
  */
-export async function uploadImage(uri: string): Promise<UploadedPhoto> {
+export async function uploadImage(
+  uri: string,
+  /** What it's for: a proof-of-work photo is kept private; looks and portfolio are checked for copies. */
+  kind?: 'look' | 'portfolio' | 'avatar' | 'proof'
+): Promise<UploadedPhoto> {
   if (/^https?:\/\//.test(uri) || process.env.EXPO_PUBLIC_API_MOCKS === 'true') return { uri };
   const form = new FormData();
   if (Platform.OS === 'web') {
@@ -154,6 +160,7 @@ export async function uploadImage(uri: string): Promise<UploadedPhoto> {
   } else {
     form.append('file', { uri, name: 'photo.jpg', type: 'image/jpeg' } as unknown as Blob);
   }
+  if (kind) form.append('kind', kind);
   const response = await apiClient.post<UploadedPhoto>('/api/uploads/', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
     timeout: 60_000,

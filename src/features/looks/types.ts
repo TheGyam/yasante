@@ -15,6 +15,8 @@ export interface Look {
   photoUri: string;
   /** A smaller copy for grids, from the server's media pipeline. Falls back to the photo. */
   thumbUri?: string;
+  /** A 1080-wide copy for feeds, from the same pipeline. Falls back to the photo. */
+  feedUri?: string;
   /** Width over height, from the server's media record, when it has one. */
   photoAspect?: number;
   caption?: string;
