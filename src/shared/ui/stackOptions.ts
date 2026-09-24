@@ -23,7 +23,10 @@ function build(theme: Theme, reduced: boolean) {
   };
   const modal: Options = {
     presentation: 'modal',
-    animation: reduced ? 'fade' : Platform.OS === 'android' ? 'slide_from_bottom' : 'default',
+    // Android's slide_from_bottom runs 400 ms at an even speed, which felt slow;
+    // fade_from_bottom is Material's quicker rise (in ~210 ms, out ~150 ms, easing to
+    // a stop). iOS keeps its native sheet, which is quick and follows the finger.
+    animation: reduced ? 'fade' : Platform.OS === 'android' ? 'fade_from_bottom' : 'default',
     gestureEnabled: true,
   };
   const fade: Options = { animation: 'fade', animationDuration: 220 };
