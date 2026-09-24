@@ -220,3 +220,65 @@ def test_search_hides_people_you_have_blocked(api, make_user, make_look):
     look = make_look(author, caption="Silk press")
     api(viewer).post("/api/blocks/", {"accountId": str(author.pk)})
     assert str(look.pk) not in ids(api(viewer).get("/api/looks/", q="silk"))
+
+
+def _comment(look, author, body, likes=0, hours_ago=0):
+    from datetime import timedelta
+
+    from apps.looks.models import LookComment
+    from django.utils import timezone
+
+    c = LookComment.objects.create(look=look, author=author, body=body)
+    LookComment.objects.filter(pk=c.pk).update(
+        like_count=likes, created_at=timezone.now() - timedelta(hours=hours_ago)
+    )
+    return c
+
+
+def _order(api_client, look, **params):
+    return [c["body"] for c in api_client.get(f"/api/looks/{look.pk}/comments/", **params).json()["data"]]
+
+
+def test_top_comments_rank_engagement_freshness_and_the_creator(api, make_user, make_look):
+    creator, a, b = make_user(), make_user(), make_user()
+    look = make_look(creator)
+    _comment(look, a, "loved", likes=12, hours_ago=5)
+    _comment(look, b, "meh", likes=0, hours_ago=1)
+    _comment(look, a, "old favourite", likes=3, hours_ago=24 * 30)
+    _comment(look, b, "new favourite", likes=3, hours_ago=2)
+    order = _order(api(), look)
+    assert order.index("loved") < order.index("meh")
+    # Same likes, so the newer one ranks higher.
+    assert order.index("new favourite") < order.index("old favourite")
+    # A reply from the creator lifts a quiet comment above a lukewarm one.
+    quiet = _comment(look, a, "quiet", likes=0, hours_ago=3)
+    api(creator).post(f"/api/looks/{look.pk}/comments/", {"body": "thank you!", "replyTo": str(quiet.pk)})
+    order = _order(api(), look)
+    assert order.index("quiet") < order.index("meh")
+    # Newest first is still there on request.
+    assert _order(api(), look, sort="new")[0] == "meh"
+
+
+def test_her_new_comment_comes_first_for_her_only(api, make_user, make_look):
+    me, other = make_user(), make_user()
+    look = make_look(make_user())
+    _comment(look, other, "popular", likes=40, hours_ago=2)
+    api(me).post(f"/api/looks/{look.pk}/comments/", {"body": "mine, just now"})
+    assert _order(api(me), look)[0] == "mine, just now"
+    assert _order(api(other), look)[0] == "popular"
+
+
+def test_top_comments_page_without_repeats_or_gaps(api, make_user, make_look):
+    look = make_look(make_user())
+    for i in range(7):
+        _comment(look, make_user(), f"c{i}", likes=i % 3, hours_ago=i)
+    seen, cursor = [], None
+    while True:
+        params = {"limit": 3, **({"cursor": cursor} if cursor else {})}
+        body = api().get(f"/api/looks/{look.pk}/comments/", **params).json()
+        seen += [c["body"] for c in body["data"]]
+        cursor = body.get("nextCursor")
+        if not cursor:
+            break
+    assert sorted(seen) == [f"c{i}" for i in range(7)]
+    assert seen == _order(api(), look, limit=20)
