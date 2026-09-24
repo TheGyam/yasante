@@ -94,8 +94,13 @@ class HandleCheckView(APIView):
         if not handle:
             return Response({"message": "Provide a handle."}, status=400)
 
+        # Her own handle isn't "taken": editing her page checks the one she already has.
+        others = StylistProfile.objects.all()
+        if request.user.is_authenticated:
+            others = others.exclude(account=request.user)
+
         def taken(h):
-            return h in NOT_HANDLES or StylistProfile.objects.filter(handle=h).exists()
+            return h in NOT_HANDLES or others.filter(handle=h).exists()
 
         if not taken(handle):
             return Response({"handle": handle, "available": True})

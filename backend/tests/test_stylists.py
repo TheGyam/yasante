@@ -249,3 +249,14 @@ def test_search_lists_live_pages_by_name_handle_or_area(api, make_stylist):
     live.save(update_fields=["published"])
     assert api().get("/api/stylists/", q=live.handle).json() == []
     assert api().get("/api/stylists/").json() == []
+
+
+def test_her_own_handle_is_available_to_her(api, make_stylist, make_user):
+    profile = make_stylist()
+    mine = api(profile.account).get("/api/stylists/handle-available/", handle=profile.handle).json()
+    assert mine["available"] is True
+    theirs = api(make_user()).get("/api/stylists/handle-available/", handle=profile.handle).json()
+    assert theirs["available"] is False and theirs["suggestions"]
+    assert api().get("/api/stylists/handle-available/", handle=profile.handle).json()["available"] is False
+    # Saving the page with the handle unchanged goes through.
+    assert api(profile.account).patch("/api/stylists/me/", {"handle": profile.handle, "bio": "New"}).status_code == 200
