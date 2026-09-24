@@ -157,25 +157,44 @@ export default function LookScreen() {
   const started = useRef(false);
   const closing = useRef(false);
 
-  const land = useCallback(() => {
+  const finish = useCallback(() => {
     setFlying(false);
     setSettled(true);
   }, []);
+
+  // The page's top spacing can arrive after the photo was measured, moving it without
+  // telling it. So check where it really is before handing over: if it moved, glide
+  // the last few pixels rather than jump.
+  const land = useCallback(() => {
+    const real = photo.current;
+    if (!hero || !real) return finish();
+    real.measureInWindow((rx, ry, rw, rh) => {
+      const off = Math.abs(rx - x.get()) + Math.abs(ry - y.get()) + Math.abs(rw - w.get());
+      if (!rw || off < 2) return finish();
+      const nudge = { duration: 120, easing: EASE_OUT };
+      x.set(withTiming(rx, nudge));
+      y.set(withTiming(ry, nudge));
+      w.set(withTiming(rw, nudge));
+      h.set(
+        withTiming(rh, nudge, done => {
+          if (done) scheduleOnRN(finish);
+        })
+      );
+    });
+  }, [hero, finish, x, y, w, h]);
 
   const fadeIn = useCallback(() => {
     if (started.current) return;
     started.current = true;
     progress.set(
       withTiming(1, { duration: 220, easing: EASE_OUT }, done => {
-        if (done) scheduleOnRN(land);
+        if (done) scheduleOnRN(finish);
       })
     );
-  }, [progress, land]);
+  }, [progress, finish]);
 
-  // Once the real photo has a place, fly the tile's copy onto it.
-  const onPhotoLayout = useCallback(() => {
-    if (!hero || started.current) return;
-    photo.current?.measureInWindow((tx, ty, tw, th) => {
+  const flyTo = useCallback(
+    (tx: number, ty: number, tw: number, th: number) => {
       if (started.current) return;
       if (!tw || !th) return fadeIn();
       started.current = true;
@@ -189,14 +208,24 @@ export default function LookScreen() {
           if (done) scheduleOnRN(land);
         })
       );
-    });
-  }, [hero, fadeIn, land, progress, x, y, w, h]);
+    },
+    [fadeIn, land, progress, x, y, w, h]
+  );
+
+  // Once the real photo has a place, fly the tile's copy onto it. Two frames later:
+  // its first layout comes before the page's own top spacing has settled.
+  const onPhotoLayout = useCallback(() => {
+    if (!hero || started.current) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => photo.current?.measureInWindow(flyTo)));
+  }, [hero, flyTo]);
 
   // Nothing to grow from (a link, a notification, reduced motion), or the photo
   // never laid out (still loading): fade in rather than wait.
   useEffect(() => {
     if (!hero) return fadeIn();
+    // Only if the flight never started; once it has, it lands on its own.
     const fallback = setTimeout(() => {
+      if (started.current) return;
       setFlying(false);
       fadeIn();
     }, 500);
@@ -262,7 +291,14 @@ export default function LookScreen() {
       <Animated.View style={[heroStyles.fill, content]}>
         {look ? (
           <Screen back title={look.authorName} scroll="list" opaque={false} testID="look-screen">
-            <LookThread id={id} settled={settled} photoRef={photo} onPhotoLayout={onPhotoLayout} />
+            <LookThread
+              id={id}
+              settled={settled}
+              photoRef={photo}
+              onPhotoLayout={onPhotoLayout}
+              // Hidden under the moving copy, so there's only ever one photo on screen.
+              photoHidden={flying}
+            />
           </Screen>
         ) : (
           <Screen back opaque={false} testID="look-screen">
@@ -450,12 +486,14 @@ function LookThread({
   settled,
   photoRef,
   onPhotoLayout,
+  photoHidden,
 }: {
   id: string;
   /** False while the page is still arriving: comments wait until it has. */
   settled: boolean;
   photoRef: RefObject<View | null>;
   onPhotoLayout: () => void;
+  photoHidden: boolean;
 }) {
   const styles = useStyles();
   const insets = useContentInsets();
@@ -522,6 +560,7 @@ function LookThread({
               onSave={look.mine ? undefined : actions.onSave}
               photoRef={photoRef}
               onPhotoLayout={onPhotoLayout}
+              photoHidden={photoHidden}
             />
             <Text variant="overline" tone="tertiary" style={styles.heading}>
               {look.commentCount
