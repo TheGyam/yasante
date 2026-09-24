@@ -96,6 +96,7 @@ def test_policies_serve_the_current_published_version(api):
     from django.utils import timezone
 
     now = timezone.now()
+    PolicyDocument.objects.all().delete()  # the migration publishes first versions; start clean
     assert api().get("/api/policies/privacy/").status_code == 404
     PolicyDocument.objects.create(type="privacy", version="2026-01", title="Privacy", body="v1", published=True, effective_at=now - timedelta(days=30))
     PolicyDocument.objects.create(type="privacy", version="2026-09", title="Privacy", body="v2", published=True, effective_at=now - timedelta(days=1))
