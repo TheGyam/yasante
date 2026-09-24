@@ -58,4 +58,4 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now yasante-backup.timer dnf-automatic.timer
 sudo systemctl start yasante-backup.service
 sudo systemctl restart yasante-web yasante-worker yasante-beat
-ls -la /var/backups/yasante
+sudo ls -la /var/backups/yasante
