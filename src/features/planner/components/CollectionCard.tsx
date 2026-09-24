@@ -12,6 +12,7 @@ import { makeStyles, radius, space, spring, timing, useTheme } from '@/shared/th
 import { Tilt } from '@/shared/ui/Motion';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
+import { usePrefetchCollectionItems } from '../hooks';
 import type { Collection } from '../types';
 
 export interface CollectionCardProps {
@@ -103,6 +104,7 @@ export function CollectionCard({ collection, onPress }: CollectionCardProps) {
   const theme = useTheme();
   const reduced = useReducedMotion();
   const spread = useSharedValue(0);
+  const prefetch = usePrefetchCollectionItems();
   const pictures = (
     collection.previewUris?.length
       ? collection.previewUris
@@ -116,7 +118,10 @@ export function CollectionCard({ collection, onPress }: CollectionCardProps) {
   return (
     <Tilt
       onPress={() => onPress(collection)}
-      onPressIn={() => !reduced && spread.set(withTiming(1, timing.pressIn))}
+      onPressIn={() => {
+        prefetch(collection.id);
+        if (!reduced) spread.set(withTiming(1, timing.pressIn));
+      }}
       onPressOut={() => spread.set(withSpring(0, spring.snap))}
       maxTilt={6}
       accessibilityLabel={`${collection.name}, ${countLabel(collection.itemCount)}`}

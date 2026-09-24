@@ -23,7 +23,8 @@ export function useCollections() {
     queryKey: keys.collections,
     queryFn: plannerApi.getCollections,
     enabled: keys.enabled,
-    staleTime: 60 * 1000,
+    // Only her own saves and removals change these, and each refreshes them.
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -33,8 +34,26 @@ export function useCollectionItems(id: string) {
     queryKey: keys.items(id),
     queryFn: () => plannerApi.getItems(id),
     enabled: keys.enabled && !!id,
-    staleTime: 60 * 1000,
+    // Only her own saves and removals change these, and each refreshes them.
+    staleTime: 10 * 60 * 1000,
   });
+}
+
+/**
+ * Starts loading a collection's items as a finger lands on it, so they're usually
+ * there by the time the page opens. Does nothing if a fresh copy is already cached.
+ */
+export function usePrefetchCollectionItems() {
+  const queryClient = useQueryClient();
+  const keys = useKeys();
+  return (id: string) => {
+    if (!keys.enabled) return;
+    queryClient.prefetchQuery({
+      queryKey: keys.items(id),
+      queryFn: () => plannerApi.getItems(id),
+      staleTime: 10 * 60 * 1000,
+    });
+  };
 }
 
 /** A write re-reads rather than patching the cache: counts and covers change too. */

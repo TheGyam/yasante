@@ -64,7 +64,7 @@ const useStyles = makeStyles(t => ({
 
 /**
  * A look in the home grid: the photo, who posted it, and the heart. One tap opens
- * it — comments, booking and the rest — and a double tap likes it.
+ * it — comments, booking and the rest — straight away; the heart beside the name likes it.
  */
 export const LookTile = memo(function LookTile({
   look,
@@ -101,7 +101,7 @@ export const LookTile = memo(function LookTile({
             ]
               .filter(Boolean)
               .join(', ')}
-            accessibilityHint="Opens the look. Double tap to like"
+            accessibilityHint="Opens the look"
           >
             {/* The grid's copy: half the width, a fraction of the bytes. */}
             <RemoteImage
