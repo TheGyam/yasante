@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { Check, Droplets, Plus, Ruler, Scissors } from 'lucide-react-native';
+import { Check, Droplets, Plus, Ruler, Scissors, type LucideIcon } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space, useTheme } from '@/shared/theme';
@@ -18,6 +18,12 @@ import { useUser } from '../hooks';
 import { useUserStore } from '../store';
 import { lengthIsStale, progressOf, sectionSummary, SECTIONS } from './sections';
 import { StrandArt } from './TextureStep';
+
+/** One tap each, dated by the phone. */
+const LOGGABLE: { kind: HairLogKind; title: string; icon: LucideIcon }[] = [
+  { kind: 'trim', title: 'I had a trim', icon: Scissors },
+  { kind: 'wash', title: 'Wash day done', icon: Droplets },
+];
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xl },
@@ -108,28 +114,30 @@ export function HairProfileHub() {
         {isAuthenticated && (
           <Section
             title="Between appointments"
-            footer="Tap when it happens. Over time it shows how often you trim and wash."
+            footer="Over time this shows how often you trim and wash, and which day is wash day."
           >
-            <ListRow
-              title="I had a trim"
-              subtitle={
-                sinceLast(log.data, 'trim') ? `Last: ${sinceLast(log.data, 'trim')}` : undefined
-              }
-              icon={Scissors}
-              iconTone="neutral"
-              onPress={() => note('trim')}
-              testID="log-trim"
-            />
-            <ListRow
-              title="Wash day done"
-              subtitle={
-                sinceLast(log.data, 'wash') ? `Last: ${sinceLast(log.data, 'wash')}` : undefined
-              }
-              icon={Droplets}
-              iconTone="neutral"
-              onPress={() => note('wash')}
-              testID="log-wash"
-            />
+            {LOGGABLE.map(({ kind, title, icon }) => {
+              const last = sinceLast(log.data, kind);
+              const doneToday = last === 'Today';
+              return (
+                <ListRow
+                  key={kind}
+                  title={title}
+                  subtitle={last ? `Last: ${last}` : 'Tap when it happens'}
+                  icon={icon}
+                  iconTone={doneToday ? 'success' : 'neutral'}
+                  // Once a day is enough: a second tap would count a second trim.
+                  onPress={doneToday ? undefined : () => note(kind)}
+                  trailing={
+                    doneToday ? (
+                      <Check size={20} color={theme.colors.success} strokeWidth={2.4} />
+                    ) : null
+                  }
+                  accessibilityLabel={doneToday ? `${title}, noted today` : title}
+                  testID={`log-${kind}`}
+                />
+              );
+            })}
           </Section>
         )}
       </View>

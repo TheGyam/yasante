@@ -28,3 +28,14 @@ describe('incoming links', () => {
     expect(routeForLink('https://example.com/x')).toBe('https://example.com/x');
   });
 });
+
+describe('app screens are never read as handles', () => {
+  it.each(['bookings', 'requests', 'numbers', 'planner', 'shelf', 'hair-profile'])('%s', path => {
+    expect(routeForLink(`yasante://${path}`)).toBe(`/${path}`);
+    expect(routeForLink(`https://yasante.com/${path}`)).toBe(`/${path}`);
+  });
+
+  it('still reads a real handle', () => {
+    expect(routeForLink('https://yasante.com/braidsbyama')).toBe('/stylist/braidsbyama');
+  });
+});

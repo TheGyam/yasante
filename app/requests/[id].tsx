@@ -418,6 +418,7 @@ export default function RequestScreen() {
             )}
             {booking.moveRequest?.by === 'stylist' && (
               <InlineAlert
+                tone="info"
                 message={`You asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}. Waiting for ${first}.`}
               />
             )}

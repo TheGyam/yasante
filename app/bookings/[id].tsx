@@ -237,6 +237,7 @@ export default function BookingScreen() {
 
         {booking.status === 'requested' && !booking.proposal && (
           <InlineAlert
+            tone="info"
             message={`With her now. She has until ${booking.expiresAt ? whenLabel(booking.expiresAt) : 'two days from now'} to accept, suggest another time, or say no.`}
           />
         )}
@@ -293,6 +294,7 @@ export default function BookingScreen() {
         )}
         {booking.moveRequest?.by === 'client' && (
           <InlineAlert
+            tone="info"
             message={`You asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}. Until she agrees, it stays where it is.`}
           />
         )}

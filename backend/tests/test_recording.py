@@ -67,8 +67,8 @@ def test_trims_and_wash_days_are_logged_on_her_own_clock(api, make_user):
     me_api = api(me)
     trim = me_api.post("/api/hair-log/", {"kind": "trim", "localAt": "2026-09-27T09:15:00"})
     assert trim.status_code == 201 and trim.json()["kind"] == "trim"
-    me_api.post("/api/hair-log/", {"kind": "wash"})
-    assert [e["kind"] for e in me_api.get("/api/hair-log/").json()] == ["wash", "trim"]
+    me_api.post("/api/hair-log/", {"kind": "wash", "at": "2020-01-05T10:00:00Z"})
+    assert [e["kind"] for e in me_api.get("/api/hair-log/").json()] == ["trim", "wash"]  # newest first
     assert me_api.post("/api/hair-log/", {"kind": "nap"}).status_code == 400
     from apps.profiles.models import HairLog
 
@@ -121,3 +121,17 @@ def test_monthly_length_prompt_goes_to_those_who_have_not_updated(make_user):
     assert told == [stale.pk]
     assert NotificationLog.objects.get().data["url"] == "/hair-profile/length"
     assert never.pk not in told
+
+
+def test_no_week_four_check_in_once_the_style_is_out(api, setup, book):
+    from datetime import timedelta
+
+    from apps.bookings.models import Booking
+    from django.utils import timezone
+
+    profile, client = setup
+    answers = {"holding": "okay", "scalp": "comfortable", "again": "yes"}
+    due = _completed(api, profile, client, book, days_ago=15)
+    api(client).post(f"/api/bookings/{due}/check-in/", {"week": 2, "stillIn": False, **answers})
+    Booking.objects.filter(pk=due).update(completed_at=timezone.now() - timedelta(days=29))
+    assert "checkInDue" not in api(client).get(f"/api/bookings/{due}/").json()
