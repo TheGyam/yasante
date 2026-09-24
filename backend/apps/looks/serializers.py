@@ -60,6 +60,7 @@ def present_looks(looks, viewer):
                 "author_avatar_uri": author.get("avatar_uri"),
                 "photo_uri": look.photo_uri,
                 "thumb_uri": look.thumb_uri or None,
+                "feed_uri": look.feed_uri or None,
                 "photo_aspect": look.photo_aspect or None,
                 "caption": look.caption,
                 "stylist": (
@@ -92,7 +93,7 @@ def present_looks(looks, viewer):
 
 
 def comment_queryset(viewer, blocked_ids):
-    qs = LookComment.objects.all()
+    qs = LookComment.objects.filter(status="live")
     if viewer is None:
         qs = qs.annotate(liked=Value(False))
     else:

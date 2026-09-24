@@ -206,3 +206,38 @@ class AnalyticsEvent(models.Model):
     class Meta:
         db_table = "profiles_analytics_event"
         ordering = ["-at"]
+
+
+class PolicyDocument(models.Model):
+    """A published policy, one row per version. Consent records name the version."""
+
+    TYPE_CHOICES = [
+        ("terms", "Client terms"),
+        ("stylist_terms", "Stylist terms"),
+        ("privacy", "Privacy policy"),
+        ("guidelines", "Community guidelines"),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, db_index=True)
+    version = models.CharField(max_length=50)
+    effective_at = models.DateTimeField()
+    title = models.CharField(max_length=200)
+    body = models.TextField(help_text="Plain text or Markdown.")
+    published = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-effective_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["type", "version"], name="one_row_per_policy_version")
+        ]
+
+    @classmethod
+    def current(cls, type):
+        from django.utils import timezone
+
+        return (
+            cls.objects.filter(type=type, published=True, effective_at__lte=timezone.now())
+            .order_by("-effective_at")
+            .first()
+        )

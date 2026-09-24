@@ -20,6 +20,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import (
+    held_checks,
+    record_check,
     NOT_HANDLES,
     MenuItem,
     PageView,
@@ -111,6 +113,14 @@ class HandleCheckView(APIView):
         return Response({"handle": handle, "available": False, "suggestions": suggestions})
 
 
+def _checks_on_setup(user, profile):
+    """Her phone (verified at signup) counts now; the proof photo waits for review."""
+    if user.phone_verified:
+        record_check(user.pk, "phone", evidence=user.phone or "")
+    if profile.proof_photo_uri:
+        record_check(user.pk, "proof_photo", "pending", profile.proof_photo_uri)
+
+
 class StylistCreateView(APIView):
     """
     GET /api/stylists/?q= — search live pages by name, handle or area.
@@ -140,7 +150,9 @@ class StylistCreateView(APIView):
             from apps.looks.models import Look, Style
 
             name = Style.objects.filter(slug=style).values_list("name", flat=True).first() or style
-            tagged = Look.objects.filter(styles__slug=style).values_list("stylist_id", flat=True)
+            tagged = Look.objects.filter(styles__slug=style, status="live").values_list(
+                "stylist_id", flat=True
+            )
             qs = qs.filter(
                 Q(account_id__in=[t for t in tagged if t]) | Q(menu_items__name__icontains=name)
             ).distinct()
@@ -215,6 +227,7 @@ class StylistCreateView(APIView):
                 )
                 for m in methods[:5]:
                     PaymentMethod.objects.create(stylist=profile, **m)
+                _checks_on_setup(request.user, profile)
                 if "stylist" not in (request.user.roles or []):
                     request.user.roles = list(request.user.roles or []) + ["stylist"]
                     request.user.save(update_fields=["roles"])
@@ -254,6 +267,9 @@ class StylistMeView(APIView):
             if field in data:
                 setattr(profile, field, str(data[field] or "").strip())
                 update_fields.append(field)
+        if "proof_photo_uri" in data and profile.proof_photo_uri:
+            # A new proof photo goes back into the queue.
+            record_check(profile.account_id, "proof_photo", "pending", profile.proof_photo_uri)
         if "service_models" in data:
             models = [m for m in (data["service_models"] or []) if m in ("salon", "home", "mobile")]
             profile.service_models = models
@@ -364,6 +380,10 @@ class StylistByHandleView(APIView):
         ]
 
         data = StylistProfileSerializer(profile).data
+        # Exactly what was checked, so a badge never means more than it says.
+        data["checks"] = sorted(
+            "work" if c == "proof_photo" else c for c in held_checks(profile.account_id)
+        )
         # The proof photo is for the verification queue, and her payment details go
         # only to a client she's accepted — neither is on her page.
         data.pop("proof_photo_uri", None)

@@ -35,12 +35,17 @@ class Look(TimeStampedModel):
     # never need a second path when text posts and questions arrive.
     TYPE_CHOICES = [("look", "Look"), ("text", "Text"), ("question", "Question")]
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="look", db_index=True)
+    # Moderation: hidden (pending an appeal, still hers to see) or removed (gone).
+    STATUS_CHOICES = [("live", "Live"), ("hidden", "Hidden"), ("removed", "Removed")]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="live", db_index=True)
 
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="looks"
     )
     photo_uri = models.URLField(max_length=500)
     thumb_uri = models.URLField(max_length=500, blank=True, default="")
+    # A 1080-wide copy for feeds: full size is for the look's own page.
+    feed_uri = models.URLField(max_length=500, blank=True, default="")
     photo_aspect = models.FloatField(default=1)
     caption = models.TextField(max_length=1000, blank=True, default="")
     visibility = models.CharField(
@@ -109,6 +114,9 @@ class LookComment(TimeStampedModel):
     reply_to_id → specific comment being replied to (for @mention)
     """
 
+    # Moderation: hidden (pending an appeal, still hers to see) or removed (gone).
+    STATUS_CHOICES = [("live", "Live"), ("hidden", "Hidden"), ("removed", "Removed")]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="live", db_index=True)
     look = models.ForeignKey(Look, on_delete=models.CASCADE, related_name="comments")
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="look_comments"
@@ -171,6 +179,15 @@ class Report(TimeStampedModel):
     object_id = models.UUIDField()
     content_object = GenericForeignKey("content_type", "object_id")
 
+    # The queue: every report is answered, and the reporter can see how.
+    QUEUE_CHOICES = [("open", "Open"), ("actioned", "Actioned"), ("dismissed", "Dismissed")]
+    status = models.CharField(max_length=10, choices=QUEUE_CHOICES, default="open", db_index=True)
+    handled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    handled_at = models.DateTimeField(null=True, blank=True)
+    resolution = models.CharField(max_length=300, blank=True, default="")
+
     class Meta:
         db_table = "looks_report"
         ordering = ["-created_at"]
@@ -195,3 +212,41 @@ class Block(models.Model):
     class Meta:
         db_table = "looks_block"
         unique_together = [("blocker", "blocked")]
+
+
+class ModerationAction(TimeStampedModel):
+    """Every hide, remove, restore or unpublish, who did it and why: the audit trail."""
+
+    ACTION_CHOICES = [
+        ("hide", "Hide"),
+        ("remove", "Remove"),
+        ("restore", "Restore"),
+        ("unpublish", "Unpublish page"),
+        ("dismiss", "Dismiss reports"),
+    ]
+    moderator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    reason = models.CharField(max_length=300, blank=True, default="")
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.UUIDField()
+    target = GenericForeignKey("content_type", "object_id")
+    # Whose content it was, so they can appeal.
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="moderated"
+    )
+
+
+class Appeal(TimeStampedModel):
+    """The author asks for a hide or removal to be looked at again."""
+
+    STATUS_CHOICES = [("open", "Open"), ("upheld", "Upheld"), ("overturned", "Overturned")]
+    action = models.ForeignKey(ModerationAction, on_delete=models.CASCADE, related_name="appeals")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="appeals")
+    body = models.TextField(max_length=1000)
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="open", db_index=True)
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)

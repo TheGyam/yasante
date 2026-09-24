@@ -289,6 +289,9 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "mediafiles"
+# Private photos are handed to nginx (X-Accel-Redirect to its internal /protected/)
+# in production; locally Django streams them itself.
+PRIVATE_MEDIA_ACCEL = config("PRIVATE_MEDIA_ACCEL", default=False, cast=bool)
 
 _media_backend = config("MEDIA_STORAGE_BACKEND", default="local")
 if _media_backend == "s3":

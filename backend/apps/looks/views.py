@@ -38,7 +38,17 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Block, CommentLike, Look, LookComment, LookLike, Report, Style
+from .models import (
+    Appeal,
+    Block,
+    CommentLike,
+    Look,
+    LookComment,
+    LookLike,
+    ModerationAction,
+    Report,
+    Style,
+)
 from .serializers import (
     REPORT_REASONS,
     comment_queryset,
@@ -69,6 +79,11 @@ def _visible_look(pk, viewer):
         return None
     if look.visibility == "private" and (viewer is None or viewer.pk != look.author_id):
         return None
+    # Hidden stays hers to see (so she can appeal); removed is gone for everyone.
+    if look.status == "removed" or (
+        look.status == "hidden" and (viewer is None or viewer.pk != look.author_id)
+    ):
+        return None
     if viewer and look.author_id != viewer.pk and is_blocked(viewer, look.author):
         return None
     return look
@@ -96,7 +111,7 @@ class FeedView(APIView):
 
     def get(self, request):
         viewer = _viewer(request)
-        qs = _looks(viewer).filter(visibility="public")
+        qs = _looks(viewer).filter(visibility="public", status="live")
         blocked = blocked_account_ids(viewer)
         if blocked:
             qs = qs.exclude(author_id__in=blocked)
@@ -180,6 +195,7 @@ def create_look(request):
             author=user,
             photo_uri=photo_uri,
             thumb_uri=str(body.get("thumb_uri") or ""),
+            feed_uri=str(body.get("feed_uri") or ""),
             photo_aspect=float(body.get("photo_aspect") or 0) or 1,
             caption=str(body.get("caption") or "").strip()[:1000],
             visibility="private" if body.get("visibility") == "private" else "public",
@@ -600,3 +616,85 @@ class BlockDeleteView(APIView):
         if not deleted:
             return Response({"message": "Block not found."}, status=404)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+class MyReportsView(APIView):
+    """GET /api/reports/mine/ — what she reported, and what was done about it."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.bookings.models import ReviewReport
+
+        rows = [
+            {
+                "id": str(r.pk),
+                "target": r.content_type.model,
+                "reason": r.reason,
+                "status": r.status,
+                "resolution": r.resolution or None,
+                "created_at": r.created_at,
+                "handled_at": r.handled_at,
+            }
+            for r in Report.objects.filter(reporter=request.user).select_related("content_type")[:50]
+        ] + [
+            {
+                "id": str(r.pk),
+                "target": "review",
+                "reason": r.reason,
+                "status": r.status,
+                "resolution": r.resolution or None,
+                "created_at": r.created_at,
+                "handled_at": r.handled_at,
+            }
+            for r in ReviewReport.objects.filter(reporter=request.user)[:50]
+        ]
+        rows.sort(key=lambda r: r["created_at"], reverse=True)
+        return Response(rows)
+
+
+class MyModerationView(APIView):
+    """GET /api/moderation/mine/ — actions taken on her content, each appealable."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response(
+            [
+                {
+                    "id": str(a.pk),
+                    "action": a.action,
+                    "reason": a.reason,
+                    "target": a.content_type.model,
+                    "target_id": str(a.object_id),
+                    "created_at": a.created_at,
+                    "appeal": next(
+                        ({"status": ap.status, "created_at": ap.created_at} for ap in a.appeals.all()),
+                        None,
+                    ),
+                }
+                for a in ModerationAction.objects.filter(author=request.user)
+                .exclude(action__in=["dismiss", "restore"])
+                .select_related("content_type")
+                .prefetch_related("appeals")[:50]
+            ]
+        )
+
+
+class AppealCreateView(APIView):
+    """POST /api/moderation/:id/appeal/ — { body } once, by the author only."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        action = ModerationAction.objects.filter(pk=pk, author=request.user).first()
+        if action is None:
+            return Response({"message": "Not found"}, status=404)
+        if action.appeals.exists():
+            return Response({"message": "You’ve already appealed this"}, status=409)
+        body = str(request.data.get("body") or "").strip()
+        if not body:
+            return Response({"message": "Say why it should come back"}, status=400)
+        appeal = Appeal.objects.create(action=action, author=request.user, body=body[:1000])
+        return Response({"id": str(appeal.pk), "status": appeal.status}, status=201)

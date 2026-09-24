@@ -231,3 +231,87 @@ class PageView(models.Model):
 
     class Meta:
         db_table = "stylists_page_view"
+
+
+class Verification(TimeStampedModel):
+    """
+    One check on a stylist, recorded separately so every badge can say exactly what
+    was checked. Her tier is derived from these (see recompute_tier), never set by hand.
+    """
+
+    TYPE_CHOICES = [
+        ("phone", "Phone number"),
+        ("instagram", "Instagram ownership"),
+        ("proof_photo", "Proof-of-work photo"),
+        ("met_in_person", "Met in person"),
+        ("met_on_video", "Met on video"),
+        ("insurance", "Insurance certificate"),
+    ]
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("verified", "Verified"),
+        ("rejected", "Rejected"),
+        ("expired", "Expired"),
+    ]
+    account = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="verifications"
+    )
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending", db_index=True)
+    evidence = models.CharField(max_length=500, blank=True, default="")
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    verified_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+def held_checks(account_id):
+    """The checks she holds right now: verified and not expired."""
+    from django.utils import timezone
+
+    now = timezone.now()
+    return set(
+        Verification.objects.filter(account_id=account_id, status="verified")
+        .exclude(expires_at__lt=now)
+        .values_list("type", flat=True)
+    )
+
+
+def tier_for(checks):
+    """
+    Tier 1: phone and a proof-of-work photo. Tier 2: also met (in person or on video).
+    Tier 3: also a current insurance certificate. Phase 1 grants up to 1 in practice.
+    """
+    if not {"phone", "proof_photo"} <= checks:
+        return 0
+    if not checks & {"met_in_person", "met_on_video"}:
+        return 1
+    return 3 if "insurance" in checks else 2
+
+
+def recompute_tier(account_id):
+    tier = tier_for(held_checks(account_id))
+    StylistProfile.objects.filter(account_id=account_id).update(verification_tier=tier)
+    return tier
+
+
+def record_check(account_id, type, status="verified", evidence="", by=None):
+    """Add or update one check, then re-derive her tier."""
+    from django.utils import timezone
+
+    check, _ = Verification.objects.update_or_create(
+        account_id=account_id,
+        type=type,
+        defaults={
+            "status": status,
+            "evidence": evidence,
+            "verified_by": by,
+            "verified_at": timezone.now() if status == "verified" else None,
+        },
+    )
+    recompute_tier(account_id)
+    return check

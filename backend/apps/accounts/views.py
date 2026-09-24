@@ -364,6 +364,10 @@ class PhoneVerifyView(APIView):
 
         # Clean up challenges
         PhoneChallenge.objects.filter(user=request.user, phone=phone).delete()
+        # A stylist's badge counts it; for a client it's just on record.
+        from apps.stylists.models import record_check
+
+        record_check(request.user.pk, "phone", evidence=phone)
 
         return Response(UserSerializer(request.user).data)
 
