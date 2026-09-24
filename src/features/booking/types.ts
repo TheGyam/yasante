@@ -100,6 +100,16 @@ export interface Booking {
   contested?: { noShow?: boolean; timing?: boolean };
   /** Her review, once she's left one. Only on the client's copy. */
   review?: Pick<Review, 'rating' | 'status'>;
+  /** The look she booked from, if she did: the picture the stylist is being asked for. */
+  fromLook?: {
+    id: string;
+    photoUri: string;
+    feedUri?: string;
+    thumbUri?: string;
+    photoAspect?: number;
+    caption?: string;
+    authorName?: string;
+  };
   /** The check-in the server is asking her for now, if any. Only on the client's copy. */
   checkInDue?: CheckInWeek;
   createdAt: string;
@@ -116,6 +126,8 @@ export interface BookingDraft {
   requestedTimes: string[];
   notes?: string;
   policyVersion: string;
+  /** The look she's booking from, so the stylist sees the picture. */
+  lookId?: string;
 }
 
 /** A stylist's free start times for one service, day by day. Only days with room. */

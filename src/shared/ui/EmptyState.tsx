@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { makeStyles, space, useTheme } from '@/shared/theme';
 import { Button } from './Button';
+import { Float } from './Motion';
 import { Text } from './Text';
 
 export interface EmptyStateProps {
@@ -39,9 +40,10 @@ export function EmptyState({ icon: Icon, title, message, actionLabel, onAction }
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.well}>
+      {/* A slow bob: an empty screen still feels alive. */}
+      <Float style={styles.well}>
         <Icon size={28} color={theme.colors.accent} strokeWidth={2} />
-      </View>
+      </Float>
       <Text variant="title3" align="center" style={styles.text}>
         {title}
       </Text>

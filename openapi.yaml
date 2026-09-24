@@ -2554,6 +2554,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/HairProfileResponse'
           description: ''
+  /api/users/username-check/:
+    get:
+      operationId: users_username_check_retrieve
+      description: GET /api/users/username-check/?username= — free to use, or why
+        not.
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsernameCheck'
+          description: ''
 components:
   schemas:
     AcceptRequestRequest:
@@ -2739,6 +2755,9 @@ components:
           items:
             type: string
           description: Style slugs
+        fromLook:
+          allOf:
+          - $ref: '#/components/schemas/FromLook'
         optionLabels:
           type: array
           items:
@@ -2864,6 +2883,10 @@ components:
         policyVersion:
           type: string
           minLength: 1
+        lookId:
+          type: string
+          minLength: 1
+          description: The look she's booking from
       required:
       - bringingOwnHair
       - policyVersion
@@ -3218,12 +3241,18 @@ components:
           type: integer
         coverUri:
           type: string
+        previewUris:
+          type: array
+          items:
+            type: string
+          description: The newest few pictures, newest first
       required:
       - createdAt
       - id
       - isPrivate
       - itemCount
       - name
+      - previewUris
     Comment:
       type: object
       properties:
@@ -3588,6 +3617,27 @@ components:
         * `every-2-days` - every-2-days
         * `weekly` - weekly
         * `specific-days` - specific-days
+    FromLook:
+      type: object
+      properties:
+        id:
+          type: string
+        photoUri:
+          type: string
+        feedUri:
+          type: string
+        thumbUri:
+          type: string
+        photoAspect:
+          type: number
+          format: double
+        caption:
+          type: string
+        authorName:
+          type: string
+      required:
+      - id
+      - photoUri
     GoalsEnum:
       enum:
       - growth
@@ -4507,6 +4557,10 @@ components:
             maxLength: 500
           - type: string
             maxLength: 0
+        username:
+          type: string
+          minLength: 1
+          maxLength: 31
     PaymentMethod:
       type: object
       description: |-
@@ -5608,6 +5662,9 @@ components:
         name:
           type: string
           readOnly: true
+        username:
+          type: string
+          readOnly: true
         email:
           type: string
           format: email
@@ -5658,6 +5715,9 @@ components:
         name:
           type: string
           readOnly: true
+        username:
+          type: string
+          readOnly: true
         email:
           type: string
           format: email
@@ -5693,6 +5753,18 @@ components:
       - phoneVerified
       - roles
       - updatedAt
+    UsernameCheck:
+      type: object
+      properties:
+        username:
+          type: string
+        available:
+          type: boolean
+        reason:
+          type: string
+      required:
+      - available
+      - username
     VerificationTierEnum:
       type: integer
       enum:

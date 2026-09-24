@@ -16,7 +16,8 @@ import { useCollections } from '@/features/planner';
 import { hairTraits, lengthIsStale, progressOf, useUser, useUserStore } from '@/features/profile';
 import { shelfSummary, useShelf } from '@/features/shelf';
 import { ModeSwitchRow, useIsStylist } from '@/features/stylist';
-import { Scissors } from 'lucide-react-native';
+import { AtSign, Scissors } from 'lucide-react-native';
+import { Rise } from '@/shared/ui/Rise';
 import { makeStyles, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
@@ -92,10 +93,16 @@ function Profile() {
           <Text variant="title1" accessibilityRole="header">
             {name ?? ' '}
           </Text>
-          {!!user?.email && (
-            <Text variant="subhead" tone="secondary">
-              {user.email}
+          {user?.username ? (
+            <Text variant="subhead" tone="accent">
+              @{user.username}
             </Text>
+          ) : (
+            !!user?.email && (
+              <Text variant="subhead" tone="secondary">
+                {user.email}
+              </Text>
+            )
           )}
         </View>
         <Button
@@ -105,6 +112,22 @@ function Profile() {
           onPress={() => router.push('/edit-profile')}
         />
       </View>
+
+      {/* Posts show a username (or just her first name until she picks one). */}
+      {!!user && !user.username && !isStylist && (
+        <Rise>
+          <Section>
+            <ListRow
+              title="Pick a username"
+              subtitle="It’s what your looks and comments show, instead of your name"
+              icon={AtSign}
+              iconTone="accent"
+              onPress={() => router.push('/edit-profile')}
+              testID="pick-username"
+            />
+          </Section>
+        </Rise>
+      )}
 
       <Section>
         {isStylist ? (

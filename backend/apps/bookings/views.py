@@ -14,6 +14,7 @@ from apps.stylists.pricing import option_groups, price_choice
 from apps.stylists.slots import is_open_on, start_fits
 from django.conf import settings
 from django.db import transaction
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from apps.common.throttling import BookingRequestThrottle, ReviewThrottle
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -53,6 +54,16 @@ logger = logging.getLogger(__name__)
 
 HOUR = timedelta(hours=1)
 REVIEW_REPORT_REASONS = ("not-real", "private", "hate", "other")
+
+
+def _bookable_look(look_id):
+    """The look a request came from, if it's a real, public, live one. Never fails a request."""
+    from apps.looks.models import Look
+
+    try:
+        return Look.objects.filter(pk=look_id, visibility="public", status="live").first() if look_id else None
+    except (ValueError, DjangoValidationError):
+        return None
 
 
 def _err(message, code):
@@ -138,7 +149,7 @@ class BookingListCreateView(APIView):
         wanted = [s for s in request.query_params.get("status", "").split(",") if s]
         if wanted:
             qs = qs.filter(status__in=wanted)
-        qs = qs.select_related("client").prefetch_related("check_ins").order_by("-created_at")
+        qs = qs.select_related("client", "from_look__author").prefetch_related("check_ins").order_by("-created_at")
         return Response([present_booking(b, request.user) for b in qs])
 
     def post(self, request):
@@ -210,6 +221,7 @@ class BookingListCreateView(APIView):
                 bringing_own_hair=bool(data.get("bringing_own_hair")),
                 hair_included=bool(service.hair_included),
                 styles=list(service.styles),
+                from_look=_bookable_look(data.get("look_id")),
                 notes=str(data.get("notes") or "").strip()[:1000],
                 requested_times=starts,
                 expires_at=timezone.now() + settings.BOOKING_REQUEST_LAPSE_HOURS * HOUR,

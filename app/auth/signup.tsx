@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Linking, type TextInput } from 'react-native';
+import { type TextInput } from 'react-native';
 import { useNavigationState } from '@react-navigation/native';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useRouter } from '@/shared/lib/navigation';
@@ -13,7 +13,7 @@ import {
   useSignup,
 } from '@/features/auth';
 import { useModeStore } from '@/features/stylist';
-import { POLICY_VERSION, PRIVACY_URL, TERMS_URL } from '@/shared/config/policies';
+import { POLICY_VERSION, PRIVACY_ROUTE, TERMS_ROUTE } from '@/shared/config/policies';
 import { useConsentStore } from '@/shared/config/consentStore';
 import { haptics } from '@/shared/lib/haptics';
 import { Button } from '@/shared/ui/Button';
@@ -207,11 +207,11 @@ export default function SignupScreen() {
       >
         <Text variant="subhead" tone="secondary">
           I’m 18 or over, and I agree to the{' '}
-          <Text variant="subhead" tone="accent" onPress={() => Linking.openURL(TERMS_URL)}>
+          <Text variant="subhead" tone="accent" onPress={() => router.push(TERMS_ROUTE)}>
             Terms of Service
           </Text>{' '}
           and{' '}
-          <Text variant="subhead" tone="accent" onPress={() => Linking.openURL(PRIVACY_URL)}>
+          <Text variant="subhead" tone="accent" onPress={() => router.push(PRIVACY_ROUTE)}>
             Privacy Policy
           </Text>
         </Text>

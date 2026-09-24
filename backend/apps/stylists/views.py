@@ -7,6 +7,7 @@ import uuid
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 
+from apps.accounts.models import User
 from apps.bookings.models import Booking, Review
 from apps.common.blocks import blocked_account_ids, is_blocked
 from apps.common.models import log_search
@@ -97,6 +98,11 @@ def _valid_availability(value):
     return isinstance(value.get("blocked", []), list)
 
 
+def _someones_username(handle, user):
+    """Handles and usernames are one namespace: another person's username is taken."""
+    return User.objects.filter(username=handle).exclude(pk=user.pk).exists()
+
+
 @extend_schema_view(get=extend_schema(responses=HandleCheckResponseSerializer))
 class HandleCheckView(APIView):
     """GET /api/stylists/handle-available/?handle="""
@@ -113,8 +119,13 @@ class HandleCheckView(APIView):
         if request.user.is_authenticated:
             others = others.exclude(account=request.user)
 
+        people = User.objects.exclude(username=None)
+        if request.user.is_authenticated:
+            people = people.exclude(pk=request.user.pk)
+
         def taken(h):
-            return h in NOT_HANDLES or others.filter(handle=h).exists()
+            # A stylist's handle can't be someone's username either: one namespace.
+            return h in NOT_HANDLES or others.filter(handle=h).exists() or people.filter(username=h).exists()
 
         if not taken(handle):
             return Response({"handle": handle, "available": True})
@@ -211,6 +222,8 @@ class StylistCreateView(APIView):
         serializer = StylistProfileDraftSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        if _someones_username(data["handle"], request.user):
+            return Response({"message": "That handle is taken."}, status=409)
         policies = data.get("policies") or {}
         methods = _payment_methods(request.data.get("payment_methods") or []) or []
         availability = request.data.get("availability")
@@ -301,6 +314,7 @@ class StylistMeView(APIView):
             if new_handle != profile.handle:
                 if (
                     new_handle in NOT_HANDLES
+                    or _someones_username(new_handle, request.user)
                     or StylistProfile.objects.filter(handle=new_handle)
                     .exclude(pk=profile.pk)
                     .exists()

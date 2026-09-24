@@ -15,7 +15,7 @@ describe('incoming links', () => {
 
   it('never mistakes a site page for a handle', () => {
     expect(routeForLink('https://yasante.com/looks')).toBe('/looks');
-    expect(routeForLink('https://yasante.com/terms')).toBe('/terms');
+    expect(routeForLink('https://yasante.com/terms')).toBe('/policy/terms');
   });
 
   it('keeps the query', () => {
@@ -37,5 +37,11 @@ describe('app screens are never read as handles', () => {
 
   it('still reads a real handle', () => {
     expect(routeForLink('https://yasante.com/braidsbyama')).toBe('/stylist/braidsbyama');
+  });
+});
+
+describe('policy pages open their screen', () => {
+  it.each(['terms', 'privacy'])('%s', page => {
+    expect(routeForLink(`https://yasante.com/${page}`)).toBe(`/policy/${page}`);
   });
 });

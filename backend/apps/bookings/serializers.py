@@ -53,6 +53,21 @@ def _money(value):
     return float(value) if value is not None else None
 
 
+def present_from_look(look):
+    """The picture she booked from. Gone if the look has since been hidden or removed."""
+    if look is None or look.status != "live":
+        return None
+    return {
+        "id": str(look.pk),
+        "photo_uri": look.photo_uri,
+        "feed_uri": look.feed_uri or None,
+        "thumb_uri": look.thumb_uri or None,
+        "photo_aspect": look.photo_aspect or None,
+        "caption": look.caption or None,
+        "author_name": look.author.name if look.author_id else None,
+    }
+
+
 def present_booking(booking, viewer):
     as_stylist = viewer is not None and booking.stylist_id == viewer.pk
     confirmed = booking.status in ("confirmed", "completed")
@@ -71,6 +86,7 @@ def present_booking(booking, viewer):
         "service_id": str(booking.service_id),
         "service_name": booking.service_name,
         "styles": booking.styles,
+        "from_look": present_from_look(booking.from_look),
         "option_labels": booking.option_labels or None,
         "price": _money(booking.price),
         "from_price": booking.from_price,
@@ -214,6 +230,16 @@ class ReviewStateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=["pending", "published", "removed"])
 
 
+class FromLookSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    photo_uri = serializers.CharField()
+    feed_uri = optional(serializers.CharField())
+    thumb_uri = optional(serializers.CharField())
+    photo_aspect = optional(serializers.FloatField())
+    caption = optional(serializers.CharField())
+    author_name = optional(serializers.CharField())
+
+
 class BookingSerializer(serializers.Serializer):
     id = serializers.CharField()
     status = serializers.ChoiceField(choices=[c for c, _ in BOOKING_STATUS_CHOICES])
@@ -227,6 +253,7 @@ class BookingSerializer(serializers.Serializer):
     service_id = serializers.CharField()
     service_name = serializers.CharField()
     styles = serializers.ListField(child=serializers.CharField(), help_text="Style slugs")
+    from_look = optional(FromLookSerializer())
     option_labels = optional(serializers.ListField(child=serializers.CharField()))
     price = serializers.FloatField()
     from_price = serializers.BooleanField()
@@ -297,6 +324,7 @@ class BookingCreateRequestSerializer(serializers.Serializer):
     requested_times = serializers.ListField(child=serializers.DateTimeField())
     notes = serializers.CharField(required=False)
     policy_version = serializers.CharField()
+    look_id = serializers.CharField(required=False, help_text="The look she's booking from")
 
 
 class AcceptRequestSerializer(serializers.Serializer):

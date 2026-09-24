@@ -1632,6 +1632,23 @@ export interface paths {
         patch: operations["users_hair_profile_partial_update"];
         trace?: never;
     };
+    "/api/users/username-check/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/users/username-check/?username= — free to use, or why not. */
+        get: operations["users_username_check_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1745,6 +1762,7 @@ export interface components {
             serviceName: string;
             /** @description Style slugs */
             styles: string[];
+            fromLook?: components["schemas"]["FromLook"];
             optionLabels?: string[];
             /** Format: double */
             price: number;
@@ -1795,6 +1813,8 @@ export interface components {
             requestedTimes: string[];
             notes?: string;
             policyVersion: string;
+            /** @description The look she's booking from */
+            lookId?: string;
         };
         /** @description Her policies as they were when the request was made. */
         BookingPolicy: {
@@ -1968,6 +1988,8 @@ export interface components {
             createdAt: string;
             itemCount: number;
             coverUri?: string;
+            /** @description The newest few pictures, newest first */
+            previewUris: string[];
         };
         Comment: {
             id: string;
@@ -2131,6 +2153,16 @@ export interface components {
          * @enum {string}
          */
         FrequencyEnum: "daily" | "every-2-days" | "weekly" | "specific-days";
+        FromLook: {
+            id: string;
+            photoUri: string;
+            feedUri?: string;
+            thumbUri?: string;
+            /** Format: double */
+            photoAspect?: number;
+            caption?: string;
+            authorName?: string;
+        };
         /**
          * @description * `growth` - Growth
          *     * `health` - Health
@@ -2531,6 +2563,7 @@ export interface components {
             /** Format: email */
             email?: string;
             avatarUri?: string;
+            username?: string;
         };
         /**
          * @description For output-only model serializers: a model field that may be blank or null can be
@@ -3015,6 +3048,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly name: string;
+            readonly username?: string;
             /** Format: email */
             readonly email: string;
             readonly phone?: string;
@@ -3033,6 +3067,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly name: string;
+            readonly username?: string;
             /** Format: email */
             readonly email: string;
             readonly phone?: string;
@@ -3044,6 +3079,11 @@ export interface components {
             readonly createdAt: string;
             /** Format: date-time */
             readonly updatedAt: string;
+        };
+        UsernameCheck: {
+            username: string;
+            available: boolean;
+            reason?: string;
         };
         /** @enum {integer} */
         VerificationTierEnum: 0 | 1 | 2;
@@ -5694,6 +5734,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HairProfileResponse"];
+                };
+            };
+        };
+    };
+    users_username_check_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsernameCheck"];
                 };
             };
         };

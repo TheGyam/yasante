@@ -54,6 +54,7 @@ export const NOT_HANDLES = new Set([
 ]);
 
 const HANDLE = /^[a-z0-9][a-z0-9._]*$/;
+const POLICY_PAGES = new Set(['terms', 'privacy', 'guidelines', 'stylist-terms']);
 
 /**
  * Where an incoming link should land in the app. A yasante.com link and the
@@ -78,6 +79,10 @@ export function routeForLink(link: string): string {
   const [pathname, search = ''] = path.split('?');
   const segments = pathname.split('/').filter(Boolean);
   const query = search ? `?${search}` : '';
+
+  // The site's policy pages have their own screen in the app.
+  const policy = segments.length === 1 && POLICY_PAGES.has(segments[0].toLowerCase());
+  if (policy) return `/policy/${segments[0].toLowerCase()}`;
 
   if (segments.length === 1) {
     const handle = segments[0].toLowerCase();

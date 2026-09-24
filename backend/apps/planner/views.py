@@ -7,7 +7,7 @@ import logging
 from apps.common.timeparse import local_parts
 from apps.looks.models import Look
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status
@@ -35,8 +35,18 @@ TIMES_OF_DAY = ("morning", "afternoon", "evening", "night")
 # ── Collections ──────────────────────────────────────
 
 
+PREVIEWS = 4
+
+
+def _with_photos():
+    return CollectionItem.objects.exclude(photo_uri="").order_by("-created_at")
+
+
 def present_collection(c):
-    cover = c.items.exclude(photo_uri="").order_by("-created_at").first()
+    # The newest few pictures, for the stacked card; prefetched when listing.
+    photos = getattr(c, "with_photos", None)
+    photos = photos[:PREVIEWS] if photos is not None else list(_with_photos().filter(collection=c)[:PREVIEWS])
+    cover = photos[0] if photos else None
     return {
         "id": str(c.pk),
         "name": c.name,
@@ -44,6 +54,7 @@ def present_collection(c):
         "created_at": c.created_at,
         "item_count": c.item_total if hasattr(c, "item_total") else c.items.count(),
         "cover_uri": (cover.thumb_uri or cover.photo_uri) if cover else None,
+        "preview_uris": [p.thumb_uri or p.photo_uri for p in photos],
     }
 
 
@@ -76,6 +87,9 @@ class CollectionListCreateView(APIView):
         collections = (
             Collection.objects.filter(user=request.user)
             .annotate(item_total=Count("items"))
+            # ponytail: fetches every pictured item per collection; slice in SQL if
+            # collections grow to hundreds of items.
+            .prefetch_related(Prefetch("items", queryset=_with_photos(), to_attr="with_photos"))
             .order_by("-created_at")
         )
         return Response([present_collection(c) for c in collections])

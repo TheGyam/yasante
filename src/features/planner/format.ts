@@ -68,6 +68,37 @@ export function dueLabel(
   return `Due ${format(nextDue(plan, now), 'd MMM')}`;
 }
 
+/** How many times a month the plan asks for: daily 30, weekly about 4. */
+export function expectedPerMonth(plan: Pick<CarePlan, 'frequency' | 'specificDays'>) {
+  if (plan.frequency === 'daily') return 30;
+  if (plan.frequency === 'every-2-days') return 15;
+  if (plan.frequency === 'weekly') return 30 / 7;
+  return Math.max(1, (plan.specificDays?.length ?? 1) * (30 / 7));
+}
+
+/**
+ * The last 30 days: how many times she followed it, and how that compares with what
+ * the plan asks for (0 to 1). Kind by design: doing it more often than planned is 1.
+ */
+export function consistency(
+  plan: Pick<CarePlan, 'frequency' | 'specificDays'>,
+  sessions: { completedAt: string }[],
+  now = new Date()
+) {
+  const since = addDays(startOfDay(now), -29).getTime();
+  const done = sessions.filter(s => new Date(s.completedAt).getTime() >= since).length;
+  return { done, share: Math.min(1, done / expectedPerMonth(plan)) };
+}
+
+/** The last `days` days, oldest first, each marked if she followed it that day. */
+export function recentDays(sessions: { completedAt: string }[], days = 14, now = new Date()) {
+  const followed = new Set(sessions.map(s => format(new Date(s.completedAt), 'yyyy-MM-dd')));
+  return Array.from({ length: days }, (_, i) => {
+    const day = addDays(startOfDay(now), i - days + 1);
+    return { day, done: followed.has(format(day, 'yyyy-MM-dd')), today: i === days - 1 };
+  });
+}
+
 // Links carry only an id. Everything else is fetched, so nothing private rides in a URL.
 const LINK = /^yasante:\/\/(collection|care-plan)\/([^/?#]+)/;
 

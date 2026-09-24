@@ -88,3 +88,31 @@ def test_an_account_is_only_readable_by_its_owner(api, make_user):
     # Someone else's email and phone stay private, and a stranger's id looks like no id.
     assert api(me).get(f"/api/users/{other.pk}/").status_code == 404
     assert api().get(f"/api/users/{me.pk}/").status_code == 401
+
+
+def test_usernames_are_what_posts_show_and_share_a_namespace_with_handles(api, make_user, make_stylist, make_look):
+    from apps.accounts.models import User
+
+    me = make_user(name="Efua Mensah")
+    look = make_look(me)
+    # Before a username: first name only, never her full name.
+    assert api().get(f"/api/looks/{look.pk}/").json()["authorName"] == "Efua"
+
+    url = f"/api/users/{me.pk}/"
+    assert api(me).patch(url, {"username": "@Efua.Braids"}).json()["username"] == "efua.braids"
+    assert api().get(f"/api/looks/{look.pk}/").json()["authorName"] == "efua.braids"
+
+    stylist = make_stylist()
+    # A stylist's handle can't be taken as a username, nor a reserved word, nor bad shape.
+    for bad in (stylist.handle, "bookings", "a", ".dot", "two..dots"):
+        assert api(me).patch(url, {"username": bad}).status_code == 400, bad
+    check = api(me).get("/api/users/username-check/", username=stylist.handle).json()
+    assert check["available"] is False and check["reason"]
+    # ...and a username can't become someone's stylist handle.
+    other = make_user()
+    User.objects.filter(pk=other.pk).update(username="takenname")
+    assert api(stylist.account).get("/api/stylists/handle-available/", handle="takenname").json()["available"] is False
+
+    # A stylist still posts as her brand.
+    stylist_look = make_look(stylist.account, stylist=stylist)
+    assert api().get(f"/api/looks/{stylist_look.pk}/").json()["authorName"] == stylist.display_name

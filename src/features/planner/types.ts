@@ -15,6 +15,8 @@ export interface Collection {
   itemCount: number;
   /** The newest item's picture, for the card. */
   coverUri?: string;
+  /** The newest few pictures, newest first, for the stacked card. */
+  previewUris?: string[];
   createdAt: string;
 }
 

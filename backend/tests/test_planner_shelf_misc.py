@@ -137,3 +137,15 @@ def test_library_and_favourites_on_the_apps_paths(api, make_user):
     assert me.get("/api/favorites/favorites/check/", contentId=str(article.pk)).json() == {"isFavorite": True}
     assert len(me.get("/api/favorites/favorites/").json()) == 1
     assert me.post("/api/favorites/favorites/toggle/", {"contentId": str(article.pk)}).json() == {"isFavorite": False}
+
+
+def test_collections_list_their_newest_pictures_for_the_stack(api, make_user, make_look):
+    me = api(make_user())
+    collection = me.post("/api/collections/", {"name": "Ideas"}).json()
+    author = make_user()
+    looks = [make_look(author, caption=f"Look {i}") for i in range(5)]
+    for look in looks:
+        me.post(f"/api/collections/{collection['id']}/items/", {"kind": "look", "refId": str(look.pk)})
+    listed = me.get("/api/collections/").json()[0]
+    assert listed["itemCount"] == 5 and len(listed["previewUris"]) == 4
+    assert listed["coverUri"] == listed["previewUris"][0]

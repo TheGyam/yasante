@@ -123,8 +123,8 @@ def test_threads_are_one_level_deep_and_replies_page_separately(api, make_user, 
     root = api(efua).post(url, {"body": "How long?"}).json()
     answer = api(zainab).post(url, {"body": "Three hours", "replyTo": root["id"]}).json()
     back = api(efua).post(url, {"body": "Thank you!", "replyTo": answer["id"]}).json()
-    assert answer["parentId"] == root["id"] and answer["replyToName"] == "Efua Mensah"
-    assert back["parentId"] == root["id"] and back["replyToName"] == "Zainab Bello"
+    assert answer["parentId"] == root["id"] and answer["replyToName"] == "Efua"
+    assert back["parentId"] == root["id"] and back["replyToName"] == "Zainab"
     threads = api().get(url).json()["data"]
     assert [c["id"] for c in threads] == [root["id"]] and threads[0]["replyCount"] == 2
     replies = api().get(f"/api/comments/{root['id']}/replies/").json()["data"]

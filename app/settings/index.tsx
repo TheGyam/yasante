@@ -1,4 +1,4 @@
-import { Linking, View } from 'react-native';
+import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import Constants from 'expo-constants';
 import {
@@ -11,7 +11,7 @@ import {
   Shield,
 } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
-import { PRIVACY_URL, TERMS_URL } from '@/shared/config/policies';
+import { PRIVACY_ROUTE, TERMS_ROUTE } from '@/shared/config/policies';
 import { haptics } from '@/shared/lib/haptics';
 import { makeStyles, space, useThemePreference } from '@/shared/theme';
 import { confirm } from '@/shared/ui/dialog';
@@ -107,13 +107,13 @@ export default function SettingsScreen() {
             title="Terms of use"
             icon={FileText}
             iconTone="neutral"
-            onPress={() => Linking.openURL(TERMS_URL)}
+            onPress={() => router.push(TERMS_ROUTE)}
           />
           <ListRow
             title="Privacy policy"
             icon={FileText}
             iconTone="neutral"
-            onPress={() => Linking.openURL(PRIVACY_URL)}
+            onPress={() => router.push(PRIVACY_ROUTE)}
           />
         </Section>
 

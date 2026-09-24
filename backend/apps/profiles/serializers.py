@@ -29,6 +29,16 @@ class UserUpdateSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=150, required=False)
     email = serializers.EmailField(required=False)
     avatar_uri = serializers.URLField(max_length=500, required=False, allow_blank=True)
+    username = serializers.CharField(max_length=31, required=False)
+
+    def validate_username(self, value):
+        from apps.accounts.usernames import normalise, username_problem
+
+        value = normalise(value)
+        problem = username_problem(value, self.context.get("user"))
+        if problem:
+            raise serializers.ValidationError(problem)
+        return value
 
 
 class ConsentSerializer(serializers.Serializer):
@@ -79,6 +89,12 @@ class UserDetailResponseSerializer(UserResponseSerializer):
 
     class Meta(UserResponseSerializer.Meta):
         fields = UserResponseSerializer.Meta.fields + ["hair_profile"]
+
+
+class UsernameCheckSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    available = serializers.BooleanField()
+    reason = optional(serializers.CharField())
 
 
 class DataExportResponseSerializer(serializers.Serializer):

@@ -45,6 +45,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, db_index=True)
     name = models.CharField(max_length=150)
+    # What her posts and comments show (a stylist's show her brand name instead).
+    # Shares one namespace with stylist handles, so nobody can post as a stylist.
+    username = models.CharField(max_length=30, unique=True, null=True, blank=True)
     phone = models.CharField(max_length=20, blank=True, default="")
     phone_verified = models.BooleanField(default=False)
     roles = ArrayField(

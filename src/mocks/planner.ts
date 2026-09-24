@@ -33,6 +33,10 @@ const summarise = (collection: {
   createdAt: collection.createdAt,
   itemCount: collection.items.length,
   coverUri: collection.items.find(item => item.imageUri)?.imageUri,
+  previewUris: collection.items
+    .map(item => item.imageUri)
+    .filter((uri): uri is string => !!uri)
+    .slice(0, 4),
 });
 
 /** What a saved thing looks like, read off whatever it points at. */

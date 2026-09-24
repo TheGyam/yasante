@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { Check } from 'lucide-react-native';
-import { makeStyles, radius, space, useTheme } from '@/shared/theme';
-import { PressableScale } from '@/shared/ui/PressableScale';
+import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
+import Animated, { ZoomIn } from 'react-native-reanimated';
+import { Pop, Tilt } from '@/shared/ui/Motion';
 import { Text } from '@/shared/ui/Text';
 
 export interface ChoiceCardProps {
@@ -62,17 +63,21 @@ export function ChoiceCard({
   const theme = useTheme();
 
   return (
-    <PressableScale
+    // Leans toward the finger: a card you pick up, not a button you press.
+    <Tilt
       onPress={onPress}
       haptic="selection"
-      scaleTo={0.96}
       accessibilityRole={multiple ? 'checkbox' : 'radio'}
       accessibilityState={{ checked: selected }}
       accessibilityLabel={hint ? `${label}. ${hint}` : label}
       containerStyle={style}
       style={[styles.card, selected ? styles.selected : styles.idle]}
     >
-      {children && <View style={styles.art}>{children}</View>}
+      {children && (
+        <Pop trigger={selected ? label : undefined}>
+          <View style={styles.art}>{children}</View>
+        </Pop>
+      )}
       <Text variant="callout" align="center" numberOfLines={2}>
         {label}
       </Text>
@@ -82,10 +87,10 @@ export function ChoiceCard({
         </Text>
       )}
       {selected && (
-        <View style={styles.check}>
+        <Animated.View entering={ZoomIn.duration(180).easing(EASE_OUT)} style={styles.check}>
           <Check size={12} color={theme.colors.text.onAccent} strokeWidth={3.2} />
-        </View>
+        </Animated.View>
       )}
-    </PressableScale>
+    </Tilt>
   );
 }
