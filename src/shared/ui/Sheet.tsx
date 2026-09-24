@@ -4,6 +4,7 @@ import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetView,
+  useBottomSheetSpringConfigs,
   type BottomSheetBackdropProps,
   type BottomSheetBackgroundProps,
 } from '@gorhom/bottom-sheet';
@@ -50,6 +51,9 @@ export function Sheet({ visible, onClose, children, snapPoints }: SheetProps) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const ref = useRef<BottomSheetModal>(null);
+  // Quicker than the library's default, and no bounce: a spring still carries the
+  // speed of a flick into the settle.
+  const animationConfigs = useBottomSheetSpringConfigs({ duration: 280, dampingRatio: 1 });
 
   useEffect(() => {
     if (visible) ref.current?.present();
@@ -60,6 +64,7 @@ export function Sheet({ visible, onClose, children, snapPoints }: SheetProps) {
     <BottomSheetModal
       ref={ref}
       snapPoints={snapPoints}
+      animationConfigs={animationConfigs}
       enableDynamicSizing={!snapPoints}
       onDismiss={onClose}
       backdropComponent={Backdrop}
