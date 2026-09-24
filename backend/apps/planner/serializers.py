@@ -103,6 +103,9 @@ class CollectionResponseSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField()
     item_count = serializers.IntegerField()
     cover_uri = optional(serializers.CharField())
+    preview_uris = serializers.ListField(
+        child=serializers.CharField(), help_text="The newest few pictures, newest first"
+    )
 
 
 class CollectionItemResponseSerializer(serializers.Serializer):

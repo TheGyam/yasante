@@ -20,10 +20,13 @@ def load_people(account_ids):
         )
     }
     people = {}
-    for user in User.objects.filter(pk__in=ids).only("id", "name", "avatar_uri"):
+    for user in User.objects.filter(pk__in=ids).only("id", "name", "username", "avatar_uri"):
         profile = profiles.get(user.pk)
+        # A stylist posts as her brand; anyone else as her username, or her first name
+        # until she picks one. Never a full name on a public post.
+        own = user.username or (user.name or "").split(" ")[0]
         people[user.pk] = {
-            "name": (profile.display_name if profile else "") or user.name or "Someone",
+            "name": (profile.display_name if profile else "") or own or "Someone",
             "handle": profile.handle if profile and profile.published else None,
             "avatar_uri": (profile.avatar_uri if profile else "") or user.avatar_uri or None,
             "base_area": profile.base_area if profile else None,

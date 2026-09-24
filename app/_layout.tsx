@@ -137,6 +137,7 @@ function RootNavigator() {
         <Stack.Screen name="settings/index" />
         <Stack.Screen name="settings/privacy" />
         <Stack.Screen name="settings/faqs" />
+        <Stack.Screen name="policy/[type]" />
         <Stack.Screen name="hair-profile/index" options={modal} />
         <Stack.Screen name="hair-profile/[section]" options={modal} />
         <Stack.Screen name="looks/index" />

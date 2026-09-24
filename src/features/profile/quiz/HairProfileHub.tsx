@@ -1,8 +1,9 @@
 import { View } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 import { Check, Droplets, Plus, Ruler, Scissors, type LucideIcon } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { useRouter } from '@/shared/lib/navigation';
-import { makeStyles, space, useTheme } from '@/shared/theme';
+import { EASE_OUT, makeStyles, space, useTheme } from '@/shared/theme';
 import { haptics } from '@/shared/lib/haptics';
 import { Card } from '@/shared/ui/Card';
 import { notify } from '@/shared/ui/dialog';
@@ -130,7 +131,9 @@ export function HairProfileHub() {
                   onPress={doneToday ? undefined : () => note(kind)}
                   trailing={
                     doneToday ? (
-                      <Check size={20} color={theme.colors.success} strokeWidth={2.4} />
+                      <Animated.View entering={ZoomIn.duration(240).easing(EASE_OUT)}>
+                        <Check size={20} color={theme.colors.success} strokeWidth={2.4} />
+                      </Animated.View>
                     ) : null
                   }
                   accessibilityLabel={doneToday ? `${title}, noted today` : title}

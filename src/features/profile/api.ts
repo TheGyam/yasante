@@ -15,6 +15,7 @@ import { User, HairProfile } from '@/features/profile';
 
 export interface UserUpdate {
   name?: string;
+  username?: string;
   email?: string;
   avatar_uri?: string;
 }

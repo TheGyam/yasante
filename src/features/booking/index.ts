@@ -22,6 +22,8 @@ export { bookingApi } from './api';
 export * from './format';
 export * from './hooks';
 export { BookingNudge } from './components/BookingNudge';
+export { FromLookCard } from './components/FromLookCard';
+export { BookingProgress, stepsFor } from './components/BookingProgress';
 export { ReviewCard } from './components/ReviewCard';
 export { usePrepStore } from './prepStore';
 export { SlotPicker } from './components/SlotPicker';

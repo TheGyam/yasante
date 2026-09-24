@@ -77,6 +77,10 @@ class Booking(TimeStampedModel):
     # Service snapshot (frozen at booking time)
     service_id = models.UUIDField()
     service_name = models.CharField(max_length=150)
+    # The look she booked from, if she did: the stylist sees the exact picture.
+    from_look = models.ForeignKey(
+        "looks.Look", on_delete=models.SET_NULL, null=True, blank=True, related_name="bookings"
+    )
     # Style slugs, copied from her menu at booking time: "braids six times this year".
     styles = ArrayField(models.CharField(max_length=100), default=list, blank=True)
     option_labels = ArrayField(

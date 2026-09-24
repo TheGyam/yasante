@@ -68,6 +68,7 @@ const useStyles = makeStyles(t => ({
   fill: { flex: 1 },
   padded: { paddingHorizontal: GUTTER },
   bar: { position: 'absolute', top: 0, left: 0, right: 0 },
+  barFill: { position: 'absolute', top: -8, left: 0, right: 0, bottom: 0 },
   barGlass: {
     flex: 1,
     borderWidth: 0,
@@ -229,7 +230,9 @@ export function Screen({
         {body}
         {hasBar && (
           <View pointerEvents="box-none" style={[styles.bar, { height: top + HEADER_HEIGHT }]}>
-            <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, barBackground]}>
+            {/* The glass reaches past the top edge: at fractional pixel densities (2.625 on
+                a Note10+) a bar ending exactly at 0 leaves a hairline of content showing. */}
+            <Animated.View pointerEvents="none" style={[styles.barFill, barBackground]}>
               <Glass variant="chrome" radius={0} style={styles.barGlass} />
             </Animated.View>
             <View pointerEvents="box-none" style={[styles.barRow, { marginTop: top }]}>

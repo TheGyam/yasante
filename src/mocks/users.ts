@@ -15,6 +15,24 @@ const own = (request: MockRequest) => {
 };
 
 defineMocks({
+  'GET /api/users/username-check/': request => {
+    const me = requireAccount(request);
+    const wanted = (request.query.get('username') ?? '').toLowerCase();
+    const taken = [...db.accounts.values()].some(
+      a => a.id !== me && (a as { username?: string }).username === wanted
+    );
+    const shape = /^[a-z0-9][a-z0-9._]{1,28}[a-z0-9]$/.test(wanted);
+    return {
+      username: wanted,
+      available: shape && !taken,
+      reason: !shape
+        ? '3 to 30 letters, numbers, dots or underscores'
+        : taken
+          ? 'Someone already has that'
+          : undefined,
+    };
+  },
+
   'GET /api/users/:id/': request => {
     requireAccount(request);
     return account(request.params.id);

@@ -135,3 +135,28 @@ def test_no_week_four_check_in_once_the_style_is_out(api, setup, book):
     api(client).post(f"/api/bookings/{due}/check-in/", {"week": 2, "stillIn": False, **answers})
     Booking.objects.filter(pk=due).update(completed_at=timezone.now() - timedelta(days=29))
     assert "checkInDue" not in api(client).get(f"/api/bookings/{due}/").json()
+
+
+def test_a_booking_from_a_look_shows_the_stylist_that_look(api, setup, book, make_look, slot):
+    profile, client = setup
+    look = make_look(profile.account, stylist=profile)
+    service = profile.menu_items.get(name="Knotless braids")
+    body = {
+        "stylistId": str(profile.account_id),
+        "serviceId": str(service.pk),
+        "options": {},
+        "bringingOwnHair": False,
+        "requestedTimes": [slot(api(client), profile, service)],
+        "policyVersion": "2026-09",
+        "lookId": str(look.pk),
+    }
+    booking = api(client).post("/api/bookings/", body).json()
+    seen = api(profile.account).get(f"/api/bookings/{booking['id']}/").json()
+    assert seen["fromLook"]["id"] == str(look.pk) and seen["fromLook"]["photoUri"]
+    # Hidden later: it goes from the request, the booking stays.
+    look.status = "hidden"
+    look.save()
+    assert "fromLook" not in api(profile.account).get(f"/api/bookings/{booking['id']}/").json()
+    # A made-up look never stops a request.
+    body["lookId"], body["requestedTimes"] = "not-a-look", [slot(api(client), profile, service)]
+    assert api(client).post("/api/bookings/", body).status_code == 201

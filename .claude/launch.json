@@ -4,14 +4,43 @@
     {
       "name": "yasante-web",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web", "--port", "8081", "--clear"],
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8081",
+        "--clear"
+      ],
       "port": 8081
     },
     {
       "name": "yasante-web-8082",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["expo", "start", "--web", "--port", "8082", "--clear"],
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8082",
+        "--clear"
+      ],
       "port": 8082
+    },
+    {
+      "name": "yasante-web-mocks",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8083"
+      ],
+      "port": 8083,
+      "env": {
+        "EXPO_PUBLIC_API_MOCKS": "true"
+      }
     }
   ]
 }

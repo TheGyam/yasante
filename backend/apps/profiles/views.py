@@ -20,6 +20,7 @@ from .models import (
     PolicyDocument,
 )
 from .serializers import (
+    UsernameCheckSerializer,
     HairLogRequestSerializer,
     HairLogSerializer,
     ConsentBatchSerializer,
@@ -70,7 +71,9 @@ class UserDetailView(APIView):
                 {"message": "You can only edit your own profile."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        serializer = UserUpdateSerializer(data=request.data, partial=True)
+        serializer = UserUpdateSerializer(
+            data=request.data, partial=True, context={"user": request.user}
+        )
         serializer.is_valid(raise_exception=True)
 
         user = request.user
@@ -320,3 +323,18 @@ class HairLogView(APIView):
         if entry is None:
             return Response({"message": "Already noted"}, status=409)
         return Response(present_hair_log(entry), status=201)
+
+
+
+@extend_schema_view(get=extend_schema(responses=UsernameCheckSerializer))
+class UsernameCheckView(APIView):
+    """GET /api/users/username-check/?username= — free to use, or why not."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.accounts.usernames import normalise, username_problem
+
+        value = normalise(request.query_params.get("username"))
+        problem = username_problem(value, request.user)
+        return Response({"username": value, "available": problem is None, "reason": problem})

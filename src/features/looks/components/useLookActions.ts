@@ -50,7 +50,7 @@ export function useLookActions({
       onSave: signedIn((look: Look) => router.push(`/collections/save?kind=look&refId=${look.id}`)),
       onShare: (look: Look) => shareLook(look),
       onBook: signedIn((look: Look) =>
-        router.push(`/book/${look.stylist!.handle}?service=${look.serviceId}`)
+        router.push(`/book/${look.stylist!.handle}?service=${look.serviceId}&look=${look.id}`)
       ),
       onMore: signedIn((look: Look) =>
         router.push(

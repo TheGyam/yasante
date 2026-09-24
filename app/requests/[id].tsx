@@ -18,6 +18,8 @@ import {
 } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
+  BookingProgress,
+  FromLookCard,
   STATUS_LABELS,
   serviceLine,
   recordLabel,
@@ -204,13 +206,18 @@ export default function RequestScreen() {
             {serviceLine(booking)}
           </Text>
           <Text variant="subhead" tone="secondary">
-            {booking.clientName} ·{' '}
             {`${booking.fromPrice ? 'from ' : ''}${formatMoney(booking.price)}`}
             {status !== 'requested' && status !== 'awaiting_deposit' && status !== 'confirmed'
               ? ` · ${STATUS_LABELS[status]}`
               : ''}
           </Text>
         </View>
+
+        <BookingProgress booking={booking} />
+
+        {booking.fromLook && (
+          <FromLookCard look={booking.fromLook} title="She booked from this look" />
+        )}
 
         <Section title="Who's asking">
           <ListRow

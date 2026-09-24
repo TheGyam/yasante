@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
-import { Camera } from 'lucide-react-native';
+import { AtSign, Camera } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
-import { useUpdateUser, useUser, type User } from '@/features/profile';
+import { useUpdateUser, useUser, useUsernameCheck, type User } from '@/features/profile';
+import { errorMessage } from '@/features/auth';
 import { makeStyles, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
@@ -39,6 +40,23 @@ function ProfileForm({ user }: { user: User }) {
   const router = useRouter();
   const update = useUpdateUser(user.id);
   const [name, setName] = useState(user.name ?? '');
+  const [username, setUsername] = useState(user.username ?? '');
+  const check = useUsernameCheck(username, user.username);
+  const wanted = username.trim().replace(/^@/, '').toLowerCase();
+  const usernameChanged = !!wanted && wanted !== user.username;
+  // Said as she types: free, or why not. Nothing until there's enough to check.
+  const usernameHint = !usernameChanged
+    ? 'It’s what your looks and comments show.'
+    : check.data?.username === wanted
+      ? check.data.available
+        ? 'That one’s yours if you want it'
+        : (check.data.reason ?? 'Someone already has that')
+      : wanted.length < 3
+        ? 'At least 3 characters'
+        : check.isError
+          ? 'We’ll check it when you save'
+          : 'Checking…';
+  const usernameTaken = usernameChanged && check.data?.username === wanted && !check.data.available;
   const [email, setEmail] = useState(user.email ?? '');
   const [avatarUri, setAvatarUri] = useState(user.avatarUri ?? '');
   const [picking, setPicking] = useState(false);
@@ -50,13 +68,21 @@ function ProfileForm({ user }: { user: User }) {
       email: !email || isValidEmail(email) ? undefined : 'That email doesn’t look right',
     };
     setErrors(found);
-    if (found.name || found.email) return;
+    if (found.name || found.email || usernameTaken) return;
     update.mutate(
-      { name: name.trim(), email: email.trim() || undefined, avatarUri: avatarUri || undefined },
+      {
+        name: name.trim(),
+        username: usernameChanged ? wanted : undefined,
+        email: email.trim() || undefined,
+        avatarUri: avatarUri || undefined,
+      },
       {
         onSuccess: () => router.back(),
-        onError: () =>
-          notify({ title: 'Couldn’t save', message: 'Check your connection and try again.' }),
+        onError: error =>
+          notify({
+            title: 'Couldn’t save',
+            message: errorMessage(error, 'Check your connection and try again.'),
+          }),
       }
     );
   };
@@ -87,6 +113,18 @@ function ProfileForm({ user }: { user: User }) {
           autoCapitalize="words"
           textContentType="name"
           autoComplete="name"
+        />
+        <Input
+          label="Username"
+          value={username}
+          onChangeText={text => setUsername(text.replace(/s/g, ''))}
+          icon={AtSign}
+          hint={usernameTaken ? undefined : usernameHint}
+          error={usernameTaken ? usernameHint : undefined}
+          autoCapitalize="none"
+          autoCorrect={false}
+          maxLength={31}
+          testID="edit-username"
         />
         <Input
           label="Email"

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { useLocalSearchParams } from 'expo-router';
-import { BellRing, CalendarClock, Circle, CircleCheck, Scissors } from 'lucide-react-native';
+import { BellRing, CalendarClock, Check, Circle, CircleCheck, Scissors } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
+import { useLook } from '@/features/looks';
 import { SlotPicker, useFreeSlots, useRequestBooking, whenLabel } from '@/features/booking';
 import {
   estimate,
@@ -17,13 +19,15 @@ import { POLICY_VERSION } from '@/shared/config/policies';
 import { formatMoney } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
-import { makeStyles, space, useTheme } from '@/shared/theme';
+import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
 import { Chip } from '@/shared/ui/Chip';
 import { notify } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/Input';
 import { ListRow } from '@/shared/ui/ListRow';
+import { Pop, RollingText, Tilt } from '@/shared/ui/Motion';
+import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -31,8 +35,36 @@ import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
 import { track } from '@/shared/lib/analytics';
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles(t => ({
   body: { gap: space.xl },
+  look: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    padding: space.sm,
+    borderRadius: radius.lg,
+    backgroundColor: t.colors.glass.fill,
+    borderWidth: 1,
+    borderColor: t.colors.glass.border,
+  },
+  lookPhoto: { width: 64, height: 80, borderRadius: radius.md },
+  lookText: { flex: 1, gap: 2 },
+  sent: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: t.colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.lg,
+    padding: space.xxl,
+  },
+  sentTick: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: t.colors.accentSoft,
+  },
   group: { gap: space.sm },
   label: { marginLeft: space.xs },
   estimate: { gap: space.xs },
@@ -52,19 +84,24 @@ export default function RequestBookingScreen() {
   // "Book this look" arrives with a service; an opened slot arrives with its day.
   const {
     handle,
-    service: fromLook,
+    service: fromLookService,
     date: slotDay,
-  } = useLocalSearchParams<{ handle: string; service?: string; date?: string }>();
+    look: lookId,
+  } = useLocalSearchParams<{ handle: string; service?: string; date?: string; look?: string }>();
+  // The look she's booking from: shown here, and to the stylist with the request.
+  const { data: fromLookData } = useLook(lookId ?? '');
+  const fromLook = lookId ? fromLookData : undefined;
+  const [sent, setSent] = useState<{ id: string; name: string } | null>(null);
   const { user } = useAuth();
   const { data, isLoading } = useStylistPage(handle);
   const request = useRequestBooking();
   useEffect(() => {
-    track('start_booking', { handle, from: fromLook ? 'look' : slotDay ? 'slot' : 'page' });
+    track('start_booking', { handle, from: fromLookService ? 'look' : slotDay ? 'slot' : 'page' });
     // Once, when she opens it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [serviceId, setServiceId] = useState<string | undefined>(fromLook);
+  const [serviceId, setServiceId] = useState<string | undefined>(fromLookService);
   const [time, setTime] = useState<string>();
   const [ownHair, setOwnHair] = useState(false);
   const [notes, setNotes] = useState('');
@@ -86,6 +123,13 @@ export default function RequestBookingScreen() {
     }
   }, [slots.data, time]);
 
+  // A beat on "sent", then the booking. Closing the screen first cancels the hop.
+  useEffect(() => {
+    if (!sent) return;
+    const hop = setTimeout(() => router.replace(`/bookings/${sent.id}`), 1500);
+    return () => clearTimeout(hop);
+  }, [sent, router]);
+
   const send = async () => {
     if (!data || !service || !time) return;
     try {
@@ -97,9 +141,11 @@ export default function RequestBookingScreen() {
         requestedTimes: [time],
         notes: notes.trim() || undefined,
         policyVersion: POLICY_VERSION,
+        lookId: fromLook?.id,
       });
       haptics.success();
-      router.replace(`/bookings/${booking.id}`);
+      // A beat to see it went, then the booking itself.
+      setSent({ id: booking.id, name: data.profile.displayName });
     } catch (error) {
       haptics.error();
       const message = errorMessage(error, 'Check your connection and try again.');
@@ -115,6 +161,26 @@ export default function RequestBookingScreen() {
     return (
       <Screen title="Request a booking" modal testID="booking-request">
         <Skeleton height={240} />
+      </Screen>
+    );
+  }
+
+  if (sent) {
+    return (
+      <Screen modal scroll={false} back={false} testID="booking-sent">
+        <View style={styles.sent} accessibilityLiveRegion="polite">
+          <Animated.View entering={ZoomIn.duration(320).easing(EASE_OUT)} style={styles.sentTick}>
+            <Check size={46} color={theme.colors.accent} strokeWidth={2.8} />
+          </Animated.View>
+          <Animated.View entering={FadeIn.delay(140).duration(260)}>
+            <Text variant="title1" align="center" accessibilityRole="header">
+              Sent to {sent.name}
+            </Text>
+            <Text variant="body" tone="secondary" align="center" style={{ marginTop: space.xs }}>
+              She has 48 hours to reply. We’ll let you know the moment she does.
+            </Text>
+          </Animated.View>
+        </View>
       </Screen>
     );
   }
@@ -144,6 +210,29 @@ export default function RequestBookingScreen() {
   return (
     <Screen title={`Book ${profile.displayName}`} modal keyboard testID="booking-request">
       <View style={styles.body}>
+        {fromLook && (
+          <Tilt
+            style={styles.look}
+            onPress={() => router.push(`/looks/${fromLook.id}`)}
+            accessibilityLabel={`Booking from ${fromLook.authorName}'s look. Opens the look`}
+          >
+            <RemoteImage
+              uri={fromLook.thumbUri ?? fromLook.feedUri ?? fromLook.photoUri}
+              style={styles.lookPhoto}
+            />
+            <View style={styles.lookText}>
+              <Text variant="overline" tone="tertiary">
+                Booking this look
+              </Text>
+              <Text variant="callout" numberOfLines={2}>
+                {fromLook.caption || fromLook.serviceName || 'The look you picked'}
+              </Text>
+              <Text variant="footnote" tone="secondary">
+                {profile.displayName} will see it with your request
+              </Text>
+            </View>
+          </Tilt>
+        )}
         <View style={styles.group}>
           <Text variant="footnote" tone="secondary" style={styles.label}>
             What would you like?
@@ -160,7 +249,9 @@ export default function RequestBookingScreen() {
                 // A choice, not a link: a tick where a chevron would promise another page.
                 trailing={
                   serviceId === item.id ? (
-                    <CircleCheck size={20} color={theme.colors.accent} strokeWidth={2.2} />
+                    <Pop trigger={item.id}>
+                      <CircleCheck size={20} color={theme.colors.accent} strokeWidth={2.2} />
+                    </Pop>
                   ) : (
                     <Circle size={20} color={theme.colors.text.tertiary} strokeWidth={1.8} />
                   )
@@ -219,7 +310,11 @@ export default function RequestBookingScreen() {
                   .filter(Boolean)
                   .join(' · ') || undefined
               }
-              value={`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price)}`}
+              trailing={
+                <RollingText variant="callout" tone="secondary">
+                  {`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price)}`}
+                </RollingText>
+              }
               icon={CalendarClock}
             />
             {depositDue > 0 && (

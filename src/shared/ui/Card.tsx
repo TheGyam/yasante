@@ -3,7 +3,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import { radius, space } from '@/shared/theme';
 import type { HapticKind } from '@/shared/lib/haptics';
 import { Glass } from './Glass';
-import { PressableScale } from './PressableScale';
+import { Tilt } from './Motion';
 
 export interface CardProps {
   children: ReactNode;
@@ -17,7 +17,7 @@ export interface CardProps {
   testID?: string;
 }
 
-/** A glass card. Becomes pressable when given `onPress`. */
+/** A glass card. Given `onPress`, it becomes pressable and leans toward the finger in 3D. */
 export function Card({
   children,
   onPress,
@@ -38,15 +38,15 @@ export function Card({
   if (!onPress) return surface;
 
   return (
-    <PressableScale
+    <Tilt
       onPress={onPress}
       onLongPress={onLongPress}
       haptic={haptic}
-      scaleTo={0.98}
+      maxTilt={4}
       accessibilityLabel={accessibilityLabel}
       testID={testID}
     >
       {surface}
-    </PressableScale>
+    </Tilt>
   );
 }

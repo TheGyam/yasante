@@ -52,6 +52,8 @@ export interface User {
   id: string;
   roles?: AccountRole[];
   name: string;
+  /** What her posts show (a stylist's show her brand name). Not set until she picks one. */
+  username?: string;
   email?: string;
   /** E.164. Verified by a one-time code before booking or publishing a stylist page. */
   phone?: string;

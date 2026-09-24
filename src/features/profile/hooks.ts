@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { apiClient } from '@/shared/lib/api';
 import { uploadImage } from '@/shared/lib/imageService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api';
@@ -43,6 +44,7 @@ export function useUpdateUser(userId?: string) {
         : undefined;
       const response = await api.user.updateProfile(actualUserId, {
         ...(updates.name !== undefined && { name: updates.name }),
+        ...(updates.username && { username: updates.username }),
         ...(updates.email && { email: updates.email }),
         ...(avatar && { avatar_uri: avatar }),
       });
@@ -54,6 +56,30 @@ export function useUpdateUser(userId?: string) {
         queryClient.setQueryData([USER_QUERY_KEY, actualUserId], updatedUser);
       }
     },
+  });
+}
+
+/** Whether a username is free, checked as she types (after a short pause). */
+export function useUsernameCheck(value: string, current?: string) {
+  const wanted = value.trim().replace(/^@/, '').toLowerCase();
+  const [settled, setSettled] = useState(wanted);
+  useEffect(() => {
+    const pause = setTimeout(() => setSettled(wanted), 350);
+    return () => clearTimeout(pause);
+  }, [wanted]);
+  return useQuery({
+    queryKey: ['username-check', settled],
+    queryFn: async () =>
+      (
+        await apiClient.get<{ username: string; available: boolean; reason?: string }>(
+          '/api/users/username-check/',
+          { params: { username: settled } }
+        )
+      ).data,
+    enabled: settled.length >= 3 && settled === wanted && settled !== current,
+    staleTime: 30 * 1000,
+    // A failed check isn't worth waiting on: the server checks again on save.
+    retry: false,
   });
 }
 

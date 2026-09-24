@@ -22,6 +22,8 @@ import {
 } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
+  BookingProgress,
+  FromLookCard,
   STATUS_LABELS,
   serviceLine,
   blamesClient,
@@ -54,7 +56,9 @@ import { Card } from '@/shared/ui/Card';
 import { confirm, notify } from '@/shared/ui/dialog';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
 import { ListRow } from '@/shared/ui/ListRow';
+import { Confetti } from '@/shared/ui/Motion';
 import { Screen } from '@/shared/ui/Screen';
+import { useCelebrateOnce } from '@/shared/hooks/useCelebrateOnce';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StarRating } from '@/shared/ui/StarRating';
@@ -107,6 +111,8 @@ export default function BookingScreen() {
   // `cancel=1` arrives from the reminder's "I can't make it" button.
   const { id, cancel: fromReminder } = useLocalSearchParams<{ id: string; cancel?: string }>();
   const { data: booking, isLoading } = useBooking(id);
+  // Confirmed is the moment she's been waiting for: a burst, once, the first time she sees it.
+  const celebrate = useCelebrateOnce(booking?.id, booking?.status === 'confirmed');
   const cancel = useCancelBooking();
   const answerProposal = useAnswerProposal();
   const attending = useConfirmAttendance();
@@ -193,9 +199,16 @@ export default function BookingScreen() {
             {serviceLine(booking)}
           </Text>
           <Text variant="subhead" tone="secondary">
-            {booking.stylistName} · {STATUS_LABELS[booking.status]}
+            {STATUS_LABELS[booking.status]}
           </Text>
         </View>
+
+        <View>
+          <BookingProgress booking={booking} />
+          <Confetti fire={celebrate} />
+        </View>
+
+        {booking.fromLook && <FromLookCard look={booking.fromLook} title="The look you booked" />}
 
         {booking.status === 'awaiting_deposit' && !!booking.deposit && (
           <InlineAlert
