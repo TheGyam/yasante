@@ -18,9 +18,11 @@ TEXTURE_CHOICES = [
 ]
 
 LENGTH_CHOICES = [
-    ("cropped", "Cropped"),
+    # In order, shortest first, so a change is a difference in rank.
+    ("cropped", "TWA / cropped"),
     ("ear", "Ear"),
     ("chin", "Chin"),
+    ("neck", "Neck"),
     ("shoulder", "Shoulder"),
     ("armpit", "Armpit"),
     ("bra-strap", "Bra strap"),
@@ -112,6 +114,8 @@ class HairProfile(models.Model):
     )
     photo_uri = models.URLField(max_length=500, blank=True, default="")
     length_measured_at = models.DateTimeField(null=True, blank=True)
+    # For people who measure: never required, always in centimetres.
+    length_cm = models.FloatField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -147,6 +151,8 @@ class HairProfileSnapshot(models.Model):
     budget = models.CharField(max_length=20, blank=True, default="")
     photo_uri = models.URLField(max_length=500, blank=True, default="")
     length_measured_at = models.DateTimeField(null=True, blank=True)
+    # For people who measure: never required, always in centimetres.
+    length_cm = models.FloatField(null=True, blank=True)
     recorded_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
@@ -240,3 +246,54 @@ class PolicyDocument(models.Model):
             .order_by("-effective_at")
             .first()
         )
+
+
+class HairLog(models.Model):
+    """
+    Things that happen to her hair between appointments: a trim, a wash day, a
+    style taken out. Appended with the phone's local time, never edited, so
+    "time since your last trim", "you wash on Sundays" and "your braids lasted
+    38 days" can be worked out later.
+    """
+
+    KIND_CHOICES = [("trim", "Trim"), ("wash", "Wash day"), ("take_down", "Style taken out")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hair_log")
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES, db_index=True)
+    at = models.DateTimeField(db_index=True)
+    local_at = models.CharField(max_length=40, blank=True, default="")
+    local_weekday = models.PositiveSmallIntegerField(null=True, blank=True)
+    local_hour = models.PositiveSmallIntegerField(null=True, blank=True)
+    # The appointment whose style came out, for take-downs.
+    booking_id = models.UUIDField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "profiles_hair_log"
+        ordering = ["-at"]
+
+    def __str__(self):
+        return f"{self.user_id} {self.kind} {self.at:%Y-%m-%d}"
+
+
+def log_hair(user, kind, local_at=None, at=None, booking_id=None):
+    """Append one hair event with the phone's own time; once per kind per booking for take-downs."""
+    from django.utils import timezone
+
+    from apps.common.timeparse import local_parts
+
+    if kind == "take_down" and booking_id and HairLog.objects.filter(
+        user=user, kind=kind, booking_id=booking_id
+    ).exists():
+        return None
+    weekday, hour = local_parts(local_at or "")
+    return HairLog.objects.create(
+        user=user,
+        kind=kind,
+        at=at or timezone.now(),
+        local_at=str(local_at or "")[:40],
+        local_weekday=weekday,
+        local_hour=hour,
+        booking_id=booking_id,
+    )

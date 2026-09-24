@@ -103,6 +103,10 @@ class CarePlanSession(models.Model):
         related_name="care_plan_sessions",
     )
     completed_at = models.DateTimeField(default=models.functions.Now)
+    # The phone's own clock, so "you do this on Sundays" is her Sunday.
+    local_at = models.CharField(max_length=40, blank=True, default="")
+    local_weekday = models.PositiveSmallIntegerField(null=True, blank=True)
+    local_hour = models.PositiveSmallIntegerField(null=True, blank=True)
     notes = models.TextField(max_length=1000, blank=True, default="")
 
     class Meta:

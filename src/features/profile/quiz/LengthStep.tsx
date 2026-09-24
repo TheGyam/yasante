@@ -18,10 +18,17 @@ import type { HairLength } from '../types';
 const BOX = { width: 200, height: 400 };
 const HAIR_TOP = 14;
 
-export const LENGTHS: readonly { value: HairLength; label: string; y: number }[] = [
-  { value: 'cropped', label: 'Cropped', y: 30 },
+export const LENGTHS: readonly {
+  value: HairLength;
+  label: string;
+  y: number;
+  /** Too close to its neighbours to label all the time; named once it's picked. */
+  quiet?: boolean;
+}[] = [
+  { value: 'cropped', label: 'TWA', y: 30 },
   { value: 'ear', label: 'Ear', y: 60 },
   { value: 'chin', label: 'Chin', y: 92 },
+  { value: 'neck', label: 'Neck', y: 108, quiet: true },
   { value: 'shoulder', label: 'Shoulder', y: 124 },
   { value: 'armpit', label: 'Armpit', y: 170 },
   { value: 'bra-strap', label: 'Bra strap', y: 197 },
@@ -193,6 +200,7 @@ export function LengthStep({
                   style={[styles.label, { top: l.y * scale - 14 }]}
                   hitSlop={{ top: 6, bottom: 6, left: 12, right: 12 }}
                   accessibilityRole="radio"
+                  accessibilityLabel={l.label}
                   accessibilityState={{ checked: value === l.value }}
                   onPress={() => selected.set(LENGTHS.indexOf(l))}
                 >
@@ -200,7 +208,7 @@ export function LengthStep({
                     style={[styles.labelText, value === l.value && styles.labelActive]}
                     maxFontSizeMultiplier={1.2}
                   >
-                    {l.label}
+                    {l.quiet && value !== l.value ? '' : l.label}
                   </Text>
                 </Pressable>
               ))}

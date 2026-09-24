@@ -869,6 +869,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hair-log/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET / POST /api/hair-log/ — trims, wash days, styles taken out. Appended only. */
+        get: operations["hair_log_list"];
+        put?: never;
+        /** @description GET / POST /api/hair-log/ — trims, wash days, styles taken out. Appended only. */
+        post: operations["hair_log_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/invites/{code}/": {
         parameters: {
             query?: never;
@@ -1725,6 +1743,8 @@ export interface components {
             stylistHandle?: string;
             serviceId: string;
             serviceName: string;
+            /** @description Style slugs */
+            styles: string[];
             optionLabels?: string[];
             /** Format: double */
             price: number;
@@ -1843,6 +1863,8 @@ export interface components {
         };
         CarePlanSessionRequestRequest: {
             notes?: string;
+            /** @description The phone's own clock */
+            localAt?: string;
         };
         CarePlanSessionResponse: {
             id: string;
@@ -1875,6 +1897,10 @@ export interface components {
             holding: components["schemas"]["HoldingEnum"];
             scalp: components["schemas"]["CheckInRequestScalpEnum"];
             again: components["schemas"]["AgainEnum"];
+            /** @description Is the style still in? */
+            stillIn?: boolean;
+            /** @description The phone's own clock */
+            localAt?: string;
         };
         /**
          * @description * `comfortable` - comfortable
@@ -2121,6 +2147,25 @@ export interface components {
          * @enum {string}
          */
         GroupEnum: "length" | "size";
+        HairLog: {
+            id: string;
+            kind: components["schemas"]["Kind823Enum"];
+            /** Format: date-time */
+            at: string;
+            bookingId?: string;
+        };
+        HairLogRequestRequest: {
+            kind: components["schemas"]["Kind823Enum"];
+            /**
+             * Format: date-time
+             * @description When it happened; now if left out
+             */
+            at?: string;
+            /** @description The phone's own clock, ISO without offset */
+            localAt?: string;
+            /** Format: uuid */
+            bookingId?: string;
+        };
         /**
          * @description For output-only model serializers: a model field that may be blank or null can be
          *     left out of the JSON (the renderer drops empty values), so say so in the schema.
@@ -2139,6 +2184,8 @@ export interface components {
             photoUri?: string;
             /** Format: date-time */
             lengthMeasuredAt?: string;
+            /** Format: double */
+            lengthCm?: number;
             /** Format: date-time */
             completedAt?: string;
             /** Format: date-time */
@@ -2187,9 +2234,17 @@ export interface components {
             readonly expiresAt: string;
         };
         /**
-         * @description * `cropped` - Cropped
+         * @description * `trim` - trim
+         *     * `wash` - wash
+         *     * `take_down` - take_down
+         * @enum {string}
+         */
+        Kind823Enum: "trim" | "wash" | "take_down";
+        /**
+         * @description * `cropped` - TWA / cropped
          *     * `ear` - Ear
          *     * `chin` - Chin
+         *     * `neck` - Neck
          *     * `shoulder` - Shoulder
          *     * `armpit` - Armpit
          *     * `bra-strap` - Bra strap
@@ -2199,7 +2254,7 @@ export interface components {
          *     * `tailbone` - Tailbone
          * @enum {string}
          */
-        LengthEnum: "cropped" | "ear" | "chin" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
+        LengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
         /** @description POST /api/auth/login/ */
         LoginRequest: {
             /** Format: email */
@@ -2284,6 +2339,7 @@ export interface components {
             note?: string;
             hairIncluded?: boolean;
             readonly options: components["schemas"]["MenuOption"][];
+            styles: string[];
         };
         /** @description For creating/updating menu items. */
         MenuItemDraftRequest: {
@@ -2423,6 +2479,8 @@ export interface components {
             photoUri?: string;
             /** Format: date-time */
             lengthMeasuredAt?: string | null;
+            /** Format: double */
+            lengthCm?: number | null;
             /** Format: date-time */
             completedAt?: string | null;
         };
@@ -2725,9 +2783,10 @@ export interface components {
          */
         ShelfStatusEnum: "using" | "finished" | "repurchased";
         /**
-         * @description * `cropped` - Cropped
+         * @description * `cropped` - TWA / cropped
          *     * `ear` - Ear
          *     * `chin` - Chin
+         *     * `neck` - Neck
          *     * `shoulder` - Shoulder
          *     * `armpit` - Armpit
          *     * `bra-strap` - Bra strap
@@ -2737,7 +2796,7 @@ export interface components {
          *     * `tailbone` - Tailbone
          * @enum {string}
          */
-        ShrunkLengthEnum: "cropped" | "ear" | "chin" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
+        ShrunkLengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
         /**
          * @description POST /api/auth/signup/
          *
@@ -4366,6 +4425,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FavoriteState"];
+                };
+            };
+        };
+    };
+    hair_log_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HairLog"][];
+                };
+            };
+        };
+    };
+    hair_log_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HairLogRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HairLog"];
                 };
             };
         };

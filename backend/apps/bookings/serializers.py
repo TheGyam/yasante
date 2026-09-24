@@ -67,6 +67,7 @@ def present_booking(booking, viewer):
         "stylist_handle": booking.stylist_handle,
         "service_id": str(booking.service_id),
         "service_name": booking.service_name,
+        "styles": booking.styles,
         "option_labels": booking.option_labels or None,
         "price": _money(booking.price),
         "from_price": booking.from_price,
@@ -222,6 +223,7 @@ class BookingSerializer(serializers.Serializer):
     stylist_handle = optional(serializers.CharField())
     service_id = serializers.CharField()
     service_name = serializers.CharField()
+    styles = serializers.ListField(child=serializers.CharField(), help_text="Style slugs")
     option_labels = optional(serializers.ListField(child=serializers.CharField()))
     price = serializers.FloatField()
     from_price = serializers.BooleanField()
@@ -336,6 +338,8 @@ class CheckInRequestSerializer(serializers.Serializer):
     holding = serializers.ChoiceField(choices=["fresh", "okay", "tired"])
     scalp = serializers.ChoiceField(choices=["comfortable", "itchy", "sore"])
     again = serializers.ChoiceField(choices=["yes", "maybe", "no"])
+    still_in = serializers.BooleanField(required=False, help_text="Is the style still in?")
+    local_at = serializers.CharField(required=False, help_text="The phone's own clock")
 
 
 class ReviewReportRequestSerializer(serializers.Serializer):

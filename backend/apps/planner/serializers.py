@@ -160,3 +160,4 @@ class CarePlanRequestSerializer(serializers.Serializer):
 
 class CarePlanSessionRequestSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False)
+    local_at = serializers.CharField(required=False, help_text="The phone's own clock")

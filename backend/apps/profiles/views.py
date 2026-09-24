@@ -20,6 +20,8 @@ from .models import (
     PolicyDocument,
 )
 from .serializers import (
+    HairLogRequestSerializer,
+    HairLogSerializer,
     ConsentBatchSerializer,
     DataExportResponseSerializer,
     EventBatchSerializer,
@@ -209,15 +211,7 @@ class EventBatchView(APIView):
                 # Consent withdrawn — drop events silently
                 return Response(status=status.HTTP_202_ACCEPTED)
 
-        def local_parts(text):
-            # "2026-09-27T09:15:00" (with or without an offset) -> (weekday, hour).
-            from datetime import datetime
-
-            try:
-                when = datetime.fromisoformat(text.replace("Z", "+00:00"))
-                return when.isoweekday(), when.hour
-            except (ValueError, AttributeError):
-                return None, None
+        from apps.common.timeparse import local_parts
 
         events = []
         for e in serializer.validated_data["events"]:
@@ -282,3 +276,47 @@ class PolicyDetailView(APIView):
         if doc is None:
             return Response({"message": "Not published yet"}, status=404)
         return Response(present_policy(doc))
+
+
+
+def present_hair_log(entry):
+    return {
+        "id": str(entry.pk),
+        "kind": entry.kind,
+        "at": entry.at,
+        "booking_id": str(entry.booking_id) if entry.booking_id else None,
+    }
+
+
+@extend_schema_view(
+    get=extend_schema(responses=HairLogSerializer(many=True)),
+    post=extend_schema(request=HairLogRequestSerializer, responses={201: HairLogSerializer}),
+)
+class HairLogView(APIView):
+    """GET / POST /api/hair-log/ — trims, wash days, styles taken out. Appended only."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response([present_hair_log(e) for e in request.user.hair_log.all()[:200]])
+
+    def post(self, request):
+        from apps.bookings.models import Booking
+        from apps.profiles.models import log_hair
+
+        body = HairLogRequestSerializer(data=request.data)
+        if not body.is_valid():
+            return Response({"message": "Say what happened"}, status=400)
+        data = body.validated_data
+        at = data.get("at")
+        if at and at > timezone.now():
+            return Response({"message": "That hasn’t happened yet"}, status=400)
+        booking_id = data.get("booking_id")
+        if booking_id and not Booking.objects.filter(pk=booking_id, client=request.user).exists():
+            return Response({"message": "That appointment isn’t yours"}, status=404)
+        entry = log_hair(
+            request.user, data["kind"], data.get("local_at"), at=at, booking_id=booking_id
+        )
+        if entry is None:
+            return Response({"message": "Already noted"}, status=409)
+        return Response(present_hair_log(entry), status=201)

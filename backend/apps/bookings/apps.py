@@ -7,4 +7,4 @@ class BookingsConfig(AppConfig):
     verbose_name = "Bookings"
 
     def ready(self):
-        from . import notify  # noqa: F401  (booking changes send their notifications)
+        from . import audit, notify  # noqa: F401  (booking changes are logged and announced)

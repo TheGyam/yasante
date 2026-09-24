@@ -4,6 +4,7 @@ Planner: collections (what she's saving) and care plans (how she looks after it)
 
 import logging
 
+from apps.common.timeparse import local_parts
 from apps.looks.models import Look
 from django.db import transaction
 from django.db.models import Count
@@ -385,12 +386,16 @@ class CarePlanSessionView(APIView):
         if plan is None:
             return Response({"message": "That plan is gone"}, status=404)
         now = timezone.now()
+        weekday, hour = local_parts(request.data.get("local_at") or "")
         with transaction.atomic():
             session = CarePlanSession.objects.create(
                 plan=plan,
                 user=request.user,
                 completed_at=now,
                 notes=str(request.data.get("notes") or "").strip()[:1000],
+                local_at=str(request.data.get("local_at") or "")[:40],
+                local_weekday=weekday,
+                local_hour=hour,
             )
             plan.last_done_at = now
             plan.save(update_fields=["last_done_at", "updated_at"])

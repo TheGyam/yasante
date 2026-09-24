@@ -106,4 +106,19 @@ class HairProfileRequestSerializer(serializers.Serializer):
     budget = serializers.CharField(required=False, allow_blank=True)
     photo_uri = serializers.CharField(required=False, allow_blank=True)
     length_measured_at = serializers.DateTimeField(required=False, allow_null=True)
+    length_cm = serializers.FloatField(required=False, allow_null=True, min_value=1, max_value=200)
     completed_at = serializers.DateTimeField(required=False, allow_null=True)
+
+
+class HairLogSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    kind = serializers.ChoiceField(choices=["trim", "wash", "take_down"])
+    at = serializers.DateTimeField()
+    booking_id = optional(serializers.CharField())
+
+
+class HairLogRequestSerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(choices=["trim", "wash", "take_down"])
+    at = serializers.DateTimeField(required=False, help_text="When it happened; now if left out")
+    local_at = serializers.CharField(required=False, help_text="The phone's own clock, ISO without offset")
+    booking_id = serializers.UUIDField(required=False)

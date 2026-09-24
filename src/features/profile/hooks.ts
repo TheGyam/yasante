@@ -38,7 +38,9 @@ export function useUpdateUser(userId?: string) {
         throw new Error('User ID is required');
       }
       // Only what changed: an empty email would be refused as invalid.
-      const avatar = updates.avatarUri ? (await uploadImage(updates.avatarUri, 'avatar')).uri : undefined;
+      const avatar = updates.avatarUri
+        ? (await uploadImage(updates.avatarUri, 'avatar')).uri
+        : undefined;
       const response = await api.user.updateProfile(actualUserId, {
         ...(updates.name !== undefined && { name: updates.name }),
         ...(updates.email && { email: updates.email }),

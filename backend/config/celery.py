@@ -46,6 +46,10 @@ app.conf.beat_schedule = {
         "task": "apps.stylists.tasks.monthly_recap",
         "schedule": crontab(hour=9, minute=0, day_of_month=1),
     },
+    "length-prompt": {
+        "task": "apps.profiles.tasks.prompt_length",
+        "schedule": crontab(hour=10, minute=0, day_of_week="sun"),
+    },
     "insurance-reminders": {
         "task": "apps.bookings.tasks.insurance_reminders",
         "schedule": crontab(hour=9, minute=0),

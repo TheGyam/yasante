@@ -53,6 +53,7 @@ class MenuItemSerializer(BlankIsOptional, serializers.ModelSerializer):
             "note",
             "hair_included",
             "options",
+            "styles",
         ]
         read_only_fields = ["id"]
 

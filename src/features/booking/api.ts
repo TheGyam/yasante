@@ -1,4 +1,5 @@
 import { apiClient } from '@/shared/lib/api/client';
+import { localTimestamp } from '@/shared/lib/analytics';
 import type {
   Booking,
   BookingDraft,
@@ -112,7 +113,16 @@ export const bookingApi = {
 
   /** POST /api/bookings/:id/check-in/ — for the week the server asked about. */
   checkIn: async (id: string, week: CheckInWeek, answers: CheckInAnswers) =>
-    (await apiClient.post<null>(`/api/bookings/${id}/check-in/`, { week, ...answers })).data,
+    (
+      await apiClient.post<null>(`/api/bookings/${id}/check-in/`, {
+        week,
+        holding: answers.holding,
+        scalp: answers.scalp,
+        again: answers.again,
+        stillIn: answers.stillIn === 'yes',
+        localAt: localTimestamp(),
+      })
+    ).data,
 
   /** POST /api/reviews/:id/report/ */
   reportReview: async (id: string, reason: ReviewReportReason, note?: string) =>

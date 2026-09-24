@@ -77,3 +77,29 @@ def price_choice(service, options) -> dict:
         "complete": complete,
         "hair_included": service.hair_included,
     }
+
+
+def guess_styles(service_name, styles=None):
+    """
+    Style slugs a service name mentions: "Boho knotless" -> boho, knotless. Used when
+    she hasn't tagged the service, so bookings still carry styles. A name inside a
+    longer match doesn't count on its own: "Faux locs" is faux locs, not also locs.
+    """
+    if styles is None:
+        from apps.looks.models import Style
+
+        styles = Style.objects.values_list("slug", "name")
+    name = f" {service_name.lower()} "
+    found = {}
+    for slug, style_name in styles:
+        full = style_name.lower()
+        keys = {slug.replace("-", " "), full, full.removesuffix(" braids")}
+        keys |= {k.removesuffix("s") for k in keys if len(k) >= 4}
+        hits = [k for k in keys if f" {k}" in name]
+        if hits:
+            found[slug] = max(hits, key=len)
+    return sorted(
+        slug
+        for slug, key in found.items()
+        if not any(key != other and key in other for other in found.values())
+    )

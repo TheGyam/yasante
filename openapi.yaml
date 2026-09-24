@@ -1337,6 +1337,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/FavoriteState'
           description: ''
+  /api/hair-log/:
+    get:
+      operationId: hair_log_list
+      description: GET / POST /api/hair-log/ — trims, wash days, styles taken out.
+        Appended only.
+      tags:
+      - hair-log
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HairLog'
+          description: ''
+    post:
+      operationId: hair_log_create
+      description: GET / POST /api/hair-log/ — trims, wash days, styles taken out.
+        Appended only.
+      tags:
+      - hair-log
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HairLogRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HairLog'
+          description: ''
   /api/invites/{code}/:
     get:
       operationId: invites_retrieve
@@ -2695,6 +2734,11 @@ components:
           type: string
         serviceName:
           type: string
+        styles:
+          type: array
+          items:
+            type: string
+          description: Style slugs
         optionLabels:
           type: array
           items:
@@ -2789,6 +2833,7 @@ components:
       - serviceId
       - serviceName
       - status
+      - styles
       - stylistName
       - updatedAt
     BookingCreateRequestRequest:
@@ -2969,6 +3014,10 @@ components:
         notes:
           type: string
           minLength: 1
+        localAt:
+          type: string
+          minLength: 1
+          description: The phone's own clock
     CarePlanSessionResponse:
       type: object
       properties:
@@ -3027,6 +3076,13 @@ components:
           $ref: '#/components/schemas/CheckInRequestScalpEnum'
         again:
           $ref: '#/components/schemas/AgainEnum'
+        stillIn:
+          type: boolean
+          description: Is the style still in?
+        localAt:
+          type: string
+          minLength: 1
+          description: The phone's own clock
       required:
       - again
       - holding
@@ -3556,6 +3612,40 @@ components:
       description: |-
         * `length` - length
         * `size` - size
+    HairLog:
+      type: object
+      properties:
+        id:
+          type: string
+        kind:
+          $ref: '#/components/schemas/Kind823Enum'
+        at:
+          type: string
+          format: date-time
+        bookingId:
+          type: string
+      required:
+      - at
+      - id
+      - kind
+    HairLogRequestRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/Kind823Enum'
+        at:
+          type: string
+          format: date-time
+          description: When it happened; now if left out
+        localAt:
+          type: string
+          minLength: 1
+          description: The phone's own clock, ISO without offset
+        bookingId:
+          type: string
+          format: uuid
+      required:
+      - kind
     HairProfileResponse:
       type: object
       description: |-
@@ -3611,6 +3701,9 @@ components:
         lengthMeasuredAt:
           type: string
           format: date-time
+        lengthCm:
+          type: number
+          format: double
         completedAt:
           type: string
           format: date-time
@@ -3700,11 +3793,22 @@ components:
       - expiresAt
       - invitedBy
       - role
+    Kind823Enum:
+      enum:
+      - trim
+      - wash
+      - take_down
+      type: string
+      description: |-
+        * `trim` - trim
+        * `wash` - wash
+        * `take_down` - take_down
     LengthEnum:
       enum:
       - cropped
       - ear
       - chin
+      - neck
       - shoulder
       - armpit
       - bra-strap
@@ -3714,9 +3818,10 @@ components:
       - tailbone
       type: string
       description: |-
-        * `cropped` - Cropped
+        * `cropped` - TWA / cropped
         * `ear` - Ear
         * `chin` - Chin
+        * `neck` - Neck
         * `shoulder` - Shoulder
         * `armpit` - Armpit
         * `bra-strap` - Bra strap
@@ -3937,12 +4042,18 @@ components:
           items:
             $ref: '#/components/schemas/MenuOption'
           readOnly: true
+        styles:
+          type: array
+          items:
+            type: string
+            maxLength: 100
       required:
       - fromPrice
       - id
       - name
       - options
       - price
+      - styles
     MenuItemDraftRequest:
       type: object
       description: For creating/updating menu items.
@@ -4268,6 +4379,12 @@ components:
         lengthMeasuredAt:
           type: string
           format: date-time
+          nullable: true
+        lengthCm:
+          type: number
+          format: double
+          maximum: 200
+          minimum: 1
           nullable: true
         completedAt:
           type: string
@@ -4953,6 +5070,7 @@ components:
       - cropped
       - ear
       - chin
+      - neck
       - shoulder
       - armpit
       - bra-strap
@@ -4962,9 +5080,10 @@ components:
       - tailbone
       type: string
       description: |-
-        * `cropped` - Cropped
+        * `cropped` - TWA / cropped
         * `ear` - Ear
         * `chin` - Chin
+        * `neck` - Neck
         * `shoulder` - Shoulder
         * `armpit` - Armpit
         * `bra-strap` - Bra strap
