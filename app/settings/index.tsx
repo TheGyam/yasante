@@ -1,7 +1,7 @@
 import { Linking, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import Constants from 'expo-constants';
-import { FileText, LifeBuoy, LogOut, MessageCircleQuestion, Shield } from 'lucide-react-native';
+import { Bell, FileText, LifeBuoy, LogOut, MessageCircleQuestion, Shield } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { PRIVACY_URL, TERMS_URL } from '@/shared/config/policies';
 import { haptics } from '@/shared/lib/haptics';
@@ -58,6 +58,13 @@ export default function SettingsScreen() {
         </View>
 
         <Section title="Help and privacy">
+          {isAuthenticated && (
+            <ListRow
+              title="Notifications"
+              icon={Bell}
+              onPress={() => router.push('/settings/notifications')}
+            />
+          )}
           {isAuthenticated && (
             <ListRow
               title="Privacy and data"

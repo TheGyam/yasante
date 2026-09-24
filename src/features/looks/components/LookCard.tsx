@@ -191,7 +191,8 @@ export const LookCard = memo(function LookCard({
             accessibilityHint={detail ? 'Double tap to like' : 'Opens the look. Double tap to like'}
           >
             <RemoteImage
-              uri={look.photoUri}
+              // A feed doesn't need the full-size photo; the look's own page does.
+              uri={(detail ? undefined : look.feedUri) ?? look.photoUri}
               style={StyleSheet.absoluteFill}
               recyclingKey={look.id}
               // The grid's copy while the full photo loads: no flash when the

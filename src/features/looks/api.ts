@@ -29,12 +29,13 @@ export const looksApi = {
   /** POST /api/looks/ — the server fills in the author, the stylist and the tagged service. */
   create: async (draft: LookDraft) => {
     // The photo goes up first; the look points at where it now lives.
-    const photo = await uploadImage(draft.photoUri);
+    const photo = await uploadImage(draft.photoUri, 'look');
     return (
       await apiClient.post<Look>('/api/looks/', {
         ...draft,
         photoUri: photo.uri,
         thumbUri: photo.thumbUri,
+        feedUri: photo.feedUri,
         photoAspect: photo.photoAspect,
       })
     ).data;
