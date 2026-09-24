@@ -39,3 +39,4 @@ coverage/
 # Native projects are generated from app.json at build time (Continuous Native Generation).
 /android
 /ios
+fcm-key.json
