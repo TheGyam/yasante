@@ -1,4 +1,3 @@
-import os
 from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlparse
@@ -60,6 +59,7 @@ LOCAL_APPS = [
     "apps.planner",
     "apps.shelf",
     "apps.content",
+    "apps.web",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -366,3 +366,9 @@ MAX_COMMENT_LENGTH = 500
 # Admin site
 ADMIN_SITE_HEADER = "Yasante Admin"
 ADMIN_SITE_TITLE = "Yasante Administration"
+
+# The public site's app-link files: the app's id, and what proves it's ours.
+APP_ID = "com.yasante.app"
+# SHA-256 of the Android signing certificate(s), comma-separated (eas credentials shows it).
+ANDROID_CERT_SHA256 = config("ANDROID_CERT_SHA256", default="")
+APPLE_TEAM_ID = config("APPLE_TEAM_ID", default="")

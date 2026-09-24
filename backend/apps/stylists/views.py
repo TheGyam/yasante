@@ -10,7 +10,6 @@ from zoneinfo import ZoneInfo
 from apps.bookings.models import Booking, Review
 from apps.common.blocks import blocked_account_ids, is_blocked
 from apps.common.models import log_search
-from apps.common.permissions import IsPhoneVerified
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Q

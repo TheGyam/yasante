@@ -85,7 +85,7 @@ class SignupSerializer(serializers.Serializer):
     def create(self, validated_data):
         invite = validated_data.pop("_invite", None)
         validated_data.pop("password_confirm")
-        invite_code = validated_data.pop("invite_code", None)
+        validated_data.pop("invite_code", None)
 
         roles = [validated_data.pop("role")]
 

@@ -1,0 +1,17 @@
+{% extends "web/base.html" %}
+{% block content %}
+<h1 style="margin-top:40px">Braids by someone whose work you’ve seen.</h1>
+<p class="muted">Real looks on real hair, from braiders near you. Book the one you like, in the app.</p>
+{% if joined %}
+<div class="card" style="margin-top:24px"><strong>You’re on the list.</strong><p class="muted" style="margin:4px 0 0">We’ll email you when Yasante opens near you.</p></div>
+{% else %}
+<form class="card" method="post" style="margin-top:24px">{% csrf_token %}
+<label>Email<input type="email" name="email" required autocomplete="email"></label>
+<label>I’m<select name="role"><option value="client">getting my hair done</option><option value="stylist">a stylist</option></select></label>
+<label>Area (optional)<input name="area" placeholder="Peckham"></label>
+<input name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+{% if error %}<p style="color:#C7303F">{{ error }}</p>{% endif %}
+<button class="btn" type="submit">Join the waitlist</button>
+</form>
+{% endif %}
+{% endblock %}

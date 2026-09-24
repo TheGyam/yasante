@@ -38,6 +38,14 @@ app.conf.beat_schedule = {
         "task": "apps.bookings.tasks.weekly_digest",
         "schedule": crontab(hour=8, minute=0, day_of_week="mon"),
     },
+    "nightly-stats": {
+        "task": "apps.stylists.tasks.nightly_stats",
+        "schedule": crontab(hour=2, minute=15),
+    },
+    "monthly-recap": {
+        "task": "apps.stylists.tasks.monthly_recap",
+        "schedule": crontab(hour=9, minute=0, day_of_month=1),
+    },
     "insurance-reminders": {
         "task": "apps.bookings.tasks.insurance_reminders",
         "schedule": crontab(hour=9, minute=0),
