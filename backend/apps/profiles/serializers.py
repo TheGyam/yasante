@@ -63,3 +63,47 @@ class EventBatchSerializer(serializers.Serializer):
 
     events = EventSerializer(many=True)
     anonymous_id = serializers.CharField(max_length=100, required=False, default="")
+
+
+# ── Shapes for the schema the app's types are generated from ─────────────────────
+from apps.accounts.serializers import UserResponseSerializer  # noqa: E402
+from apps.common.schema import BlankIsOptional, optional  # noqa: E402
+
+
+class HairProfileResponseSerializer(BlankIsOptional, HairProfileSerializer):
+    pass
+
+
+class UserDetailResponseSerializer(UserResponseSerializer):
+    hair_profile = optional(HairProfileResponseSerializer(read_only=True))
+
+    class Meta(UserResponseSerializer.Meta):
+        fields = UserResponseSerializer.Meta.fields + ["hair_profile"]
+
+
+class DataExportResponseSerializer(serializers.Serializer):
+    requested_at = serializers.DateTimeField()
+
+
+class PolicySerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=["terms", "stylist_terms", "privacy", "guidelines"])
+    version = serializers.CharField()
+    title = serializers.CharField()
+    effective_at = serializers.DateTimeField()
+    body = serializers.CharField()
+
+
+class HairProfileRequestSerializer(serializers.Serializer):
+    texture = serializers.CharField(required=False, allow_blank=True)
+    length = serializers.CharField(required=False, allow_blank=True)
+    shrunk_length = serializers.CharField(required=False, allow_blank=True)
+    density = serializers.CharField(required=False, allow_blank=True)
+    porosity = serializers.CharField(required=False, allow_blank=True)
+    goals = serializers.ListField(child=serializers.CharField(), required=False)
+    scalp = serializers.ListField(child=serializers.CharField(), required=False)
+    chemicals = serializers.ListField(child=serializers.CharField(), required=False)
+    area = serializers.CharField(required=False, allow_blank=True)
+    budget = serializers.CharField(required=False, allow_blank=True)
+    photo_uri = serializers.CharField(required=False, allow_blank=True)
+    length_measured_at = serializers.DateTimeField(required=False, allow_null=True)
+    completed_at = serializers.DateTimeField(required=False, allow_null=True)

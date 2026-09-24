@@ -35,14 +35,16 @@ export interface Booking {
   id: string;
   status: BookingStatus;
 
-  clientId: string;
+  /** Absent once the client has deleted her account; the appointment stays on record. */
+  clientId?: string;
   clientName: string;
   /** Her hair in one line, so a stylist knows what she's saying yes to. */
   clientHair?: string;
   /** Only sent to the stylist. A client never sees her own record. */
   clientRecord?: ClientRecord;
 
-  stylistId: string;
+  /** Absent once the stylist has deleted her account. */
+  stylistId?: string;
   stylistName: string;
   stylistHandle?: string;
 

@@ -7,11 +7,18 @@ import uuid
 
 from django.db.models import Q
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Product, ShelfItem
+from .serializers import (
+    ProductResponseSerializer,
+    ShelfAddRequestSerializer,
+    ShelfItemResponseSerializer,
+    ShelfPatchRequestSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +55,7 @@ def _hair_now(user):
     }
 
 
+@extend_schema_view(get=extend_schema(responses=ProductResponseSerializer(many=True)))
 class ProductSearchView(APIView):
     """GET /api/products/?q=&limit= — every word must match brand, name or category."""
 
@@ -66,6 +74,7 @@ class ProductSearchView(APIView):
         return Response([present_product(p) for p in qs.order_by("brand", "name")[:limit]])
 
 
+@extend_schema_view(get=extend_schema(responses=ShelfItemResponseSerializer(many=True)), post=extend_schema(request=ShelfAddRequestSerializer, responses={201: ShelfItemResponseSerializer}))
 class ShelfListCreateView(APIView):
     """GET / POST /api/shelf/"""
 
@@ -93,6 +102,7 @@ class ShelfListCreateView(APIView):
         return Response(present_item(item), status=201)
 
 
+@extend_schema_view(patch=extend_schema(request=ShelfPatchRequestSerializer, responses=ShelfItemResponseSerializer), delete=extend_schema(responses={204: None}))
 class ShelfDetailView(APIView):
     """PATCH / DELETE /api/shelf/:id/ — a rating, finishing it, or buying it again."""
 

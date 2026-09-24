@@ -110,7 +110,6 @@ urlpatterns = API_DOCS + [
         content.FavoriteToggleView.as_view(),
         name="favorites-toggle",
     ),
-    path("api/content/", include("apps.content.urls")),
     path("api/devices/", include("apps.accounts.device_urls")),
     path(
         "api/notifications/preferences/",

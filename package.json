@@ -10,7 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint . --ext .ts,.tsx",
-    "api:types": "openapi-typescript openapi.yaml -o src/shared/lib/api/schema.d.ts",
+    "api:types": "openapi-typescript openapi.yaml --array-length -o src/shared/lib/api/schema.d.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "dependencies": {

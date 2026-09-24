@@ -16,12 +16,30 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from apps.common.throttling import BookingRequestThrottle, ReviewThrottle
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .held import clash_exists, release, sweep
 from .models import Booking, CheckIn, Review, ReviewReport, SlotInterest
+from .serializers import (
+    AcceptRequestSerializer,
+    AnswerRequestSerializer,
+    BookingCreateRequestSerializer,
+    BookingSerializer,
+    CheckInRequestSerializer,
+    CloseRequestSerializer,
+    ContestRequestSerializer,
+    MoveRequestBodySerializer,
+    ReasonRequestSerializer,
+    ReviewCreateRequestSerializer,
+    ReviewReportRequestSerializer,
+    ReviewSerializer,
+    SlotInterestRequestSerializer,
+    SlotInterestSerializer,
+    StartedOnTimeRequestSerializer,
+)
 from .serializers import (
     check_in_due,
     client_hair,
@@ -100,6 +118,7 @@ def _take(booking, scheduled_for, deposit):
     booking.save()
 
 
+@extend_schema_view(get=extend_schema(responses=BookingSerializer(many=True)), post=extend_schema(request=BookingCreateRequestSerializer, responses={201: BookingSerializer}))
 class BookingListCreateView(APIView):
     """GET /api/bookings/?role=&status= · POST /api/bookings/"""
 
@@ -204,6 +223,7 @@ class BookingListCreateView(APIView):
         return _ok(booking, request, 201)
 
 
+@extend_schema_view(get=extend_schema(responses=BookingSerializer))
 class BookingDetailView(APIView):
     """GET /api/bookings/:id/"""
 
@@ -230,6 +250,7 @@ class _BookingAction(APIView):
         return self.act(request, booking)
 
 
+@extend_schema_view(post=extend_schema(request=AcceptRequestSerializer, responses=BookingSerializer))
 class BookingAcceptView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.stylist_id:
@@ -244,6 +265,7 @@ class BookingAcceptView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=AcceptRequestSerializer, responses=BookingSerializer))
 class BookingProposeView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.stylist_id:
@@ -274,6 +296,7 @@ class BookingProposeView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=AnswerRequestSerializer, responses=BookingSerializer))
 class BookingProposalAnswerView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.client_id:
@@ -292,6 +315,7 @@ class BookingProposalAnswerView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=ReasonRequestSerializer, responses=BookingSerializer))
 class BookingDeclineView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.stylist_id:
@@ -307,6 +331,7 @@ class BookingDeclineView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=None, responses=BookingSerializer))
 class BookingDepositReceivedView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.stylist_id:
@@ -320,6 +345,7 @@ class BookingDepositReceivedView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=ReasonRequestSerializer, responses=BookingSerializer))
 class BookingCancelView(_BookingAction):
     def act(self, request, booking):
         if not _party(booking, request.user):
@@ -337,6 +363,7 @@ class BookingCancelView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=CloseRequestSerializer, responses=BookingSerializer))
 class BookingCloseView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.stylist_id:
@@ -380,6 +407,7 @@ class BookingCloseView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=None, responses=BookingSerializer))
 class BookingAttendingView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.client_id:
@@ -391,6 +419,7 @@ class BookingAttendingView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=MoveRequestBodySerializer, responses=BookingSerializer))
 class BookingMoveView(_BookingAction):
     def act(self, request, booking):
         if not _party(booking, request.user):
@@ -413,6 +442,7 @@ class BookingMoveView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=AnswerRequestSerializer, responses=BookingSerializer))
 class BookingMoveAnswerView(_BookingAction):
     def act(self, request, booking):
         if not _party(booking, request.user):
@@ -433,6 +463,7 @@ class BookingMoveAnswerView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=StartedOnTimeRequestSerializer, responses=BookingSerializer))
 class BookingStartedOnTimeView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.client_id:
@@ -446,6 +477,7 @@ class BookingStartedOnTimeView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=ContestRequestSerializer, responses=BookingSerializer))
 class BookingContestView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.client_id:
@@ -469,6 +501,7 @@ class BookingContestView(_BookingAction):
         return _ok(booking, request)
 
 
+@extend_schema_view(post=extend_schema(request=ReviewCreateRequestSerializer, responses={201: ReviewSerializer}))
 class ReviewCreateView(_BookingAction):
     """POST /api/bookings/:id/review/ — only the client, only once it's done, once."""
 
@@ -507,6 +540,7 @@ CHECK_IN_ANSWERS = {
 }
 
 
+@extend_schema_view(post=extend_schema(request=CheckInRequestSerializer, responses={204: None}))
 class CheckInView(_BookingAction):
     """POST /api/bookings/:id/check-in/ — only while that week's check-in is open."""
 
@@ -527,6 +561,7 @@ class CheckInView(_BookingAction):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(post=extend_schema(request=ReviewReportRequestSerializer, responses={204: None}))
 class ReviewReportView(APIView):
     """POST /api/reviews/:id/report/ — to moderation."""
 
@@ -548,6 +583,7 @@ class ReviewReportView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema_view(get=extend_schema(responses=SlotInterestSerializer(many=True)), post=extend_schema(request=SlotInterestRequestSerializer, responses={201: SlotInterestSerializer}))
 class SlotInterestListCreateView(APIView):
     """GET / POST /api/slot-interests/ — the waitlist."""
 
@@ -581,6 +617,7 @@ class SlotInterestListCreateView(APIView):
         return Response(present_slot_interest(interest), status=201)
 
 
+@extend_schema_view(delete=extend_schema(responses={204: None}))
 class SlotInterestDeleteView(APIView):
     """DELETE /api/slot-interests/:id/"""
 

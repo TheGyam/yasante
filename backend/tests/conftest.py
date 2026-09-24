@@ -11,6 +11,8 @@ from django.core.cache import cache
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+from .schema_check import check_response
+
 _seq = itertools.count(1)
 
 
@@ -33,10 +35,13 @@ class Api:
 
     def _call(self, method, url, body=None, **kw):
         response = getattr(self.client, method)(url, body, format="json", **kw)
+        check_response(method, url, response)
         return response
 
     def get(self, url, **params):
-        return self.client.get(url, params)
+        response = self.client.get(url, params)
+        check_response("get", url, response)
+        return response
 
     def post(self, url, body=None):
         return self._call("post", url, body)

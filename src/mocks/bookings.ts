@@ -1,3 +1,4 @@
+import type { MockBooking } from './db';
 import type { Booking, BookingStatus, CheckInWeek, ClientRecord } from '@/features/booking';
 import { TIMING_REASONS } from '@/features/booking/types';
 import type { ChosenOptions, MenuItem } from '@/features/stylist';
@@ -28,7 +29,7 @@ const ALLOWED: Record<BookingStatus, BookingStatus[]> = {
   no_show: [],
 };
 
-function move(booking: Booking, to: BookingStatus) {
+function move(booking: MockBooking, to: BookingStatus) {
   if (!ALLOWED[booking.status].includes(to)) {
     throw new MockError(409, `A booking that is ${booking.status} can't become ${to}`);
   }
@@ -67,7 +68,7 @@ export const respondedAt = new Map<string, string>();
  * A slot came free: anyone waiting on that stylist for that day hears about it.
  * The notification itself is the server's to send; this records that it's owed.
  */
-function release(booking: Booking) {
+function release(booking: MockBooking) {
   const day = (booking.scheduledFor ?? booking.requestedTimes[0] ?? '').slice(0, 10);
   if (!day) return;
   for (const interest of db.slotInterests) {
@@ -106,7 +107,7 @@ function sweep(now = Date.now()) {
 
 /** Taking a time: straight to confirmed with no deposit, otherwise a day to pay it. */
 function take(
-  booking: Booking,
+  booking: MockBooking,
   scheduledFor: string,
   deposit?: { amount?: unknown; method?: unknown }
 ) {
@@ -159,7 +160,7 @@ const find = (id: string) => {
   return booking;
 };
 
-const mine = (booking: Booking, accountId: string) => {
+const mine = (booking: MockBooking, accountId: string) => {
   if (booking.clientId !== accountId && booking.stylistId !== accountId) {
     throw new MockError(403, 'That booking isn’t yours');
   }
@@ -194,7 +195,7 @@ function hairOf(clientId: string) {
  * What each side is allowed to see. The address is the one that matters: it is
  * never sent before the booking is confirmed, and never to anyone else.
  */
-function forRole(booking: Booking, accountId: string) {
+function forRole(booking: MockBooking, accountId: string) {
   const asStylist = booking.stylistId === accountId;
   const confirmed = booking.status === 'confirmed' || booking.status === 'completed';
   const review = reviewOf(booking.id);
@@ -311,7 +312,7 @@ defineMocks({
     if (!request.body?.policyVersion) throw new MockError(400, 'Her terms have to be accepted');
 
     const when = new Date().toISOString();
-    const booking: Booking = {
+    const booking: MockBooking = {
       id: `bk_${Date.now()}`,
       status: 'requested',
       clientId: accountId,

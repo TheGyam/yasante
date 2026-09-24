@@ -2,12 +2,15 @@
 Stylist serializers.
 """
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+
+from apps.common.schema import BlankIsOptional, optional
 
 from .models import NOT_HANDLES, MenuItem, PaymentMethod, PortfolioPhoto, StylistProfile
 
 
-class PaymentMethodSerializer(serializers.ModelSerializer):
+class PaymentMethodSerializer(BlankIsOptional, serializers.ModelSerializer):
     class Meta:
         model = PaymentMethod
         fields = ["id", "label", "details"]
@@ -22,7 +25,23 @@ class PoliciesSerializer(serializers.Serializer):
     reschedule_free_once = serializers.BooleanField(default=True)
 
 
-class MenuItemSerializer(serializers.ModelSerializer):
+class MenuOptionSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    group = serializers.ChoiceField(choices=["length", "size"])
+    label = serializers.CharField()
+    add = serializers.FloatField()
+    add_minutes = optional(serializers.IntegerField())
+
+
+@extend_schema_field(serializers.ListField(child=MenuOptionSerializer()))
+class OptionsField(serializers.JSONField):
+    pass
+
+
+class MenuItemSerializer(BlankIsOptional, serializers.ModelSerializer):
+    # Sent as stored; the schema describes its shape.
+    options = OptionsField(read_only=True)
+
     class Meta:
         model = MenuItem
         fields = [
@@ -56,7 +75,7 @@ class MenuItemDraftSerializer(serializers.Serializer):
     )
 
 
-class PortfolioPhotoSerializer(serializers.ModelSerializer):
+class PortfolioPhotoSerializer(BlankIsOptional, serializers.ModelSerializer):
     service_id = serializers.UUIDField(
         source="service.id", read_only=True, allow_null=True
     )
@@ -67,8 +86,48 @@ class PortfolioPhotoSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "thumb_uri", "look_id", "created_at"]
 
 
-class StylistProfileSerializer(serializers.ModelSerializer):
+DAY_HOURS = {
+    "type": "object",
+    "nullable": True,
+    "properties": {"start": {"type": "string"}, "end": {"type": "string"}},
+    "required": ["start", "end"],
+}
+
+
+# Schema-only fields: sent exactly as stored, with their shape described. Each is its
+# own subclass because extend_schema_field marks the class it decorates.
+@extend_schema_field({"type": "array", "items": DAY_HOURS, "minItems": 7, "maxItems": 7})
+class WeekField(serializers.JSONField):
+    pass
+
+
+class AvailabilitySerializer(serializers.Serializer):
+    # Sunday first; null is a day off, so each day's hours are written out here.
+    week = WeekField()
+    blocked = serializers.ListField(child=serializers.DateField())
+
+
+@extend_schema_field(optional(AvailabilitySerializer()))
+class AvailabilityField(serializers.JSONField):
+    """Whole or not at all: no hours saved yet is left out, never sent as {}."""
+
+    def to_representation(self, value):
+        week = (value or {}).get("week")
+        if not isinstance(week, list) or len(week) != 7:
+            return None
+        return {"week": week, "blocked": list(value.get("blocked") or [])}
+
+
+@extend_schema_field({"type": "integer", "enum": [0, 1, 2]})
+class TierField(serializers.IntegerField):
+    pass
+
+
+class StylistProfileSerializer(BlankIsOptional, serializers.ModelSerializer):
     """Full profile for the stylist herself."""
+
+    verification_tier = TierField(read_only=True)
+    availability = AvailabilityField(read_only=True)
 
     account_id = serializers.UUIDField(source="account.id", read_only=True)
     policies = PoliciesSerializer(source="*", read_only=True)
@@ -175,3 +234,124 @@ class StylistPageSerializer(serializers.Serializer):
                 "count": profile.rating_count,
             }
         return None
+
+
+
+# ── Response shapes, for the schema the app's types are generated from ──────────
+class StylistSearchResultSerializer(serializers.Serializer):
+    account_id = serializers.CharField()
+    handle = serializers.CharField()
+    display_name = serializers.CharField()
+    avatar_uri = optional(serializers.CharField())
+    base_area = serializers.CharField()
+
+
+class HandleCheckResponseSerializer(serializers.Serializer):
+    handle = serializers.CharField()
+    available = serializers.BooleanField()
+    suggestions = optional(serializers.ListField(child=serializers.CharField()))
+
+
+class PublicProfileSerializer(StylistProfileSerializer):
+    """Her page's profile: no proof photo, payment details or address, plus the checks held."""
+
+    checks = serializers.ListField(
+        child=serializers.CharField(), help_text="phone, work, met_in_person, met_on_video, insurance"
+    )
+
+    class Meta(StylistProfileSerializer.Meta):
+        fields = [
+            f
+            for f in StylistProfileSerializer.Meta.fields
+            if f not in ("proof_photo_uri", "payment_methods", "address")
+        ] + ["checks"]
+
+
+class PageReviewSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    booking_id = serializers.CharField()
+    rating = serializers.IntegerField()
+    body = optional(serializers.CharField())
+    status = serializers.CharField()
+    author_name = serializers.CharField()
+    service_name = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
+class RatingSerializer(serializers.Serializer):
+    average = serializers.FloatField()
+    count = serializers.IntegerField()
+
+
+class TimingLabelSerializer(serializers.Serializer):
+    outcome = serializers.ChoiceField(choices=["on_time", "early", "over"])
+    count = serializers.IntegerField()
+    sample = serializers.IntegerField()
+
+
+class StylistPageResponseSerializer(serializers.Serializer):
+    profile = PublicProfileSerializer()
+    menu = MenuItemSerializer(many=True)
+    photos = PortfolioPhotoSerializer(many=True)
+    confirmed_styles = serializers.IntegerField()
+    reviews = PageReviewSerializer(many=True)
+    rating = optional(RatingSerializer())
+    response_hours = optional(serializers.FloatField())
+    timing_label = optional(TimingLabelSerializer())
+
+
+class FreeDaySerializer(serializers.Serializer):
+    date = serializers.DateField()
+    times = serializers.ListField(child=serializers.DateTimeField())
+
+
+class FreeSlotsSerializer(serializers.Serializer):
+    minutes = serializers.IntegerField()
+    days = FreeDaySerializer(many=True)
+
+
+class WeekCountsSerializer(serializers.Serializer):
+    views = serializers.IntegerField()
+    requests = serializers.IntegerField()
+    confirmed = serializers.IntegerField()
+    completed = serializers.IntegerField()
+    no_shows = serializers.IntegerField()
+    late_cancellations = serializers.IntegerField()
+    earned = serializers.FloatField()
+
+
+class ServiceTimingSerializer(serializers.Serializer):
+    service_id = serializers.CharField()
+    service_name = serializers.CharField()
+    quoted_minutes = optional(serializers.IntegerField())
+    typical_minutes = optional(serializers.IntegerField())
+    sample = serializers.IntegerField()
+    early = serializers.IntegerField()
+    on_time = serializers.IntegerField()
+    over = serializers.IntegerField()
+    client_side = serializers.IntegerField()
+
+
+class NumbersSerializer(serializers.Serializer):
+    week_of = serializers.DateTimeField()
+    this_week = WeekCountsSerializer()
+    last_week = WeekCountsSerializer()
+    timing = ServiceTimingSerializer(many=True)
+
+
+class StylistSummarySerializer(serializers.Serializer):
+    pending_requests = serializers.IntegerField()
+    appointments_today = serializers.IntegerField()
+
+
+class MenuImportRequestSerializer(serializers.Serializer):
+    items = MenuItemDraftSerializer(many=True)
+
+
+class PortfolioAddRequestSerializer(serializers.Serializer):
+    photos = serializers.ListField(child=serializers.DictField(), help_text="[{uri, thumbUri?, serviceId?}]")
+    post_as_looks = serializers.BooleanField(required=False)
+
+
+class PortfolioPatchRequestSerializer(serializers.Serializer):
+    service_id = serializers.CharField(allow_null=True)

@@ -5,11 +5,21 @@ calls: /api/content/content/… and /api/favorites/favorites/….
 
 from django.db.models import Q
 from apps.common.models import log_search
-from rest_framework import permissions, status
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import permissions, serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import ContentItem, Favorite
+from .serializers import (
+    ContentResponseSerializer,
+    FavoriteResponseSerializer,
+    FavoriteStateSerializer,
+    FavoriteToggleRequestSerializer,
+)
+
+
+TOPICS = {t for t, _ in ContentItem.TOPIC_CHOICES}
 
 
 def present_content(c):
@@ -18,7 +28,8 @@ def present_content(c):
         "title": c.title,
         "description": c.description or (c.body.split("\n\n")[0][:200] if c.body else ""),
         "type": c.kind,
-        "topic": (c.topic_tags or ["tips"])[0],
+        # The first tag the app knows; anything else reads as a tip.
+        "topic": next((t for t in c.topic_tags if t in TOPICS), "tips"),
         "hair_types": c.texture_tags or [],
         "thumbnail_uri": c.cover_uri or None,
         "video_uri": c.video_uri or None,
@@ -33,6 +44,7 @@ def _published():
     return ContentItem.objects.filter(published=True).order_by("-created_at")
 
 
+@extend_schema_view(get=extend_schema(responses=ContentResponseSerializer(many=True)))
 class ContentListView(APIView):
     """GET /api/content/content/?topic=&type=&search= — the library, newest first."""
 
@@ -70,6 +82,7 @@ class ContentSearchView(ContentListView):
     """GET /api/content/content/search/?q="""
 
 
+@extend_schema_view(get=extend_schema(responses=ContentResponseSerializer))
 class ContentDetailView(APIView):
     """GET /api/content/content/:id/"""
 
@@ -82,6 +95,7 @@ class ContentDetailView(APIView):
         return Response(present_content(item))
 
 
+@extend_schema_view(get=extend_schema(responses=serializers.ListSerializer(child=serializers.DictField())))
 class ContentProductsView(APIView):
     """GET /api/content/content/:id/products/ — none are linked yet."""
 
@@ -100,6 +114,7 @@ def present_favorite(f):
     }
 
 
+@extend_schema_view(get=extend_schema(responses=FavoriteResponseSerializer(many=True)))
 class FavoriteListView(APIView):
     """GET /api/favorites/favorites/"""
 
@@ -111,6 +126,7 @@ class FavoriteListView(APIView):
         )
 
 
+@extend_schema_view(get=extend_schema(responses=FavoriteStateSerializer))
 class FavoriteCheckView(APIView):
     """GET /api/favorites/favorites/check/?contentId="""
 
@@ -127,6 +143,7 @@ class FavoriteCheckView(APIView):
         return Response({"is_favorite": favorited})
 
 
+@extend_schema_view(post=extend_schema(request=FavoriteToggleRequestSerializer, responses=FavoriteStateSerializer))
 class FavoriteToggleView(APIView):
     """POST /api/favorites/favorites/toggle/ — { contentId }"""
 

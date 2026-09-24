@@ -12,7 +12,7 @@ import type { Booking, BookingTiming, TimingReason } from '@/features/booking';
 import type { HairLength, HairTexture, User } from '@/features/profile';
 import type { Availability, MenuItem, StylistProfile } from '@/features/stylist';
 import type { ShelfItem } from '@/features/shelf';
-import { db } from './db';
+import { db, type MockBooking } from './db';
 import { productById } from './shelf';
 
 // ── A seeded random, so the data is the same every time ────────────────────────
@@ -1013,11 +1013,11 @@ function booking(
   status: Booking['status'],
   when: string,
   extra: Partial<Booking> = {}
-): Booking {
+): MockBooking {
   const profile = db.stylists.get(stylistId)!;
   const menu = db.menus.get(stylistId) ?? [];
   const service = pick(menu);
-  const b: Booking = {
+  const b: MockBooking = {
     id: `bk_s${++bookingSeq}`,
     status,
     clientId,

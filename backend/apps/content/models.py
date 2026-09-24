@@ -27,7 +27,19 @@ class ContentItem(TimeStampedModel):
     porosity_tags = ArrayField(
         models.CharField(max_length=50), default=list, blank=True
     )
-    topic_tags = ArrayField(models.CharField(max_length=50), default=list, blank=True)
+    TOPIC_CHOICES = [
+        ("care", "Care"),
+        ("styling", "Styling"),
+        ("products", "Products"),
+        ("treatments", "Treatments"),
+        ("color", "Colour"),
+        ("growth", "Growth"),
+        ("health", "Health"),
+        ("tips", "Tips"),
+    ]
+    topic_tags = ArrayField(
+        models.CharField(max_length=50, choices=TOPIC_CHOICES), default=list, blank=True
+    )
 
     published = models.BooleanField(default=False)
     read_time_minutes = models.PositiveSmallIntegerField(default=5)
