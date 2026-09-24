@@ -6,6 +6,7 @@ import { Chip } from '@/shared/ui/Chip';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { salonTime } from '../format';
 import type { FreeSlots } from '../types';
 
 /** A day's width, and the step the strip snaps to (the day plus its gap). */
@@ -40,7 +41,7 @@ const PARTS = [
   { name: 'Evening', until: 24 },
 ];
 
-const dayOf = (iso: string) => format(new Date(iso), 'yyyy-MM-dd');
+const dayOf = (iso: string) => format(salonTime(iso), 'yyyy-MM-dd');
 
 export interface SlotPickerProps {
   slots?: FreeSlots;
@@ -153,7 +154,7 @@ export function SlotPicker({
       {PARTS.map((part, index) => {
         const from = index ? PARTS[index - 1].until : 0;
         const times = day.times.filter(t => {
-          const hour = new Date(t).getHours();
+          const hour = salonTime(t).getHours();
           return hour >= from && hour < part.until;
         });
         if (!times.length) return null;
@@ -166,10 +167,10 @@ export function SlotPicker({
               {times.map(time => (
                 <Chip
                   key={time}
-                  label={format(new Date(time), 'HH:mm')}
+                  label={format(salonTime(time), 'HH:mm')}
                   selected={value === time}
                   onPress={() => onChange(time)}
-                  accessibilityLabel={format(new Date(time), 'EEEE d MMMM, HH:mm')}
+                  accessibilityLabel={format(salonTime(time), 'EEEE d MMMM, HH:mm')}
                 />
               ))}
             </View>

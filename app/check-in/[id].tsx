@@ -33,7 +33,8 @@ type Key = keyof CheckInAnswers;
 const QUESTIONS: {
   key: Key;
   title: (style: string, answers: Partial<CheckInAnswers>) => string;
-  options: { value: string; label: string; icon: LucideIcon }[];
+  /** `outLabel` is what an answer says once the style has come out. */
+  options: { value: string; label: string; outLabel?: string; icon: LucideIcon }[];
 }[] = [
   {
     key: 'stillIn',
@@ -50,9 +51,9 @@ const QUESTIONS: {
         ? `How did your ${style} hold up?`
         : `How are your ${style} holding up?`,
     options: [
-      { value: 'fresh', label: 'Still fresh', icon: Smile },
-      { value: 'okay', label: 'A bit fuzzy', icon: Wind },
-      { value: 'tired', label: 'Ready to come out', icon: CircleHelp },
+      { value: 'fresh', label: 'Still fresh', outLabel: 'Held up well', icon: Smile },
+      { value: 'okay', label: 'A bit fuzzy', outLabel: 'Got fuzzy', icon: Wind },
+      { value: 'tired', label: 'Ready to come out', outLabel: 'Came out early', icon: CircleHelp },
     ],
   },
   {
@@ -171,7 +172,7 @@ export default function CheckInScreen() {
               Thanks — that’s week {due}
             </Text>
             <Text variant="body" tone="secondary" align="center" style={{ marginTop: space.xs }}>
-              {due === 2
+              {due === 2 && answers.stillIn !== 'no'
                 ? 'We’ll ask again at week 4. Over time this shows which styles last on hair like yours.'
                 : 'That’s the last one for this style.'}
             </Text>
@@ -189,7 +190,8 @@ export default function CheckInScreen() {
     <Screen
       modal
       scroll={false}
-      back={step > 0}
+      // The first step closes the check-in; later ones go back a question.
+      back={step > 0 ? true : undefined}
       onBack={step > 0 ? () => setStep(step - 1) : undefined}
       testID="check-in-screen"
     >
@@ -216,7 +218,7 @@ export default function CheckInScreen() {
               return (
                 <ChoiceCard
                   key={option.value}
-                  label={option.label}
+                  label={(answers.stillIn === 'no' && option.outLabel) || option.label}
                   selected={selected}
                   onPress={() => answer(question.key, option.value)}
                   style={styles.option}

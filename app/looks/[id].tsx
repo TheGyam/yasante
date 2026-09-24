@@ -728,6 +728,7 @@ function Composer({
           disabled={!ready}
           accessibilityLabel={replyingTo ? 'Post reply' : 'Post comment'}
           scaleTo={0.9}
+          hitSlop={4}
           testID="comment-send"
         >
           <Animated.View style={[styles.send, sendStyle]}>

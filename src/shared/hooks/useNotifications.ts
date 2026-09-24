@@ -34,10 +34,14 @@ export interface NotificationCategory {
  */
 export function useNotifications(
   onOpen: (target: NotificationTarget) => void,
-  categories: NotificationCategory[] = []
+  categories: NotificationCategory[] = [],
+  /** Every notification that arrives while the app is open, tapped or not. */
+  onReceive?: (target: NotificationTarget) => void
 ) {
   const handler = useRef(onOpen);
   handler.current = onOpen;
+  const receiver = useRef(onReceive);
+  receiver.current = onReceive;
   const registered = useRef(categories);
 
   useEffect(() => {
@@ -76,6 +80,12 @@ export function useNotifications(
       .then(response => response && open(response))
       .catch(() => {});
     const subscription = api.addNotificationResponseReceivedListener(open);
-    return () => subscription.remove();
+    const arrivals = api.addNotificationReceivedListener(notification =>
+      receiver.current?.((notification.request.content.data ?? {}) as NotificationTarget)
+    );
+    return () => {
+      subscription.remove();
+      arrivals.remove();
+    };
   }, []);
 }

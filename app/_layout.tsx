@@ -68,8 +68,16 @@ function RootNavigator() {
     if (isAuthenticated && !isLoading) registerPush();
   }, [isAuthenticated, isLoading, user?.id]);
 
+  // A notification means something changed on the server: what shows it is out of date.
+  const refreshFrom = (target: { bookingId?: string }) => {
+    if (!target.bookingId) return;
+    queryClient.invalidateQueries({ queryKey: ['bookings'] });
+    queryClient.invalidateQueries({ queryKey: ['stylist'] });
+  };
+
   useNotifications(
     async target => {
+      refreshFrom(target);
       if (target.mode) useModeStore.getState().setMode(target.mode);
       // The reminder's buttons answer from the notification itself: "coming" is
       // sent there and then; "can't make it" opens the cancel, with its warning.
@@ -85,7 +93,8 @@ function RootNavigator() {
       }
       if (target.url) router.push(target.url as never);
     },
-    [ATTENDANCE_CATEGORY]
+    [ATTENDANCE_CATEGORY],
+    refreshFrom
   );
 
   useEffect(() => {

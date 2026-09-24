@@ -6,12 +6,15 @@ export const PUBLIC_HOSTS = ['yasante.com', 'www.yasante.com'];
  * take these, so `yasante.com/{handle}` is never ambiguous.
  */
 export const NOT_HANDLES = new Set([
+  // The site's own pages.
   'looks',
   'invite',
   'auth',
   'settings',
   'terms',
+  'stylist-terms',
   'privacy',
+  'guidelines',
   'help',
   'support',
   'about',
@@ -19,6 +22,35 @@ export const NOT_HANDLES = new Set([
   'styles',
   'areas',
   'api',
+  // Every screen the app opens by path, so yasante://bookings is her bookings, not a
+  // stylist called "bookings". The server reserves the same words (NOT_HANDLES).
+  'availability',
+  'book',
+  'bookings',
+  'care-plans',
+  'check-in',
+  'close-out',
+  'collections',
+  'edit-profile',
+  'hair-profile',
+  'menu',
+  'numbers',
+  'onboarding',
+  'payment-methods',
+  'portfolio',
+  'requests',
+  'review',
+  'shelf',
+  'stylist',
+  'stylist-setup',
+  // Tabs.
+  'home',
+  'planner',
+  'profile',
+  'today',
+  'account',
+  'learn',
+  'content',
 ]);
 
 const HANDLE = /^[a-z0-9][a-z0-9._]*$/;

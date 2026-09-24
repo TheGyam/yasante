@@ -149,6 +149,7 @@ export function HairQuiz({ mode, section }: HairQuizProps) {
   return (
     <Screen
       scroll={false}
+      keyboard
       modal={mode === 'section'}
       back={index > 0 || mode === 'onboarding'}
       onBack={index > 0 ? () => go(-1) : undefined}

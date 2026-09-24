@@ -15,6 +15,9 @@ def check_in_due(booking, answered_weeks, now=None):
     """Which check-in is open: each gets a fortnight to be answered."""
     if booking.status != "completed" or not booking.completed_at:
         return None
+    # Once she's said the style is out, there's nothing left to check on.
+    if booking.check_ins.filter(still_in=False).exists():
+        return None
     days = ((now or timezone.now()) - booking.completed_at).total_seconds() / 86400
     if 28 <= days < 42 and 4 not in answered_weeks:
         return 4

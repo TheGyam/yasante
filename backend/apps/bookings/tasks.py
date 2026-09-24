@@ -109,7 +109,7 @@ def open_check_ins(now=None):
             status="completed",
             completed_at__lte=now - timedelta(days=7 * week),
             completed_at__gt=now - timedelta(days=7 * week + 7),
-        ).exclude(check_ins__week=week)
+        ).exclude(check_ins__week=week).exclude(check_ins__still_in=False)
         for b in due:
             notify(
                 b.client_id,

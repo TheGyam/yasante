@@ -10,7 +10,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter } from '@/shared/lib/navigation';
 import { useIsFocused, useScrollToTop } from '@react-navigation/native';
 import { ChevronLeft, X } from 'lucide-react-native';
@@ -38,7 +38,7 @@ export interface ScreenProps {
    *   and `useContentInsets`, and put `<ScreenTitle>` in the list header.
    */
   scroll?: boolean | 'list';
-  /** Forms: the scroll view keeps the focused field above the keyboard. */
+  /** Forms: the focused field stays above the keyboard (a fixed screen shrinks to fit). */
   keyboard?: boolean;
   refreshing?: boolean;
   onRefresh?: () => void;
@@ -165,6 +165,12 @@ export function Screen({
   let body: ReactNode;
   if (scroll === 'list') {
     body = <View style={styles.fill}>{children}</View>;
+  } else if (scroll === false && keyboard) {
+    body = (
+      <KeyboardAvoidingView behavior="padding" style={[styles.fill, containerStyle]}>
+        {children}
+      </KeyboardAvoidingView>
+    );
   } else if (scroll === false) {
     body = <View style={[styles.fill, containerStyle]}>{children}</View>;
   } else if (keyboard) {

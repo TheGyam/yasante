@@ -5,7 +5,10 @@ booking before saving (`booking._actor = request.user`); anything unmarked is th
 system, such as a request lapsing or an appointment completing on its own.
 """
 
+from datetime import timedelta
+
 from django.db.models.signals import post_init, post_save
+from django.utils import timezone
 from django.dispatch import receiver
 
 from .models import Booking, BookingEvent
@@ -62,5 +65,17 @@ def record(sender, instance, created, **kwargs):
             add("move_requested", before=status, move_request=instance.move_request)
         if move and not instance.move_request and instance.scheduled_for:
             add("move_answered", before=status, scheduled_for=instance.scheduled_for.isoformat())
+    if not events:
+        instance._audit_was = (instance.status, instance.proposal, instance.move_request)
+        return
+    # Strictly after the booking's last event, and a microsecond apart within one
+    # save, so the trail always reads back in the order things happened, even when
+    # the clock is coarse.
+    last = BookingEvent.objects.filter(booking=instance).order_by("-at").values_list("at", flat=True).first()
+    now = timezone.now()
+    if last and now <= last:
+        now = last + timedelta(microseconds=1)
+    for i, event in enumerate(events):
+        event.at = now + timedelta(microseconds=i)
     BookingEvent.objects.bulk_create(events)
     instance._audit_was = (instance.status, instance.proposal, instance.move_request)

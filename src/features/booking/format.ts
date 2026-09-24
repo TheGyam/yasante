@@ -30,9 +30,39 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
 const LIVE: BookingStatus[] = ['requested', 'awaiting_deposit', 'confirmed'];
 export const isLive = (booking: Pick<Booking, 'status'>) => LIVE.includes(booking.status);
 
+/** Where the appointments happen: times are shown as the stylist's clock reads them. */
+export const SALON_TIME_ZONE = 'Europe/London';
+
+const salonParts = new Intl.DateTimeFormat('en-GB', {
+  timeZone: SALON_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
+
+/**
+ * The moment as London's clock shows it, as a Date whose local fields read that way,
+ * so ordinary formatting prints salon time. A phone set to Berlin still sees the
+ * 10:30 she'll walk in at, the same time the notifications say.
+ */
+export function salonTime(iso: string | Date) {
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return at;
+  try {
+    const p = Object.fromEntries(salonParts.formatToParts(at).map(x => [x.type, x.value]));
+    return new Date(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+  } catch {
+    return at;
+  }
+}
+
 /** "Today", "Tomorrow", "Sat 26 Sep" — a day, before there's a time on it. */
 export function dayLabel(iso: string) {
-  const at = new Date(iso);
+  const at = salonTime(iso);
   if (Number.isNaN(at.getTime())) return '';
   if (isToday(at)) return 'Today';
   if (isTomorrow(at)) return 'Tomorrow';
@@ -41,7 +71,7 @@ export function dayLabel(iso: string) {
 
 /** "Today, 14:00", "Tomorrow, 09:30", "Sat 26 Sep, 14:00" */
 export function whenLabel(iso: string) {
-  const at = new Date(iso);
+  const at = salonTime(iso);
   if (Number.isNaN(at.getTime())) return '';
   const time = format(at, 'HH:mm');
   if (isToday(at)) return `Today, ${time}`;

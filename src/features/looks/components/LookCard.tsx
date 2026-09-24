@@ -12,7 +12,7 @@ import {
 } from 'lucide-react-native';
 import { TEXTURE_LABELS } from '@/features/profile';
 import { formatMoney } from '@/shared/lib/format';
-import { makeStyles, radius, space, useTheme } from '@/shared/theme';
+import { HIT_TARGET, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { IconButton } from '@/shared/ui/IconButton';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -52,6 +52,8 @@ export interface LookCardProps {
 const useStyles = makeStyles(t => ({
   card: { gap: space.sm, marginBottom: space.xxl },
   author: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  // Takes the row's spare width, so the options button always has its place at the end.
+  who: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm },
   names: { flex: 1 },
   media: {
     overflow: 'hidden',
@@ -75,7 +77,15 @@ const useStyles = makeStyles(t => ({
   serviceText: { color: '#FFFFFF' },
   save: { position: 'absolute', right: space.sm, bottom: space.sm },
   actions: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
-  action: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minHeight: 36 },
+  // 44 square at least: a thumb, not a fingertip (the icons are 20).
+  action: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.xs,
+    minHeight: HIT_TARGET,
+    minWidth: HIT_TARGET,
+  },
   spacer: { flex: 1 },
   book: {
     flexDirection: 'row',
@@ -159,12 +169,12 @@ export const LookCard = memo(function LookCard({
           <PressableScale
             onPress={() => onOpenPerson(look.authorHandle!)}
             accessibilityLabel={`${look.authorName}, open their page`}
-            containerStyle={styles.author}
+            containerStyle={styles.who}
           >
             {author}
           </PressableScale>
         ) : (
-          <View style={styles.author}>{author}</View>
+          <View style={styles.who}>{author}</View>
         )}
         <IconButton
           icon={MoreHorizontal}

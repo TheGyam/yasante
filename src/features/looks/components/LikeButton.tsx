@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Heart } from 'lucide-react-native';
-import { EASE_OUT, makeStyles, space, useTheme } from '@/shared/theme';
+import { EASE_OUT, HIT_TARGET, makeStyles, space, useTheme } from '@/shared/theme';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Text } from '@/shared/ui/Text';
 
@@ -23,7 +23,14 @@ export interface LikeButtonProps {
 }
 
 const useStyles = makeStyles(() => ({
-  button: { flexDirection: 'row', alignItems: 'center', gap: space.xs, minHeight: 36 },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.xs,
+    minHeight: HIT_TARGET,
+    minWidth: HIT_TARGET,
+  },
 }));
 
 /**
