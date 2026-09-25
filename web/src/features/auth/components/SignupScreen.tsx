@@ -146,6 +146,12 @@ export function SignupScreen() {
                 <Text variant="subhead" tone="accent">
                   Terms of Service
                 </Text>
+              </Link>
+              ,{' '}
+              <Link to="/stylist-terms" target="_blank">
+                <Text variant="subhead" tone="accent">
+                  Stylist terms
+                </Text>
               </Link>{' '}
               and{' '}
               <Link to="/privacy" target="_blank">
