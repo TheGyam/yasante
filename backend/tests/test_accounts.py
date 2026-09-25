@@ -101,26 +101,6 @@ def test_reset_password_with_a_valid_token(api, make_user):
     assert login.status_code == 200
 
 
-def test_phone_code_flow(api, make_user, monkeypatch):
-    user = make_user(verified=False)
-    monkeypatch.setattr("apps.accounts.views.generate_code", lambda n: "123456")
-    as_user = api(user)
-    start = as_user.post("/api/auth/phone/start/", {"phone": "07700 900123"})
-    assert start.status_code == 200
-    assert start.json() == {"resendInSeconds": 30, "expiresInSeconds": 600}
-    again = as_user.post("/api/auth/phone/start/", {"phone": "07700 900123"})
-    assert again.status_code == 429 and "Wait" in again.json()["message"]
-    assert as_user.post("/api/auth/phone/verify/", {"phone": "07700900123", "code": "000000"}).status_code == 400
-    ok = as_user.post("/api/auth/phone/verify/", {"phone": "07700900123", "code": "123456"})
-    assert ok.status_code == 200
-    assert ok.json()["phoneVerified"] is True and ok.json()["phone"] == "+447700900123"
-
-
-def test_phone_start_refuses_a_non_uk_mobile(api, make_user):
-    response = api(make_user(verified=False)).post("/api/auth/phone/start/", {"phone": "+15551234567"})
-    assert response.status_code == 400
-
-
 def test_invites_look_up_and_redeem(api, make_user):
     from apps.accounts.models import Invite
 

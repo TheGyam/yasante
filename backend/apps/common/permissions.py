@@ -20,19 +20,6 @@ class IsOwner(BasePermission):
         return getattr(obj, "pk", None) == request.user.pk
 
 
-class IsPhoneVerified(BasePermission):
-    """Requires the user's phone to be verified."""
-
-    message = "Verify your mobile number before you book"
-
-    def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and request.user.phone_verified
-        )
-
-
 class IsStylist(BasePermission):
     """Requires the user to have the stylist role."""
 

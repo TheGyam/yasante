@@ -266,11 +266,7 @@ defineMocks({
 
   'POST /api/bookings/': request => {
     const accountId = requireAccount(request);
-    const account = db.accounts.get(accountId);
-    // The plan gates a request on a verified phone, and so does the server.
-    if (!account?.phoneVerified) {
-      throw new MockError(403, 'Verify your mobile number before you book');
-    }
+    const account = db.accounts.get(accountId)!;
 
     const stylistId = String(request.body?.stylistId ?? '');
     const profile = db.stylists.get(stylistId);

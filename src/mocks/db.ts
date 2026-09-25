@@ -395,7 +395,6 @@ export const db = {
   ]),
 
   /** Pending phone codes. In dev the code is always 123456. */
-  phoneCodes: new Map<string, { code: string; sentAt: number; attempts: number }>(),
 
   // Requests arrive with bookings; until then the inbox is honestly empty.
   pendingRequests: new Map<string, number>(),

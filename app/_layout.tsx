@@ -82,7 +82,6 @@ function RootNavigator() {
   const router = useRouter();
   const { push, modal, fade, overlay } = useStackPresets();
   const { isAuthenticated, isLoading, user } = useAuth();
-  const phoneDeferred = useAuthStore(s => s.phoneDeferred);
   const onboarded = useUserStore(s => s.onboardingCompleted);
   const mode = useActiveMode();
   const userHydrated = useHydrated(useUserStore);
@@ -152,13 +151,11 @@ function RootNavigator() {
 
   // Someone who has taken the quiz or signed in is inside the app, even as a guest.
   const entered = isAuthenticated || onboarded;
-  // Signing up continues into email and then phone verification, so the auth flow
-  // stays open until the email is confirmed and the phone is checked or put off.
-  // (Only an explicit false counts: accounts saved before emails were checked have no
-  // value at all, and they're all confirmed.)
+  // Signing up continues into email verification, so the auth flow stays open until
+  // the email is confirmed. (Only an explicit false counts: accounts saved before
+  // emails were checked have no value at all, and they're all confirmed.)
   const emailUnconfirmed = isAuthenticated && user?.emailVerified === false;
-  const inAuthFlow =
-    !isAuthenticated || emailUnconfirmed || (!user?.phoneVerified && !phoneDeferred);
+  const inAuthFlow = !isAuthenticated || emailUnconfirmed;
 
   return (
     <>

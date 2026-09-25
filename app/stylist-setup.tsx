@@ -127,8 +127,6 @@ export default function StylistSetupScreen() {
       haptics.error();
       const message = errorMessage(error, 'We couldn’t put your page live just yet.');
       await notify({ title: 'Not live yet', message });
-      // The one thing she can fix from here.
-      if (message.toLowerCase().includes('mobile')) router.push('/auth/verify-phone');
     }
   };
 
@@ -308,7 +306,12 @@ export default function StylistSetupScreen() {
                 fullWidth
               />
             ) : (
-              <Button label="Finish later" variant="ghost" onPress={() => router.back()} fullWidth />
+              <Button
+                label="Finish later"
+                variant="ghost"
+                onPress={() => router.back()}
+                fullWidth
+              />
             ))}
         </View>
       </View>
@@ -322,11 +325,6 @@ export default function StylistSetupScreen() {
           setPickingPhoto(false);
         }}
       />
-      {!user?.phoneVerified && index === STEPS.length - 1 ? (
-        <Text variant="footnote" tone="tertiary" align="center">
-          You’ll verify your mobile before the page goes live.
-        </Text>
-      ) : null}
     </Screen>
   );
 }

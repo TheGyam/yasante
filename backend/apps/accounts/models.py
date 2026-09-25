@@ -1,5 +1,5 @@
 """
-Account models: User, Invite, PhoneChallenge, DeviceToken.
+Account models: User, Invite, EmailChallenge, DeviceToken.
 """
 
 import uuid
@@ -120,35 +120,6 @@ class Invite(models.Model):
         return self.redeemed_by is None and self.expires_at > timezone.now()
 
 
-class PhoneChallenge(models.Model):
-    """
-    Short-lived phone verification challenge.
-    The code is stored hashed (HMAC-SHA256).
-    """
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="phone_challenges"
-    )
-    phone = models.CharField(max_length=20)
-    code_hash = models.CharField(max_length=128)
-    attempts = models.PositiveSmallIntegerField(default=0)
-    expires_at = models.DateTimeField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = "accounts_phone_challenge"
-        ordering = ["-created_at"]
-
-    @property
-    def is_expired(self) -> bool:
-        return timezone.now() > self.expires_at
-
-    @property
-    def is_locked(self) -> bool:
-        return self.attempts >= settings.PHONE_CODE_MAX_ATTEMPTS
-
-
 class EmailChallenge(models.Model):
     """A short-lived code sent to an email address, stored hashed like a phone code."""
 
@@ -170,7 +141,7 @@ class EmailChallenge(models.Model):
 
     @property
     def is_locked(self) -> bool:
-        return self.attempts >= settings.PHONE_CODE_MAX_ATTEMPTS
+        return self.attempts >= settings.VERIFICATION_CODE_MAX_ATTEMPTS
 
 
 class DeviceToken(models.Model):
