@@ -1,12 +1,17 @@
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from './api';
+import { consentsAtSignup, recordConsents } from './consents';
 import { currentSession, endSession, startSession, updateUser } from './session';
 import type { LoginRequest, SignupRequest } from './types';
 
 export function useSignup() {
   return useMutation({
     mutationFn: (body: SignupRequest) => authApi.signup(body),
-    onSuccess: startSession,
+    onSuccess: auth => {
+      startSession(auth);
+      // She ticked the box for the terms, privacy and stylist terms: on the record.
+      void recordConsents(auth.user.id, consentsAtSignup());
+    },
   });
 }
 

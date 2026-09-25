@@ -37,6 +37,7 @@ describe('a stylist setting up on the web', () => {
   it('makes an account, confirms the email and puts a page live', async () => {
     const calls = mockApi({
       'POST /api/auth/signup/': { status: 201, body: auth },
+      'POST /api/consents/': { status: 201 },
       'POST /api/auth/email/start/': { resendInSeconds: 30, expiresInSeconds: 600 },
       'POST /api/auth/email/verify/': { ...user, emailVerified: true },
       'GET /api/stylists/me/': { status: 404, body: { message: 'No stylist page yet' } },
@@ -77,6 +78,18 @@ describe('a stylist setting up on the web', () => {
       policyVersion: '2026-09',
     });
     await waitFor(() => expect(calls.some(c => c.url === '/api/auth/email/start/')).toBe(true));
+    // What she agreed to is on the record, stylist terms included.
+    const consents = calls.find(c => c.url === '/api/consents/');
+    expect(consents?.auth).toBe('Bearer access-1');
+    expect(
+      (consents?.body as { consents: { purpose: string; policyVersion: string }[] }).consents.map(
+        c => [c.purpose, c.policyVersion]
+      )
+    ).toEqual([
+      ['terms', '2026-09'],
+      ['privacy', '2026-09'],
+      ['stylist_terms', '2026-09'],
+    ]);
     await typist.type(screen.getByLabelText('The code from the email'), '123456');
 
     // The page, starting from her name.
