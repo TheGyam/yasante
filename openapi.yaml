@@ -2882,7 +2882,7 @@ components:
         lookId:
           type: string
           minLength: 1
-          description: The look she's booking from
+          description: The look the booking is from
       required:
       - bringingOwnHair
       - policyVersion
@@ -4031,7 +4031,7 @@ components:
         bookingId:
           type: string
           minLength: 1
-          description: Credits her stylist through this booking
+          description: Credits the stylist through this booking
         serviceId:
           type: string
           minLength: 1
