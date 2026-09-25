@@ -7,6 +7,13 @@ import {
   ImagePickerResult,
 } from '@/shared/lib/imageService';
 
+/** A photo that couldn't be had, in words: permission, or anything else. */
+function pickerMessage(err: unknown) {
+  return /permission/i.test(String((err as Error)?.message))
+    ? 'Allow access to your photos in Settings, then try again.'
+    : 'That photo couldn’t be added. Please try another.';
+}
+
 export function useImagePicker() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +31,7 @@ export function useImagePicker() {
       }
       return result.uri;
     } catch (err: any) {
-      setError(err.message || 'Failed to pick image');
+      setError(pickerMessage(err));
       return null;
     } finally {
       setLoading(false);
@@ -41,7 +48,7 @@ export function useImagePicker() {
       for (const image of picked) uris.push(await compressImage(image.uri));
       return uris;
     } catch (err: any) {
-      setError(err.message || 'Failed to pick images');
+      setError(pickerMessage(err));
       return [];
     } finally {
       setLoading(false);
@@ -61,7 +68,7 @@ export function useImagePicker() {
       }
       return result.uri;
     } catch (err: any) {
-      setError(err.message || 'Failed to take photo');
+      setError(pickerMessage(err));
       return null;
     } finally {
       setLoading(false);

@@ -83,6 +83,53 @@ export function useUsernameCheck(value: string, current?: string) {
   });
 }
 
+/**
+ * A username field's state and what to say under it as she types: free, taken and
+ * why, or too short. Shared by Edit profile and the username prompt.
+ */
+export function useUsernameField(current?: string) {
+  const [username, setUsername] = useState(current ?? '');
+  const check = useUsernameCheck(username, current);
+  const wanted = username.trim().replace(/^@/, '').toLowerCase();
+  const changed = !!wanted && wanted !== current;
+  const taken = changed && check.data?.username === wanted && !check.data.available;
+  const hint = !changed
+    ? current
+      ? 'It’s what your looks and comments show.'
+      : 'Letters, numbers, dots and underscores'
+    : check.data?.username === wanted
+      ? check.data.available
+        ? 'That one’s yours if you want it'
+        : (check.data.reason ?? 'Someone already has that')
+      : wanted.length < 3
+        ? 'At least 3 characters'
+        : check.isError
+          ? 'We’ll check it when you save'
+          : 'Checking…';
+  return {
+    username,
+    // No spaces in a username; they're dropped as she types.
+    setUsername: (text: string) => setUsername(text.replace(/\s/g, '')),
+    wanted,
+    changed,
+    taken,
+    hint,
+    tooShort: wanted.length < 3,
+  };
+}
+
+/**
+ * True for someone about to post or comment with no username yet: what's shown on
+ * a post is the username, so she's asked for one first. Stylists post under their
+ * brand name and are never asked.
+ */
+export function useNeedsUsername() {
+  const { user: authUser, isAuthenticated } = useAuth();
+  const { data: user } = useUser(authUser?.id, { enabled: isAuthenticated });
+  const me = user ?? authUser;
+  return isAuthenticated && !!me && !me.roles?.includes('stylist') && !me.username;
+}
+
 export function useUpdateHairProfile(userId?: string) {
   const queryClient = useQueryClient();
   const { user: authUser } = useAuth();

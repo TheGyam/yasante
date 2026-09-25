@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import { SplashScreen, Stack } from 'expo-router';
+import { SplashScreen, Stack, type ErrorBoundaryProps } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { StatusBar } from 'expo-status-bar';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -22,7 +23,7 @@ import { useNotifications } from '@/shared/hooks/useNotifications';
 import { registerPush } from '@/shared/lib/push';
 import { useConsentSync } from '@/shared/config/consentSync';
 import { startAnalytics, track } from '@/shared/lib/analytics';
-import { ThemeProvider, useTheme, useThemePreference } from '@/shared/theme';
+import { darkTheme, ThemeProvider, useTheme, useThemePreference } from '@/shared/theme';
 import { DialogHost } from '@/shared/ui/DialogHost';
 import { useStackPresets } from '@/shared/ui/stackOptions';
 import { queryClient } from '@/queryClient';
@@ -39,6 +40,38 @@ SplashScreen.preventAutoHideAsync();
 startAnalytics();
 
 export const unstable_settings = { anchor: '(client)' };
+
+/**
+ * If a screen crashes, a calm page with a way back instead of the error's own text,
+ * which is written for developers. Drawn without the app's providers (they're what
+ * this replaces), so plain components and the dark palette.
+ */
+export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+  const c = darkTheme.colors;
+  return (
+    <View style={[crash.page, { backgroundColor: c.bg }]}>
+      <Text style={[crash.title, { color: c.text.primary }]}>Something went wrong</Text>
+      <Text style={[crash.body, { color: c.text.secondary }]}>
+        This screen ran into a problem. Try again, and if it keeps happening, restart the app.
+      </Text>
+      <Pressable
+        onPress={retry}
+        accessibilityRole="button"
+        style={[crash.button, { backgroundColor: c.accent }]}
+      >
+        <Text style={[crash.label, { color: c.text.onAccent }]}>Try again</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const crash = StyleSheet.create({
+  page: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
+  title: { fontSize: 20, fontWeight: '600', textAlign: 'center' },
+  body: { fontSize: 15, lineHeight: 21, textAlign: 'center' },
+  button: { marginTop: 12, paddingHorizontal: 28, paddingVertical: 14, borderRadius: 999 },
+  label: { fontSize: 16, fontWeight: '600' },
+});
 
 const useHydrated = (
   store: typeof useUserStore | typeof useModeStore | typeof useThemePreference
@@ -183,6 +216,7 @@ function RootNavigator() {
           <Stack.Screen name="care-plans/[id]" />
           <Stack.Screen name="care-plans/edit" options={modal} />
           <Stack.Screen name="edit-profile" options={modal} />
+          <Stack.Screen name="username" options={modal} />
         </Stack.Protected>
 
         <Stack.Screen name="invite/[code]" />

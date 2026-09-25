@@ -135,7 +135,7 @@ class ShelfDetailView(APIView):
             item.finished_at = None
         elif wanted and wanted != item.status:
             return Response(
-                {"message": f"Can’t go from {item.status} to {wanted}"}, status=409
+                {"message": "That can’t be changed right now. Pull down to refresh and try again."}, status=409
             )
         item.save()
         return Response(present_item(item))

@@ -76,8 +76,8 @@ function CollectionItems() {
   const { data: items = [], isLoading, isRefetching, refetch } = useCollectionItems(id);
   // The grid is built once the page has slid in: building it with the page, even
   // from the cache, made the slide start late and stutter (a third of frames late
-  // on a Note10+). Cached items are there the moment it lands; only a real wait for
-  // the network shows a placeholder.
+  // on a Note10+). A placeholder holds the space while it slides; cached items fill
+  // it the moment it lands.
   const arrived = useTransitionDone();
   const showGrid = arrived && !isLoading;
 
@@ -161,7 +161,7 @@ function CollectionItems() {
           }
         />
       </Section>
-      {isLoading && <Skeleton height={160} />}
+      {!showGrid && <Skeleton height={160} />}
     </View>
   );
 

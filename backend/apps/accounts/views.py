@@ -118,12 +118,12 @@ class RefreshTokenView(APIView):
             )
         except TokenError:
             return Response(
-                {"message": "Invalid or expired refresh token. Please sign in again."},
+                {"message": "Your session has ended. Please sign in again."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
         except User.DoesNotExist:
             return Response(
-                {"message": "Account not found."},
+                {"message": "We couldn’t find that account."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -184,7 +184,7 @@ class ResetPasswordView(APIView):
         uid = request.data.get("uid")
         if not uid:
             return Response(
-                {"message": "Invalid reset link."},
+                {"message": "This reset link doesn’t work. Request a new one."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -192,7 +192,7 @@ class ResetPasswordView(APIView):
             user = User.objects.get(pk=uid)
         except User.DoesNotExist:
             return Response(
-                {"message": "Invalid reset link."},
+                {"message": "This reset link doesn’t work. Request a new one."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -288,7 +288,7 @@ class PhoneStartView(APIView):
                 - (timezone.now() - recent.created_at).seconds
             )
             return Response(
-                {"message": f"Wait {max(remaining, 1)}s before asking again."},
+                {"message": f"Wait {max(remaining, 1)} seconds before asking for another code."},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 

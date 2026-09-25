@@ -38,6 +38,7 @@ import {
   useToggleCommentLike,
   type LookComment,
 } from '@/features/looks';
+import { useNeedsUsername } from '@/features/profile';
 import { usePrefetchStylistPage } from '@/features/stylist';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
@@ -676,6 +677,8 @@ function Composer({
   const input = useRef<TextInput>(null);
   const [body, setBody] = useState('');
   const add = useAddComment(lookId);
+  const router = useRouter();
+  const needsUsername = useNeedsUsername();
   const ready = body.trim().length > 0 && !add.isPending;
 
   // Tapping Reply puts the cursor straight in the box.
@@ -696,6 +699,8 @@ function Composer({
   const send = async () => {
     const text = body.trim();
     if (!text) return;
+    // A comment shows her username: asked for first, and what she wrote stays here.
+    if (needsUsername) return router.push('/username');
     setBody('');
     try {
       await add.mutateAsync({ body: text, replyTo: replyingTo });

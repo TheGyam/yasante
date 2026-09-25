@@ -33,9 +33,5 @@ export function useVerifyPhone() {
   });
 }
 
-/** The server's message for a failed request, if it sent one. */
-export function errorMessage(error: unknown, fallback: string) {
-  const data = (error as { response?: { data?: { message?: string; detail?: string } } })?.response
-    ?.data;
-  return data?.message ?? data?.detail ?? fallback;
-}
+// Kept here too: most screens import it from auth.
+export { errorMessage } from '@/shared/lib/errors';

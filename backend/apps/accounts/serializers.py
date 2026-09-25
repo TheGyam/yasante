@@ -79,7 +79,7 @@ class SignupSerializer(serializers.Serializer):
                     )
                 attrs["_invite"] = invite
             except Invite.DoesNotExist:
-                raise serializers.ValidationError({"message": "Invalid invite code."})
+                raise serializers.ValidationError({"message": "That invite code doesn’t work. Check it and try again."})
 
         return attrs
 

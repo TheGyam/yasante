@@ -43,6 +43,8 @@ export const NOT_HANDLES = new Set([
   'shelf',
   'stylist',
   'stylist-setup',
+  'username',
+  'policy',
   // Tabs.
   'home',
   'planner',

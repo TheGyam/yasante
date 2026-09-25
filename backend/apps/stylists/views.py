@@ -112,7 +112,7 @@ class HandleCheckView(APIView):
     def get(self, request):
         handle = request.query_params.get("handle", "").lower().strip()
         if not handle:
-            return Response({"message": "Provide a handle."}, status=400)
+            return Response({"message": "Enter a handle to check."}, status=400)
 
         # Her own handle isn't "taken": editing her page checks the one she already has.
         others = StylistProfile.objects.all()

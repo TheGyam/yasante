@@ -61,7 +61,7 @@ class UserDetailView(APIView):
         # can't be probed for whether it exists.
         if str(request.user.pk) != str(pk):
             return Response(
-                {"message": "User not found."}, status=status.HTTP_404_NOT_FOUND
+                {"message": "We couldn’t find that account."}, status=status.HTTP_404_NOT_FOUND
             )
         return Response(UserDetailSerializer(request.user).data)
 
