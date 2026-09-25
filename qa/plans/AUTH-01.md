@@ -44,41 +44,60 @@ Then **server check**: `cat .env.development.local` from the repo root. Expect
 Expect `"dev_client": true`. **If it is false, or a WARNING is printed, stop the run
 here**: that build can only talk to the live server. Report BLOCKED.
 
-**P4: Fresh app.** `qa/bin/qadb clear`, then `qa/bin/qadb launch`. Wait 20 s for the
-bundle (the first load can take a minute; the dev client shows a progress bar). Then
-`qadb step P4 "welcome after clear"`.
+**P4: Fresh app.** `qa/bin/qadb clear`, then `qa/bin/qadb launch`. Wait until
+`grep -i bundled qa/runs/<RUN>/metro.log` prints a line (up to 2 minutes), then 10 s more.
+`qadb step P4a`. After a clear, the dev client shows its developer-menu intro
+(`This is the developer menu…`, `Continue`). If so: `qadb tapon Continue --exact`, then
+`qadb tapon Close --exact`. The app then shows `Unmatched Route` with a
+`yasante://expo-development-client…` line. That's expected: the dev client's own launch
+link reaches the router. Run `qadb link "yasante:///"`, wait 3 s, `qadb step P4`.
 Expect the welcome screen with these texts: `Get started`,
 `I already have an account`, `Just look around`, and the three promises
 (`Made for your texture`, `Plan every style`, `See your growth`).
-If a dev-client menu or "Connect to Metro" screen shows instead, capture it and stop:
-BLOCKED.
+If it says it can't connect to the development server, capture it and stop: BLOCKED.
 
 **P5: ROUTING GATE.** This proves the app talks to the laptop.
 1. `qadb tapon "I already have an account"` → `qadb step P5a`
-2. Tap the Email field, type `ama.achieng@yasante.dev`; tap the Password field, type
-   `password123`; `qadb tapon "Sign in" --exact` (if several match, it's the button,
-   not the footer link, so pick the one that is a button in the `find` output).
+2. `qadb tapon email-input`, `qadb type "ama.achieng@yasante.dev"`,
+   `qadb tapon password-input`, `qadb type "password123"`, `qadb step P5a2`,
+   `qadb tapon login-button`.
 3. Wait 5 s, `qadb step P5b "after sign-in"`.
 4. **Server check:** `grep -E '"POST /api/auth/login/' qa/runs/<RUN>/server.log | tail -3`
 
 **Expect:** the server check shows a line ending `" 200 <number>` with a time from the
-last minute (server log times are UTC), and the screen shows the app's home (the looks
-feed), not the login screen.
+last minute (server log times are UTC).
 **If the grep prints nothing, STOP THE WHOLE RUN.** The app is talking to some other
 server. Do not sign up, do not continue. Report the gate as FAIL.
 
-**P6: Back to signed out.** Open the Profile tab (`qadb find "Profile"`, tap it), open
-settings (look for a gear or "Settings"), `qadb tapon "Sign out"`, and confirm the dialog
-with `Sign out`. `qadb step P6`.
-Expect: the welcome or sign-in screen. **Server check:**
-`grep -E '"POST /api/auth/logout/' qa/runs/<RUN>/server.log | tail -1` shows `204`.
-Record how you got to settings (the exact taps), because later plans will reuse it.
+The seeded accounts are not email-confirmed (a known seed-data gap), so the screen goes
+to `Check your email`, not the feed. That screen's blinking cursor usually stops the UI
+tree from being read (`UI tree unavailable`), which is expected; the screenshot is the
+evidence. Finish the sign-in:
+5. `qa/bin/mailbox <RUN> --to ama.achieng@yasante.dev --last` and note the code. The code
+   boxes already have focus: `qadb type "<code>"`. Wait 5 s. `qadb step P5c`.
+6. **Server check:** `grep -E '"POST /api/auth/email/verify/' … | tail -1` shows `200`.
+   **db check:** `dbcheck ama.achieng@yasante.dev` shows `verified=True`.
+Expect: the feed (`Hey Ama`, `Looks`, tabs `Home`, `Planner`, `Profile`).
+
+**P6: Back to signed out.** The **sign-out route** (reused throughout):
+`qadb tapon Profile --exact` → `qadb tapon Settings --exact` (the gear, top right) →
+`qadb swipe up` → `qadb tapon "Sign out" --exact` → `qadb step P6a` (expect the
+`Sign out?` dialog) → `qadb tapon dialog-confirm`. Wait 3 s. `qadb step P6`.
+Expect: the signed-out Profile tab, reading `Your hair, your space` and
+`Create a free account`.
+**Server check:** `grep -E '"POST /api/auth/logout/' qa/runs/<RUN>/server.log | tail -1`
+should show `204`. If it prints nothing, the verdict is **FAIL**: the server was never told
+about the sign-out, so the session stays valid on the server. Say so, and carry on
+(this is not a gate).
+To reach the welcome or sign-in screen from here, run `qadb link "yasante:///auth/login"`.
+If that doesn't open `Welcome back`, use `Create a free account` and the sign-in link in its
+footer, and record what worked.
 
 ---
 
 ## A: Sign in and session
 
-Start: signed out, on the welcome screen (after P6). `qadb tapon "I already have an account"`.
+Start: signed out (after P6). `qadb link "yasante:///auth/login"`, wait 3 s. Field and button testIDs: `email-input`, `password-input`, `login-button`, `forgot-password-link`.
 
 **A1: Empty form.** Tap `Sign in` (the button) with both fields empty. `qadb step A1`.
 Expect: `Enter your email` and `Enter your password` under the fields. **Server check:**
@@ -108,9 +127,9 @@ Quote it.
 Expect: straight into the feed, with no welcome and no sign-in screen.
 **Server check:** `grep -cE '"POST /api/auth/login/' …` is unchanged from A5.
 
-**A7: Sign out.** Sign out as in P6. `qadb step A7`. Then `qadb stop`, `qadb launch`,
-wait 20 s, `qadb step A7b`. Expect: still signed out after the restart (welcome or
-sign-in screen, no feed with an account). Server: `logout` line `204`.
+**A7: Sign out.** Sign out by the sign-out route in P6. `qadb step A7`. Then `qadb stop`, `qadb launch`,
+wait 20 s, `qadb step A7b`. Expect: still signed out after the restart (the feed as a guest, the welcome
+screen or the signed-out Profile tab; no `Hey Ama`). Server: `logout` line `204`.
 **db check:** `qa/bin/dbcheck ama.achieng@yasante.dev`. Paste it. The `revoked` count
 should be at least 1.
 
@@ -118,19 +137,17 @@ should be at least 1.
 
 ## B: Client sign-up and the email code
 
-Start: signed out on the welcome screen. **Wait 65 s** if Part A just ran.
+Start: signed out. **Wait 65 s** if Part A just ran. Sign-up testIDs: `name-input`,
+`email-input`, `password-input`, `confirm-password-input`, `signup-button`.
 
-**B1: Role choice.** From welcome, `qadb tapon "Get started"`. **Record** where it
-lands (it may be the hair quiz, not sign-up). Capture `qadb step B1`. If it's the quiz,
-go back (`qadb key BACK`) and find another route to "Join" / "Create an account": the
-sign-in screen's footer has `Create an account`. Capture the screen with the two role
-cards (`I’m here for my hair`, `I’m a stylist`) as `qadb step B1b`.
+**B1: Role choice.** `qadb link "yasante:///auth/join"`, wait 3 s, `qadb step B1`.
+Expect `Join Yasante` and two role cards (testIDs `role-client`, `role-stylist`).
 
-**B2: Pick client.** `qadb tapon "I’m here for my hair"`. Wait 2 s. `qadb step B2`.
+**B2: Pick client.** `qadb tapon role-client`. Wait 2 s. `qadb step B2`.
 Expect: title `Create your account`, fields Name, Email, Password, Confirm password, the
 18+ checkbox, and a `Create account` button.
 
-**B3: Empty submit.** `qadb tapon "Create account" --exact` (the button). `qadb step B3`.
+**B3: Empty submit.** `qadb tapon signup-button`. `qadb step B3`.
 Expect all of: `Tell us your name`, `Enter your email`, `Use at least 8 characters`,
 `Confirm your password`, `Confirm you’re 18 or over to continue`. No
 `POST /api/auth/signup/` in the server log.
@@ -198,7 +215,7 @@ Expect: the feed, not `Check your email`.
 
 ### B-lock: five wrong codes (second account)
 
-Sign out (as P6). **Wait 65 s.** Sign up the **second client**
+Sign out (the P6 route). **Wait 65 s.** Sign up the **second client**
 (`a01.<STAMP>.two@example.com`, `QA Two <STAMP>`, `Qa-Test-2026!`) the same way as B7,
 capturing `qadb step BL1` on `Check your email`.
 
@@ -226,7 +243,7 @@ the mailbox. `qadb step BL4`. Expect: into the app. db check: `verified=True`.
 
 ## C: Forgot and reset password
 
-Start: signed out. Uses the account from Part B (`a01.<STAMP>.client@example.com`).
+Start: signed out, then `qadb link "yasante:///auth/login"`. Uses the account from Part B (`a01.<STAMP>.client@example.com`).
 If Part B wasn't run today, use `ama.achieng@yasante.dev` and say so.
 
 **C1: Unknown address.** Sign-in screen → `qadb tapon "Forgot password?"`.
@@ -284,7 +301,7 @@ There is no fixed expectation; the owner wants to know.
 
 Start: signed out. **Wait 65 s** after any other sign-up.
 
-**D1.** From the join screen, `qadb tapon "I’m a stylist"`. `qadb step D1`. Expect: title
+**D1.** `qadb link "yasante:///auth/join"`, then `qadb tapon role-stylist`. `qadb step D1`. Expect: title
 `Set up your stylist account`, name label `Your name or business name`, button
 `Create stylist account`.
 

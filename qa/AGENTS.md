@@ -85,9 +85,24 @@ to look before you tap. Use raw `qadb tap X Y` only when the plan says so or not
 else works, and then say so in the report. After typing into a field, capture before
 submitting when the plan asks.
 
-To type into a field: `qadb tapon "<field label or placeholder>"`, then `qadb type "…"`.
+Each capture lists the screen's **testIDs**. They are the steadiest targets
+(`qadb tapon email-input`), so use them whenever the plan names one.
+
+To type into a field: `qadb tapon <testID or label>`, then `qadb type "…"`.
 `qadb type` does not clear a field. To clear one, `qadb key DEL` repeatedly, or clear
 the app data where the plan says so.
+
+**`UI tree unavailable`** happens on screens that never stop moving (the email-code
+screen's blinking cursor, animated feeds). Then `visible text` is empty and the
+screenshot is the only on-screen evidence. **Do not write screen text you can't
+see.** Look at `screen.png`, say what it shows in your own words, and lean on the
+server and db checks. Taps there need the testIDs from an earlier capture or, as a
+last resort, `qadb tap X Y` (say so).
+
+**The developer menu** (`Connected to:`, `Performance monitor`, `Reload`) can pop up
+over the app, for example when the phone is moved. `qadb tapon Close --exact`, then
+repeat the last action, and note it under Other observations. Anything typed while it
+was open went nowhere.
 
 ## 7. Report
 

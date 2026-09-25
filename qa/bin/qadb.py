@@ -108,6 +108,23 @@ def require_foreground(allowed=frozenset({PKG}), what="action"):
     return fg
 
 
+def status_bar_height():
+    out = adb("shell", "dumpsys", "window")
+    m = re.search(r"type=statusBars frame=\[0,0\]\[\d+,(\d+)\]", out)
+    return int(m.group(1)) if m else 160
+
+
+def mask_status_bar(png):
+    """Black out the status bar: its notification icons belong to the owner, not the app."""
+    import io
+    from PIL import Image, ImageDraw
+    img = Image.open(io.BytesIO(png)).convert("RGB")
+    ImageDraw.Draw(img).rectangle([0, 0, img.width, status_bar_height()], fill=(0, 0, 0))
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    return buf.getvalue()
+
+
 def app_pid():
     return adb("shell", "pidof", PKG, check=False).strip().split(" ")[0]
 
@@ -116,7 +133,13 @@ def app_pid():
 
 
 def ui_tree():
-    raw = adb("exec-out", "uiautomator", "dump", "/dev/tty", timeout=40)
+    # A busy screen (blinking cursor, looping animation) never goes idle and the dump
+    # fails; it often succeeds on a retry a moment later.
+    for attempt in range(3):
+        raw = adb("exec-out", "uiautomator", "dump", "/dev/tty", timeout=40)
+        if "<?xml" in raw:
+            break
+        time.sleep(1.5)
     xml = raw[raw.find("<?xml") : raw.rfind("</hierarchy>") + len("</hierarchy>")]
     if not xml:
         raise Refused(f"uiautomator dump failed: {raw.strip()[:200]}")
@@ -162,10 +185,11 @@ def match(tree, needle, exact):
         ok = any((f == needle) if exact else (needle.lower() in f.lower()) for f in fields if f)
         if ok:
             hits.append(n)
-    # A button and its own label are two nodes at one spot: keep one, the clickable one.
+    # A button and its own label/icon are nested nodes: keep one, the clickable one.
     merged = []
     for h in sorted(hits, key=lambda h: not h["clickable"]):
-        if not any(abs(h["center"][0] - m["center"][0]) <= 12 and abs(h["center"][1] - m["center"][1]) <= 12 for m in merged):
+        inside = lambda pt, b: b[0] <= pt[0] <= b[2] and b[1] <= pt[1] <= b[3]
+        if not any(inside(h["center"], m["bounds"]) or inside(m["center"], h["bounds"]) for m in merged):
             merged.append(h)
     return sorted(merged, key=lambda h: (h["center"][1], h["center"][0]))
 
@@ -332,7 +356,7 @@ def cmd_step(step_id, *note):
     png = adb("exec-out", "screencap", "-p", binary=True)
     if foreground() != fg:  # the screen changed hands mid-capture: don't keep it
         raise Refused("foreground changed during capture; screenshot discarded, capture again")
-    (sd / "screen.png").write_bytes(png)
+    (sd / "screen.png").write_bytes(mask_status_bar(png))
 
     texts, ids, ui_error = [], [], None
     try:
