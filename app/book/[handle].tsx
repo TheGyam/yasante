@@ -150,8 +150,6 @@ export default function RequestBookingScreen() {
       haptics.error();
       const message = errorMessage(error, 'Check your connection and try again.');
       await notify({ title: 'Couldn’t send that', message });
-      // The one thing she can fix from here.
-      if (message.toLowerCase().includes('mobile')) router.push('/auth/verify-phone');
       // Someone got there first: show what's still free.
       slots.refetch();
     }
@@ -398,10 +396,7 @@ export default function RequestBookingScreen() {
             testID="booking-send"
           />
           <Text variant="caption" tone="tertiary" align="center">
-            {missing ??
-              (user?.phoneVerified
-                ? `${whenLabel(time!)}. She has 48 hours to reply.`
-                : 'You’ll verify your mobile number before this can be sent.')}
+            {missing ?? `${whenLabel(time!)}. She has 48 hours to reply.`}
           </Text>
         </View>
       </View>

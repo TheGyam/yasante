@@ -96,13 +96,8 @@ export default function VerifyEmailScreen() {
       const account = await verify.mutateAsync(value);
       setStatus('success');
       haptics.success();
-      setTimeout(() => {
-        // The phone comes next unless it's done or put off; otherwise storing the
-        // confirmed account is what closes sign-up.
-        const { phoneDeferred } = useAuthStore.getState();
-        if (!account.phoneVerified && !phoneDeferred) router.replace('/auth/verify-phone');
-        useAuthStore.getState().setUser(account);
-      }, NEXT_AFTER_SUCCESS);
+      // Storing the confirmed account is what closes sign-up.
+      setTimeout(() => useAuthStore.getState().setUser(account), NEXT_AFTER_SUCCESS);
     } catch (error) {
       haptics.error();
       setStatus('error');

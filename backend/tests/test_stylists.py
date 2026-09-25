@@ -40,10 +40,8 @@ def test_create_a_draft_page_and_publish_it(api, make_user):
     assert body["paymentMethods"][0]["label"] == "Monzo"
     user.refresh_from_db()
     assert "stylist" in user.roles
-    # Publishing needs a verified phone.
-    assert api(user).post("/api/stylists/me/publish/").status_code == 403
-    user.phone_verified = True
-    user.save()
+    # No phone check stands in the way of going live.
+    assert not user.phone_verified
     assert api(user).post("/api/stylists/me/publish/").json()["published"] is True
     assert api(user).post("/api/stylists/", draft).status_code == 400
 

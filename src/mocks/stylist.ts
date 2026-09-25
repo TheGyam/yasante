@@ -319,9 +319,6 @@ defineMocks({
     const accountId = requireAccount(request);
     const profile = db.stylists.get(accountId);
     if (!profile) throw new MockError(404, 'No stylist profile yet');
-    if (!db.accounts.get(accountId)?.phoneVerified) {
-      throw new MockError(403, 'Verify your mobile number before your page goes live');
-    }
     profile.published = true;
     return profile;
   },

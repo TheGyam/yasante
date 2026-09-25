@@ -115,49 +115,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/phone/start/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * @description POST /api/auth/phone/start/
-         *
-         *     Sends a 6-digit verification code via SMS.
-         *     Rate limited: 1/30s per phone.
-         */
-        post: operations["auth_phone_start_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/phone/verify/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * @description POST /api/auth/phone/verify/
-         *
-         *     Verifies the phone code. 5 attempts per code, then locked.
-         */
-        post: operations["auth_phone_verify_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/auth/refresh-token/": {
         parameters: {
             query?: never;
@@ -1556,7 +1513,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description POST /api/stylists/me/publish/ — refused until her phone is verified. */
+        /** @description POST /api/stylists/me/publish/ — puts her page live. */
         post: operations["stylists_me_publish_create"];
         delete?: never;
         options?: never;
@@ -1993,6 +1950,10 @@ export interface components {
             /** Format: double */
             actualPrice?: number;
             timing?: components["schemas"]["TimingRequest"];
+        };
+        CodeSent: {
+            resendInSeconds: number;
+            expiresInSeconds: number;
         };
         CollectionItemRequestRequest: {
             kind: components["schemas"]["CollectionKindEnum"];
@@ -2631,19 +2592,6 @@ export interface components {
             label: string;
             details: string;
         };
-        /** @description POST /api/auth/phone/start/ */
-        PhoneStartRequest: {
-            phone: string;
-        };
-        PhoneStartResponse: {
-            resendInSeconds: number;
-            expiresInSeconds: number;
-        };
-        /** @description POST /api/auth/phone/verify/ */
-        PhoneVerifyRequest: {
-            phone: string;
-            code: string;
-        };
         Policies: {
             noticeHours: number;
             depositType: components["schemas"]["DepositTypeEnum"];
@@ -3192,7 +3140,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PhoneStartResponse"];
+                    "application/json": components["schemas"]["CodeSent"];
                 };
             };
         };
@@ -3303,52 +3251,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    auth_phone_start_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PhoneStartRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PhoneStartResponse"];
-                };
-            };
-        };
-    };
-    auth_phone_verify_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PhoneVerifyRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserResponse"];
-                };
             };
         };
     };

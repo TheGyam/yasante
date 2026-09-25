@@ -155,10 +155,6 @@ class BookingListCreateView(APIView):
     def post(self, request):
         user = request.user
         data = request.data
-        # The plan gates a request on a verified phone, and so does the server.
-        if not user.phone_verified:
-            return _err("Verify your mobile number before you book", 403)
-
         stylist_id = data.get("stylist_id")
         profile = (
             StylistProfile.objects.filter(account_id=stylist_id, published=True).first()

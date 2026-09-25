@@ -5,7 +5,7 @@ Account admin — user management, invite management.
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import DeviceToken, Invite, PhoneChallenge, User
+from .models import DeviceToken, EmailChallenge, Invite, User
 
 
 @admin.register(User)
@@ -88,9 +88,9 @@ class InviteAdmin(admin.ModelAdmin):
     readonly_fields = ("redeemed_by", "redeemed_at", "created_at")
 
 
-@admin.register(PhoneChallenge)
-class PhoneChallengeAdmin(admin.ModelAdmin):
-    list_display = ("user", "phone", "attempts", "expires_at", "created_at")
+@admin.register(EmailChallenge)
+class EmailChallengeAdmin(admin.ModelAdmin):
+    list_display = ("user", "email", "attempts", "expires_at", "created_at")
     readonly_fields = ("code_hash",)
 
 

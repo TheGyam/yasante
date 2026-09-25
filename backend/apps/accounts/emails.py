@@ -17,7 +17,7 @@ def send_email_code(email, name, code):
     not, so the app can say so and let her ask again.
     """
     first = (name or "").split(" ")[0] or "there"
-    minutes = settings.PHONE_CODE_EXPIRY_SECONDS // 60
+    minutes = settings.VERIFICATION_CODE_EXPIRY_SECONDS // 60
     text = (
         f"Hi {first},\n\n"
         f"Your Yasante code is {code}\n\n"

@@ -159,19 +159,6 @@ class ResetPasswordSerializer(serializers.Serializer):
         return value
 
 
-class PhoneStartSerializer(serializers.Serializer):
-    """POST /api/auth/phone/start/"""
-
-    phone = serializers.CharField(max_length=20)
-
-
-class PhoneVerifySerializer(serializers.Serializer):
-    """POST /api/auth/phone/verify/"""
-
-    phone = serializers.CharField(max_length=20)
-    code = serializers.CharField(max_length=10)
-
-
 class EmailStartSerializer(serializers.Serializer):
     """POST /api/auth/email/start/ — optionally to a corrected address."""
 
@@ -243,7 +230,7 @@ class MessageSerializer(serializers.Serializer):
     message = serializers.CharField()
 
 
-class PhoneStartResponseSerializer(serializers.Serializer):
+class CodeSentSerializer(serializers.Serializer):
     resend_in_seconds = serializers.IntegerField()
     expires_in_seconds = serializers.IntegerField()
 

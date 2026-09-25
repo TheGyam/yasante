@@ -136,7 +136,7 @@ class HandleCheckView(APIView):
 
 
 def _checks_on_setup(user, profile):
-    """Her phone (verified at signup) counts now; the proof photo waits for review."""
+    """A phone staff have checked counts now; the proof photo waits for review."""
     if user.phone_verified:
         record_check(user.pk, "phone", evidence=user.phone or "")
     if profile.proof_photo_uri:
@@ -355,7 +355,7 @@ class StylistMeView(APIView):
 
 @extend_schema_view(post=extend_schema(request=None, responses=StylistProfileSerializer))
 class StylistPublishView(APIView):
-    """POST /api/stylists/me/publish/ — refused until her phone is verified."""
+    """POST /api/stylists/me/publish/ — puts her page live."""
 
     permission_classes = [permissions.IsAuthenticated]
 
@@ -363,11 +363,6 @@ class StylistPublishView(APIView):
         profile = _my_profile(request)
         if profile is None:
             return Response(NO_PROFILE, status=404)
-        if not request.user.phone_verified:
-            return Response(
-                {"message": "Verify your mobile number before your page goes live"},
-                status=403,
-            )
         profile.published = True
         profile.save(update_fields=["published", "updated_at"])
         return Response(StylistProfileSerializer(profile).data)

@@ -1,5 +1,5 @@
 """
-Account views: signup, login, token refresh, password reset, phone verification.
+Account views: signup, login, token refresh, password reset, email verification.
 """
 
 import logging
@@ -10,8 +10,6 @@ from apps.common.throttling import LoginThrottle, PhoneCodeThrottle, SignupThrot
 from apps.common.utils import (
     generate_code,
     hash_code,
-    is_uk_mobile,
-    normalise_phone,
     verify_code,
 )
 from django.conf import settings
@@ -26,7 +24,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .emails import send_email_code
-from .models import DeviceToken, EmailChallenge, Invite, PhoneChallenge, User
+from .models import DeviceToken, EmailChallenge, Invite, User
 from .serializers import (
     AuthResponseSerializer,
     DeviceTokenSerializer,
@@ -40,9 +38,7 @@ from .serializers import (
     MessageSerializer,
     NotificationPreferencesRequestSerializer,
     NotificationPreferencesSerializer,
-    PhoneStartResponseSerializer,
-    PhoneStartSerializer,
-    PhoneVerifySerializer,
+    CodeSentSerializer,
     RefreshTokenSerializer,
     ResetPasswordSerializer,
     SignupSerializer,
@@ -253,148 +249,7 @@ class LogoutEverywhereView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@extend_schema_view(post=extend_schema(request=PhoneStartSerializer, responses=PhoneStartResponseSerializer))
-class PhoneStartView(APIView):
-    """
-    POST /api/auth/phone/start/
-
-    Sends a 6-digit verification code via SMS.
-    Rate limited: 1/30s per phone.
-    """
-
-    permission_classes = [permissions.IsAuthenticated]
-    throttle_classes = [PhoneCodeThrottle]
-
-    def post(self, request):
-        serializer = PhoneStartSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        phone = normalise_phone(serializer.validated_data["phone"])
-
-        if not is_uk_mobile(phone):
-            return Response(
-                {"message": "Enter a UK mobile number."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Check rate limit — no new code within 30s
-        recent = PhoneChallenge.objects.filter(
-            user=request.user,
-            phone=phone,
-            created_at__gte=timezone.now()
-            - timedelta(seconds=settings.PHONE_CODE_RESEND_SECONDS),
-        ).first()
-
-        if recent:
-            remaining = (
-                settings.PHONE_CODE_RESEND_SECONDS
-                - (timezone.now() - recent.created_at).seconds
-            )
-            return Response(
-                {"message": f"Wait {max(remaining, 1)} seconds before asking for another code."},
-                status=status.HTTP_429_TOO_MANY_REQUESTS,
-            )
-
-        # Generate and store code
-        code = generate_code(settings.PHONE_CODE_LENGTH)
-        PhoneChallenge.objects.create(
-            user=request.user,
-            phone=phone,
-            code_hash=hash_code(code),
-            expires_at=timezone.now()
-            + timedelta(seconds=settings.PHONE_CODE_EXPIRY_SECONDS),
-        )
-
-        # Send SMS (console backend in dev)
-        logger.info("Phone verification code for %s: %s", phone, code)
-        # TODO: Twilio integration for production
-        # self._send_sms(phone, code)
-
-        return Response(
-            {
-                "resend_in_seconds": settings.PHONE_CODE_RESEND_SECONDS,
-                "expires_in_seconds": settings.PHONE_CODE_EXPIRY_SECONDS,
-            }
-        )
-
-
-@extend_schema_view(post=extend_schema(request=PhoneVerifySerializer, responses=UserResponseSerializer))
-class PhoneVerifyView(APIView):
-    """
-    POST /api/auth/phone/verify/
-
-    Verifies the phone code. 5 attempts per code, then locked.
-    """
-
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request):
-        serializer = PhoneVerifySerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        phone = normalise_phone(serializer.validated_data["phone"])
-        code = serializer.validated_data["code"]
-
-        # Find the latest challenge for this phone
-        challenge = (
-            PhoneChallenge.objects.filter(
-                user=request.user,
-                phone=phone,
-            )
-            .order_by("-created_at")
-            .first()
-        )
-
-        if not challenge:
-            return Response(
-                {"message": "Request a verification code first."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if challenge.is_expired:
-            return Response(
-                {"message": "This code has expired. Request a new one."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if challenge.is_locked:
-            return Response(
-                {"message": "Too many attempts. Request a new code."},
-                status=status.HTTP_429_TOO_MANY_REQUESTS,
-            )
-
-        # Increment attempts
-        challenge.attempts += 1
-        challenge.save(update_fields=["attempts"])
-
-        if not verify_code(code, challenge.code_hash):
-            remaining = settings.PHONE_CODE_MAX_ATTEMPTS - challenge.attempts
-            if remaining <= 0:
-                return Response(
-                    {"message": "Too many attempts. Request a new code."},
-                    status=status.HTTP_429_TOO_MANY_REQUESTS,
-                )
-            return Response(
-                {"message": f"Wrong code. {remaining} attempts left."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Success — verify the phone
-        request.user.phone = phone
-        request.user.phone_verified = True
-        request.user.save(update_fields=["phone", "phone_verified"])
-
-        # Clean up challenges
-        PhoneChallenge.objects.filter(user=request.user, phone=phone).delete()
-        # A stylist's badge counts it; for a client it's just on record.
-        from apps.stylists.models import record_check
-
-        record_check(request.user.pk, "phone", evidence=phone)
-
-        return Response(UserSerializer(request.user).data)
-
-
-@extend_schema_view(post=extend_schema(request=EmailStartSerializer, responses=PhoneStartResponseSerializer))
+@extend_schema_view(post=extend_schema(request=EmailStartSerializer, responses=CodeSentSerializer))
 class EmailStartView(APIView):
     """
     POST /api/auth/email/start/
@@ -430,21 +285,21 @@ class EmailStartView(APIView):
         recent = EmailChallenge.objects.filter(
             user=user,
             email=email,
-            created_at__gte=timezone.now() - timedelta(seconds=settings.PHONE_CODE_RESEND_SECONDS),
+            created_at__gte=timezone.now() - timedelta(seconds=settings.VERIFICATION_CODE_RESEND_SECONDS),
         ).first()
         if recent:
-            remaining = settings.PHONE_CODE_RESEND_SECONDS - (timezone.now() - recent.created_at).seconds
+            remaining = settings.VERIFICATION_CODE_RESEND_SECONDS - (timezone.now() - recent.created_at).seconds
             return Response(
                 {"message": f"Wait {max(remaining, 1)} seconds before asking for another code."},
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        code = generate_code(settings.PHONE_CODE_LENGTH)
+        code = generate_code(settings.VERIFICATION_CODE_LENGTH)
         challenge = EmailChallenge.objects.create(
             user=user,
             email=email,
             code_hash=hash_code(code),
-            expires_at=timezone.now() + timedelta(seconds=settings.PHONE_CODE_EXPIRY_SECONDS),
+            expires_at=timezone.now() + timedelta(seconds=settings.VERIFICATION_CODE_EXPIRY_SECONDS),
         )
         if not send_email_code(email, user.name, code):
             # Not sent, so it mustn't block asking again straight away.
@@ -456,8 +311,8 @@ class EmailStartView(APIView):
 
         return Response(
             {
-                "resend_in_seconds": settings.PHONE_CODE_RESEND_SECONDS,
-                "expires_in_seconds": settings.PHONE_CODE_EXPIRY_SECONDS,
+                "resend_in_seconds": settings.VERIFICATION_CODE_RESEND_SECONDS,
+                "expires_in_seconds": settings.VERIFICATION_CODE_EXPIRY_SECONDS,
             }
         )
 
@@ -492,7 +347,7 @@ class EmailVerifyView(APIView):
         challenge.attempts += 1
         challenge.save(update_fields=["attempts"])
         if not verify_code(serializer.validated_data["code"].strip(), challenge.code_hash):
-            remaining = settings.PHONE_CODE_MAX_ATTEMPTS - challenge.attempts
+            remaining = settings.VERIFICATION_CODE_MAX_ATTEMPTS - challenge.attempts
             if remaining <= 0:
                 return Response(
                     {"message": "Too many tries. Ask for a new code."},

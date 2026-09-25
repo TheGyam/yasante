@@ -26,7 +26,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PhoneStartResponse'
+                $ref: '#/components/schemas/CodeSent'
           description: ''
   /api/auth/email/verify/:
     post:
@@ -124,55 +124,6 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/auth/phone/start/:
-    post:
-      operationId: auth_phone_start_create
-      description: |-
-        POST /api/auth/phone/start/
-
-        Sends a 6-digit verification code via SMS.
-        Rate limited: 1/30s per phone.
-      tags:
-      - auth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PhoneStartRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PhoneStartResponse'
-          description: ''
-  /api/auth/phone/verify/:
-    post:
-      operationId: auth_phone_verify_create
-      description: |-
-        POST /api/auth/phone/verify/
-
-        Verifies the phone code. 5 attempts per code, then locked.
-      tags:
-      - auth
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PhoneVerifyRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserResponse'
-          description: ''
   /api/auth/refresh-token/:
     post:
       operationId: auth_refresh_token_create
@@ -2418,7 +2369,7 @@ paths:
   /api/stylists/me/publish/:
     post:
       operationId: stylists_me_publish_create
-      description: POST /api/stylists/me/publish/ — refused until her phone is verified.
+      description: POST /api/stylists/me/publish/ — puts her page live.
       tags:
       - stylists
       security:
@@ -3213,6 +3164,16 @@ components:
           $ref: '#/components/schemas/TimingRequest'
       required:
       - outcome
+    CodeSent:
+      type: object
+      properties:
+        resendInSeconds:
+          type: integer
+        expiresInSeconds:
+          type: integer
+      required:
+      - expiresInSeconds
+      - resendInSeconds
     CollectionItemRequestRequest:
       type: object
       properties:
@@ -4661,41 +4622,6 @@ components:
       required:
       - details
       - label
-    PhoneStartRequest:
-      type: object
-      description: POST /api/auth/phone/start/
-      properties:
-        phone:
-          type: string
-          minLength: 1
-          maxLength: 20
-      required:
-      - phone
-    PhoneStartResponse:
-      type: object
-      properties:
-        resendInSeconds:
-          type: integer
-        expiresInSeconds:
-          type: integer
-      required:
-      - expiresInSeconds
-      - resendInSeconds
-    PhoneVerifyRequest:
-      type: object
-      description: POST /api/auth/phone/verify/
-      properties:
-        phone:
-          type: string
-          minLength: 1
-          maxLength: 20
-        code:
-          type: string
-          minLength: 1
-          maxLength: 10
-      required:
-      - code
-      - phone
     Policies:
       type: object
       properties:

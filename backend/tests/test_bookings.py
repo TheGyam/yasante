@@ -73,13 +73,13 @@ def test_a_request_is_refused_when_it_breaks_a_rule(api, setup, slot, change, co
     assert response.status_code == code and words in response.json()["message"]
 
 
-def test_booking_needs_a_verified_phone_a_live_page_and_someone_else(api, make_stylist, make_user, slot):
+def test_booking_needs_a_live_page_and_someone_else_but_no_phone_check(api, make_stylist, make_user, slot):
     profile = make_stylist()
     service = profile.menu_items.first()
     body = {"stylistId": str(profile.account_id), "serviceId": str(service.pk), "policyVersion": "v1"}
     unverified = make_user(verified=False)
     body["requestedTimes"] = [slot(api(unverified), profile, service)]
-    assert api(unverified).post("/api/bookings/", body).status_code == 403
+    assert api(unverified).post("/api/bookings/", body).status_code == 201
     assert api(profile.account).post("/api/bookings/", body).status_code == 400
     draft = make_stylist(published=False)
     assert (
