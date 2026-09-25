@@ -651,7 +651,7 @@ class BlockDeleteView(APIView):
             Q(pk=pk) | Q(blocked_id=pk), blocker=request.user
         ).delete()
         if not deleted:
-            return Response({"message": "Block not found."}, status=404)
+            return Response({"message": "That person isn’t blocked."}, status=404)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -732,7 +732,7 @@ class AppealCreateView(APIView):
     def post(self, request, pk):
         action = ModerationAction.objects.filter(pk=pk, author=request.user).first()
         if action is None:
-            return Response({"message": "Not found"}, status=404)
+            return Response({"message": "We couldn’t find that. It may have been removed."}, status=404)
         if action.appeals.exists():
             return Response({"message": "You’ve already appealed this"}, status=409)
         body = str(request.data.get("body") or "").strip()

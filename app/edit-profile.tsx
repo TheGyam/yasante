@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { AtSign, Camera } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
-import { useUpdateUser, useUser, useUsernameCheck, type User } from '@/features/profile';
+import { useUpdateUser, useUser, useUsernameField, type User } from '@/features/profile';
 import { errorMessage } from '@/features/auth';
 import { makeStyles, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
@@ -40,23 +40,7 @@ function ProfileForm({ user }: { user: User }) {
   const router = useRouter();
   const update = useUpdateUser(user.id);
   const [name, setName] = useState(user.name ?? '');
-  const [username, setUsername] = useState(user.username ?? '');
-  const check = useUsernameCheck(username, user.username);
-  const wanted = username.trim().replace(/^@/, '').toLowerCase();
-  const usernameChanged = !!wanted && wanted !== user.username;
-  // Said as she types: free, or why not. Nothing until there's enough to check.
-  const usernameHint = !usernameChanged
-    ? 'It’s what your looks and comments show.'
-    : check.data?.username === wanted
-      ? check.data.available
-        ? 'That one’s yours if you want it'
-        : (check.data.reason ?? 'Someone already has that')
-      : wanted.length < 3
-        ? 'At least 3 characters'
-        : check.isError
-          ? 'We’ll check it when you save'
-          : 'Checking…';
-  const usernameTaken = usernameChanged && check.data?.username === wanted && !check.data.available;
+  const field = useUsernameField(user.username);
   const [email, setEmail] = useState(user.email ?? '');
   const [avatarUri, setAvatarUri] = useState(user.avatarUri ?? '');
   const [picking, setPicking] = useState(false);
@@ -68,11 +52,11 @@ function ProfileForm({ user }: { user: User }) {
       email: !email || isValidEmail(email) ? undefined : 'That email doesn’t look right',
     };
     setErrors(found);
-    if (found.name || found.email || usernameTaken) return;
+    if (found.name || found.email || field.taken) return;
     update.mutate(
       {
         name: name.trim(),
-        username: usernameChanged ? wanted : undefined,
+        username: field.changed ? field.wanted : undefined,
         email: email.trim() || undefined,
         avatarUri: avatarUri || undefined,
       },
@@ -116,11 +100,11 @@ function ProfileForm({ user }: { user: User }) {
         />
         <Input
           label="Username"
-          value={username}
-          onChangeText={text => setUsername(text.replace(/\s/g, ''))}
+          value={field.username}
+          onChangeText={field.setUsername}
           icon={AtSign}
-          hint={usernameTaken ? undefined : usernameHint}
-          error={usernameTaken ? usernameHint : undefined}
+          hint={field.taken ? undefined : field.hint}
+          error={field.taken ? field.hint : undefined}
           autoCapitalize="none"
           autoCorrect={false}
           maxLength={31}

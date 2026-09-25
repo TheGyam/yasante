@@ -174,7 +174,7 @@ class PrivateMediaView(APIView):
         media = Media.objects.filter(pk=pk).first()
         allowed = media and (media.owner_id == request.user.pk or request.user.is_staff)
         if not allowed:
-            return Response({"message": "Not found"}, status=404)
+            return Response({"message": "We couldn’t find that. It may have been removed."}, status=404)
         if settings.PRIVATE_MEDIA_ACCEL:
             # nginx sends the file (location /protected/ is internal): fast, and the
             # file itself is never reachable by URL.

@@ -74,6 +74,8 @@ NOT_HANDLES = {
     "review",
     "onboarding",
     "edit-profile",
+    "username",
+    "policy",
     "payment-methods",
     "stylist-setup",
     "today",

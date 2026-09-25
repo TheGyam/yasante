@@ -3,7 +3,7 @@ import { type TextInput } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useRouter } from '@/shared/lib/navigation';
 import { Lock } from 'lucide-react-native';
-import { AuthLayout, PasswordStrength, useResetPassword } from '@/features/auth';
+import { AuthLayout, errorMessage, PasswordStrength, useResetPassword } from '@/features/auth';
 import { haptics } from '@/shared/lib/haptics';
 import { Button } from '@/shared/ui/Button';
 import { notify } from '@/shared/ui/dialog';
@@ -49,11 +49,11 @@ export default function ResetPasswordScreen() {
       await resetPassword.mutateAsync({ token, password });
       haptics.success();
       setDone(true);
-    } catch (error: any) {
+    } catch (error) {
       haptics.error();
       notify({
         title: 'Couldn’t reset your password',
-        message: error?.message || 'The link may have expired. Request a new one and try again.',
+        message: errorMessage(error, 'The link may have expired. Request a new one and try again.'),
       });
     }
   };

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import type { TextInput } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { Lock, Mail } from 'lucide-react-native';
-import { AuthLayout, AuthSwitch, useLogin } from '@/features/auth';
+import { AuthLayout, AuthSwitch, errorMessage, useLogin } from '@/features/auth';
 import { haptics } from '@/shared/lib/haptics';
 import { Button } from '@/shared/ui/Button';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
@@ -45,9 +45,11 @@ export default function LoginScreen() {
       haptics.success();
       // A verified account closes this flow on its own; otherwise check the phone first.
       if (!session.user.phoneVerified) router.push('/auth/verify-phone');
-    } catch (error: any) {
+    } catch (error) {
       haptics.error();
-      setFormError(error?.message || 'We couldn’t sign you in. Check your details and try again.');
+      setFormError(
+        errorMessage(error, 'We couldn’t sign you in. Check your details and try again.')
+      );
     }
   };
 

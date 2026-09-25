@@ -11,7 +11,13 @@ import {
   type LookVisibility,
 } from '@/features/looks';
 import { useShelf } from '@/features/shelf';
-import { TEXTURE_LABELS, useUser, useUserStore, type HairTexture } from '@/features/profile';
+import {
+  TEXTURE_LABELS,
+  useNeedsUsername,
+  useUser,
+  useUserStore,
+  type HairTexture,
+} from '@/features/profile';
 import { formatPrice, useActiveMode, useMenu, usePortfolio } from '@/features/stylist';
 import { useImagePicker } from '@/shared/hooks/useImagePicker';
 import { haptics } from '@/shared/lib/haptics';
@@ -78,6 +84,7 @@ export default function ComposeLookScreen() {
   const { data: taxonomy = [] } = useStyleTaxonomy();
   const { user } = useAuth();
   const { data: account } = useUser(user?.id);
+  const needsUsername = useNeedsUsername();
   const ownTexture = useUserStore(s => s.hairProfile?.texture);
   const post = usePostLook();
 
@@ -153,6 +160,8 @@ export default function ComposeLookScreen() {
 
   const share = async () => {
     if (!photoUri || !picked.length) return;
+    // The post shows her username: asked for first, and her draft waits here.
+    if (needsUsername) return router.push('/username');
     try {
       const look = await post.mutateAsync({
         photoUri,
