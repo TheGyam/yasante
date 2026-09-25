@@ -2648,7 +2648,7 @@ export interface components {
          */
         PorosityEnum: "low" | "medium" | "high";
         PortfolioAddRequestRequest: {
-            /** @description [{uri, thumbUri?, serviceId?}] */
+            /** @description [{uri, thumbUri?, serviceId?, lookId?}] — lookId: her own look of the same photo */
             photos: {
                 [key: string]: unknown;
             }[];

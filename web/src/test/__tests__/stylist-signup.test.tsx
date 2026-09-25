@@ -169,15 +169,15 @@ describe('a stylist setting up on the web', () => {
       '/api/stylists/handle-available/': { handle: 'braidsbyama', available: true },
     });
     const typist = userEvent.setup();
-    renderSite('/auth/login');
+    const { router } = renderSite('/auth/login');
     await typist.type(screen.getByLabelText('Email'), 'ama@example.com');
     await typist.type(screen.getByLabelText('Password'), 'Braids#2026');
     await typist.click(screen.getByRole('button', { name: 'Sign in' }));
 
-    // Her live page fills the form, to edit.
-    expect(await screen.findByLabelText('Name clients know you by')).toHaveValue('Braids by Ama');
+    // Into her studio, with the expired token refreshed once on the way.
+    expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/today');
     expect(token).toBe('Bearer access-2');
     expect(calls.filter(c => c.url === '/api/auth/refresh-token/')).toHaveLength(1);
-    expect(screen.getByText('Signed in as ama@example.com ·')).toBeInTheDocument();
   });
 });

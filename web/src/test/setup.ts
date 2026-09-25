@@ -14,3 +14,6 @@ window.matchMedia ??= ((query: string) => ({
   removeEventListener() {},
 })) as unknown as typeof window.matchMedia;
 window.scrollTo = () => {};
+// jsdom can't make object URLs for files; the site only needs one to show a preview.
+URL.createObjectURL = () => 'blob:preview';
+URL.revokeObjectURL = () => {};

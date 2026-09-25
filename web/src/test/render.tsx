@@ -41,7 +41,10 @@ export function mockApi(table: Record<string, Handler>) {
           ? (handler as (call: Call) => Answer)(call)
           : handler;
     const { status = 200, body = answer } =
-      answer && typeof answer === 'object' && 'status' in answer
+      // { status: 404, body } is a reply; a booking's own `status: 'requested'` is data.
+      answer &&
+      typeof answer === 'object' &&
+      typeof (answer as { status?: unknown }).status === 'number'
         ? (answer as { status: number; body?: unknown })
         : { body: answer };
     return new Response(body === undefined ? '' : JSON.stringify(body), { status });

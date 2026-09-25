@@ -299,11 +299,10 @@ function Setup({
   );
 }
 
-/** Live: her link, and what comes next. */
+/** Live: her link, and on to her studio to get ready for clients. */
 function Live({ profile, edited }: { profile: StylistProfile; edited: boolean }) {
-  const url = `https://yasante.com/${profile.handle}`;
   return (
-    <Page title="Your page is live">
+    <Page title={edited ? 'Saved' : 'Your page is live'}>
       <Rise className={styles.column}>
         <div className={styles.done}>
           <Text variant="title1">{edited ? 'Saved' : 'Your page is live'}</Text>
@@ -311,29 +310,22 @@ function Live({ profile, edited }: { profile: StylistProfile; edited: boolean })
             It’s at <strong>yasante.com/{profile.handle}</strong>. Put it in your bio: it’s the link
             clients book you from.
           </Text>
-          <Button label="See your page" icon={ExternalLink} to={`/${profile.handle}`} />
+          {!edited && (
+            <Text variant="body" tone="secondary">
+              Next: add your services and prices, set your hours, and post your work — your looks
+              are how clients find you in the feed.
+            </Text>
+          )}
+          <div className={styles.actions}>
+            <Button label="Go to your studio" to="/today" />
+            <Button
+              label="See your page"
+              icon={ExternalLink}
+              variant="secondary"
+              to={`/${profile.handle}`}
+            />
+          </div>
         </div>
-        <Glass padded radius="xl">
-          <Text variant="overline" tone="tertiary" as="h2">
-            Next, in the Yasante app
-          </Text>
-          <ol className={styles.nextSteps}>
-            <li>
-              <Text variant="body">Add your services and prices, so clients can book.</Text>
-            </li>
-            <li>
-              <Text variant="body">Set your hours, and add photos of your work.</Text>
-            </li>
-            <li>
-              <Text variant="body">
-                Sign in with the email and password you just used: everything here is already there.
-              </Text>
-            </li>
-          </ol>
-        </Glass>
-        <Text variant="footnote" tone="tertiary">
-          Copy your link: {url}
-        </Text>
       </Rise>
     </Page>
   );
