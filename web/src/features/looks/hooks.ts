@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import {
+  useMutation,
   useInfiniteQuery,
   useQuery,
   useQueryClient,
   type InfiniteData,
   type QueryClient,
 } from '@tanstack/react-query';
-import { getAreas, getLook, getLooks, getStyles } from './api';
+import { addToPortfolio, uploadPhoto } from '@/features/stylist';
+import { deleteLook, getAreas, getLook, getLooks, getMyLooks, getStyles, postLook } from './api';
 import type { Look, LookFilters, LooksPage } from './types';
 
 /**
@@ -17,6 +20,7 @@ export const lookKeys = {
   look: (id: string) => ['look', id] as const,
   styles: ['styles'] as const,
   areas: ['looks', 'areas'] as const,
+  mine: ['looks', 'mine'] as const,
 };
 
 /** The feed, a page at a time. */
@@ -71,3 +75,81 @@ export function useStyleNames() {
 }
 
 export type { Look };
+
+export function useMyLooks() {
+  return useQuery({ queryKey: lookKeys.mine, queryFn: getMyLooks });
+}
+
+export function useDeleteLook() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: deleteLook,
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: lookKeys.mine });
+      client.invalidateQueries({ queryKey: ['looks', 'feed'] });
+    },
+  });
+}
+
+/** One photo to post, as she tagged it. */
+export interface WorkDraft {
+  file: File;
+  style: string;
+  serviceId?: string;
+  caption: string;
+}
+
+export interface PostProgress {
+  done: number;
+  total: number;
+  /** Photos that didn't post, with why, so she can try just those again. */
+  failed: { draft: WorkDraft; error: unknown }[];
+}
+
+/**
+ * Posts her work a photo at a time: uploaded once, posted as a look (the feed), and
+ * added to her page linked to that look. One failure doesn't stop the rest.
+ */
+export function usePostWork() {
+  const client = useQueryClient();
+  const [progress, setProgress] = useState<PostProgress>();
+
+  const post = async (drafts: WorkDraft[], onPage: boolean) => {
+    const failed: PostProgress['failed'] = [];
+    setProgress({ done: 0, total: drafts.length, failed });
+    for (const [index, draft] of drafts.entries()) {
+      try {
+        const photo = await uploadPhoto(draft.file, 'look');
+        const look = await postLook({
+          photoUri: photo.uri ?? '',
+          feedUri: photo.feedUri,
+          thumbUri: photo.thumbUri,
+          photoAspect: photo.photoAspect,
+          styles: [draft.style],
+          serviceId: draft.serviceId,
+          caption: draft.caption.trim(),
+          visibility: 'public',
+        });
+        if (onPage) {
+          await addToPortfolio([
+            {
+              uri: look.photoUri,
+              thumbUri: look.thumbUri,
+              serviceId: draft.serviceId,
+              lookId: look.id,
+            },
+          ]);
+        }
+      } catch (error) {
+        failed.push({ draft, error });
+      }
+      setProgress({ done: index + 1, total: drafts.length, failed: [...failed] });
+    }
+    client.invalidateQueries({ queryKey: lookKeys.mine });
+    client.invalidateQueries({ queryKey: ['looks', 'feed'] });
+    client.invalidateQueries({ queryKey: ['stylist', 'portfolio'] });
+    return failed;
+  };
+
+  return { post, progress, reset: () => setProgress(undefined) };
+}

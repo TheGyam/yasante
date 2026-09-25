@@ -121,10 +121,45 @@ def area(request, slug):
     )
 
 
+
+
 @public
-def open_in_app(request):
-    """A link meant for the app, opened on a computer: the page says where to open it."""
-    return page(request, title="Open on your phone")
+def signup(request):
+    """A stylist's account, on the web."""
+    return page(
+        request,
+        title="Set up your stylist account",
+        description="Your page, menu and bookings in one place. Free for founding stylists.",
+    )
+
+
+def account_page(title):
+    """A page for someone signing in or signed in: the React app handles it, search skips it."""
+
+    def view(request, **_ids):
+        # The id in the address (a request, a service) is the React app's to read.
+        return page(request, title=title, noindex=True)
+
+    return view
+
+
+sign_in = account_page("Sign in")
+forgot_password = account_page("Forgot your password?")
+# The link in the reset email: the website's form wherever the app doesn't open it.
+reset_password = account_page("Choose a new password")
+# A stylist's studio: the app's own screens, on the web until the app is in the stores.
+studio_today = account_page("Today")
+studio_requests = account_page("Requests")
+studio_request = account_page("Request")
+studio_portfolio = account_page("Your work")
+studio_post = account_page("Post your work")
+studio_menu = account_page("Your menu")
+studio_service = account_page("A service")
+studio_hours = account_page("Working hours")
+studio_payments = account_page("Getting paid")
+studio_account = account_page("Account")
+verify_email = account_page("Check your email")
+stylist_setup = account_page("Set up your page")
 
 
 def policy(request, type):

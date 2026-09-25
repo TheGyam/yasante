@@ -41,3 +41,17 @@ export const select = style([
 ]);
 
 export const hint = style({ fontSize: '0.8125rem', color: vars.color.text.tertiary });
+
+export const invalid = style({
+  borderColor: vars.color.danger,
+  ':focus': { borderColor: vars.color.danger },
+});
+
+export const error = style({ fontSize: '0.8125rem', color: vars.color.danger });
+
+export const textarea = style({
+  minHeight: 96,
+  padding: `${space.md}px ${space.lg}px`,
+  lineHeight: 1.5,
+  resize: 'vertical',
+});

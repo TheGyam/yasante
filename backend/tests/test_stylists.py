@@ -258,3 +258,24 @@ def test_her_own_handle_is_available_to_her(api, make_stylist, make_user):
     assert api().get("/api/stylists/handle-available/", handle=profile.handle).json()["available"] is False
     # Saving the page with the handle unchanged goes through.
     assert api(profile.account).patch("/api/stylists/me/", {"handle": profile.handle, "bio": "New"}).status_code == 200
+
+
+def test_a_photo_she_posted_as_a_look_joins_her_page_linked_to_it(api, make_stylist, make_user, styles):
+    profile = make_stylist()
+    me = api(profile.account)
+    look = me.post("/api/looks/", {"photoUri": "https://x.com/a.jpg", "styles": ["knotless"]}).json()
+    added = me.post(
+        "/api/stylists/me/portfolio/",
+        {"photos": [{"uri": "https://x.com/a.jpg", "lookId": look["id"]}]},
+    )
+    assert added.status_code == 201 and added.json()[0]["lookId"] == look["id"]
+    page = api().get(f"/api/stylists/by-handle/{profile.handle}/").json()
+    assert page["photos"][0]["lookId"] == look["id"]
+
+    # Someone else's look can't be claimed.
+    theirs = api(make_user()).post("/api/looks/", {"photoUri": "https://x.com/b.jpg", "styles": ["twists"]}).json()
+    refused = me.post(
+        "/api/stylists/me/portfolio/",
+        {"photos": [{"uri": "https://x.com/b.jpg", "lookId": theirs["id"]}]},
+    )
+    assert refused.status_code == 400
