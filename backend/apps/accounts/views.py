@@ -25,10 +25,13 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import DeviceToken, Invite, PhoneChallenge, User
+from .emails import send_email_code
+from .models import DeviceToken, EmailChallenge, Invite, PhoneChallenge, User
 from .serializers import (
     AuthResponseSerializer,
     DeviceTokenSerializer,
+    EmailStartSerializer,
+    EmailVerifySerializer,
     ForgotPasswordSerializer,
     InviteResponseSerializer,
     InviteSerializer,
@@ -389,6 +392,121 @@ class PhoneVerifyView(APIView):
         record_check(request.user.pk, "phone", evidence=phone)
 
         return Response(UserSerializer(request.user).data)
+
+
+@extend_schema_view(post=extend_schema(request=EmailStartSerializer, responses=PhoneStartResponseSerializer))
+class EmailStartView(APIView):
+    """
+    POST /api/auth/email/start/
+
+    Emails a six-digit code to her address, or to a corrected one she sends (which
+    becomes her address, unverified, if nobody else has it). One code every 30s.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [PhoneCodeThrottle]
+
+    def post(self, request):
+        serializer = EmailStartSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        email = (serializer.validated_data.get("email") or user.email).strip().lower()
+
+        if email != user.email.lower():
+            if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+                return Response(
+                    {"message": "Another account already uses that email."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            user.email, user.email_verified = email, False
+            user.save(update_fields=["email", "email_verified", "updated_at"])
+
+        if user.email_verified:
+            return Response(
+                {"message": "Your email is already confirmed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        recent = EmailChallenge.objects.filter(
+            user=user,
+            email=email,
+            created_at__gte=timezone.now() - timedelta(seconds=settings.PHONE_CODE_RESEND_SECONDS),
+        ).first()
+        if recent:
+            remaining = settings.PHONE_CODE_RESEND_SECONDS - (timezone.now() - recent.created_at).seconds
+            return Response(
+                {"message": f"Wait {max(remaining, 1)} seconds before asking for another code."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        code = generate_code(settings.PHONE_CODE_LENGTH)
+        challenge = EmailChallenge.objects.create(
+            user=user,
+            email=email,
+            code_hash=hash_code(code),
+            expires_at=timezone.now() + timedelta(seconds=settings.PHONE_CODE_EXPIRY_SECONDS),
+        )
+        if not send_email_code(email, user.name, code):
+            # Not sent, so it mustn't block asking again straight away.
+            challenge.delete()
+            return Response(
+                {"message": "We couldn’t send the email just now. Please try again in a moment."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response(
+            {
+                "resend_in_seconds": settings.PHONE_CODE_RESEND_SECONDS,
+                "expires_in_seconds": settings.PHONE_CODE_EXPIRY_SECONDS,
+            }
+        )
+
+
+@extend_schema_view(post=extend_schema(request=EmailVerifySerializer, responses=UserResponseSerializer))
+class EmailVerifyView(APIView):
+    """POST /api/auth/email/verify/ — five tries per code."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = EmailVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        challenge = EmailChallenge.objects.filter(user=user, email=user.email.lower()).first()
+
+        if not challenge:
+            return Response(
+                {"message": "Ask for a code first."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if challenge.is_expired:
+            return Response(
+                {"message": "This code has expired. Ask for a new one."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if challenge.is_locked:
+            return Response(
+                {"message": "Too many tries. Ask for a new code."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        challenge.attempts += 1
+        challenge.save(update_fields=["attempts"])
+        if not verify_code(serializer.validated_data["code"].strip(), challenge.code_hash):
+            remaining = settings.PHONE_CODE_MAX_ATTEMPTS - challenge.attempts
+            if remaining <= 0:
+                return Response(
+                    {"message": "Too many tries. Ask for a new code."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            return Response(
+                {"message": f"That code isn’t right. {remaining} tries left."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.email_verified = True
+        user.save(update_fields=["email_verified", "updated_at"])
+        EmailChallenge.objects.filter(user=user).delete()
+        return Response(UserSerializer(user).data)
 
 
 @extend_schema_view(get=extend_schema(responses=InviteResponseSerializer))

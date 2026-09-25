@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { SplashScreen, Stack, type ErrorBoundaryProps } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
@@ -135,14 +135,30 @@ function RootNavigator() {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
+  // Opened the app signed in but with her email still unconfirmed (she left mid
+  // sign-up): straight back to the code. Checked once at launch; sign-up and sign-in
+  // take her there themselves.
+  const launchChecked = useRef(false);
+  useEffect(() => {
+    if (!ready || launchChecked.current) return;
+    launchChecked.current = true;
+    if (isAuthenticated && user?.emailVerified === false) {
+      setTimeout(() => router.push('/auth/verify-email'), 0);
+    }
+  }, [ready, isAuthenticated, user?.emailVerified, router]);
+
   // The splash stays up until we know who's here, so nobody sees the wrong screen first.
   if (!ready) return null;
 
   // Someone who has taken the quiz or signed in is inside the app, even as a guest.
   const entered = isAuthenticated || onboarded;
-  // Signing up continues into phone verification, so the auth flow stays open until
-  // the phone is checked or put off.
-  const inAuthFlow = !isAuthenticated || (!user?.phoneVerified && !phoneDeferred);
+  // Signing up continues into email and then phone verification, so the auth flow
+  // stays open until the email is confirmed and the phone is checked or put off.
+  // (Only an explicit false counts: accounts saved before emails were checked have no
+  // value at all, and they're all confirmed.)
+  const emailUnconfirmed = isAuthenticated && user?.emailVerified === false;
+  const inAuthFlow =
+    !isAuthenticated || emailUnconfirmed || (!user?.phoneVerified && !phoneDeferred);
 
   return (
     <>

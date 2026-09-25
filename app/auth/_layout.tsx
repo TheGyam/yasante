@@ -12,6 +12,7 @@ export default function AuthStackLayout() {
       <Stack.Screen name="login" options={fade} />
       <Stack.Screen name="signup" />
       {/* Nothing to go back to once the account exists. */}
+      <Stack.Screen name="verify-email" options={{ gestureEnabled: false }} />
       <Stack.Screen name="verify-phone" options={{ gestureEnabled: false }} />
     </Stack>
   );

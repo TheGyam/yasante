@@ -18,6 +18,24 @@ export const verificationApi = {
     (await apiClient.post<User>('/api/auth/phone/verify/', { phone, code })).data,
 };
 
+export const emailVerificationApi = {
+  /** POST /api/auth/email/start/ — emails a six-digit code, to a corrected address if given. */
+  start: async (email?: string) =>
+    (await apiClient.post<PhoneChallenge>('/api/auth/email/start/', email ? { email } : {})).data,
+
+  /** POST /api/auth/email/verify/ — returns the account with the email confirmed. */
+  verify: async (code: string) =>
+    (await apiClient.post<User>('/api/auth/email/verify/', { code })).data,
+};
+
+export function useStartEmailVerification() {
+  return useMutation({ mutationFn: emailVerificationApi.start });
+}
+
+export function useVerifyEmail() {
+  return useMutation({ mutationFn: emailVerificationApi.verify });
+}
+
 export function useStartPhoneVerification() {
   return useMutation({ mutationFn: verificationApi.start });
 }
