@@ -15,6 +15,8 @@ import { FlashList, useRecyclingState, type FlashListRef } from '@shopify/flash-
 import Animated, {
   Extrapolation,
   interpolate,
+  measure,
+  useAnimatedRef,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -152,19 +154,18 @@ export default function LookScreen() {
 
   // Taken once: the tile's photo and where it sat.
   const [hero] = useState(() => (reduced ? null : takeHero(id)));
-  const photo = useRef<View>(null);
-  // Positions are measured in window coordinates, but the moving copy is drawn inside
-  // this page, which on Android starts below the status bar. Where the page sits in
-  // the window is subtracted when drawing, so the copy lands exactly on the photo.
-  const page = useRef<View>(null);
-  const originX = useSharedValue(0);
-  const originY = useSharedValue(0);
+  // The photo on this page and the page itself, measured on the UI thread on every
+  // frame the copy moves: it aims at where the photo really is at that moment, so it
+  // can't miss if the page settles a little late. (Aiming at a position measured
+  // once, it used to land, pause, and glide the last few pixels.)
+  const photo = useAnimatedRef<View>();
+  const page = useAnimatedRef<View>();
+  // Where the tile sat, relative to this page (which on Android starts below the
+  // status bar). Both measured the same way, in window coordinates.
+  const fromX = useSharedValue(hero?.from.x ?? 0);
+  const fromY = useSharedValue(hero?.from.y ?? 0);
   // 0 = still the feed, 1 = the look's page.
   const progress = useSharedValue(0);
-  const x = useSharedValue(hero?.from.x ?? 0);
-  const y = useSharedValue(hero?.from.y ?? 0);
-  const w = useSharedValue(hero?.from.width ?? 0);
-  const h = useSharedValue(hero?.from.height ?? 0);
   // 1 while the moving copy covers the photo (the real one hidden under it), 0 once
   // it has landed. A shared value, not state: handing over at either end of the
   // animation never re-renders the page.
@@ -180,27 +181,6 @@ export default function LookScreen() {
     setSettled(true);
   }, [cover]);
 
-  // The page's top spacing can arrive after the photo was measured, moving it without
-  // telling it. So check where it really is before handing over: if it moved, glide
-  // the last few pixels rather than jump.
-  const land = useCallback(() => {
-    const real = photo.current;
-    if (!hero || !real) return finish();
-    real.measureInWindow((rx, ry, rw, rh) => {
-      const off = Math.abs(rx - x.get()) + Math.abs(ry - y.get()) + Math.abs(rw - w.get());
-      if (!rw || off < 2) return finish();
-      const nudge = { duration: 120, easing: EASE_OUT };
-      x.set(withTiming(rx, nudge));
-      y.set(withTiming(ry, nudge));
-      w.set(withTiming(rw, nudge));
-      h.set(
-        withTiming(rh, nudge, done => {
-          if (done) scheduleOnRN(finish);
-        })
-      );
-    });
-  }, [hero, finish, x, y, w, h]);
-
   const fadeIn = useCallback(() => {
     if (started.current) return;
     started.current = true;
@@ -211,41 +191,27 @@ export default function LookScreen() {
     );
   }, [progress, finish]);
 
-  const flyTo = useCallback(
-    (tx: number, ty: number, tw: number, th: number) => {
-      if (started.current) return;
-      if (!tw || !th) return fadeIn();
-      started.current = true;
-      const move = { duration: OPEN_MS, easing: EASE_OUT };
-      x.set(withTiming(tx, move));
-      y.set(withTiming(ty, move));
-      w.set(withTiming(tw, move));
-      h.set(withTiming(th, move));
-      progress.set(
-        withTiming(1, move, done => {
-          if (done) scheduleOnRN(land);
-        })
-      );
-    },
-    [fadeIn, land, progress, x, y, w, h]
-  );
-
   // Once the real photo has a place, fly the tile's copy onto it. Two frames later,
-  // once the page has finished building: its first layout comes before the page's
-  // top spacing has settled, and starting while the page is still being mounted
+  // once the page has finished building: starting while it's still being mounted
   // drops frames (measured on a Note10+: 100ms+ frames, against none this way).
   const onPhotoLayout = useCallback(() => {
     if (!hero || started.current) return;
     requestAnimationFrame(() =>
       requestAnimationFrame(() =>
         page.current?.measureInWindow((px, py) => {
-          originX.set(px);
-          originY.set(py);
-          photo.current?.measureInWindow(flyTo);
+          if (started.current) return;
+          started.current = true;
+          fromX.set(hero.from.x - px);
+          fromY.set(hero.from.y - py);
+          progress.set(
+            withTiming(1, { duration: OPEN_MS, easing: EASE_OUT }, done => {
+              if (done) scheduleOnRN(finish);
+            })
+          );
         })
       )
     );
-  }, [hero, flyTo, originX, originY]);
+  }, [hero, page, fromX, fromY, progress, finish]);
 
   // Nothing to grow from (a link, a notification, reduced motion), or the photo
   // never laid out (still loading): fade in rather than wait.
@@ -260,7 +226,8 @@ export default function LookScreen() {
     return () => clearTimeout(fallback);
   }, [hero, fadeIn, cover]);
 
-  // Leaving by any route (back button, hardware back, a gesture) plays it in reverse.
+  // Leaving by any route (back button, hardware back, a gesture) plays it in reverse:
+  // the same flight, run backwards from wherever the photo is now.
   useEffect(
     () =>
       navigation.addListener('beforeRemove', e => {
@@ -268,34 +235,21 @@ export default function LookScreen() {
         e.preventDefault();
         closing.current = true;
         const leave = () => navigation.dispatch(e.data.action);
-        const fadeOut = () =>
+        const back = (duration: number) =>
           progress.set(
-            withTiming(0, { duration: 180, easing: EASE_OUT }, done => {
+            withTiming(0, { duration, easing: EASE_OUT }, done => {
               if (done) scheduleOnRN(leave);
             })
           );
-        if (!hero || !photo.current) return fadeOut();
-        photo.current.measureInWindow((px, py, pw, ph) => {
+        if (!hero || !photo.current) return back(180);
+        photo.current.measureInWindow((_px, py, pw, ph) => {
           // Scrolled away from the photo: there's nothing to shrink back.
-          if (!pw || py + ph < 0 || py > screenHeight) return fadeOut();
-          x.set(px);
-          y.set(py);
-          w.set(pw);
-          h.set(ph);
+          if (!pw || py + ph < 0 || py > screenHeight) return back(180);
           cover.set(1);
-          const move = { duration: CLOSE_MS, easing: EASE_OUT };
-          x.set(withTiming(hero.from.x, move));
-          y.set(withTiming(hero.from.y, move));
-          w.set(withTiming(hero.from.width, move));
-          h.set(withTiming(hero.from.height, move));
-          progress.set(
-            withTiming(0, move, done => {
-              if (done) scheduleOnRN(leave);
-            })
-          );
+          back(CLOSE_MS);
         });
       }),
-    [navigation, hero, progress, screenHeight, x, y, w, h, cover]
+    [navigation, hero, photo, progress, screenHeight, cover]
   );
 
   const backdrop = useAnimatedStyle(() => ({ opacity: progress.get() }));
@@ -303,13 +257,24 @@ export default function LookScreen() {
   const content = useAnimatedStyle(() => ({
     opacity: interpolate(progress.get(), [0.35, 1], [0, 1], Extrapolation.CLAMP),
   }));
-  const flight = useAnimatedStyle(() => ({
-    opacity: cover.get(),
-    left: x.get() - originX.get(),
-    top: y.get() - originY.get(),
-    width: w.get(),
-    height: h.get(),
-  }));
+  const flight = useAnimatedStyle(() => {
+    if (!hero) return { opacity: 0 };
+    const p = progress.get();
+    const at = measure(page);
+    const to = measure(photo);
+    // Until the photo has a place, the copy stays where the tile was.
+    const tx = to && at ? to.pageX - at.pageX : fromX.get();
+    const ty = to && at ? to.pageY - at.pageY : fromY.get();
+    const tw = to ? to.width : hero.from.width;
+    const th = to ? to.height : hero.from.height;
+    return {
+      opacity: cover.get(),
+      left: fromX.get() + (tx - fromX.get()) * p,
+      top: fromY.get() + (ty - fromY.get()) * p,
+      width: hero.from.width + (tw - hero.from.width) * p,
+      height: hero.from.height + (th - hero.from.height) * p,
+    };
+  });
   const photoStyle = useAnimatedStyle(() => ({ opacity: 1 - cover.get() }));
 
   return (
@@ -644,7 +609,6 @@ function LookThread({
         <KeyboardStickyView offset={{ closed: 0, opened: safe.bottom }}>
           <Composer
             lookId={id}
-            ready={settled}
             bottom={safe.bottom + space.sm}
             replyingTo={replyingTo}
             onCancelReply={() => setReplyingTo(undefined)}
@@ -662,15 +626,12 @@ function LookThread({
 
 function Composer({
   lookId,
-  ready: pageReady,
   bottom,
   replyingTo,
   onCancelReply,
   onSent,
 }: {
   lookId: string;
-  /** False while the page is arriving: the text field is made once it has. */
-  ready: boolean;
   bottom: number;
   replyingTo?: LookComment;
   onCancelReply: () => void;
@@ -680,6 +641,8 @@ function Composer({
   const theme = useTheme();
   const input = useRef<TextInput>(null);
   const [body, setBody] = useState('');
+  // The real text field exists from the first tap on the bar (or Reply) onwards.
+  const [typing, setTyping] = useState(false);
   const add = useAddComment(lookId);
   const router = useRouter();
   const needsUsername = useNeedsUsername();
@@ -687,7 +650,9 @@ function Composer({
 
   // Tapping Reply puts the cursor straight in the box.
   useEffect(() => {
-    if (replyingTo) input.current?.focus();
+    if (!replyingTo) return;
+    setTyping(true);
+    input.current?.focus();
   }, [replyingTo]);
 
   // The send button grows in as soon as there's something to send.
@@ -737,15 +702,21 @@ function Composer({
         </View>
       )}
       <View style={styles.composerRow}>
-        {!pageReady ? (
-          // A lookalike until the photo has landed. Creating a text field is one of
-          // the costliest things an Android page does as it opens, and this one
-          // would be made in the same moments the photo is setting off.
-          <View style={styles.input}>
+        {!typing ? (
+          // A lookalike until she goes to write. Creating a text field is one of the
+          // costliest things an Android page does, and made with the page it landed
+          // in the frames the photo opens in. Tapping it makes the real one, focused.
+          <PressableScale
+            onPress={() => setTyping(true)}
+            scaleTo={1}
+            accessibilityRole="button"
+            accessibilityLabel="Add a comment"
+            style={styles.input}
+          >
             <Text variant="callout" tone="tertiary">
               Add a comment
             </Text>
-          </View>
+          </PressableScale>
         ) : (
           <TextInput
             ref={input}
@@ -757,6 +728,7 @@ function Composer({
             maxLength={500}
             style={styles.input}
             accessibilityLabel={replyingTo ? `Reply to ${replyingTo.authorName}` : 'Add a comment'}
+            autoFocus
             testID="comment-input"
           />
         )}
