@@ -51,9 +51,16 @@ if (( RESEED )) || [[ "$("$PY" manage.py shell -c 'from apps.accounts.models imp
 fi
 
 # 3. Django. Replaces any earlier runserver so the log belongs to this run.
+# A systemd user service, not `nohup … &`: some agent shells kill every child when a
+# command returns, which took Metro down mid-run. A service belongs to no shell.
 pkill -f "manage.py runserver 127.0.0.1:8000" 2>/dev/null || true
-nohup "$PY" -u manage.py runserver 127.0.0.1:8000 --noreload > "$OUT/server.log" 2>&1 &
-echo $! > "$OUT/server.pid"
+systemctl --user stop yasante-qa-django 2>/dev/null || true
+systemctl --user reset-failed yasante-qa-django 2>/dev/null || true
+: > "$OUT/server.log"
+systemd-run --user --quiet --unit=yasante-qa-django --collect \
+  --working-directory="$REPO/backend" \
+  -p StandardOutput="append:$OUT/server.log" -p StandardError="append:$OUT/server.log" \
+  "$PY" -u manage.py runserver 127.0.0.1:8000 --noreload
 
 for _ in $(seq 20); do
   curl -s -o /dev/null http://127.0.0.1:8000/ && break

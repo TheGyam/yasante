@@ -24,11 +24,19 @@ EOF
 
 [[ -d node_modules ]] || npm ci > "$OUT/npm-ci.log" 2>&1
 # Anchored on the node binary so it can't match the shell that runs this script.
+# A systemd user service (see env-up): it outlives the shell that started it.
 pkill -f "^node .*expo start --dev-client --port 8082" 2>/dev/null || true
 pkill -f "^npm exec expo start --dev-client --port 8082" 2>/dev/null || true
+systemctl --user stop yasante-qa-metro 2>/dev/null || true
+systemctl --user reset-failed yasante-qa-metro 2>/dev/null || true
 sleep 2
-nohup npx expo start --dev-client --port 8082 --clear > "$OUT/metro.log" 2>&1 &
-echo $! > "$OUT/metro.pid"
+: > "$OUT/metro.log"
+systemd-run --user --quiet --unit=yasante-qa-metro --collect \
+  --working-directory="$REPO" --setenv=PATH="$PATH" --setenv=HOME="$HOME" \
+  -p StandardOutput="append:$OUT/metro.log" -p StandardError="append:$OUT/metro.log" \
+  bash -c 'tail -f /dev/null | exec npx expo start --dev-client --port 8082 --clear'
+# ^ The Expo CLI quits as soon as its stdin closes (it did under systemd, and when the
+#   agent's shell returned), so it gets a stdin that never closes.
 sleep 3
 
 for _ in $(seq 60); do
