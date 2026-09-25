@@ -27,7 +27,7 @@ const useStyles = makeStyles(() => ({
 function attendance(booking: Booking) {
   const first = booking.clientName.split(' ')[0];
   if (booking.scheduledFor && new Date(booking.scheduledFor) <= new Date()) {
-    return { text: 'Close it out when she leaves', icon: ClipboardCheck, tone: 'accent' as const };
+    return { text: 'Close it out when they leave', icon: ClipboardCheck, tone: 'accent' as const };
   }
   return booking.attendanceConfirmedAt
     ? { text: `${first} said she’s coming`, icon: UserCheck, tone: 'success' as const }
@@ -98,7 +98,7 @@ export default function TodayScreen() {
         <View>
           <SectionHeader title="Appointments" />
           {today.length ? (
-            <Section footer="Close one out when she leaves — it's what keeps your numbers honest.">
+            <Section footer="Close one out when your client leaves — it's what keeps your numbers honest.">
               {today.map(booking => {
                 const state = attendance(booking);
                 return (

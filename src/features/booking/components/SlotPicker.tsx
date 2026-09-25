@@ -133,7 +133,7 @@ export function SlotPicker({
     return (
       <View style={styles.body}>
         <Text variant="subhead" tone="secondary">
-          She’s fully booked for the next four weeks.
+          They’re fully booked for the next four weeks.
         </Text>
         {whenFull}
       </View>

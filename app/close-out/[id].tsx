@@ -164,7 +164,7 @@ export default function CloseOutScreen() {
     paid: { title: 'What were you paid?', help: 'It stays between you and your numbers.' },
     no_show: {
       title: `Mark ${first} as a no-show?`,
-      help: 'It goes on her record, and she can contest it once. Only mark it if she really didn’t arrive.',
+      help: 'It goes on their record, and they can contest it once. Only mark it if they really didn’t arrive.',
     },
   };
   const question = questions[step];
@@ -204,7 +204,7 @@ export default function CloseOutScreen() {
             <>
               <View style={styles.row}>
                 <ChoiceCard
-                  label="She came"
+                  label="They came"
                   selected={false}
                   onPress={() => go('time')}
                   style={styles.option}
@@ -212,7 +212,7 @@ export default function CloseOutScreen() {
                   <UserCheck size={30} color={theme.colors.success} strokeWidth={1.8} />
                 </ChoiceCard>
                 <ChoiceCard
-                  label="She didn’t turn up"
+                  label="They didn’t turn up"
                   hint={started ? undefined : 'After the start time'}
                   selected={false}
                   onPress={() => (started ? go('no_show') : undefined)}
@@ -278,7 +278,7 @@ export default function CloseOutScreen() {
               {(['client', 'stylist'] as const).map(side => (
                 <View key={side}>
                   <Text variant="footnote" tone="secondary" style={{ marginBottom: space.sm }}>
-                    {side === 'client' ? 'On her side' : 'On your side, or the job'}
+                    {side === 'client' ? 'On their side' : 'On your side, or the job'}
                   </Text>
                   <View style={styles.chips}>
                     {TIMING_REASONS.filter(r => r.side === side).map(option => (
@@ -339,7 +339,7 @@ export default function CloseOutScreen() {
                 fullWidth
                 testID="close-out-no-show"
               />
-              <Button label="She did come" variant="ghost" onPress={back} fullWidth />
+              <Button label="They did come" variant="ghost" onPress={back} fullWidth />
             </View>
           )}
         </Animated.View>

@@ -175,7 +175,7 @@ export default function RequestBookingScreen() {
               Sent to {sent.name}
             </Text>
             <Text variant="body" tone="secondary" align="center" style={{ marginTop: space.xs }}>
-              She has 48 hours to reply. We’ll let you know the moment she does.
+              They have 48 hours to reply. We’ll let you know the moment they do.
             </Text>
           </Animated.View>
         </View>
@@ -200,9 +200,9 @@ export default function RequestBookingScreen() {
     : !quote?.complete
       ? `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')}.`
       : !time
-        ? 'Pick a time and she has 48 hours to reply.'
+        ? 'Pick a time and they have 48 hours to reply.'
         : !accepted
-          ? 'Tick her terms above to send.'
+          ? 'Tick their terms above to send.'
           : undefined;
 
   return (
@@ -294,7 +294,7 @@ export default function RequestBookingScreen() {
             title="What it comes to"
             footer={
               quote.complete
-                ? 'Worked out from her own price list. She confirms it when she accepts.'
+                ? 'Worked out from their own price list. They confirm it when they accept.'
                 : `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')} to see what it comes to.`
             }
           >
@@ -318,7 +318,7 @@ export default function RequestBookingScreen() {
             {depositDue > 0 && (
               <ListRow
                 title="Deposit to confirm"
-                subtitle="Paid straight to her, once she accepts"
+                subtitle="Paid straight to them, once they accept"
                 value={formatMoney(depositDue)}
               />
             )}
@@ -328,7 +328,7 @@ export default function RequestBookingScreen() {
         <View style={styles.group}>
           <Text variant="footnote" tone="secondary" style={styles.label}>
             {!service
-              ? 'Pick a service to see when she’s free.'
+              ? 'Pick a service to see when they’re free.'
               : !quoteReady
                 ? `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')} to see when she’s free.`
                 : `When suits you?${hoursLabel(profile.availability) ? ` She works ${hoursLabel(profile.availability)}.` : ''}`}
@@ -354,7 +354,7 @@ export default function RequestBookingScreen() {
           )}
         </View>
 
-        <Section footer="She'll know not to order hair for you.">
+        <Section footer="They'll know not to order hair for you.">
           <ListRow
             title="I'm bringing my own hair"
             // The whole row, not just the switch: a small target is the one people miss.
@@ -371,7 +371,7 @@ export default function RequestBookingScreen() {
         </Section>
 
         <Input
-          label="Anything she should know"
+          label="Anything they should know"
           value={notes}
           onChangeText={setNotes}
           placeholder="My hair is shoulder length and I'd like it waist length"
@@ -382,7 +382,7 @@ export default function RequestBookingScreen() {
         <Checkbox checked={accepted} onChange={setAccepted}>
           <Text variant="footnote" tone="secondary">
             I accept {profile.displayName}’s terms: {profile.policies.noticeHours} hours’ notice to
-            cancel, and the deposit is paid directly to her.
+            cancel, and the deposit is paid directly to them.
           </Text>
         </Checkbox>
 
@@ -396,7 +396,7 @@ export default function RequestBookingScreen() {
             testID="booking-send"
           />
           <Text variant="caption" tone="tertiary" align="center">
-            {missing ?? `${whenLabel(time!)}. She has 48 hours to reply.`}
+            {missing ?? `${whenLabel(time!)}. They have 48 hours to reply.`}
           </Text>
         </View>
       </View>

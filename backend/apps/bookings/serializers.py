@@ -324,7 +324,7 @@ class BookingCreateRequestSerializer(serializers.Serializer):
     requested_times = serializers.ListField(child=serializers.DateTimeField())
     notes = serializers.CharField(required=False)
     policy_version = serializers.CharField()
-    look_id = serializers.CharField(required=False, help_text="The look she's booking from")
+    look_id = serializers.CharField(required=False, help_text="The look the booking is from")
 
 
 class AcceptRequestSerializer(serializers.Serializer):

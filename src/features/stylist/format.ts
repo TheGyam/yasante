@@ -96,8 +96,8 @@ export function isOpenOn(availability: Availability | undefined, date: Date) {
 export function closedReason(availability: Availability | undefined, date: Date) {
   if (isOpenOn(availability, date)) return undefined;
   return availability!.blocked.includes(ymd(date))
-    ? 'She’s away that day'
-    : `She doesn’t work ${DAY_NAMES[date.getDay()]}s`;
+    ? 'They’re away that day'
+    : `They don’t work ${DAY_NAMES[date.getDay()]}s`;
 }
 
 /** "Tue–Sat, 09:00–18:00" or "Mon, Wed, Fri" — how her week reads at a glance. */

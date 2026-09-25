@@ -304,7 +304,7 @@ export default function ComposeLookScreen() {
         ) : (
           <View style={styles.group}>
             <Text variant="footnote" tone="secondary">
-              {asStylist ? 'Her hair type' : 'Your hair type'} — it’s how people with hair like it
+              {asStylist ? 'Their hair type' : 'Your hair type'} — it’s how people with hair like it
               find this.
             </Text>
             <View style={styles.chips}>

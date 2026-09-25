@@ -14,15 +14,15 @@ import {
  * the stylist's inbox says what she has to do instead.
  */
 export const STATUS_LABELS: Record<BookingStatus, string> = {
-  requested: 'Waiting for her to reply',
+  requested: 'Waiting for them to reply',
   awaiting_deposit: 'Send the deposit to confirm',
   confirmed: 'Confirmed',
   completed: 'Done',
-  declined: 'She couldn’t take it',
+  declined: 'They couldn’t take it',
   expired: 'No reply in time',
   cancelled_in_time: 'Cancelled',
   cancelled_late: 'Cancelled late',
-  cancelled_by_stylist: 'She had to cancel',
+  cancelled_by_stylist: 'They had to cancel',
   no_show: 'Marked as a no-show',
 };
 
@@ -207,11 +207,11 @@ export interface PrepItem {
 /** What to do before the day, from what she booked. Prep a stylist can't do for her. */
 export function prepList(booking: Pick<Booking, 'bringingOwnHair' | 'hairIncluded'>): PrepItem[] {
   return [
-    { id: 'takedown', text: 'Take out your old style, unless she’s doing it' },
+    { id: 'takedown', text: 'Take out your old style, unless they’re doing it' },
     { id: 'wash', text: 'Wash and detangle the day before' },
     { id: 'dry', text: 'Come with it dry and stretched, no heavy product' },
     ...(booking.bringingOwnHair || booking.hairIncluded === false
-      ? [{ id: 'hair', text: 'Buy the braiding hair — ask her how many packs' }]
+      ? [{ id: 'hair', text: 'Buy the braiding hair — ask them how many packs' }]
       : []),
     { id: 'time', text: 'Clear the time — a long style can run over' },
   ];
