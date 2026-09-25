@@ -146,6 +146,11 @@ def area(request, slug):
 
 
 @public
+def open_in_app(request):
+    """A link meant for the app, opened on a computer: say where to open it."""
+    return render(request, "web/open_in_app.html")
+
+
 def policy(request, type):
     doc = PolicyDocument.current(type.replace("-", "_"))
     if doc is None:

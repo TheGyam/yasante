@@ -63,3 +63,18 @@ def test_a_mail_failure_says_so_and_lets_her_try_again(api, make_user, monkeypat
     assert failed.status_code == 503 and "try again" in failed.json()["message"]
     monkeypatch.undo()
     assert me.post("/api/auth/email/start/", {}).status_code == 200
+
+
+def test_a_reset_email_carries_a_link_the_app_can_use(api, make_user):
+    from urllib.parse import parse_qs, urlparse
+
+    user = make_user()
+    api().post("/api/auth/forgot-password/", {"email": user.email})
+    message = mail.outbox[-1]
+    link = re.search(r"https://yasante\.com/auth/reset-password\?\S+", message.body).group(0)
+    query = parse_qs(urlparse(link).query)
+    body = {"uid": query["uid"][0], "token": query["token"][0], "password": "Brand-new-Passw0rd"}
+    assert api().post("/api/auth/reset-password/", body).status_code == 200
+    # Only once: the same link can't change it again.
+    assert api().post("/api/auth/reset-password/", body).status_code == 400
+    assert api().get("/auth/reset-password").status_code == 200

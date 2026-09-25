@@ -88,16 +88,55 @@ def send_email_code(email, name, code):
 <p style="margin:0 0 28px;font-size:14px;line-height:21px;color:{SOFT};">Didn’t sign up? You can safely ignore this email. Nobody can use your address without this code.</p>
 <p style="margin:0;font-size:15px;line-height:22px;color:{INK};">With love,<br><strong>The Yasante team</strong></p>"""
 
-    message = EmailMultiAlternatives(
-        subject=f"{code} is your Yasante code",
-        body=text,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[email],
+    return _send(
+        email,
+        f"{code} is your Yasante code",
+        text,
+        _page(f"Your code is {spaced}. Welcome to Yasante!", body),
     )
-    message.attach_alternative(_page(f"Your code is {spaced}. Welcome to Yasante!", body), "text/html")
+
+
+def send_password_reset(email, name, link):
+    """The link to choose a new password. True if the mail server took it."""
+    first = (name or "").split(" ")[0] or "there"
+    text = (
+        f"Hi {first},\n\n"
+        "Someone (hopefully you!) asked to reset the password for your Yasante account.\n\n"
+        "Open this link on your phone to choose a new one:\n\n"
+        f"{link}\n\n"
+        "It works for the next hour, and only once.\n\n"
+        "Didn't ask for this? You can ignore this email. Your password stays the same, "
+        "and your account is safe.\n\n"
+        "With love,\nThe Yasante team\n"
+        "https://yasante.com\n"
+    )
+    body = f"""\
+<p style="margin:0 0 8px;font-size:15px;color:{SOFT};">Hi {escape(first)},</p>
+<h1 style="margin:0 0 16px;font-size:26px;line-height:32px;font-weight:700;letter-spacing:-0.4px;color:{INK};">Let’s get you back in</h1>
+<p style="margin:0 0 28px;font-size:16px;line-height:24px;color:{INK};">Someone (hopefully you!) asked to reset the password for your Yasante account. Tap the button on your phone to choose a new one.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+  <a href="{escape(link)}" style="display:inline-block;background:{PINK};color:{INK};font-size:16px;font-weight:700;text-decoration:none;padding:16px 36px;border-radius:999px;">Choose a new password</a>
+</td></tr></table>
+<p style="margin:14px 0 28px;font-size:13px;line-height:20px;color:{SOFT};text-align:center;">It works for the next hour, and only once.</p>
+<p style="margin:0 0 28px;font-size:14px;line-height:21px;color:{SOFT};">Didn’t ask for this? You can ignore this email. Your password stays the same, and your account is safe.</p>
+<p style="margin:0;font-size:15px;line-height:22px;color:{INK};">With love,<br><strong>The Yasante team</strong></p>"""
+    return _send(
+        email,
+        "Reset your Yasante password",
+        text,
+        _page("Choose a new password for your Yasante account.", body),
+    )
+
+
+def _send(to, subject, text, html):
+    """True if the mail server took it; False (logged) so the caller can say so."""
+    message = EmailMultiAlternatives(
+        subject=subject, body=text, from_email=settings.DEFAULT_FROM_EMAIL, to=[to]
+    )
+    message.attach_alternative(html, "text/html")
     try:
         message.send()
         return True
     except Exception:  # noqa: BLE001 — any mail failure is the same to her: try again
-        logger.exception("Couldn't send the email code to %s", email)
+        logger.exception("Couldn't send %r to %s", subject, to)
         return False

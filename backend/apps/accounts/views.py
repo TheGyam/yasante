@@ -14,7 +14,6 @@ from apps.common.utils import (
 )
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions, status
@@ -23,7 +22,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .emails import send_email_code
+from .emails import send_email_code, send_password_reset
 from .models import DeviceToken, EmailChallenge, Invite, User
 from .serializers import (
     AuthResponseSerializer,
@@ -145,18 +144,10 @@ class ForgotPasswordView(APIView):
         try:
             user = User.objects.get(email__iexact=email)
             token = default_token_generator.make_token(user)
-            # In production, send a real email with a reset link
-            reset_url = (
-                f"https://yasante.com/reset-password?token={token}&uid={user.pk}"
-            )
-            send_mail(
-                "Reset your Yasante password",
-                f"Use this link to reset your password: {reset_url}",
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=True,
-            )
-            logger.info("Password reset email sent to %s", email)
+            # A yasante.com link opens the app's reset screen on a phone (and a page
+            # saying so on a computer). It carries who and the one-time token.
+            link = f"https://yasante.com/auth/reset-password?uid={user.pk}&token={token}"
+            send_password_reset(user.email, user.name, link)
         except User.DoesNotExist:
             # Don't reveal whether the email exists
             pass
