@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Read-only look at an account in the LOCAL test database.
+# Usage: qa/bin/dbcheck <email>
+set -euo pipefail
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+EMAIL="${1:?usage: dbcheck <email>}"
+cd "$(dirname "$QA")/backend"
+QA_EMAIL="$EMAIL" "$QA/.venv/bin/python" manage.py shell -c '
+import os
+from apps.accounts.models import User, EmailChallenge
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+email = os.environ["QA_EMAIL"]
+u = User.objects.filter(email__iexact=email).first()
+if not u:
+    print(f"no account with email {email}")
+    raise SystemExit
+out = OutstandingToken.objects.filter(user=u)
+print(f"email={u.email} name={u.name!r} verified={u.email_verified} roles={u.roles} active={u.is_active}")
+print(f"created={u.created_at:%Y-%m-%d %H:%M:%S} last_login={u.last_login}")
+print(f"refresh_tokens issued={out.count()} revoked={BlacklistedToken.objects.filter(token__in=out).count()}")
+for c in EmailChallenge.objects.filter(user=u):
+    print(f"open_code_challenge to={c.email} attempts={c.attempts} expires={c.expires_at:%H:%M:%S}")
+' 2>&1 | grep -v "objects imported automatically"

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Stops Metro and Django, stops (keeps) the containers, and removes the local API override
+# so a normal `npm start` talks to the committed .env.development again.
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+REPO="$(dirname "$QA")"
+pkill -f "^node .*expo start --dev-client --port 8082" 2>/dev/null
+pkill -f "^npm exec expo start --dev-client --port 8082" 2>/dev/null
+pkill -f "manage.py runserver 127.0.0.1:8000" 2>/dev/null
+podman stop yasante-qa-db yasante-qa-redis >/dev/null 2>&1
+rm -f "$REPO/.env.development.local"
+adb reverse --remove-all 2>/dev/null
+echo "down: metro, django, containers stopped; .env.development.local removed"

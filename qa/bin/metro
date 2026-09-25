@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Starts Metro on :8082 pointed at the local backend, logging to qa/runs/<run-id>/metro.log.
+# The phone reaches it through `qadb reverse` (phone 8081 -> laptop 8082, phone 8000 -> laptop 8000).
+set -euo pipefail
+
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+REPO="$(dirname "$QA")"
+RUN="${1:?usage: metro <run-id>}"
+OUT="$QA/runs/$RUN"
+mkdir -p "$OUT"
+
+# The committed .env.development points at the LIVE API. In dev, Expo merges the .env
+# files over the shell's variables, so exporting here is not enough: the override has
+# to be .env.development.local (gitignored, merged last), and it must exist before
+# Metro starts. qa/bin/env-down removes it.
+cd "$REPO"
+cat > .env.development.local <<'EOF'
+# Written by qa/bin/metro for local testing; removed by qa/bin/env-down. Not committed.
+EXPO_PUBLIC_API_BASE_URL=http://localhost:8000
+EXPO_PUBLIC_API_MOCKS=false
+EXPO_PUBLIC_API_LOGGING=true
+EOF
+
+[[ -d node_modules ]] || npm ci > "$OUT/npm-ci.log" 2>&1
+# Anchored on the node binary so it can't match the shell that runs this script.
+pkill -f "^node .*expo start --dev-client --port 8082" 2>/dev/null || true
+pkill -f "^npm exec expo start --dev-client --port 8082" 2>/dev/null || true
+sleep 2
+nohup npx expo start --dev-client --port 8082 --clear > "$OUT/metro.log" 2>&1 &
+echo $! > "$OUT/metro.pid"
+sleep 3
+
+for _ in $(seq 60); do
+  curl -s http://127.0.0.1:8082/status 2>/dev/null | grep -q running && break
+  sleep 2
+done
+curl -s http://127.0.0.1:8082/status | grep -q running \
+  && echo "metro: running on :8082 (log $OUT/metro.log)" \
+  || { echo "metro did not start; see $OUT/metro.log"; exit 1; }

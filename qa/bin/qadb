@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+exec "$QA/.venv/bin/python" "$QA/bin/qadb.py" "$@"
