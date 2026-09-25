@@ -171,28 +171,28 @@ class BookingListCreateView(APIView):
             profile.menu_items.filter(pk=service_id).first() if _is_uuid(service_id) else None
         )
         if service is None:
-            return _err("Pick a service from her menu", 400)
+            return _err("Pick a service from the menu", 400)
 
         # Priced here from her menu, never from what the app says it costs.
         priced = price_choice(service, data.get("options") or {})
         groups = option_groups(service)
         if groups and not priced["complete"]:
             names = " and ".join(g["group"] for g in groups)
-            return _err(f"Pick your {names} so she knows what to quote", 400)
+            return _err(f"Pick your {names} so the stylist knows what to quote", 400)
 
         times = [t for t in (data.get("requested_times") or []) if t]
         if not times:
             return _err("Say when you’d like to come", 400)
         starts = [_parse_time(t) for t in times]
         if any(s is None for s in starts):
-            return _err("Pick one of her times", 400)
+            return _err("Pick one of the stylist’s times", 400)
         if any(not is_open_on(profile, s) for s in starts):
-            return _err("She doesn’t work one of those days. Pick another", 400)
+            return _err("The stylist doesn’t work one of those days. Pick another", 400)
         minutes = priced["minutes"] or service.duration_minutes or 120
         if profile.availability and not start_fits(profile, starts[0], minutes):
-            return _err("That’s outside her hours. Pick one of her times", 400)
+            return _err("That’s outside the stylist’s hours. Pick one of their times", 400)
         if not data.get("policy_version"):
-            return _err("Her terms have to be accepted", 400)
+            return _err("The stylist’s terms have to be accepted", 400)
 
         with transaction.atomic():
             # One request at a time per stylist, so two clients can't take one slot.
@@ -264,7 +264,7 @@ class _BookingAction(APIView):
 class BookingAcceptView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.stylist_id:
-            return _err("Only she can accept it", 403)
+            return _err("Only the stylist can accept it", 403)
         if booking.status != "requested":
             return _err(f"A booking that is {booking.status} can't be accepted", 409)
         when = _parse_time(request.data.get("scheduled_for"))
@@ -279,7 +279,7 @@ class BookingAcceptView(_BookingAction):
 class BookingProposeView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.stylist_id:
-            return _err("Only she can suggest a time", 403)
+            return _err("Only the stylist can suggest a time", 403)
         if booking.status != "requested":
             return _err("That request has moved on", 409)
         when = _parse_time(request.data.get("scheduled_for"))
@@ -329,7 +329,7 @@ class BookingProposalAnswerView(_BookingAction):
 class BookingDeclineView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.stylist_id:
-            return _err("Only she can decline it", 403)
+            return _err("Only the stylist can decline it", 403)
         if not can_transition(booking.status, "declined"):
             return _err(f"A booking that is {booking.status} can't be declined", 409)
         booking.status = "declined"
@@ -345,7 +345,7 @@ class BookingDeclineView(_BookingAction):
 class BookingDepositReceivedView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.stylist_id:
-            return _err("Only she can mark it received", 403)
+            return _err("Only the stylist can mark it received", 403)
         if booking.status != "awaiting_deposit":
             return _err(f"A booking that is {booking.status} can't become confirmed", 409)
         booking.status = "confirmed"
@@ -377,10 +377,10 @@ class BookingCancelView(_BookingAction):
 class BookingCloseView(_BookingAction):
     def act(self, request, booking):
         if request.user.pk != booking.stylist_id:
-            return _err("Only she can close it", 403)
+            return _err("Only the stylist can close it", 403)
         outcome = request.data.get("outcome")
         if outcome not in ("attended", "no_show"):
-            return _err("Say whether she came", 400)
+            return _err("Say whether your client came", 400)
         no_show = outcome == "no_show"
         if no_show and booking.scheduled_for and booking.scheduled_for > timezone.now():
             return _err("You can only mark a no-show after the start time", 400)

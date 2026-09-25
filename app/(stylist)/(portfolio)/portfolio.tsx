@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { RefreshControl, View } from 'react-native';
+import { RefreshControl, StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import Animated from 'react-native-reanimated';
 import { Images, ImagePlus, ScrollText, LayoutGrid } from 'lucide-react-native';
@@ -35,7 +35,7 @@ const AnimatedFlashList = Animated.createAnimatedComponent(
 const useStyles = makeStyles(() => ({
   header: { gap: space.xl, marginBottom: space.lg },
   cell: { flex: 1, paddingHorizontal: 3, paddingBottom: space.sm, gap: 4 },
-  photo: { width: '100%', aspectRatio: 0.8, borderRadius: radius.sm },
+  photo: { width: '100%', aspectRatio: 0.8, borderRadius: radius.sm, overflow: 'hidden' },
   grid: { marginHorizontal: -3 },
 }));
 
@@ -120,7 +120,14 @@ function PortfolioGrid() {
               onPress={() => setTagging(item)}
               accessibilityLabel={`Photo ${index + 1}, ${nameOf(item.serviceId) ?? 'no service'}`}
             >
-              <RemoteImage uri={item.uri} style={styles.photo} recyclingKey={item.id} />
+              {/* Sized box, filling picture: sized on the image, Android drew it 0px tall. */}
+              <View style={styles.photo}>
+                <RemoteImage
+                  uri={item.thumbUri ?? item.uri}
+                  style={StyleSheet.absoluteFill}
+                  recyclingKey={item.id}
+                />
+              </View>
             </PressableScale>
             <Text variant="caption" tone="tertiary" numberOfLines={1}>
               {nameOf(item.serviceId) ?? ' '}

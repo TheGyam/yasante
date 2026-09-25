@@ -12,9 +12,9 @@ describe('her working hours', () => {
   it('closes her days off and her blocked dates, and says why', () => {
     const hours: Availability = { ...DEFAULT_AVAILABILITY, blocked: ['2026-09-23'] };
     expect(isOpenOn(hours, day(20))).toBe(false);
-    expect(closedReason(hours, day(20))).toBe('She doesn’t work Suns');
+    expect(closedReason(hours, day(20))).toBe('They don’t work Suns');
     expect(isOpenOn(hours, day(22))).toBe(true);
-    expect(closedReason(hours, day(23))).toBe('She’s away that day');
+    expect(closedReason(hours, day(23))).toBe('They’re away that day');
   });
 
   it('reads her week the way she’d say it', () => {

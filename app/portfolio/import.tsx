@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { X } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import { styleForService, useStyleTaxonomy } from '@/features/looks';
@@ -36,7 +36,7 @@ const useStyles = makeStyles(() => ({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   tile: { width: '31%', gap: space.xs },
-  photo: { width: '100%', aspectRatio: 0.8, borderRadius: radius.sm },
+  photo: { width: '100%', aspectRatio: 0.8, borderRadius: radius.sm, overflow: 'hidden' },
   drop: { position: 'absolute', top: space.xs, right: space.xs },
   footer: { gap: space.xs, paddingTop: space.lg },
 }));
@@ -170,7 +170,9 @@ export default function ImportPhotosScreen() {
                     onPress={() => setTagging(index)}
                     accessibilityLabel={`Photo ${index + 1}, ${nameOf(photo.serviceId) ?? 'no service'}`}
                   >
-                    <RemoteImage uri={photo.uri} style={styles.photo} />
+                    <View style={styles.photo}>
+                      <RemoteImage uri={photo.uri} style={StyleSheet.absoluteFill} />
+                    </View>
                   </PressableScale>
                   <IconButton
                     icon={X}

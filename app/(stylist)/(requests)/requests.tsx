@@ -81,7 +81,7 @@ export default function RequestsScreen() {
           <EmptyState
             icon={Inbox}
             title="No requests yet"
-            message="When someone asks for a date, it lands here with her hair profile and her record."
+            message="When someone asks for a date, it lands here with their hair profile and their record."
           />
         )}
       </View>

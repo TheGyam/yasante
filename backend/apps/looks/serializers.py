@@ -266,7 +266,7 @@ class LookCreateRequestSerializer(serializers.Serializer):
     photo_aspect = serializers.FloatField(required=False)
     caption = serializers.CharField(required=False)
     styles = serializers.ListField(child=serializers.CharField(), help_text="Style slugs; at least one")
-    booking_id = serializers.CharField(required=False, help_text="Credits her stylist through this booking")
+    booking_id = serializers.CharField(required=False, help_text="Credits the stylist through this booking")
     service_id = serializers.CharField(required=False)
     product_ids = serializers.ListField(child=serializers.CharField(), required=False)
     visibility = serializers.ChoiceField(choices=["public", "private"], required=False)

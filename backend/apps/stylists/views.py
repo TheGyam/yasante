@@ -667,7 +667,7 @@ class StylistSlotsView(APIView):
             else None
         )
         if service is None:
-            return Response({"message": "Pick a service from her menu"}, status=400)
+            return Response({"message": "Pick a service from the menu"}, status=400)
         option_ids = [
             o.strip() for o in request.query_params.get("options", "").split(",") if o.strip()
         ]

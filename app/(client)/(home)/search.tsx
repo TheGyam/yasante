@@ -332,7 +332,7 @@ function StylistRow({
   const styles = useStyles();
   return (
     <PressableScale
-      accessibilityLabel={`${stylist.displayName}, ${stylist.baseArea}. Open her page`}
+      accessibilityLabel={`${stylist.displayName}, ${stylist.baseArea}. Open their page`}
       onPress={() => onOpen(stylist)}
       style={styles.person}
     >

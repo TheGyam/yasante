@@ -89,7 +89,7 @@ def on_status(booking, before):
             booking,
             "confirmed",
             f"Confirmed with {booking.stylist_name}",
-            f"{_when(start)}. Her address and what to bring are in your booking.",
+            f"{_when(start)}. The address and what to bring are in your booking.",
         )
     elif status == "declined":
         to_client(

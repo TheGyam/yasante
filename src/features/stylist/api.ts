@@ -61,7 +61,8 @@ export const stylistApi = {
   /** PATCH /api/stylists/me/ */
   update: async (changes: Partial<StylistProfileDraft>) => {
     const body = { ...changes };
-    if (body.proofPhotoUri) body.proofPhotoUri = (await uploadImage(body.proofPhotoUri, 'proof')).uri;
+    if (body.proofPhotoUri)
+      body.proofPhotoUri = (await uploadImage(body.proofPhotoUri, 'proof')).uri;
     return (await apiClient.patch<StylistProfile>('/api/stylists/me/', body)).data;
   },
 
