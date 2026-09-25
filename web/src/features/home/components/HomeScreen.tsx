@@ -16,7 +16,7 @@ import { Page } from '@/shared/ui/Page';
 import { Rise } from '@/shared/ui/Rise';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { Text } from '@/shared/ui/Text';
-import styles from './HomeScreen.module.css';
+import * as styles from './HomeScreen.css';
 
 interface Point {
   icon: LucideIcon;

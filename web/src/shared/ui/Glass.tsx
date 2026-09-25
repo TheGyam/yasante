@@ -1,5 +1,5 @@
 import type { ElementType, HTMLAttributes, ReactNode } from 'react';
-import styles from './Glass.module.css';
+import * as styles from './Glass.css';
 
 export interface GlassProps extends HTMLAttributes<HTMLElement> {
   /**
@@ -22,7 +22,12 @@ export function Glass({
   children,
   ...rest
 }: GlassProps) {
-  const classes = [styles[variant], styles[radius], padded ? styles.padded : '', className ?? '']
+  const classes = [
+    styles.variant[variant],
+    styles.radius[radius],
+    padded ? styles.padded : '',
+    className ?? '',
+  ]
     .filter(Boolean)
     .join(' ');
   return (

@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Link } from './Link';
-import styles from './Button.module.css';
+import * as styles from './Button.css';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 export type ButtonSize = 'lg' | 'md' | 'sm';
@@ -43,8 +43,8 @@ export function Button(props: ButtonProps) {
   } = props;
   const classes = [
     styles.button,
-    styles[variant],
-    styles[size],
+    styles.variant[variant],
+    styles.size[size],
     fullWidth ? styles.fullWidth : '',
     className ?? '',
   ].join(' ');

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Glass } from './Glass';
 import { Text } from './Text';
-import styles from './Section.module.css';
+import * as styles from './Section.css';
 
 export interface SectionProps {
   title?: string;

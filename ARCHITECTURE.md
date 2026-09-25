@@ -203,8 +203,9 @@ screen draws comes from `src/shared/ui` and `src/shared/theme`.
 `web/` is yasante.com: React and Vite, on the same rules as the app. Routes are thin,
 features are imported through their `index.ts`, `shared/` never reaches into a feature
 (ESLint enforces all three there too), and the types come from the same `openapi.yaml`.
-Its design tokens are the app's, held equal by a test, so the site and the app can't
-drift apart. Django serves each page's HTML with its title, share image and its own API
+Styles are TypeScript too, beside each component in a `.css.ts` file that reads the
+same typed tokens as the app, and a test holds the site's tokens equal to the app's, so
+the two can't drift apart. Django serves each page's HTML with its title, share image and its own API
 data inlined, so shared links preview properly and open on their content.
 [web/README.md](web/README.md) has the details.
 

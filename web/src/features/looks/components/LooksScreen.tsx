@@ -7,7 +7,7 @@ import { useAreas, useStyles } from '../hooks';
 import { HAIR_TEXTURES } from '../format';
 import type { LookFilters } from '../types';
 import { LookGrid } from './LookGrid';
-import styles from './LooksScreen.module.css';
+import * as styles from './LooksScreen.css';
 
 /** The address for a set of filters, so every view of the feed can be shared. */
 export function looksHref(filters: LookFilters) {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import styles from './Avatar.module.css';
+import * as styles from './Avatar.css';
 
 export interface AvatarProps {
   name: string;

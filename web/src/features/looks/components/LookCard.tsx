@@ -4,7 +4,7 @@ import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { usePrefetchLook } from '../hooks';
 import { lookAlt, lookTitle } from '../format';
 import type { Look } from '../types';
-import styles from './LookCard.module.css';
+import * as styles from './LookCard.css';
 
 /** Portrait tiles, like the app's grid, so a feed reads as one even wall. */
 export const TILE_ASPECT = 4 / 5;

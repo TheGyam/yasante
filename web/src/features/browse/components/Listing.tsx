@@ -7,7 +7,7 @@ import { Glass } from '@/shared/ui/Glass';
 import { Page } from '@/shared/ui/Page';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { Text } from '@/shared/ui/Text';
-import styles from './Listing.module.css';
+import * as styles from './Listing.css';
 
 export interface ListingProps {
   title: string;

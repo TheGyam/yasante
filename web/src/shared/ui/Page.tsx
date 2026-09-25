@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
-import styles from './Page.module.css';
+import * as styles from './Page.css';
 
 export interface PageProps {
   /** The tab's title, before " · Yasante". Leave out for the home page. */

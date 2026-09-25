@@ -33,6 +33,8 @@
     "@types/node": "^26.6.2",
     "@types/react": "~19.1.0",
     "@types/react-dom": "~19.1.0",
+    "@vanilla-extract/css": "^1.21.2",
+    "@vanilla-extract/vite-plugin": "^5.2.6",
     "@vitejs/plugin-react": "^6.1.1",
     "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9.39.5",

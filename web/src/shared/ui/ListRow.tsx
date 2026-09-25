@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Link } from './Link';
 import { Text } from './Text';
-import styles from './ListRow.module.css';
+import * as styles from './ListRow.css';
 
 export interface ListRowProps {
   title: string;
@@ -31,7 +31,7 @@ export function ListRow({
     <>
       {leading ??
         (Icon && (
-          <span className={`${styles.icon} ${styles[iconTone]}`}>
+          <span className={`${styles.icon} ${styles.iconTone[iconTone]}`}>
             <Icon size={17} strokeWidth={2.1} aria-hidden />
           </span>
         ))}
@@ -51,7 +51,7 @@ export function ListRow({
     </>
   );
   return to ? (
-    <Link to={to} preload={preload} className={styles.row}>
+    <Link to={to} preload={preload} className={`${styles.row} ${styles.linked}`}>
       {inner}
     </Link>
   ) : (

@@ -1,19 +1,7 @@
 /**
- * The theme lives in CSS (./theme.css) so pages paint in the right colours before any
- * script runs. This is the little that code needs to know.
+ * The theme, as the app's: colours in ./themes.ts, static tokens in ./tokens.ts, and
+ * the CSS variables styles read in ./vars.css.ts. Styles live next to each component
+ * in a `.css.ts` file — the web's makeStyles — and never hard-code a colour.
  */
 export { useReducedMotion } from './useReducedMotion';
-
-/** The app's type scale: each variant is a class in shared/ui/Text.module.css. */
-export type TypeVariant =
-  | 'display'
-  | 'title1'
-  | 'title2'
-  | 'title3'
-  | 'body'
-  | 'bodyStrong'
-  | 'callout'
-  | 'subhead'
-  | 'footnote'
-  | 'caption'
-  | 'overline';
+export type { TypeVariant } from './tokens';

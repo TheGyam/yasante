@@ -1,6 +1,6 @@
 import { Link } from './Link';
 import { Text } from './Text';
-import styles from './SiteFooter.module.css';
+import * as styles from './SiteFooter.css';
 
 export interface SiteFooterProps {
   links: { label: string; to: string }[];

@@ -18,7 +18,7 @@ import { Text } from '@/shared/ui/Text';
 import { useLook, useStyleNames } from '../hooks';
 import { lookAlt, lookPrice, lookTitle } from '../format';
 import { LookGrid } from './LookGrid';
-import styles from './LookScreen.module.css';
+import * as styles from './LookScreen.css';
 
 /** One look: the photo, who did it, and a way to book it in the app. */
 export function LookScreen({ id }: { id: string }) {

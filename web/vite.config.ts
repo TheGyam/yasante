@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react, { reactCompilerPreset } from '@vitejs/plugin-react';
 import babel from '@rolldown/plugin-babel';
+import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import { fileURLToPath, URL } from 'node:url';
 
 /**
@@ -15,7 +16,8 @@ const api = process.env.YASANTE_API ?? 'http://localhost:8000';
 
 export default defineConfig(({ command }) => ({
   base: command === 'build' ? '/static/site/' : '/',
-  plugins: [react(), babel({ presets: [reactCompilerPreset()] })],
+  // Styles are TypeScript (`.css.ts`, the web's makeStyles), compiled to plain CSS at build time.
+  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), vanillaExtractPlugin()],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
@@ -37,6 +39,5 @@ export default defineConfig(({ command }) => ({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
-    css: { modules: { classNameStrategy: 'non-scoped' } },
   },
 }));

@@ -8,7 +8,7 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { useLooks } from '../hooks';
 import type { LookFilters } from '../types';
 import { LookCard, TILE_ASPECT } from './LookCard';
-import styles from './LookGrid.module.css';
+import * as styles from './LookGrid.css';
 
 export interface LookGridProps {
   filters: LookFilters;

@@ -1,4 +1,4 @@
-import styles from './BrandMark.module.css';
+import * as styles from './BrandMark.css';
 
 /** The app's mark: a Y on an accent tile, and the name. */
 export function BrandMark() {
