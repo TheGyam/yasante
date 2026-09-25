@@ -15,7 +15,7 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://yasante.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.yasante.com"
       }
     },
     "preview": {
@@ -27,7 +27,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://yasante.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.yasante.com"
       }
     },
     "production": {
@@ -39,7 +39,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://yasante.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.yasante.com"
       },
       "autoIncrement": true
     }

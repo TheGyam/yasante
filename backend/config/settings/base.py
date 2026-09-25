@@ -304,6 +304,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
+# Where uploaded photos are linked from, whichever address the upload came in on.
+# Empty (tests, local) means the request's own address.
+PUBLIC_BASE_URL = config("PUBLIC_BASE_URL", default="")
 MEDIA_ROOT = BASE_DIR / "mediafiles"
 # Private photos are handed to nginx (X-Accel-Redirect to its internal /protected/)
 # in production; locally Django streams them itself.

@@ -94,7 +94,7 @@
     ],
     "extra": {
       "router": {},
-      "apiBaseUrl": "https://yasante.com",
+      "apiBaseUrl": "https://api.yasante.com",
       "eas": {
         "projectId": "9dbcb957-3709-4ef6-b6e0-1f5800eb2c43"
       }

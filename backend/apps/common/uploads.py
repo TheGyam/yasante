@@ -84,10 +84,14 @@ def near_duplicate(phash, owner_id):
 
 
 def media_url(request, media, path):
-    """Public copies are plain URLs; private ones go through the owner-only view."""
-    if media.visibility == "private":
-        return request.build_absolute_uri(f"/api/media/{media.pk}/")
-    return request.build_absolute_uri(default_storage.url(path))
+    """
+    Public copies are plain URLs; private ones go through the owner-only view. Both
+    on the public address when one is set, so a photo's link is the same whichever
+    address (yasante.com or api.yasante.com) the upload came in on.
+    """
+    relative = f"/api/media/{media.pk}/" if media.visibility == "private" else default_storage.url(path)
+    base = settings.PUBLIC_BASE_URL.rstrip("/")
+    return f"{base}{relative}" if base else request.build_absolute_uri(relative)
 
 
 class UploadRequestSerializer(serializers.Serializer):
