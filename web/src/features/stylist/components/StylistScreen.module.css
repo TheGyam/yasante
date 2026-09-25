@@ -1,0 +1,97 @@
+.layout {
+  display: grid;
+  gap: var(--space-xxl);
+}
+
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: 360px minmax(0, 1fr);
+    gap: var(--space-huge);
+    align-items: start;
+  }
+  .aside {
+    position: sticky;
+    top: 88px;
+  }
+}
+
+.identity {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-md);
+  text-align: center;
+}
+
+.names {
+  display: grid;
+  gap: 2px;
+}
+
+.bio {
+  white-space: pre-line;
+}
+
+.book {
+  display: grid;
+  gap: var(--space-sm);
+  margin-top: var(--space-xl);
+  text-align: center;
+}
+
+.main > :first-child {
+  margin-top: 0;
+}
+
+.workHead,
+.reviewsHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin: var(--space-xxxl) var(--space-xs) var(--space-sm);
+}
+
+.work {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-xs);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.work a {
+  display: block;
+  transition: opacity var(--t-state) var(--ease-out);
+}
+.work a:hover {
+  opacity: 0.88;
+}
+
+.average {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reviews {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.review {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.reviewHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.more {
+  margin-top: var(--space-sm);
+  display: flex;
+  justify-content: center;
+}

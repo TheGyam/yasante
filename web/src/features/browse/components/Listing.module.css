@@ -1,0 +1,5 @@
+.intro {
+  display: grid;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}

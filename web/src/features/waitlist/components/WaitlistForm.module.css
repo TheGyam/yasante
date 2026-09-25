@@ -1,0 +1,29 @@
+.form {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.row {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+@media (min-width: 640px) {
+  .row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* People never see this field; bots fill in every field they find. */
+.trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.done {
+  display: grid;
+  gap: var(--space-xs);
+}

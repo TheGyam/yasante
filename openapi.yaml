@@ -2566,6 +2566,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/UsernameCheck'
           description: ''
+  /api/waitlist/:
+    post:
+      operationId: waitlist_create
+      tags:
+      - waitlist
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WaitlistRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          description: No response body
 components:
   schemas:
     AcceptRequestRequest:
@@ -5780,6 +5796,31 @@ components:
       description: |-
         * `public` - public
         * `private` - private
+    WaitlistRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          default: client
+        area:
+          type: string
+          default: ''
+          maxLength: 100
+        source:
+          type: string
+          default: ''
+          maxLength: 100
+        website:
+          type: string
+          default: ''
+      required:
+      - email
     WeekCounts:
       type: object
       properties:

@@ -9,8 +9,9 @@ actually work, and a planner that keeps your care routine on track. Stylists get
 own side of the app too, with a page, a menu, a calendar and a simple way to run their
 day.
 
-The app is built with Expo and React Native. The backend is Django, and it runs live at
-[yasante.com](https://yasante.com).
+The app is built with Expo and React Native. The website at
+[yasante.com](https://yasante.com) is React, built with Vite. The backend is Django, and
+serves both.
 
 ---
 
@@ -77,6 +78,16 @@ yasante.com). You can change that in
 
 `npm run web` opens the app in a browser, which is handy for quick layout work.
 
+### Run the website
+
+```bash
+cd web
+npm install
+npm run dev                  # http://localhost:5173, talking to the backend on :8000
+```
+
+[web/README.md](web/README.md) has the rest.
+
 ### Run the backend
 
 The backend lives in `backend/`. Postgres and Redis run in Docker; Django runs on your
@@ -113,6 +124,7 @@ src/features/      Everything that belongs to one part of the product:
                    looks, booking, planner, profile, stylist, shelf, auth, education.
 src/shared/        The design system, theme, API client and helpers used everywhere.
 src/mocks/         The mock backend used when EXPO_PUBLIC_API_MOCKS is on.
+web/               The website, laid out the same way (routes, features, shared).
 backend/apps/      The Django apps, one per area, matching the features above.
 ```
 
@@ -125,9 +137,10 @@ types are generated from it:
 
 ```bash
 npm run api:types
+cd web && npm run api:types
 ```
 
-CI fails if either file is out of date, and the backend's tests check every response
+CI fails if any of these files is out of date, and the backend's tests check every response
 against the schema. So when an endpoint changes, regenerate both and commit them
 together.
 
@@ -139,6 +152,7 @@ together.
 npm test                          # app tests
 npm run lint                      # lint
 npx tsc --noEmit                  # types
+cd web && npm test && npm run lint  # the website
 cd backend && pytest              # backend tests (needs Postgres running)
 ```
 
@@ -181,8 +195,9 @@ npx eas-cli build --platform android --profile preview
 
 Build minutes are limited, so check before starting one.
 
-**Deploying the backend** happens automatically. Pushing to `master` with changes under
-`backend/` runs CI, and if it passes, deploys to yasante.com and rolls back on its own
+**Deploying the backend and website** happens automatically. Pushing to `master` with
+changes under `backend/` or `web/` runs CI, and if it passes, builds the website and
+deploys both to yasante.com and rolls back on its own
 if anything goes wrong. The details are in
 [backend/deploy/README.md](backend/deploy/README.md).
 

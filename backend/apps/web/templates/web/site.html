@@ -1,0 +1,33 @@
+{% load static %}<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F7F2F4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0709" media="(prefers-color-scheme: dark)">
+<title>{{ title }}</title>
+<meta name="description" content="{{ description }}">
+<meta property="og:site_name" content="Yasante">
+<meta property="og:title" content="{{ og_title }}">
+<meta property="og:description" content="{{ description }}">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+{% if image %}<meta property="og:image" content="{{ image }}">
+<meta name="twitter:card" content="summary_large_image">{% else %}<meta name="twitter:card" content="summary">{% endif %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+{% if assets %}<link rel="icon" type="image/png" href="{% static 'site/favicon.png' %}">
+{% for href in assets.styles %}<link rel="stylesheet" href="{{ href }}">
+{% endfor %}<script type="module" src="{{ assets.script }}"></script>{% endif %}
+<style>body{margin:0;background:#F7F2F4;color:#1B0E14}@media (prefers-color-scheme:dark){body{background:#0B0709;color:#F8F1F4}}</style>
+</head>
+<body>
+<div id="root"></div>
+{% if page_data %}<script id="page-data" type="application/json">{{ page_data }}</script>{% endif %}
+<noscript>
+<main style="max-width:640px;margin:0 auto;padding:24px 16px;font:16px/1.5 system-ui,sans-serif">
+<h1>{{ og_title }}</h1>
+<p>{{ description }}</p>
+<p>This page needs JavaScript. The Yasante app has everything here too.</p>
+</main>
+</noscript>
+</body>
+</html>

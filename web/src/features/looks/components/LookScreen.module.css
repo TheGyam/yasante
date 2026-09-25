@@ -1,0 +1,64 @@
+.layout {
+  display: grid;
+  gap: var(--space-xxl);
+}
+
+@media (min-width: 860px) {
+  .layout {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: var(--space-huge);
+    align-items: start;
+  }
+  .details {
+    position: sticky;
+    top: 88px;
+  }
+}
+
+.photo {
+  border-radius: var(--radius-xl);
+  max-height: 82dvh;
+}
+
+.details {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.caption {
+  white-space: pre-line;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.counts {
+  display: flex;
+  gap: var(--space-xl);
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.skeletonPhoto {
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-xl);
+}

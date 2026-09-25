@@ -1,0 +1,74 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* The glass fades in once the page has scrolled under it, driven by the scroll itself:
+   nothing re-renders, and browsers without scroll timelines simply show it. */
+.glass {
+  position: absolute;
+  inset: -1px 0 0;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  pointer-events: none;
+}
+
+@supports (animation-timeline: scroll()) {
+  .glass {
+    animation: appear linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 48px;
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  max-width: var(--content);
+  height: 64px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--hit-target);
+  padding: 0 var(--space-md);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: color var(--t-state) var(--ease-out);
+}
+
+.link:hover,
+.link[aria-current='page'] {
+  color: var(--text-primary);
+}
+
+@media (max-width: 480px) {
+  .wide {
+    display: none;
+  }
+}
