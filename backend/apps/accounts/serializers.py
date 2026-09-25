@@ -22,6 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
             "name",
             "username",
             "email",
+            "email_verified",
             "phone",
             "phone_verified",
             "roles",
@@ -168,6 +169,18 @@ class PhoneVerifySerializer(serializers.Serializer):
     """POST /api/auth/phone/verify/"""
 
     phone = serializers.CharField(max_length=20)
+    code = serializers.CharField(max_length=10)
+
+
+class EmailStartSerializer(serializers.Serializer):
+    """POST /api/auth/email/start/ — optionally to a corrected address."""
+
+    email = serializers.EmailField(required=False)
+
+
+class EmailVerifySerializer(serializers.Serializer):
+    """POST /api/auth/email/verify/"""
+
     code = serializers.CharField(max_length=10)
 
 

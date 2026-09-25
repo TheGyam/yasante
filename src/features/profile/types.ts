@@ -55,6 +55,8 @@ export interface User {
   /** What her posts show (a stylist's show her brand name). Not set until she picks one. */
   username?: string;
   email?: string;
+  /** Proved with a code sent to it. `false` holds sign-up open until it is. */
+  emailVerified?: boolean;
   /** E.164. Verified by a one-time code before booking or publishing a stylist page. */
   phone?: string;
   phoneVerified?: boolean;

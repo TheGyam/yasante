@@ -44,6 +44,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, db_index=True)
+    # Proved by a code sent to it; a new address has to be proved again.
+    email_verified = models.BooleanField(default=False)
     name = models.CharField(max_length=150)
     # What her posts and comments show (a stylist's show her brand name instead).
     # Shares one namespace with stylist handles, so nobody can post as a stylist.
@@ -136,6 +138,30 @@ class PhoneChallenge(models.Model):
 
     class Meta:
         db_table = "accounts_phone_challenge"
+        ordering = ["-created_at"]
+
+    @property
+    def is_expired(self) -> bool:
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_locked(self) -> bool:
+        return self.attempts >= settings.PHONE_CODE_MAX_ATTEMPTS
+
+
+class EmailChallenge(models.Model):
+    """A short-lived code sent to an email address, stored hashed like a phone code."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_challenges")
+    email = models.EmailField()
+    code_hash = models.CharField(max_length=128)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "accounts_email_challenge"
         ordering = ["-created_at"]
 
     @property

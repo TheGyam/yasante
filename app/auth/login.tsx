@@ -43,8 +43,9 @@ export default function LoginScreen() {
     try {
       const session = await login.mutateAsync({ email: email.trim(), password });
       haptics.success();
-      // A verified account closes this flow on its own; otherwise check the phone first.
-      if (!session.user.phoneVerified) router.push('/auth/verify-phone');
+      // A verified account closes this flow on its own; otherwise the email, then the phone.
+      if (session.user.emailVerified === false) router.push('/auth/verify-email');
+      else if (!session.user.phoneVerified) router.push('/auth/verify-phone');
     } catch (error) {
       haptics.error();
       setFormError(

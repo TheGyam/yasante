@@ -31,6 +31,15 @@ class UserUpdateSerializer(serializers.Serializer):
     avatar_uri = serializers.URLField(max_length=500, required=False, allow_blank=True)
     username = serializers.CharField(max_length=31, required=False)
 
+    def validate_email(self, value):
+        from apps.accounts.models import User
+
+        value = value.strip().lower()
+        user = self.context.get("user")
+        if User.objects.filter(email__iexact=value).exclude(pk=getattr(user, "pk", None)).exists():
+            raise serializers.ValidationError("Another account already uses that email.")
+        return value
+
     def validate_username(self, value):
         from apps.accounts.usernames import normalise, username_problem
 

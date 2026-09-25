@@ -4,6 +4,45 @@
  */
 
 export interface paths {
+    "/api/auth/email/start/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/auth/email/start/
+         *
+         *     Emails a six-digit code to her address, or to a corrected one she sends (which
+         *     becomes her address, unverified, if nobody else has it). One code every 30s.
+         */
+        post: operations["auth_email_start_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/email/verify/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/auth/email/verify/ — five tries per code. */
+        post: operations["auth_email_verify_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/forgot-password/": {
         parameters: {
             query?: never;
@@ -2098,6 +2137,15 @@ export interface components {
             token: string;
             platform: string;
         };
+        /** @description POST /api/auth/email/start/ — optionally to a corrected address. */
+        EmailStartRequest: {
+            /** Format: email */
+            email?: string;
+        };
+        /** @description POST /api/auth/email/verify/ */
+        EmailVerifyRequest: {
+            code: string;
+        };
         /** @description POST /api/events/ */
         EventBatchRequest: {
             events: components["schemas"]["EventRequest"][];
@@ -3051,6 +3099,7 @@ export interface components {
             readonly username?: string;
             /** Format: email */
             readonly email: string;
+            readonly emailVerified: boolean;
             readonly phone?: string;
             readonly phoneVerified: boolean;
             readonly roles: components["schemas"]["RolesEnum"][];
@@ -3070,6 +3119,7 @@ export interface components {
             readonly username?: string;
             /** Format: email */
             readonly email: string;
+            readonly emailVerified: boolean;
             readonly phone?: string;
             readonly phoneVerified: boolean;
             readonly roles: components["schemas"]["RolesEnum"][];
@@ -3124,6 +3174,52 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    auth_email_start_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EmailStartRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhoneStartResponse"];
+                };
+            };
+        };
+    };
+    auth_email_verify_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailVerifyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
     auth_forgot_password_create: {
         parameters: {
             query?: never;

@@ -88,8 +88,9 @@ export default function SignupScreen() {
       setConsent('privacy', true);
       if (stylist) useModeStore.getState().setMode('stylist');
       haptics.success();
-      // Signed in now; the flow stays open until the phone is checked or put off.
-      router.push('/auth/verify-phone');
+      // Signed in now; the flow stays open until the email is confirmed and the phone
+      // is checked or put off. The email comes first.
+      router.push('/auth/verify-email');
     } catch (error) {
       haptics.error();
       setFormError(errorMessage(error, 'We couldn’t create your account. Try again in a moment.'));

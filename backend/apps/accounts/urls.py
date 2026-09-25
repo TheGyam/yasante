@@ -16,6 +16,8 @@ urlpatterns = [
     path(
         "reset-password/", views.ResetPasswordView.as_view(), name="auth-reset-password"
     ),
+    path("email/start/", views.EmailStartView.as_view(), name="auth-email-start"),
+    path("email/verify/", views.EmailVerifyView.as_view(), name="auth-email-verify"),
     path("phone/start/", views.PhoneStartView.as_view(), name="auth-phone-start"),
     path("phone/verify/", views.PhoneVerifyView.as_view(), name="auth-phone-verify"),
     path("logout/", views.LogoutView.as_view(), name="auth-logout"),

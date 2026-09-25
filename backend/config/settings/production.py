@@ -26,6 +26,8 @@ if _email_host:
     EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")  # noqa: F405
     EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")  # noqa: F405
     EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)  # noqa: F405
+    # A slow mail server shouldn't hold a request (and a web worker) for long.
+    EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=15, cast=int)  # noqa: F405
 
 # Sentry
 _sentry_dsn = config("SENTRY_DSN", default="")  # noqa: F405

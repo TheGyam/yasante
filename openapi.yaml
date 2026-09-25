@@ -4,6 +4,51 @@ info:
   version: 1.0.0
   description: Backend APIs for Yasante.
 paths:
+  /api/auth/email/start/:
+    post:
+      operationId: auth_email_start_create
+      description: |-
+        POST /api/auth/email/start/
+
+        Emails a six-digit code to her address, or to a corrected one she sends (which
+        becomes her address, unverified, if nobody else has it). One code every 30s.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailStartRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneStartResponse'
+          description: ''
+  /api/auth/email/verify/:
+    post:
+      operationId: auth_email_verify_create
+      description: POST /api/auth/email/verify/ — five tries per code.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailVerifyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+          description: ''
   /api/auth/forgot-password/:
     post:
       operationId: auth_forgot_password_create
@@ -3494,6 +3539,24 @@ components:
       required:
       - platform
       - token
+    EmailStartRequest:
+      type: object
+      description: POST /api/auth/email/start/ — optionally to a corrected address.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+    EmailVerifyRequest:
+      type: object
+      description: POST /api/auth/email/verify/
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 10
+      required:
+      - code
     EventBatchRequest:
       type: object
       description: POST /api/events/
@@ -5669,6 +5732,9 @@ components:
           type: string
           format: email
           readOnly: true
+        emailVerified:
+          type: boolean
+          readOnly: true
         phone:
           type: string
           readOnly: true
@@ -5699,6 +5765,7 @@ components:
       required:
       - createdAt
       - email
+      - emailVerified
       - id
       - name
       - phoneVerified
@@ -5721,6 +5788,9 @@ components:
         email:
           type: string
           format: email
+          readOnly: true
+        emailVerified:
+          type: boolean
           readOnly: true
         phone:
           type: string
@@ -5748,6 +5818,7 @@ components:
       required:
       - createdAt
       - email
+      - emailVerified
       - id
       - name
       - phoneVerified

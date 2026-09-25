@@ -77,9 +77,13 @@ class UserDetailView(APIView):
         serializer.is_valid(raise_exception=True)
 
         user = request.user
-        for field, value in serializer.validated_data.items():
+        changes = dict(serializer.validated_data)
+        # A new address has to be proved again, with a code sent to it.
+        if "email" in changes and changes["email"] != user.email.lower():
+            changes["email_verified"] = False
+        for field, value in changes.items():
             setattr(user, field, value)
-        user.save(update_fields=list(serializer.validated_data.keys()) + ["updated_at"])
+        user.save(update_fields=list(changes.keys()) + ["updated_at"])
 
         return Response(UserDetailSerializer(user).data)
 
