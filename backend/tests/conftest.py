@@ -175,11 +175,13 @@ def make_look(styles):
     return make
 
 
-def free_slot(api_as, profile, service, days_ahead=2):
-    """The first free start time the server offers for a service."""
-    slots = api_as.get(
-        f"/api/stylists/by-handle/{profile.handle}/slots/", service=str(service.pk)
-    ).json()
+def free_slot(api_as, profile, service, days_ahead=2, options=None):
+    """The first free start time the server offers for a service, with its options
+    (a longer option can need a slot the plain service wouldn't)."""
+    params = {"service": str(service.pk)}
+    if options:
+        params["options"] = ",".join(options.values())
+    slots = api_as.get(f"/api/stylists/by-handle/{profile.handle}/slots/", **params).json()
     for day in slots["days"]:
         if day["times"]:
             return day["times"][0]
@@ -203,7 +205,7 @@ def book(api, slot):
             "serviceId": str(service.pk),
             "options": options or {},
             "bringingOwnHair": False,
-            "requestedTimes": [time or slot(as_client, profile, service)],
+            "requestedTimes": [time or slot(as_client, profile, service, options=options)],
             "policyVersion": "2026-09",
         }
         response = as_client.post("/api/bookings/", body)
