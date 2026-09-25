@@ -1,7 +1,8 @@
 # yasante.com
 
 The website: the pages a shared link opens when the app isn't installed (her page, a
-look), browsing looks, styles and areas, the waitlist and the policies. It's React,
+look), browsing looks, styles and areas, the waitlist and the policies — and a
+stylist's own sign-up, from account to a live page. It's React,
 built with Vite, and it follows the same principles as the app: read
 [ARCHITECTURE.md](../ARCHITECTURE.md) first — nearly everything there applies here.
 
@@ -47,6 +48,45 @@ both. A new page is added in three places: `src/routes/index.tsx`,
 `backend/apps/web/urls.py` (with its view), and, if the app should open it,
 `APP_PATHS` in the same views file.
 
+## Stylists signing up
+
+A stylist can make her account and put her page live without the app, in the app's
+steps and words: `/auth/signup` (the account, role stylist), `/auth/verify-email` (the
+six-digit code), then `/stylist-setup` (name and page, where she works, her rules,
+proof of work, go live). `/auth/login` brings her back to finish or change it, and
+`/auth/forgot-password` emails her a link to `/auth/reset-password` to choose a new
+password (an hour, once; every session on the account ends when it's used). These
+are the app's own addresses, so on a phone with the app they open there instead.
+
+- **The session lives in this tab only** (sessionStorage): a reload keeps her signed
+  in, closing the tab signs her out, and "Sign out" also ends it on the server. The
+  auth feature hands tokens to the API client through an `AuthBridge`, as in the app,
+  and an expired token is refreshed once.
+- **Her answers are saved in the browser as she goes** (per account), so an interrupted
+  setup picks up where it stopped. A page she already has fills the form to edit.
+- **The rules are the app's**: password rules, handle rules and the policy version are
+  checked against the app's own files by a test, so an account made here works there.
+- She accepts the terms, the privacy policy and the **stylist terms**; all three are
+  recorded against her account (`POST /api/consents/`), and kept to retry if that fails.
+
+## A stylist's studio
+
+Until the apps are in the stores, a stylist runs everything from the website. Her studio
+is the app's stylist screens, at the app's own addresses, behind her sign-in:
+
+| Address | What it's for |
+| --- | --- |
+| `/today` | Her page link, a "get ready for clients" checklist worked out from her real page (live, services, hours, payment details, 9+ looks), this week's numbers, today's and upcoming appointments |
+| `/requests`, `/requests/:id` | Requests to answer (accept an asked-for time with her deposit and how to pay it, suggest another time in London time, or decline), deposits to mark as arrived, cancelling, and closing out after an appointment |
+| `/looks/new` | Posting her work: up to 20 photos at once, each tagged with a style (and a service if she likes). Each becomes a look in the feed, credited to her, and joins her page linked to that look |
+| `/portfolio` | What she's posted: her looks in the feed, and the photos on her page |
+| `/menu`, `/menu/new`, `/menu/:id` | Her services: price, "from" prices, time, options by length and size, hair included |
+| `/availability`, `/payment-methods`, `/account` | Working hours and days off, where clients pay deposits, her address, editing her page |
+
+A live stylist can post up to 200 looks an hour (clients: 30), so a back catalogue goes up
+in one sitting. Everything she does here is what the app does, through the same API, so
+when the app arrives it's all already there.
+
 ## Where things live
 
 ```
@@ -57,8 +97,8 @@ src/shared/theme/      themes.ts and tokens.ts (the app's), vars.css.ts, global.
 src/shared/lib/        The API client, errors, formatting, page data, the query client
 ```
 
-Features today: `home` · `looks` · `stylist` · `browse` (style and area pages) ·
-`policy` · `waitlist` · `auth`.
+Features today: `home` · `looks` · `stylist` (her page, and setting it up) · `browse`
+(style and area pages) · `policy` · `waitlist` · `auth` (signing up and in).
 
 The same three rules as the app, enforced by ESLint:
 

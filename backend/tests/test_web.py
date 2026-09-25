@@ -69,6 +69,33 @@ def test_every_page_is_the_site(make_stylist):
     assert '<div id="root">' not in web.get("/api/nothing-here/").content.decode()
 
 
+def test_a_stylist_can_sign_up_on_the_web():
+    web = Client()
+    signup = web.get("/auth/signup").content.decode()
+    assert "<title>Set up your stylist account · Yasante</title>" in signup
+    assert 'name="robots"' not in signup
+    # Signing in, the code and setup are for one person: kept out of search.
+    for path in (
+        "/auth/login",
+        "/auth/verify-email",
+        "/stylist-setup",
+        # Her studio, at the app's addresses.
+        "/today",
+        "/requests",
+        "/requests/00000000-0000-0000-0000-000000000001",
+        "/portfolio",
+        "/looks/new",
+        "/menu",
+        "/menu/new",
+        "/menu/00000000-0000-0000-0000-000000000001",
+        "/availability",
+        "/payment-methods",
+        "/account",
+    ):
+        page = web.get(path)
+        assert page.status_code == 200 and '<meta name="robots" content="noindex">' in page.content.decode()
+
+
 def test_waitlist_joins_once_and_ignores_bots(api):
     from apps.web.models import WaitlistEntry
 
@@ -124,7 +151,11 @@ def test_style_and_area_pages(make_stylist, make_user, make_look):
 
 def test_terms_and_privacy_are_published():
     web = Client()
-    for path, title in (("/terms", "Terms of use"), ("/privacy", "Privacy policy")):
+    for path, title in (
+        ("/terms", "Terms of use"),
+        ("/privacy", "Privacy policy"),
+        ("/stylist-terms", "Stylist terms"),
+    ):
         page = web.get(path)
         assert page.status_code == 200 and title in page.content.decode()
 
@@ -133,3 +164,14 @@ def test_the_privacy_policy_names_who_sends_our_emails(api):
     current = api().get("/api/policies/privacy/").json()
     assert current["version"] == "2026-09-25"
     assert "IONOS" in current["body"] and "confirm by emailing you a code" in current["body"]
+
+
+def test_stylist_terms_say_what_the_product_does(api):
+    terms = api().get("/api/policies/stylist_terms/").json()
+    assert terms["version"] == "2026-09"
+    # The facts they state are the ones the booking rules enforce.
+    from django.conf import settings
+
+    assert f"within {settings.BOOKING_REQUEST_LAPSE_HOURS} hours lapses" in terms["body"]
+    assert f"within {settings.BOOKING_DEPOSIT_LAPSE_HOURS} hours of your acceptance" in terms["body"]
+    assert "Yasante never takes, holds, or refunds money" in terms["body"]

@@ -14,6 +14,7 @@
 {% if image %}<meta property="og:image" content="{{ image }}">
 <meta name="twitter:card" content="summary_large_image">{% else %}<meta name="twitter:card" content="summary">{% endif %}
 <link rel="canonical" href="{{ request.build_absolute_uri }}">
+{% if noindex %}<meta name="robots" content="noindex">{% endif %}
 {% if assets %}<link rel="icon" type="image/png" href="{% static 'site/favicon.png' %}">
 {% for href in assets.styles %}<link rel="stylesheet" href="{{ href }}">
 {% endfor %}<script type="module" src="{{ assets.script }}"></script>{% endif %}

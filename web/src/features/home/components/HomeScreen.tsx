@@ -110,6 +110,9 @@ export function HomeScreen({ source }: { source?: string }) {
             If you’re a stylist
           </Text>
           <Points points={FOR_STYLISTS} />
+          <div>
+            <Button label="Set up your page" size="md" to="/auth/signup" />
+          </div>
         </Glass>
       </div>
 

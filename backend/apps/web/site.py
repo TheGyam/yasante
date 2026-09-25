@@ -56,8 +56,9 @@ def page_data(seeds):
     return mark_safe(text)
 
 
-def page(request, *, title=None, description=None, image="", seeds=(), status=200):
-    """Render one page of the site. `seeds` is [(query key, API data)]."""
+def page(request, *, title=None, description=None, image="", seeds=(), status=200, noindex=False):
+    """Render one page of the site. `seeds` is [(query key, API data)]; `noindex` keeps
+    it out of search (a sign-in form, a page only for the signed-in)."""
     return render(
         request,
         "web/site.html",
@@ -68,6 +69,7 @@ def page(request, *, title=None, description=None, image="", seeds=(), status=20
             "image": image,
             "assets": assets(),
             "page_data": page_data(seeds),
+            "noindex": noindex,
         },
         status=status,
     )
