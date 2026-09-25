@@ -1809,7 +1809,7 @@ export interface components {
             requestedTimes: string[];
             notes?: string;
             policyVersion: string;
-            /** @description The look she's booking from */
+            /** @description The look the booking is from */
             lookId?: string;
         };
         /** @description Her policies as they were when the request was made. */
@@ -2346,7 +2346,7 @@ export interface components {
             caption?: string;
             /** @description Style slugs; at least one */
             styles: string[];
-            /** @description Credits her stylist through this booking */
+            /** @description Credits the stylist through this booking */
             bookingId?: string;
             serviceId?: string;
             productIds?: string[];
