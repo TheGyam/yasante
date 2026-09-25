@@ -2719,6 +2719,7 @@ export interface components {
         };
         /** @description POST /api/auth/reset-password/ */
         ResetPasswordRequest: {
+            uid: string;
             token: string;
             password: string;
         };

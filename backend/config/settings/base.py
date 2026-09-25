@@ -340,6 +340,8 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 # Email — console by default, override per environment
 # ──────────────────────────────────────────────
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# A reset link works for an hour (Django's default is three days).
+PASSWORD_RESET_TIMEOUT = 60 * 60
 DEFAULT_FROM_EMAIL = config(
     "DEFAULT_FROM_EMAIL", default="Yasante <noreply@yasante.com>"
 )

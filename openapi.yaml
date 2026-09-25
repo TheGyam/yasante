@@ -4915,6 +4915,9 @@ components:
       type: object
       description: POST /api/auth/reset-password/
       properties:
+        uid:
+          type: string
+          minLength: 1
         token:
           type: string
           minLength: 1
@@ -4925,6 +4928,7 @@ components:
       required:
       - password
       - token
+      - uid
     Review:
       type: object
       properties:

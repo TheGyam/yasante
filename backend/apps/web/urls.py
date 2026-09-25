@@ -9,6 +9,7 @@ urlpatterns = [
     path(".well-known/assetlinks.json", views.assetlinks),
     path(".well-known/apple-app-site-association", views.apple_app_site_association),
     path("looks/<uuid:pk>", views.look, name="web-look"),
+    path("auth/reset-password", views.open_in_app, name="web-reset-password"),
     path("styles/<slug:slug>", views.style, name="web-style"),
     path("areas/<slug:slug>", views.area, name="web-area"),
     re_path(r"^(?P<type>terms|stylist-terms|privacy|guidelines)$", views.policy, name="web-policy"),

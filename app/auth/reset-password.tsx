@@ -14,7 +14,8 @@ type Field = 'password' | 'confirmPassword';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
-  const { token = '' } = useLocalSearchParams<{ token?: string }>();
+  // Both come from the emailed link: whose account, and the one-time token.
+  const { token = '', uid = '' } = useLocalSearchParams<{ token?: string; uid?: string }>();
   const resetPassword = useResetPassword();
   const confirmRef = useRef<TextInput>(null);
 
@@ -24,13 +25,13 @@ export default function ResetPasswordScreen() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !uid) {
       notify({
         title: 'This link has expired',
         message: 'Request a new reset link and try again.',
       }).then(() => router.replace('/auth/forgot-password'));
     }
-  }, [token, router]);
+  }, [token, uid, router]);
 
   const submit = async () => {
     const next: Partial<Record<Field, string>> = {};
@@ -46,7 +47,7 @@ export default function ResetPasswordScreen() {
     }
 
     try {
-      await resetPassword.mutateAsync({ token, password });
+      await resetPassword.mutateAsync({ uid, token, password });
       haptics.success();
       setDone(true);
     } catch (error) {
@@ -58,7 +59,7 @@ export default function ResetPasswordScreen() {
     }
   };
 
-  if (!token) return null;
+  if (!token || !uid) return null;
 
   if (done) {
     return (

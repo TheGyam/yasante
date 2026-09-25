@@ -93,8 +93,8 @@ export function useForgotPassword() {
 
 export function useResetPassword() {
   return useMutation({
-    mutationFn: async ({ token, password }: { token: string; password: string }) => {
-      const response = await api.auth.resetPassword({ token, password });
+    mutationFn: async (reset: { uid: string; token: string; password: string }) => {
+      const response = await api.auth.resetPassword(reset);
       return response.data;
     },
   });
