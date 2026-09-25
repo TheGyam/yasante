@@ -9,7 +9,7 @@ pytestmark = pytest.mark.django_db
 
 
 def code_in(message):
-    return re.search(r"\b(\d{6})\b", message.body).group(1)
+    return re.match(r"(\d{6})", message.subject).group(1)
 
 
 def test_a_new_account_confirms_its_email_with_a_code(api, make_user):
