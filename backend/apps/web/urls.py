@@ -11,6 +11,12 @@ urlpatterns = [
     path("looks", views.looks, name="web-looks"),
     path("looks/<uuid:pk>", views.look, name="web-look"),
     path("auth/reset-password", views.open_in_app, name="web-reset-password"),
+    # A stylist's account and page. The same addresses as the app's screens, so a phone
+    # with the app opens them there instead.
+    path("auth/signup", views.signup, name="web-signup"),
+    path("auth/login", views.sign_in, name="web-login"),
+    path("auth/verify-email", views.verify_email, name="web-verify-email"),
+    path("stylist-setup", views.stylist_setup, name="web-stylist-setup"),
     path("styles/<slug:slug>", views.style, name="web-style"),
     path("areas/<slug:slug>", views.area, name="web-area"),
     re_path(r"^(?P<type>terms|stylist-terms|privacy|guidelines)$", views.policy, name="web-policy"),

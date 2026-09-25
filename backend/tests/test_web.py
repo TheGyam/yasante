@@ -69,6 +69,17 @@ def test_every_page_is_the_site(make_stylist):
     assert '<div id="root">' not in web.get("/api/nothing-here/").content.decode()
 
 
+def test_a_stylist_can_sign_up_on_the_web():
+    web = Client()
+    signup = web.get("/auth/signup").content.decode()
+    assert "<title>Set up your stylist account · Yasante</title>" in signup
+    assert 'name="robots"' not in signup
+    # Signing in, the code and setup are for one person: kept out of search.
+    for path in ("/auth/login", "/auth/verify-email", "/stylist-setup"):
+        page = web.get(path)
+        assert page.status_code == 200 and '<meta name="robots" content="noindex">' in page.content.decode()
+
+
 def test_waitlist_joins_once_and_ignores_bots(api):
     from apps.web.models import WaitlistEntry
 
