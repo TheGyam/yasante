@@ -82,7 +82,8 @@ export default function ReviewScreen() {
               Thank you
             </Text>
             <Text variant="body" tone="secondary" align="center" style={{ marginTop: space.xs }}>
-              Every review is checked before it appears on {booking?.stylistName ?? 'her'}’s page.
+              Every review is checked before it appears on{' '}
+              {booking?.stylistName ? `${booking.stylistName}’s` : 'their'} page.
             </Text>
           </Animated.View>
         </View>

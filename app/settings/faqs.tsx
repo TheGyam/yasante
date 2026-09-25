@@ -19,15 +19,15 @@ const FAQS = [
   },
   {
     q: 'How do I book a stylist?',
-    a: 'Open her page from a look, choose Request a booking, then pick the service and a time she’s free. She has 48 hours to reply. Any deposit is paid straight to her; Yasante never handles money.',
+    a: 'Open their page from a look, choose Request a booking, then pick the service and a time they’re free. They have 48 hours to reply. Any deposit is paid straight to them; Yasante never handles money.',
   },
   {
     q: 'When do I see the stylist’s address?',
-    a: 'Once she confirms your booking. Until then her page shows the district only.',
+    a: 'Once they confirm your booking. Until then their page shows the district only.',
   },
   {
-    q: 'She’s fully booked. Can I wait for a slot?',
-    a: 'Yes. On her page, choose Tell me if a slot opens and pick the days you could do. If someone cancels, you’ll see it on your home screen.',
+    q: 'They’re fully booked. Can I wait for a slot?',
+    a: 'Yes. On their page, choose Tell me if a slot opens and pick the days you could do. If someone cancels, you’ll see it on your home screen.',
   },
   {
     q: 'How do I change my hair profile?',

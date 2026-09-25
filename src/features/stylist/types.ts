@@ -118,6 +118,8 @@ export type MenuItemDraft = Omit<MenuItem, 'id'>;
 export interface PortfolioPhoto {
   id: string;
   uri: string;
+  /** A smaller copy for grids. */
+  thumbUri?: string;
   /** The menu service it shows, when she's said — that's what ties a photo to a price. */
   serviceId?: string;
   /** The look it was shared as, when she posted it to Looks while adding it. */

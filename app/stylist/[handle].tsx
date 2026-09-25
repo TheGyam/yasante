@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
   BadgeCheck,
@@ -42,12 +42,16 @@ import { StarRating } from '@/shared/ui/StarRating';
 import { Text } from '@/shared/ui/Text';
 import { track } from '@/shared/lib/analytics';
 
+/** A page opens on a few of each, and grows a step at a time. */
+const PHOTOS_STEP = 6;
+const REVIEWS_STEP = 3;
+
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
   identity: { alignItems: 'center', gap: space.sm },
   names: { alignItems: 'center', gap: 2 },
   work: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  photo: { width: '31%', aspectRatio: 0.8, borderRadius: radius.sm },
+  photo: { width: '31%', aspectRatio: 0.8, borderRadius: radius.sm, overflow: 'hidden' },
   reviews: { gap: space.sm },
   reviewsHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   average: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
@@ -64,6 +68,8 @@ export default function StylistPageScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const { data, isLoading, isError, error, refetch } = useStylistPage(handle);
   const { user } = useAuth();
+  const [photosShown, setPhotosShown] = useState(PHOTOS_STEP);
+  const [reviewsShown, setReviewsShown] = useState(REVIEWS_STEP);
   useEffect(() => {
     track('view_stylist', { handle });
   }, [handle]);
@@ -81,7 +87,7 @@ export default function StylistPageScreen() {
       <Screen back testID="stylist-page">
         <EmptyState
           icon={isNotFound(error) ? Store : WifiOff}
-          title={isNotFound(error) ? 'No page here' : 'Couldn’t load her page'}
+          title={isNotFound(error) ? 'No page here' : 'Couldn’t load this page'}
           message={
             isNotFound(error)
               ? 'This stylist doesn’t have a live page.'
@@ -194,7 +200,7 @@ export default function StylistPageScreen() {
           {!!timing && (
             <ListRow
               title={timing}
-              subtitle="Only counts the times that were down to her"
+              subtitle="Only counts the times that were down to them"
               icon={Timer}
               iconTone="success"
             />
@@ -202,7 +208,7 @@ export default function StylistPageScreen() {
         </Section>
 
         {menu.length > 0 && (
-          <Section title="Menu" footer="Prices are hers, and what you'd be quoted.">
+          <Section title="Menu" footer="Prices are theirs, and what you'd be quoted.">
             {menu.map(item => (
               <ListRow
                 key={item.id}
@@ -226,22 +232,33 @@ export default function StylistPageScreen() {
         {photos.length > 0 && (
           <View>
             <Text variant="overline" tone="tertiary">
-              Her work
+              Their work
             </Text>
             <View style={[styles.work, { marginTop: space.sm }]}>
-              {photos.slice(0, 9).map((photo, index, shown) => (
-                <RemoteImage
-                  key={photo.id}
-                  uri={photo.uri}
-                  style={styles.photo}
-                  recyclingKey={photo.id}
-                  accessibilityLabel={[
-                    menu.find(item => item.id === photo.serviceId)?.name ?? 'Her work',
-                    `photo ${index + 1} of ${shown.length}`,
-                  ].join(', ')}
-                />
+              {photos.slice(0, photosShown).map((photo, index) => (
+                // The box is sized; the picture fills it. (Sized on the image itself,
+                // Android drew every photo zero pixels tall.)
+                <View key={photo.id} style={styles.photo}>
+                  <RemoteImage
+                    uri={photo.thumbUri ?? photo.uri}
+                    style={StyleSheet.absoluteFill}
+                    recyclingKey={photo.id}
+                    accessibilityLabel={[
+                      menu.find(item => item.id === photo.serviceId)?.name ?? 'Their work',
+                      `photo ${index + 1} of ${photos.length}`,
+                    ].join(', ')}
+                  />
+                </View>
               ))}
             </View>
+            {photos.length > photosShown && (
+              <Button
+                label={`Show more work (${photos.length - photosShown})`}
+                variant="ghost"
+                onPress={() => setPhotosShown(n => n + PHOTOS_STEP)}
+                fullWidth
+              />
+            )}
           </View>
         )}
 
@@ -261,25 +278,35 @@ export default function StylistPageScreen() {
             )}
           </View>
           {reviews.length ? (
-            reviews.map(review => (
-              <ReviewCard
-                key={review.id}
-                review={review}
-                onReport={r =>
-                  router.push(
-                    `/review/report?id=${r.id}&author=${encodeURIComponent(r.authorName)}`
-                  )
-                }
-              />
-            ))
+            reviews
+              .slice(0, reviewsShown)
+              .map(review => (
+                <ReviewCard
+                  key={review.id}
+                  review={review}
+                  onReport={r =>
+                    router.push(
+                      `/review/report?id=${r.id}&author=${encodeURIComponent(r.authorName)}`
+                    )
+                  }
+                />
+              ))
           ) : (
             <Text variant="subhead" tone="secondary">
               No reviews yet. Only clients who’ve had a completed appointment can leave one.
             </Text>
           )}
+          {reviews.length > reviewsShown && (
+            <Button
+              label={`Show more reviews (${reviews.length - reviewsShown})`}
+              variant="ghost"
+              onPress={() => setReviewsShown(n => n + REVIEWS_STEP)}
+              fullWidth
+            />
+          )}
         </View>
 
-        <Section title="Her terms" footer="You'll be asked to accept these when you book.">
+        <Section title="Their terms" footer="You'll be asked to accept these when you book.">
           <ListRow
             title={`${profile.policies.noticeHours} hours' notice to cancel`}
             subtitle="Cancel inside that window and it counts against you"
@@ -288,7 +315,7 @@ export default function StylistPageScreen() {
           />
           <ListRow
             title={deposit}
-            subtitle="Paid straight to her — Yasante never handles it"
+            subtitle="Paid straight to them — Yasante never handles it"
             icon={Store}
             iconTone="neutral"
           />

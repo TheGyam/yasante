@@ -173,7 +173,7 @@ export default function BookingScreen() {
       message:
         what === 'no_show'
           ? 'Someone at Yasante looks at it, and it stays off your record while they do. You can do this once.'
-          : 'It comes out of her public numbers while it’s looked at. You can do this once.',
+          : 'It comes out of their public numbers while it’s looked at. You can do this once.',
       confirmLabel: 'Contest it',
     });
     if (yes) await act(() => contest.mutateAsync({ id, what }), 'Couldn’t send that');
@@ -213,7 +213,7 @@ export default function BookingScreen() {
         {booking.status === 'awaiting_deposit' && !!booking.deposit && (
           <InlineAlert
             tone="info"
-            message={`Send ${formatMoney(booking.deposit.amount)} to ${booking.stylistName} directly, ${booking.deposit.method || 'using the details she gave you'}${booking.expiresAt ? `, by ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Yasante never handles this payment. She marks it received, and that confirms your booking.`}
+            message={`Send ${formatMoney(booking.deposit.amount)} to ${booking.stylistName} directly, ${booking.deposit.method || 'using the details they gave you'}${booking.expiresAt ? `, by ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Yasante never handles this payment. They mark it received, and that confirms your booking.`}
           />
         )}
 
@@ -222,7 +222,7 @@ export default function BookingScreen() {
             title={`${booking.stylistName} suggested ${inSentence(whenLabel(booking.proposal.scheduledFor))}`}
             message={
               booking.proposal.deposit
-                ? `None of your days worked. Say yes and she'll ask for a ${formatMoney(booking.proposal.deposit.amount)} deposit.`
+                ? `None of your days worked. Say yes and they'll ask for a ${formatMoney(booking.proposal.deposit.amount)} deposit.`
                 : 'None of your days worked. Say yes and it’s confirmed.'
             }
           >
@@ -352,7 +352,7 @@ export default function BookingScreen() {
           <ListRow
             title={booking.address ?? booking.area}
             subtitle={
-              booking.address ? 'The full address' : 'The address arrives once she confirms'
+              booking.address ? 'The full address' : 'The address arrives once they confirm'
             }
             icon={MapPin}
             iconTone={booking.address ? 'success' : 'neutral'}
@@ -415,7 +415,7 @@ export default function BookingScreen() {
               title="Before the day"
               footer={
                 ticked.length >= prepList(booking).length
-                  ? 'All set. She’ll be glad of it.'
+                  ? 'All set. They’ll be glad of it.'
                   : 'Tick them off as you go. Only you see this.'
               }
             >
@@ -440,23 +440,23 @@ export default function BookingScreen() {
         )}
 
         {!!booking.notes && (
-          <Section title="What you told her">
+          <Section title="What you told them">
             <ListRow title={booking.notes} />
           </Section>
         )}
 
         {!!booking.reason && (
-          <Section title="What she said">
+          <Section title="What they said">
             <ListRow title={booking.reason} icon={TriangleAlert} iconTone="neutral" />
           </Section>
         )}
 
         {booking.status === 'completed' && !!booking.timing && (
           <Section
-            title="How she recorded it"
+            title="How they recorded it"
             footer={
               booking.contested?.timing
-                ? 'You contested this, so it’s out of her public numbers.'
+                ? 'You contested this, so it’s out of their public numbers.'
                 : undefined
             }
           >
@@ -536,7 +536,7 @@ export default function BookingScreen() {
                 title="Your review"
                 subtitle={
                   booking.review.status === 'published'
-                    ? 'On her page'
+                    ? 'On their page'
                     : booking.review.status === 'pending'
                       ? 'Being checked before it goes up'
                       : 'Taken down by moderation'

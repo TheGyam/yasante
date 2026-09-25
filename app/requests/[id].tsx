@@ -177,7 +177,7 @@ export default function RequestScreen() {
   const say = async () => {
     const yes = await confirm({
       title: `Turn down ${booking.clientName}?`,
-      message: 'She’ll be told, and offered other stylists.',
+      message: 'They’ll be told, and offered other stylists.',
       confirmLabel: 'Decline',
       destructive: true,
     });
@@ -188,7 +188,7 @@ export default function RequestScreen() {
     const yes = await confirm({
       title: `Cancel ${first}’s appointment?`,
       message:
-        'Her deposit is always returned when you cancel, and it counts against your record. Moving it instead keeps both of you whole.',
+        'Their deposit is always returned when you cancel, and it counts against your record. Moving it instead keeps both of you whole.',
       confirmLabel: 'Cancel it',
       cancelLabel: 'Keep it',
       destructive: true,
@@ -216,7 +216,7 @@ export default function RequestScreen() {
         <BookingProgress booking={booking} />
 
         {booking.fromLook && (
-          <FromLookCard look={booking.fromLook} title="She booked from this look" />
+          <FromLookCard look={booking.fromLook} title="They booked from this look" />
         )}
 
         <Section title="Who's asking">
@@ -235,7 +235,7 @@ export default function RequestScreen() {
         </Section>
 
         {!!booking.notes && (
-          <Section title="What she said">
+          <Section title="What they said">
             <ListRow title={booking.notes} />
           </Section>
         )}
@@ -265,7 +265,7 @@ export default function RequestScreen() {
               <DateTimeField title="Start at" mode="time" value={when} onChange={setWhen} />
               {!onAskedDay && (
                 <Text variant="caption" tone="accent" style={styles.label}>
-                  That’s not the time she picked, so she’ll be asked if it works.
+                  That’s not the time they picked, so they’ll be asked if it works.
                 </Text>
               )}
             </View>
@@ -281,7 +281,7 @@ export default function RequestScreen() {
             {amount > 0 && (
               <View style={styles.group}>
                 <Text variant="footnote" tone="secondary" style={styles.label}>
-                  How she pays you
+                  How they pay you
                 </Text>
                 {saved.length > 0 && (
                   <View style={styles.chips}>
@@ -382,8 +382,8 @@ export default function RequestScreen() {
                 title={booking.attendanceConfirmedAt ? `${first} is coming` : 'Not confirmed yet'}
                 subtitle={
                   booking.attendanceConfirmedAt
-                    ? 'She said yes to the reminder'
-                    : 'She’s asked the day before'
+                    ? 'They said yes to the reminder'
+                    : 'They’re asked the day before'
                 }
                 icon={UserCheck}
                 iconTone={booking.attendanceConfirmedAt ? 'success' : 'neutral'}
@@ -467,7 +467,7 @@ export default function RequestScreen() {
           <Section title="How it went">
             <ListRow
               title={timingText(booking.timing) ?? 'No timing recorded'}
-              subtitle={booking.contested?.timing ? 'She contested this' : undefined}
+              subtitle={booking.contested?.timing ? 'They contested this' : undefined}
               icon={ClipboardCheck}
             />
             {!!booking.actualPrice && (

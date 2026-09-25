@@ -112,7 +112,7 @@ export default function BookingsScreen() {
           <EmptyState
             icon={CalendarX}
             title="No bookings yet"
-            message="Find a stylist from a look you like, and ask her for a date."
+            message="Find a stylist from a look you like, and ask them for a date."
           />
         )}
       </View>

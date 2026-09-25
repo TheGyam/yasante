@@ -88,7 +88,7 @@ def test_booking_needs_a_live_page_and_someone_else_but_no_phone_check(api, make
     )
 
 
-def test_days_off_and_times_outside_her_hours_are_refused(api, setup):
+def test_days_off_and_times_outside_working_hours_are_refused(api, setup):
     profile, client = setup
     service = profile.menu_items.get(name="Knotless braids")
     body = {"stylistId": str(profile.account_id), "serviceId": str(service.pk), "policyVersion": "v1"}
@@ -99,7 +99,7 @@ def test_days_off_and_times_outside_her_hours_are_refused(api, setup):
     assert off.status_code == 400 and "doesn’t work" in off.json()["message"]
     monday_late = (sunday + timedelta(days=1)).replace(hour=17)
     late = api(client).post("/api/bookings/", {**body, "requestedTimes": [_iso(monday_late)]})
-    assert late.status_code == 400 and "outside her hours" in late.json()["message"]
+    assert late.status_code == 400 and "outside the stylist’s hours" in late.json()["message"]
 
 
 def test_the_same_time_can_only_be_asked_for_once(api, setup, make_user, book, slot):

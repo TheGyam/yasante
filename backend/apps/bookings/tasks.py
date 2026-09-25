@@ -79,7 +79,7 @@ def send_reminders(now=None):
                 b,
                 "unconfirmed",
                 f"{first} hasn’t confirmed",
-                f"{_when(b.scheduled_for)}. You might message her to check.",
+                f"{_when(b.scheduled_for)}. You might message them to check.",
                 category="reminders",
             )
         local = _local(b.scheduled_for)

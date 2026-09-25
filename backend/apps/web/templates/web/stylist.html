@@ -2,7 +2,7 @@
 {% block title %}{{ p.display_name }} (@{{ p.handle }}) · Yasante{% endblock %}
 {% block description %}{{ p.bio|default:"Braider"|truncatechars:150 }} · {{ p.base_area }}{% endblock %}
 {% block og_title %}{{ p.display_name }} · {{ p.base_area }}{% endblock %}
-{% block og_description %}{{ p.bio|default:"See her work and book on Yasante."|truncatechars:150 }}{% endblock %}
+{% block og_description %}{{ p.bio|default:"See their work and book on Yasante."|truncatechars:150 }}{% endblock %}
 {% block og_image %}{% if image %}<meta property="og:image" content="{{ image }}">{% endif %}{% endblock %}
 {% block content %}
 <div style="display:flex;gap:16px;align-items:center;margin:28px 0 16px">
@@ -12,6 +12,6 @@
 </div>
 {% if p.bio %}<p>{{ p.bio|linebreaksbr }}</p>{% endif %}
 <a class="btn" href="{{ app_link }}">Book in the app</a>
-{% if photos %}<h2>Her work</h2><div class="grid">{% for ph in photos %}<img src="{{ ph.thumb_uri|default:ph.uri }}" alt="" loading="lazy">{% endfor %}</div>{% endif %}
+{% if photos %}<h2>Their work</h2><div class="grid">{% for ph in photos %}<img src="{{ ph.thumb_uri|default:ph.uri }}" alt="" loading="lazy">{% endfor %}</div>{% endif %}
 {% if services %}<h2>Services</h2><div>{% for s in services %}<div class="row"><span>{{ s.name }}{% if s.hours %} <span class="muted">· {{ s.hours }}h</span>{% endif %}</span><strong>{{ s.price }}</strong></div>{% endfor %}</div>{% endif %}
 {% endblock %}

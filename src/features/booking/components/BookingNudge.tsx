@@ -48,7 +48,7 @@ function pickNudge(bookings: Booking[], waiting: SlotInterest[]): Nudge | undefi
     return {
       icon: CalendarCheck,
       title: `Still coming to ${coming.stylistName} ${dayLabel(coming.scheduledFor!).toLowerCase()}?`,
-      subtitle: 'One tap lets her plan',
+      subtitle: 'One tap lets them plan',
       href: `/bookings/${coming.id}`,
     };
   }
