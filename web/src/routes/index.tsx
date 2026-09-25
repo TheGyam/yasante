@@ -8,6 +8,7 @@ import NotFoundRoute from './not-found';
 import { policyRoute } from './policy';
 import ResetPasswordRoute from './reset-password';
 import LoginRoute from './login';
+import ForgotPasswordRoute from './forgot-password';
 import SignupRoute from './signup';
 import StylistSetupRoute from './stylist-setup';
 import {
@@ -49,6 +50,7 @@ export const routes = [
       // A stylist's account and page, on the web as in the app.
       { path: '/auth/signup', element: <SignupRoute /> },
       { path: '/auth/login', element: <LoginRoute /> },
+      { path: '/auth/forgot-password', element: <ForgotPasswordRoute /> },
       { path: '/auth/verify-email', element: <VerifyEmailRoute /> },
       { path: '/stylist-setup', element: <StylistSetupRoute /> },
       // Her studio: the app's stylist screens, at the app's addresses.

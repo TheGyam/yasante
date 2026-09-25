@@ -67,10 +67,14 @@ export function LoginScreen() {
           autoComplete="current-password"
           value={password}
           error={errors.password}
-          hint="Forgot it? Reset it from the sign-in screen in the Yasante app."
           onChange={event => setPassword(event.target.value)}
         />
         <Button type="submit" label="Sign in" loading={login.isPending} fullWidth />
+        <Link to="/auth/forgot-password" className={styles.footer}>
+          <Text variant="subhead" tone="accent">
+            Forgot your password?
+          </Text>
+        </Link>
       </form>
     </AuthLayout>
   );

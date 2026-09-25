@@ -40,3 +40,15 @@ export function useSignOut() {
     onSettled: endSession,
   });
 }
+
+export function useForgotPassword() {
+  return useMutation({ mutationFn: authApi.forgotPassword });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: authApi.resetPassword,
+    // Every session on the account has just ended, this tab's included.
+    onSuccess: () => endSession(),
+  });
+}
