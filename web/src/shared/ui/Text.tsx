@@ -15,6 +15,7 @@ export interface TextProps {
   className?: string;
   style?: CSSProperties;
   id?: string;
+  role?: string;
   children: ReactNode;
 }
 
@@ -36,6 +37,7 @@ export function Text({
   className,
   style,
   id,
+  role,
   children,
 }: TextProps) {
   const Element = as ?? ELEMENT[variant] ?? 'span';
@@ -50,6 +52,7 @@ export function Text({
   return (
     <Element
       id={id}
+      role={role}
       className={classes}
       style={lines ? { WebkitLineClamp: lines, ...style } : style}
     >

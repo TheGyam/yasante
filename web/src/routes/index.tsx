@@ -7,6 +7,10 @@ import LooksRoute from './looks';
 import NotFoundRoute from './not-found';
 import { policyRoute } from './policy';
 import ResetPasswordRoute from './reset-password';
+import LoginRoute from './login';
+import SignupRoute from './signup';
+import StylistSetupRoute from './stylist-setup';
+import VerifyEmailRoute from './verify-email';
 import StyleRoute from './style';
 import StylistRoute from './stylist';
 
@@ -29,6 +33,11 @@ export const routes = [
       { path: '/privacy', Component: policyRoute('privacy') },
       { path: '/guidelines', Component: policyRoute('guidelines') },
       { path: '/auth/reset-password', element: <ResetPasswordRoute /> },
+      // A stylist's account and page, on the web as in the app.
+      { path: '/auth/signup', element: <SignupRoute /> },
+      { path: '/auth/login', element: <LoginRoute /> },
+      { path: '/auth/verify-email', element: <VerifyEmailRoute /> },
+      { path: '/stylist-setup', element: <StylistSetupRoute /> },
       // Last: her bio link, yasante.com/{handle}.
       { path: '/:handle', element: <StylistRoute /> },
       { path: '*', element: <NotFoundRoute /> },

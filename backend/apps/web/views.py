@@ -127,6 +127,30 @@ def open_in_app(request):
     return page(request, title="Open on your phone")
 
 
+@public
+def signup(request):
+    """A stylist's account, on the web."""
+    return page(
+        request,
+        title="Set up your stylist account",
+        description="Your page, menu and bookings in one place. Free for founding stylists.",
+    )
+
+
+def account_page(title):
+    """A page for someone signing in or signed in: the React app handles it, search skips it."""
+
+    def view(request):
+        return page(request, title=title, noindex=True)
+
+    return view
+
+
+sign_in = account_page("Sign in")
+verify_email = account_page("Check your email")
+stylist_setup = account_page("Set up your page")
+
+
 def policy(request, type):
     doc = PolicyDocument.current(type.replace("-", "_"))
     if doc is None:

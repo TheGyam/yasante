@@ -16,7 +16,13 @@ export default function Layout() {
       <a className="visually-hidden" href="#main">
         Skip to content
       </a>
-      <SiteHeader links={[{ label: 'Looks', to: '/looks' }]} appTo="/#waitlist" />
+      <SiteHeader
+        links={[
+          { label: 'Looks', to: '/looks' },
+          { label: 'For stylists', to: '/auth/signup' },
+        ]}
+        appTo="/#waitlist"
+      />
       <main id="main">
         <Outlet />
       </main>

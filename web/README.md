@@ -1,7 +1,8 @@
 # yasante.com
 
 The website: the pages a shared link opens when the app isn't installed (her page, a
-look), browsing looks, styles and areas, the waitlist and the policies. It's React,
+look), browsing looks, styles and areas, the waitlist and the policies — and a
+stylist's own sign-up, from account to a live page. It's React,
 built with Vite, and it follows the same principles as the app: read
 [ARCHITECTURE.md](../ARCHITECTURE.md) first — nearly everything there applies here.
 
@@ -47,6 +48,24 @@ both. A new page is added in three places: `src/routes/index.tsx`,
 `backend/apps/web/urls.py` (with its view), and, if the app should open it,
 `APP_PATHS` in the same views file.
 
+## Stylists signing up
+
+A stylist can make her account and put her page live without the app, in the app's
+steps and words: `/auth/signup` (the account, role stylist), `/auth/verify-email` (the
+six-digit code), then `/stylist-setup` (name and page, where she works, her rules,
+proof of work, go live). `/auth/login` brings her back to finish or change it. These
+are the app's own addresses, so on a phone with the app they open there instead.
+
+- **The session lives in this tab only** (sessionStorage): a reload keeps her signed
+  in, closing the tab signs her out, and "Sign out" also ends it on the server. The
+  auth feature hands tokens to the API client through an `AuthBridge`, as in the app,
+  and an expired token is refreshed once.
+- **Her answers are saved in the browser as she goes** (per account), so an interrupted
+  setup picks up where it stopped. A page she already has fills the form to edit.
+- **The rules are the app's**: password rules, handle rules and the policy version are
+  checked against the app's own files by a test, so an account made here works there.
+- Services, prices, hours and photos are added in the app afterwards; the page says so.
+
 ## Where things live
 
 ```
@@ -57,8 +76,8 @@ src/shared/theme/      themes.ts and tokens.ts (the app's), vars.css.ts, global.
 src/shared/lib/        The API client, errors, formatting, page data, the query client
 ```
 
-Features today: `home` · `looks` · `stylist` · `browse` (style and area pages) ·
-`policy` · `waitlist` · `auth`.
+Features today: `home` · `looks` · `stylist` (her page, and setting it up) · `browse`
+(style and area pages) · `policy` · `waitlist` · `auth` (signing up and in).
 
 The same three rules as the app, enforced by ESLint:
 
