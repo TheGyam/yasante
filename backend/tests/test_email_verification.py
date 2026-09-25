@@ -65,7 +65,7 @@ def test_a_mail_failure_says_so_and_lets_her_try_again(api, make_user, monkeypat
     assert me.post("/api/auth/email/start/", {}).status_code == 200
 
 
-def test_a_reset_email_carries_a_link_the_app_can_use(api, make_user):
+def test_a_reset_email_carries_a_link_the_app_and_the_site_can_use(api, make_user):
     from urllib.parse import parse_qs, urlparse
 
     user = make_user()
@@ -77,4 +77,9 @@ def test_a_reset_email_carries_a_link_the_app_can_use(api, make_user):
     assert api().post("/api/auth/reset-password/", body).status_code == 200
     # Only once: the same link can't change it again.
     assert api().post("/api/auth/reset-password/", body).status_code == 400
-    assert api().get("/auth/reset-password").status_code == 200
+    # The link works on any device: the site has the form wherever the app doesn't open it.
+    assert "on your phone" not in message.body
+    page = api().client.get(link.replace("https://yasante.com", ""))
+    assert page.status_code == 200 and "Choose a new password" in page.content.decode()
+    assert '<meta name="robots" content="noindex">' in page.content.decode()
+    assert api().client.get("/auth/forgot-password").status_code == 200

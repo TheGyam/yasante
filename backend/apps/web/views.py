@@ -121,10 +121,6 @@ def area(request, slug):
     )
 
 
-@public
-def open_in_app(request):
-    """A link meant for the app, opened on a computer: the page says where to open it."""
-    return page(request, title="Open on your phone")
 
 
 @public
@@ -148,6 +144,9 @@ def account_page(title):
 
 
 sign_in = account_page("Sign in")
+forgot_password = account_page("Forgot your password?")
+# The link in the reset email: the website's form wherever the app doesn't open it.
+reset_password = account_page("Choose a new password")
 # A stylist's studio: the app's own screens, on the web until the app is in the stores.
 studio_today = account_page("Today")
 studio_requests = account_page("Requests")

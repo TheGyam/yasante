@@ -11,7 +11,8 @@ urlpatterns = [
     path("looks", views.looks, name="web-looks"),
     path("looks/new", views.studio_post, name="web-post-look"),
     path("looks/<uuid:pk>", views.look, name="web-look"),
-    path("auth/reset-password", views.open_in_app, name="web-reset-password"),
+    path("auth/forgot-password", views.forgot_password, name="web-forgot-password"),
+    path("auth/reset-password", views.reset_password, name="web-reset-password"),
     # A stylist's account and page. The same addresses as the app's screens, so a phone
     # with the app opens them there instead.
     path("auth/signup", views.signup, name="web-signup"),

@@ -53,7 +53,9 @@ both. A new page is added in three places: `src/routes/index.tsx`,
 A stylist can make her account and put her page live without the app, in the app's
 steps and words: `/auth/signup` (the account, role stylist), `/auth/verify-email` (the
 six-digit code), then `/stylist-setup` (name and page, where she works, her rules,
-proof of work, go live). `/auth/login` brings her back to finish or change it. These
+proof of work, go live). `/auth/login` brings her back to finish or change it, and
+`/auth/forgot-password` emails her a link to `/auth/reset-password` to choose a new
+password (an hour, once; every session on the account ends when it's used). These
 are the app's own addresses, so on a phone with the app they open there instead.
 
 - **The session lives in this tab only** (sessionStorage): a reload keeps her signed
