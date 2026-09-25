@@ -36,3 +36,16 @@ Remove the line containing `github-actions-deploy` from
 - Logs: `sudo journalctl -u yasante-web -f`
 - The host key GitHub trusts is pinned in `.github/deploy_known_hosts`; update it if
   the server is rebuilt.
+
+## The API's own address
+
+The app talks to `https://api.yasante.com`; the website stays at `yasante.com`. Both are
+the same server and backend. Setting it up takes one DNS record and one script:
+
+1. In IONOS → Domains & SSL → yasante.com → DNS, add an **A** record: host `api`, points
+   to `13.49.44.212`.
+2. Once it resolves (usually a few minutes), run `bash deploy/api-host.sh` on the server.
+   It adds the name to nginx and the HTTPS certificate, allows it in Django, and keeps
+   photo links on yasante.com.
+
+yasante.com keeps answering API calls too, so builds made before the switch carry on.

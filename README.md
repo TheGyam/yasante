@@ -65,7 +65,8 @@ npm install
 npm start
 ```
 
-By default the app talks to the live backend at yasante.com. You can change that in
+By default the app talks to the live API at api.yasante.com (the website stays at
+yasante.com). You can change that in
 `.env.development`:
 
 | Setting                    | What it does                                                                                                                                    |
