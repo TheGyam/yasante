@@ -1,204 +1,192 @@
-# Yasante - Hair Wellness Planning App
+# Yasante
 
-A beautiful, modern mobile app for hairstyle planning and education built with Expo, React Native, and TypeScript.
+Yasante is a home for textured hair. It's where you find a style you love, book the
+stylist who can do it, and look after your hair between appointments.
 
-## Features
+It brings together three things that usually live in separate places: a feed of real
+looks from real people, a booking flow built around how independent hair stylists
+actually work, and a planner that keeps your care routine on track. Stylists get their
+own side of the app too, with a page, a menu, a calendar and a simple way to run their
+day.
 
-- **Hair Wellness Planner**: Goal setting, progress tracking with photos, routine scheduling, and activity logging
-- **Personalized Education Hub**: Hair profile quiz, filtered content library (articles + videos), favorites
-- **Modern UI**:
-  - Floating animated tab bar with SVG icons
-  - Rotating pop-culture greetings
-  - Shared element transitions for media
-  - Light/dark theme support
-  - Smooth animations with Reanimated 4
-  - Responsive design
-- **Enhanced Profile**: Stats dashboard, active goals, favorites, and hair profile summary
-- **Settings & Support**: Profile editing, FAQs, privacy settings, report a problem
-- **Offline-First**: Mock API for development, easy to swap for real backend
+The app is built with Expo and React Native. The backend is Django, and it runs live at
+[yasante.com](https://yasante.com).
 
-## Tech Stack
+---
 
-- **Framework**: Expo (Managed Workflow)
-- **Language**: TypeScript
-- **Navigation**: Expo Router
-- **Styling**: StyleSheet via the design system in `src/shared/ui` (see ARCHITECTURE.md)
-- **State Management**: Zustand + React Query
-- **Animations**: React Native Reanimated 4
-- **Icons**: lucide-react-native
-- **Media**: expo-video, react-native-shared-element
-- **UI Components**: Custom component library
+## What's inside
 
-## Getting Started
+**For clients**
 
-### Prerequisites
+- **Looks.** A feed of hairstyles you can like, save, comment on and share. Open one
+  and the photo grows out of the grid into its own page. Filter by style, by hair like
+  yours, or by area.
+- **Booking.** Pick a service, choose your size and options, see the price and the
+  stylist's free times, and send a request. If you booked from a look, the stylist sees
+  that exact photo. You follow along as it goes from asked, to accepted, to confirmed
+  and done.
+- **Planner.** Collections for the looks you're saving up, shown as little stacks of
+  their newest photos. Care plans for your routine (wash day, oiling, protective
+  styling), with a consistency ring, the last two weeks at a glance, and a satisfying
+  flip when you mark today done.
+- **Your hair profile.** A short quiz about texture, length and porosity, a log of trims
+  and washes, and measured length over time.
+- **Your shelf.** The products you use, so you can remember what works.
 
-- Node.js 18+
-- npm or yarn
-- Expo CLI (`npm install -g expo-cli`)
-- iOS Simulator (Mac) or Android Emulator
+**For stylists**
 
-### Installation
+- A public page with a menu, prices, portfolio, hours and policies, plus a link for your
+  bio.
+- Requests you can accept, move or decline, with deposits paid straight to you.
+- Your week at a glance, reminders, and a nudge to post the result after each
+  appointment.
 
-1. Clone the repository
+**Everywhere**
+
+- Usernames for clients, brand names for stylists.
+- Push notifications for the moments that matter, each one switchable in settings.
+- Reporting, blocking and appeals, with staff moderation in the admin.
+- Error messages in plain words, never codes.
+- Light and dark themes, reduced-motion support, and screen-reader labels throughout.
+
+---
+
+## Getting started
+
+You'll need Node 18 or newer, and either an Android phone, an Android emulator or an
+iOS simulator. For the backend you’ll also want Python 3.11 or newer, and Docker.
+
+### Run the app
 
 ```bash
 git clone https://github.com/TheGyam/yasante.git
 cd yasante
-```
-
-2. Install dependencies
-
-```bash
 npm install
-```
-
-3. Start the development server
-
-```bash
 npm start
 ```
 
-4. Run on iOS/Android
+By default the app talks to the live backend at yasante.com. You can change that in
+`.env.development`:
+
+| Setting                    | What it does                                                                                                                                    |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EXPO_PUBLIC_API_BASE_URL` | Which backend the app talks to. Use your computer's LAN IP to reach a local backend from a phone.                                               |
+| `EXPO_PUBLIC_API_MOCKS`    | Set to `true` to answer every request from the built-in mock data in `src/mocks`, so no backend is needed at all. Great for working on screens. |
+| `EXPO_PUBLIC_API_LOGGING`  | Set to `true` to log each request and response while developing.                                                                                |
+
+`npm run web` opens the app in a browser, which is handy for quick layout work.
+
+### Run the backend
+
+The backend lives in `backend/`. Postgres and Redis run in Docker; Django runs on your
+machine.
 
 ```bash
-npm run ios
-# or
-npm run android
+cd backend
+docker compose up -d db redis
+python -m venv venv
+venv/Scripts/activate        # or: source venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env         # then set SECRET_KEY; the database defaults match Docker
+python manage.py migrate
+python manage.py seed_db     # optional: fills the database with sample data
+python manage.py runserver 0.0.0.0:8000
 ```
 
-## Project Structure
+`seed_db` loads the same people, stylists, looks and bookings the app's mock data uses.
+Every seeded account has the password `password123`, so it's for local use only.
 
-```
-/app
-  /(tabs)          # Tab-based screens (home, education, planner, profile)
-  /onboarding      # Onboarding flow
-/src
-  /api             # Mock API and React Query hooks
-  /assets          # Images, Lottie animations, icons
-  /components      # Reusable UI components
-    /ui           # Atomic components (Button, Card, Input, etc.)
-    /composed     # Composed components (TopBar, BottomTabBar, etc.)
-    /animations   # Animation wrappers
-  /hooks          # Custom React hooks
-  /services       # Image, notification, storage services
-  /state          # Zustand stores
-  /theme          # Design tokens and theme provider
-  /types          # TypeScript type definitions
-  /utils          # Utility functions
-```
-
-## Design Tokens
-
-The app uses a centralized design token system. To change the brand color, edit `src/theme/tokens.ts`:
-
-```typescript
-export const colors = {
-  primary: '#5e1d31', // Change this to update brand color
-  // ...
-};
-```
-
-All components use these tokens, so changing the primary color will update the entire app.
-
-## Mock API
-
-The app includes a simple in-app mock API for development. To seed/reset mock data:
-
-```typescript
-import { seedMockData } from '@/utils/seed';
-seedMockData();
-```
-
-This is automatically called in dev mode on app start.
-
-## Theme System
-
-The app supports light, dark, and system themes. Users can toggle themes in Settings. Themes are built once per scheme with `makeStyles`; see ARCHITECTURE.md.
-
-## Testing
-
-Run tests:
+Background jobs (reminders, check-ins, weekly digests) run on Celery:
 
 ```bash
-npm test
+celery -A config worker -B -l info
 ```
 
-Run tests in watch mode:
+---
+
+## How the code is organised
+
+```
+app/               The screens, one file per route (Expo Router).
+src/features/      Everything that belongs to one part of the product:
+                   looks, booking, planner, profile, stylist, shelf, auth, education.
+src/shared/        The design system, theme, API client and helpers used everywhere.
+src/mocks/         The mock backend used when EXPO_PUBLIC_API_MOCKS is on.
+backend/apps/      The Django apps, one per area, matching the features above.
+```
+
+A feature only exposes what's in its `index.ts`, and `shared/` never reaches into a
+feature. [ARCHITECTURE.md](ARCHITECTURE.md) explains the rules and the reasoning behind
+them, and is worth a read before a big change.
+
+**The API contract.** The backend describes itself in `openapi.yaml`, and the app's
+types are generated from it:
 
 ```bash
-npm run test:watch
+npm run api:types
 ```
 
-### Test Coverage
+CI fails if either file is out of date, and the backend's tests check every response
+against the schema. So when an endpoint changes, regenerate both and commit them
+together.
 
-- Unit tests for `GreetingBanner` (rotation logic)
-- Unit tests for `greetings` utility (rotation, time-of-day)
+---
 
-## Key Features
-
-### Floating Tab Bar
-
-- Full-width pill container with animated highlight
-- SVG icons from lucide-react-native
-- Spring animations with haptic feedback
-- Keyboard-aware hiding
-
-### Rotating Greetings
-
-- Pop-culture inspired greetings that rotate each session
-- Time-of-day contextual prefixes
-- Animated entrance with gradient underline
-
-### Shared Element Transitions
-
-- Smooth thumbnail → fullscreen transitions for images and videos
-- Poster-to-video crossfade for video content
-- Drag-to-dismiss gesture support
-
-### Enhanced Profile
-
-- Quick stats dashboard (growth, goals, last photo, routines)
-- Active goals list
-- Favorites carousel with horizontal scroll
-- Hair profile summary with badges
-- Settings pages (Edit Profile, FAQs, Privacy, Report a Problem)
-
-### DIY Story View
-
-- Full-screen story-like experience for DIY tutorials
-- Tap zones for navigation (left 40% = previous, right 60% = next)
-- Progress indicators showing current step
-- Swipe down to dismiss
-
-## Building for Production
-
-### iOS
+## Tests and checks
 
 ```bash
-eas build --platform ios
+npm test                          # app tests
+npm run lint                      # lint
+npx tsc --noEmit                  # types
+cd backend && pytest              # backend tests (needs Postgres running)
 ```
 
-### Android
+All of these run in CI on every push.
+
+---
+
+## Performance
+
+Speed matters here as much as features. A few habits keep the app feeling quick:
+
+- **Motion stays off the JavaScript thread.** Animations move only position, rotation
+  and transparency, run on the UI thread with Reanimated, and quiet down when the
+  phone asks for reduced motion.
+- **Screens open with what's already known.** Data is cached with TanStack Query and
+  kept on the phone between launches, so the app opens on what was there last time
+  while fresh copies load. Likely next taps, such as a collection under your finger or
+  a stylist's page from their look, start loading early.
+- **Heavy things wait their turn.** A page builds only what its opening animation needs,
+  and the rest arrives a step at a time once it has landed.
+- **The server stays lean.** Responses are compressed, and a test holds the busiest
+  endpoints to a fixed number of database queries however much they return.
+
+Changes that touch motion or lists are measured on a real Android phone, not just in a
+simulator.
+
+---
+
+## Building and releasing
+
+Builds are made with EAS. There are three profiles in `eas.json`:
+
+- **development** for a dev client you can load code into,
+- **preview** for an installable APK to test on real phones,
+- **production** for the stores.
 
 ```bash
-eas build --platform android
+npx eas-cli build --platform android --profile preview
 ```
 
-## Development Notes
+Build minutes are limited, so check before starting one.
 
-- The app uses Expo Router for file-based routing
-- Mock API is in `src/api/mock/` - easy to swap for real backend
-- All components are in `/src` directory
-- Theme tokens are centralized in `src/theme/tokens.ts`
-- Responsive utilities in `src/utils/responsive.ts`
-- Back buttons use consistent white rounded square design
-- Navigation buttons use text link style for modern app feel
+**Deploying the backend** happens automatically. Pushing to `master` with changes under
+`backend/` runs CI, and if it passes, deploys to yasante.com and rolls back on its own
+if anything goes wrong. The details are in
+[backend/deploy/README.md](backend/deploy/README.md).
 
-## Contributing
-
-This is a private project. All rights reserved.
+---
 
 ## License
 
-Private - All rights reserved
+Private. All rights reserved.
