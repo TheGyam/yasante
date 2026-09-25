@@ -585,17 +585,24 @@ class PortfolioListCreateView(APIView):
                 if service_id and _is_uuid(service_id)
                 else None
             )
-            checked.append((uri, str((raw or {}).get("thumb_uri") or ""), service))
+            # A look she already posted of this photo, so her page links to it. Hers only.
+            look_id = (raw or {}).get("look_id")
+            if look_id:
+                from apps.looks.models import Look
+
+                if not (_is_uuid(look_id) and Look.objects.filter(pk=look_id, author=request.user).exists()):
+                    return Response({"message": "That look isn’t yours"}, status=400)
+            checked.append((uri, str((raw or {}).get("thumb_uri") or ""), service, look_id or None))
 
         # Shared to the feed only from a live page: a draft page has nobody to send clients to.
         share = bool(request.data.get("post_as_looks")) and profile.published
         created = []
         with transaction.atomic():
-            for uri, thumb, service in checked:
+            for uri, thumb, service, look_id in checked:
                 photo = PortfolioPhoto.objects.create(
-                    stylist=profile, uri=uri, thumb_uri=thumb, service=service
+                    stylist=profile, uri=uri, thumb_uri=thumb, service=service, look_id=look_id
                 )
-                if share and service:
+                if share and service and not look_id:
                     photo.look_id = self._share(profile, photo, service)
                     if photo.look_id:
                         photo.save(update_fields=["look_id"])

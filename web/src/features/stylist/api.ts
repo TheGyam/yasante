@@ -1,5 +1,10 @@
 import { api } from '@/shared/lib/api/client';
 import type {
+  MenuItem,
+  MenuItemDraft,
+  Numbers,
+  PortfolioPhoto,
+  StylistSummary,
   HandleCheck,
   StylistFilters,
   StylistPage,
@@ -40,3 +45,33 @@ export function uploadProof(file: File) {
   form.append('visibility', 'private');
   return api.upload<Upload>('/uploads/', form);
 }
+
+/** Her whole menu, in the order she arranged it. */
+export const getMenu = () => api.get<MenuItem[]>('/stylists/me/menu/');
+export const addMenuItem = (draft: MenuItemDraft) =>
+  api.post<MenuItem>('/stylists/me/menu/', draft);
+export const updateMenuItem = (id: string, draft: Partial<MenuItemDraft>) =>
+  api.patch<MenuItem>(`/stylists/me/menu/${id}/`, draft);
+export const removeMenuItem = (id: string) => api.delete(`/stylists/me/menu/${id}/`);
+
+export const getPortfolio = () => api.get<PortfolioPhoto[]>('/stylists/me/portfolio/');
+export const removePortfolioPhoto = (id: string) => api.delete(`/stylists/me/portfolio/${id}/`);
+
+/** This week against last, and how her services really run. */
+export const getNumbers = () => api.get<Numbers>('/stylists/me/numbers/');
+/** What's waiting: requests to answer, appointments today. */
+export const getSummary = () => api.get<StylistSummary>('/stylists/me/summary/');
+
+/** A photo for the feed or her portfolio: public, resized, with a feed and thumbnail copy. */
+export function uploadPhoto(file: File, kind: 'look' | 'portfolio') {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('kind', kind);
+  form.append('source', 'camera_roll');
+  return api.upload<Upload>('/uploads/', form);
+}
+
+/** Photos for her page's "Their work", each linked to the look it was posted as. */
+export const addToPortfolio = (
+  photos: { uri: string; thumbUri?: string; serviceId?: string; lookId?: string }[]
+) => api.post<PortfolioPhoto[]>('/stylists/me/portfolio/', { photos });

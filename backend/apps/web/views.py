@@ -140,13 +140,25 @@ def signup(request):
 def account_page(title):
     """A page for someone signing in or signed in: the React app handles it, search skips it."""
 
-    def view(request):
+    def view(request, **_ids):
+        # The id in the address (a request, a service) is the React app's to read.
         return page(request, title=title, noindex=True)
 
     return view
 
 
 sign_in = account_page("Sign in")
+# A stylist's studio: the app's own screens, on the web until the app is in the stores.
+studio_today = account_page("Today")
+studio_requests = account_page("Requests")
+studio_request = account_page("Request")
+studio_portfolio = account_page("Your work")
+studio_post = account_page("Post your work")
+studio_menu = account_page("Your menu")
+studio_service = account_page("A service")
+studio_hours = account_page("Working hours")
+studio_payments = account_page("Getting paid")
+studio_account = account_page("Account")
 verify_email = account_page("Check your email")
 stylist_setup = account_page("Set up your page")
 

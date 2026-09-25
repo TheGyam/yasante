@@ -29,8 +29,7 @@ export function LoginScreen() {
     login.mutate(
       { email: email.trim(), password },
       {
-        onSuccess: ({ user }) =>
-          navigate(user.emailVerified ? '/stylist-setup' : '/auth/verify-email'),
+        onSuccess: ({ user }) => navigate(user.emailVerified ? '/today' : '/auth/verify-email'),
       }
     );
   };
@@ -38,7 +37,7 @@ export function LoginScreen() {
   return (
     <AuthLayout
       title="Sign in"
-      subtitle="To set up or change your page."
+      subtitle="To your studio: your page, menu, work and requests."
       footer={
         <Text variant="subhead" tone="secondary">
           New to Yasante?{' '}

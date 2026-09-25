@@ -64,7 +64,26 @@ are the app's own addresses, so on a phone with the app they open there instead.
   setup picks up where it stopped. A page she already has fills the form to edit.
 - **The rules are the app's**: password rules, handle rules and the policy version are
   checked against the app's own files by a test, so an account made here works there.
-- Services, prices, hours and photos are added in the app afterwards; the page says so.
+- She accepts the terms, the privacy policy and the **stylist terms**; all three are
+  recorded against her account (`POST /api/consents/`), and kept to retry if that fails.
+
+## A stylist's studio
+
+Until the apps are in the stores, a stylist runs everything from the website. Her studio
+is the app's stylist screens, at the app's own addresses, behind her sign-in:
+
+| Address | What it's for |
+| --- | --- |
+| `/today` | Her page link, a "get ready for clients" checklist worked out from her real page (live, services, hours, payment details, 9+ looks), this week's numbers, today's and upcoming appointments |
+| `/requests`, `/requests/:id` | Requests to answer (accept an asked-for time with her deposit and how to pay it, suggest another time in London time, or decline), deposits to mark as arrived, cancelling, and closing out after an appointment |
+| `/looks/new` | Posting her work: up to 20 photos at once, each tagged with a style (and a service if she likes). Each becomes a look in the feed, credited to her, and joins her page linked to that look |
+| `/portfolio` | What she's posted: her looks in the feed, and the photos on her page |
+| `/menu`, `/menu/new`, `/menu/:id` | Her services: price, "from" prices, time, options by length and size, hair included |
+| `/availability`, `/payment-methods`, `/account` | Working hours and days off, where clients pay deposits, her address, editing her page |
+
+A live stylist can post up to 200 looks an hour (clients: 30), so a back catalogue goes up
+in one sitting. Everything she does here is what the app does, through the same API, so
+when the app arrives it's all already there.
 
 ## Where things live
 

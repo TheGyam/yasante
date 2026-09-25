@@ -23,9 +23,3 @@ export const heading = style({ display: 'grid', gap: space.sm });
 export const step = style({ display: 'grid', gap: space.xl });
 export const actions = style({ display: 'grid', gap: space.sm });
 export const done = style({ display: 'grid', gap: space.lg, justifyItems: 'start' });
-export const nextSteps = style({
-  display: 'grid',
-  gap: space.md,
-  margin: 0,
-  paddingLeft: space.xl,
-});

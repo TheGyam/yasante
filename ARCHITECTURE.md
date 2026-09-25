@@ -207,7 +207,9 @@ Styles are TypeScript too, beside each component in a `.css.ts` file that reads 
 same typed tokens as the app, and a test holds the site's tokens equal to the app's, so
 the two can't drift apart. Django serves each page's HTML with its title, share image and its own API
 data inlined, so shared links preview properly and open on their content.
-[web/README.md](web/README.md) has the details.
+Until the apps are in the stores, stylists sign up and run their whole studio on the
+site — menu, hours, getting paid, posting looks, answering requests — at the app's own
+addresses, through the same API. [web/README.md](web/README.md) has the details.
 
 ## Built for growth
 

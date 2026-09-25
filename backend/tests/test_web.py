@@ -75,7 +75,23 @@ def test_a_stylist_can_sign_up_on_the_web():
     assert "<title>Set up your stylist account · Yasante</title>" in signup
     assert 'name="robots"' not in signup
     # Signing in, the code and setup are for one person: kept out of search.
-    for path in ("/auth/login", "/auth/verify-email", "/stylist-setup"):
+    for path in (
+        "/auth/login",
+        "/auth/verify-email",
+        "/stylist-setup",
+        # Her studio, at the app's addresses.
+        "/today",
+        "/requests",
+        "/requests/00000000-0000-0000-0000-000000000001",
+        "/portfolio",
+        "/looks/new",
+        "/menu",
+        "/menu/new",
+        "/menu/00000000-0000-0000-0000-000000000001",
+        "/availability",
+        "/payment-methods",
+        "/account",
+    ):
         page = web.get(path)
         assert page.status_code == 200 and '<meta name="robots" content="noindex">' in page.content.decode()
 

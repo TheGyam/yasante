@@ -1,4 +1,5 @@
 import { Outlet, ScrollRestoration } from 'react-router';
+import { useSession } from '@/features/auth';
 import { SiteFooter } from '@/shared/ui/SiteFooter';
 import { SiteHeader } from '@/shared/ui/SiteHeader';
 
@@ -11,6 +12,7 @@ const POLICIES = [
 
 /** The frame around every page. */
 export default function Layout() {
+  const signedIn = !!useSession();
   return (
     <>
       <a className="visually-hidden" href="#main">
@@ -19,7 +21,9 @@ export default function Layout() {
       <SiteHeader
         links={[
           { label: 'Looks', to: '/looks' },
-          { label: 'For stylists', to: '/auth/signup' },
+          signedIn
+            ? { label: 'Your studio', to: '/today' }
+            : { label: 'For stylists', to: '/auth/signup' },
         ]}
         appTo="/#waitlist"
       />
