@@ -38,7 +38,7 @@ use `qa/bin/env-up <RUN>`). Expect the last lines to be `backend: HTTP 200 …` 
 
 **P2: Metro up.** `qa/bin/metro <RUN>`. Expect `metro: running on :8082`. Paste it.
 Then **server check**: `cat .env.development.local` from the repo root. Expect
-`EXPO_PUBLIC_API_BASE_URL=http://localhost:8000`. Paste it.
+`EXPO_PUBLIC_API_BASE_URL=http://localhost:8765`. Paste it.
 
 **P3: Device.** `qa/bin/qadb start <RUN>`. Paste the full JSON.
 Expect `"dev_client": true`. **If it is false, or a WARNING is printed, stop the run

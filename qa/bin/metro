@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Starts Metro on :8082 pointed at the local backend, logging to qa/runs/<run-id>/metro.log.
-# The phone reaches it through `qadb reverse` (phone 8081 -> laptop 8082, phone 8000 -> laptop 8000).
+# The phone reaches it through `qadb reverse` (phone 8081 -> laptop 8082, phone 8765 -> laptop 8000).
 set -euo pipefail
 
 QA="$(cd "$(dirname "$0")/.." && pwd)"
@@ -16,7 +16,8 @@ mkdir -p "$OUT"
 cd "$REPO"
 cat > .env.development.local <<'EOF'
 # Written by qa/bin/metro for local testing; removed by qa/bin/env-down. Not committed.
-EXPO_PUBLIC_API_BASE_URL=http://localhost:8000
+# 8765 on the phone is tunnelled to Django on :8000 here (qadb start).
+EXPO_PUBLIC_API_BASE_URL=http://localhost:8765
 EXPO_PUBLIC_API_MOCKS=false
 EXPO_PUBLIC_API_LOGGING=true
 EOF

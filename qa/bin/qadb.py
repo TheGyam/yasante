@@ -75,7 +75,7 @@ def run_dir():
 
 
 def device_time():
-    return adb("shell", "date", "+%m-%d %H:%M:%S.000").strip()
+    return adb("shell", "date '+%m-%d %H:%M:%S.000'").strip()
 
 
 def journal(entry):
@@ -186,7 +186,8 @@ def cmd_start(run_id):
         "dev_client": "devlauncher" in pkg.lower(),
         "device_time": device_time(),
     }
-    adb("reverse", "tcp:8000", "tcp:8000")
+    # Phone port 8765, not 8000: something on the owner's phone already holds 8000.
+    adb("reverse", "tcp:8765", "tcp:8000")
     adb("reverse", "tcp:8081", "tcp:8082")
     (d / "device.json").write_text(json.dumps(info, indent=2))
     journal({"cmd": "start", **info})

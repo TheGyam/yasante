@@ -28,7 +28,7 @@ qa/
   app's own windows, reads the app's log by its process ID only, and opens only
   yasante.com / `yasante://` links, inside the app.
 - `metro` writes a gitignored `.env.development.local` pointing the app at
-  `http://localhost:8000` (tunnelled over USB by `adb reverse`). Expo's dev runtime lets
+  `http://localhost:8765`, which `adb reverse` tunnels over USB to Django on :8000 (the phone already uses 8000 for something else). Expo's dev runtime lets
   the committed `.env.development` (the **live** API) win over shell variables, so the
   file is the only override that works. `env-down` removes it.
 - Every plan opens with a routing gate: sign in with a seeded account that exists only
