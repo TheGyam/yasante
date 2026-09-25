@@ -47,3 +47,6 @@ celerybeat.pid
 # OS
 .DS_Store
 Thumbs.db
+
+# The website's build (npm run build in web/): made in CI and on deploy, never committed.
+apps/web/static/site/

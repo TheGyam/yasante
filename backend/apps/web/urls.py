@@ -8,6 +8,7 @@ urlpatterns = [
     path("sitemap.xml", views.sitemap, name="web-sitemap"),
     path(".well-known/assetlinks.json", views.assetlinks),
     path(".well-known/apple-app-site-association", views.apple_app_site_association),
+    path("looks", views.looks, name="web-looks"),
     path("looks/<uuid:pk>", views.look, name="web-look"),
     path("auth/reset-password", views.open_in_app, name="web-reset-password"),
     path("styles/<slug:slug>", views.style, name="web-style"),
