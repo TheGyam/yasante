@@ -1,0 +1,46 @@
+/* `card`: a translucent fill, no blur. Cheap enough for every card and list. */
+.card {
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  border-top-color: var(--glass-highlight);
+}
+
+/* `chrome`: real blur, for bars that float over moving content. */
+.chrome {
+  background: var(--glass-chrome-tint);
+  border: 1px solid var(--glass-border);
+  border-top-color: var(--glass-highlight);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .chrome {
+    background: var(--glass-chrome-solid);
+  }
+}
+
+.sm {
+  border-radius: var(--radius-sm);
+}
+.md {
+  border-radius: var(--radius-md);
+}
+.lg {
+  border-radius: var(--radius-lg);
+}
+.xl {
+  border-radius: var(--radius-xl);
+}
+.none {
+  border-radius: 0;
+}
+
+.padded {
+  padding: var(--space-lg);
+}
+@media (min-width: 760px) {
+  .padded {
+    padding: var(--space-xxl);
+  }
+}

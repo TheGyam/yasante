@@ -1,0 +1,17 @@
+.section {
+  margin-top: var(--space-xxxl);
+}
+
+.title {
+  margin-bottom: var(--space-sm);
+  padding: 0 var(--space-xs);
+}
+
+.rows > * + * {
+  border-top: 1px solid var(--separator);
+}
+
+.footer {
+  margin-top: var(--space-sm);
+  padding: 0 var(--space-xs);
+}

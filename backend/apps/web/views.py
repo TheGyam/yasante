@@ -1,55 +1,51 @@
 """
 The public site at yasante.com: the pages a shared link opens when the app isn't
-installed (her page, a look), the waitlist, policies, and the files search engines
-and phones ask for. Plain HTML, no JavaScript, so it's fast on any connection.
-When the app is installed, the same links open it instead (App Links / Universal Links).
+installed (her page, a look), browsing looks, the waitlist, policies, and the files
+search engines and phones ask for. The pages are the React app in web/; each view here
+sends its HTML with the title, share image and data filled in (see site.py). When the
+app is installed, the same links open it instead (App Links / Universal Links).
+
+The query keys in `seeds` are the ones the site's features read with (web/src/features/*/hooks.ts).
 """
 
 from django.conf import settings
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import render
 from django.urls import reverse
 from django.utils.text import slugify
 from django.views.decorators.cache import cache_control
-from django.views.decorators.http import require_http_methods
 
 from apps.looks.models import Look, Style
+from apps.looks.serializers import present_looks, with_viewer_flags
 from apps.profiles.models import PolicyDocument
+from apps.profiles.views import present_policy
 from apps.stylists.models import PageView, StylistProfile
+from apps.stylists.views import stylist_page
 
-from .models import WaitlistEntry
+from .site import page
 
 public = cache_control(public=True, max_age=300)
 
+LIVE_LOOKS = {"visibility": "public", "status": "live"}
 
-@require_http_methods(["GET", "POST"])
+
+def _styles():
+    return [{"id": s.slug, "name": s.name} for s in Style.objects.order_by("sort_order", "name")]
+
+
+@public
 def home(request):
-    joined = False
-    error = ""
-    if request.method == "POST":
-        # Bots fill every field; people never see this one.
-        if request.POST.get("website"):
-            return render(request, "web/home.html", {"joined": True})
-        email = (request.POST.get("email") or "").strip().lower()
-        role = request.POST.get("role") if request.POST.get("role") in ("client", "stylist") else "client"
-        if "@" not in email or len(email) > 254:
-            error = "That email doesn’t look right."
-        else:
-            # Already on it: same answer, so nobody learns who signed up.
-            WaitlistEntry.objects.get_or_create(
-                email=email,
-                defaults={
-                    "role": role,
-                    "area": (request.POST.get("area") or "").strip()[:100],
-                    "source": (request.GET.get("from") or "")[:100],
-                },
-            )
-            joined = True
-    return render(request, "web/home.html", {"joined": joined, "error": error})
+    return page(request)
 
 
-def _money(value):
-    return f"£{value:.0f}" if value == int(value) else f"£{value:.2f}"
+@public
+def looks(request):
+    style = Style.objects.filter(slug=request.GET.get("style") or "").first()
+    return page(
+        request,
+        title=f"{style.name} looks" if style else "Looks",
+        description="Real looks on real hair, from braiders near you.",
+        seeds=[(["styles"], _styles())],
+    )
 
 
 @public
@@ -60,76 +56,50 @@ def stylist(request, handle):
         .first()
     )
     if profile is None:
-        raise Http404
+        return page(request, title="No page here", status=404)
     PageView.objects.create(stylist=profile, source="web")
-    photos = list(profile.portfolio_photos.all()[:12])
-    services = [
-        {
-            "name": m.name,
-            "price": ("from " if m.from_price else "") + _money(m.price),
-            "hours": round((m.duration_minutes or 0) / 60, 1) or None,
-        }
-        for m in profile.menu_items.all()[:20]
-    ]
-    return render(
+    data = stylist_page(profile)
+    photos = list(profile.portfolio_photos.all()[:1])
+    return page(
         request,
-        "web/stylist.html",
-        {
-            "p": profile,
-            "photos": photos,
-            "services": services,
-            "image": (photos[0].uri if photos else profile.avatar_uri),
-            "app_link": f"yasante://stylist/{profile.handle}",
-        },
+        title=f"{profile.display_name} (@{profile.handle})",
+        description=f"{(profile.bio or 'Braider')[:150]} · {profile.base_area}",
+        image=photos[0].uri if photos else (profile.avatar_uri or ""),
+        seeds=[(["stylist", profile.handle.lower()], data)],
     )
 
 
 @public
 def look(request, pk):
-    item = Look.objects.filter(pk=pk, visibility="public", status="live").select_related("author").first()
+    item = with_viewer_flags(Look.objects.prefetch_related("styles", "products"), None).filter(
+        pk=pk, **LIVE_LOOKS
+    ).first()
     if item is None:
-        raise Http404
-    return render(
+        return page(request, title="Look not found", status=404)
+    data = present_looks([item], None)[0]
+    what = item.service_name or "A look"
+    title = f"{what} by {data['stylist']['name']}" if data.get("stylist") else what
+    return page(
         request,
-        "web/look.html",
-        {
-            "look": item,
-            "image": item.feed_uri or item.photo_uri,
-            "app_link": f"yasante://looks/{item.pk}",
-        },
+        title=title,
+        description=(item.caption or f"{title}, on Yasante.")[:150],
+        image=item.feed_uri or item.photo_uri,
+        seeds=[(["look", str(item.pk)], data), (["styles"], _styles())],
     )
-
-
-def _listing(request, title, intro, looks, stylists):
-    return render(
-        request,
-        "web/listing.html",
-        {
-            "title": title,
-            "intro": intro,
-            "looks": looks.order_by("-like_count", "-created_at")[:30],
-            "stylists": stylists.order_by("-verification_tier", "-rating_count")[:20],
-            "image": next((lk.feed_uri or lk.photo_uri for lk in looks[:1]), ""),
-        },
-    )
-
-
-LIVE_LOOKS = {"visibility": "public", "status": "live"}
 
 
 @public
 def style(request, slug):
     item = Style.objects.filter(slug=slug).first()
     if item is None:
-        raise Http404
-    looks = Look.objects.filter(styles=item, **LIVE_LOOKS)
-    done_by = list(looks.exclude(stylist_id="").values_list("stylist_id", flat=True).distinct())
-    return _listing(
+        return page(request, title="Not found", status=404)
+    first = Look.objects.filter(styles=item, **LIVE_LOOKS).order_by("-like_count").first()
+    return page(
         request,
-        f"{item.name} in London",
-        f"{item.name} by braiders on Yasante, on real hair.",
-        looks,
-        StylistProfile.objects.filter(published=True, account_id__in=done_by),
+        title=f"{item.name} in London",
+        description=f"{item.name} by braiders on Yasante, on real hair.",
+        image=(first.feed_uri or first.photo_uri) if first else "",
+        seeds=[(["styles"], _styles())],
     )
 
 
@@ -137,25 +107,42 @@ def style(request, slug):
 def area(request, slug):
     name = slug.replace("-", " ")
     stylists = StylistProfile.objects.filter(published=True, base_area__iexact=name)
-    looks = Look.objects.filter(area__iexact=name, **LIVE_LOOKS)
-    if not stylists.exists() and not looks.exists():
-        raise Http404
+    area_looks = Look.objects.filter(area__iexact=name, **LIVE_LOOKS)
+    if not stylists.exists() and not area_looks.exists():
+        return page(request, title="Not found", status=404)
     first = stylists.first()
     label = first.base_area if first else name.title()
-    return _listing(request, f"Braiders in {label}", f"Braiders based in {label}, and their work.", looks, stylists)
+    photo = area_looks.order_by("-like_count").first()
+    return page(
+        request,
+        title=f"Braiders in {label}",
+        description=f"Braiders based in {label}, and their work.",
+        image=(photo.feed_uri or photo.photo_uri) if photo else "",
+    )
 
 
 @public
 def open_in_app(request):
-    """A link meant for the app, opened on a computer: say where to open it."""
-    return render(request, "web/open_in_app.html")
+    """A link meant for the app, opened on a computer: the page says where to open it."""
+    return page(request, title="Open on your phone")
 
 
 def policy(request, type):
     doc = PolicyDocument.current(type.replace("-", "_"))
     if doc is None:
-        raise Http404
-    return render(request, "web/policy.html", {"doc": doc})
+        return page(request, title="Not published yet", status=404)
+    return page(
+        request,
+        title=doc.title,
+        seeds=[(["policy", doc.type], present_policy(doc))],
+    )
+
+
+def not_found(request, exception=None):
+    """Any other address: the site's own not-found page, except under the API and admin."""
+    if request.path.startswith(("/api/", "/admin/", "/static/", "/media/")):
+        return HttpResponse("Not found", status=404, content_type="text/plain")
+    return page(request, title="Not found", status=404)
 
 
 @cache_control(public=True, max_age=86400)
@@ -172,7 +159,7 @@ def robots(request):
 @cache_control(public=True, max_age=3600)
 def sitemap(request):
     base = request.build_absolute_uri("/").rstrip("/")
-    urls = [(f"{base}/", None)]
+    urls = [(f"{base}/", None), (f"{base}/looks", None)]
     urls += [
         (f"{base}/{h}", u)
         for h, u in StylistProfile.objects.filter(published=True).values_list("handle", "updated_at")
@@ -182,7 +169,7 @@ def sitemap(request):
     urls += [(f"{base}/areas/{slugify(a)}", None) for a in areas if a]
     urls += [
         (f"{base}/looks/{pk}", u)
-        for pk, u in Look.objects.filter(visibility="public", status="live")
+        for pk, u in Look.objects.filter(**LIVE_LOOKS)
         .order_by("-created_at")
         .values_list("pk", "created_at")[:1000]
     ]

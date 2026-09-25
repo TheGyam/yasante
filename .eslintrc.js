@@ -18,7 +18,7 @@ module.exports = {
   },
   // React Native globals come from eslint-config-expo; the react-native/react-native
   // env key needs eslint-plugin-react-native, which is not installed.
-  ignorePatterns: ['src/shared/lib/api/schema.d.ts', 'node_modules/', 'android/', '.expo/'],
+  ignorePatterns: ['src/shared/lib/api/schema.d.ts', 'node_modules/', 'android/', '.expo/', 'web/'],
   // Module boundaries — see ARCHITECTURE.md.
   overrides: [
     {
