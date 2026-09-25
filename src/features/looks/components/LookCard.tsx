@@ -1,6 +1,6 @@
-import { memo, useCallback, useRef, type RefObject } from 'react';
+import { memo, useCallback, useRef, useState, type RefObject } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
 import {
   Bookmark,
@@ -52,10 +52,16 @@ export interface LookCardProps {
    * closing never re-render the page.
    */
   photoStyle?: StyleProp<ViewStyle>;
+  /**
+   * False keeps it to who posted it and the photo: all the look's page needs while
+   * the photo flies in. What goes below the photo fades in once this turns true.
+   */
+  details?: boolean;
 }
 
 const useStyles = makeStyles(t => ({
   card: { gap: space.sm, marginBottom: space.xxl },
+  below: { gap: space.sm },
   author: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   // Takes the row's spare width, so the options button always has its place at the end.
   who: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm },
@@ -122,6 +128,7 @@ export const LookCard = memo(function LookCard({
   photoRef,
   onPhotoLayout,
   photoStyle,
+  details = true,
 }: LookCardProps) {
   const styles = useStyles();
   const theme = useTheme();
@@ -164,82 +171,11 @@ export const LookCard = memo(function LookCard({
     look.hairTexture && hairLabel(TEXTURE_LABELS[look.hairTexture]),
   ].filter(Boolean) as string[];
 
-  return (
-    <View style={styles.card}>
-      <View style={styles.author}>
-        {/* A name with nowhere to go is a name, not a disabled button — a screen
-            reader shouldn't offer it. */}
-        {look.authorHandle && onOpenPerson ? (
-          <PressableScale
-            onPress={() => onOpenPerson(look.authorHandle!)}
-            accessibilityLabel={`${look.authorName}, open their page`}
-            containerStyle={styles.who}
-          >
-            {author}
-          </PressableScale>
-        ) : (
-          <View style={styles.who}>{author}</View>
-        )}
-        <IconButton
-          icon={MoreHorizontal}
-          variant="plain"
-          size={36}
-          accessibilityLabel={`Options for ${look.authorName}'s look`}
-          onPress={() => onMore(look)}
-        />
-      </View>
-
-      {/* The measured box stays a plain view (every platform can measure it); the
-          animated hide wraps it. */}
-      <Animated.View style={photoStyle}>
-        <View ref={media} style={styles.media} onLayout={onPhotoLayout}>
-          {/* Only the photo takes the taps: the buttons over it are siblings, so pressing
-            one can never open or like the look as well. */}
-          <GestureDetector gesture={photoGesture}>
-            <View
-              style={StyleSheet.absoluteFill}
-              accessible
-              accessibilityRole={detail ? 'image' : 'button'}
-              accessibilityLabel={look.caption ?? look.serviceName ?? 'A look'}
-              accessibilityHint={detail ? 'Double tap to like' : 'Opens the look'}
-            >
-              <RemoteImage
-                // A feed doesn't need the full-size photo; the look's own page does.
-                uri={(detail ? undefined : look.feedUri) ?? look.photoUri}
-                style={StyleSheet.absoluteFill}
-                recyclingKey={look.id}
-                // The grid's copy while the full photo loads: no flash when the
-                // opening animation hands over to this image.
-                placeholderUri={look.thumbUri}
-              />
-              {heart}
-            </View>
-          </GestureDetector>
-          {onSave && (
-            <IconButton
-              icon={BookmarkPlus}
-              variant="overlay"
-              size={32}
-              accessibilityLabel="Save to a collection"
-              onPress={() => onSave(look)}
-              style={styles.save}
-            />
-          )}
-          {!!look.serviceName && (
-            <View style={styles.service} pointerEvents="none">
-              <Text variant="footnote" style={styles.serviceText} numberOfLines={1}>
-                {look.serviceName}
-              </Text>
-              {!!price && (
-                <Text variant="footnote" style={styles.serviceText}>
-                  · {price}
-                </Text>
-              )}
-            </View>
-          )}
-        </View>
-      </Animated.View>
-
+  // Whether it opened without its details: if so they fade in when they arrive,
+  // rather than appear in a single frame.
+  const [startedBare] = useState(!details);
+  const below = (
+    <>
       <View style={styles.actions}>
         <LikeButton
           id={look.id}
@@ -360,6 +296,93 @@ export const LookCard = memo(function LookCard({
           )}
         </View>
       )}
+    </>
+  );
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.author}>
+        {/* A name with nowhere to go is a name, not a disabled button — a screen
+            reader shouldn't offer it. */}
+        {look.authorHandle && onOpenPerson ? (
+          <PressableScale
+            onPress={() => onOpenPerson(look.authorHandle!)}
+            accessibilityLabel={`${look.authorName}, open their page`}
+            containerStyle={styles.who}
+          >
+            {author}
+          </PressableScale>
+        ) : (
+          <View style={styles.who}>{author}</View>
+        )}
+        <IconButton
+          icon={MoreHorizontal}
+          variant="plain"
+          size={36}
+          accessibilityLabel={`Options for ${look.authorName}'s look`}
+          onPress={() => onMore(look)}
+        />
+      </View>
+
+      {/* The measured box stays a plain view (every platform can measure it); the
+          animated hide wraps it. */}
+      <Animated.View style={photoStyle}>
+        <View ref={media} style={styles.media} onLayout={onPhotoLayout}>
+          {/* Only the photo takes the taps: the buttons over it are siblings, so pressing
+            one can never open or like the look as well. */}
+          <GestureDetector gesture={photoGesture}>
+            <View
+              style={StyleSheet.absoluteFill}
+              accessible
+              accessibilityRole={detail ? 'image' : 'button'}
+              accessibilityLabel={look.caption ?? look.serviceName ?? 'A look'}
+              accessibilityHint={detail ? 'Double tap to like' : 'Opens the look'}
+            >
+              <RemoteImage
+                // A feed doesn't need the full-size photo; the look's own page does.
+                uri={(detail ? undefined : look.feedUri) ?? look.photoUri}
+                style={StyleSheet.absoluteFill}
+                recyclingKey={look.id}
+                // The grid's copy while the full photo loads: no flash when the
+                // opening animation hands over to this image.
+                placeholderUri={look.thumbUri}
+              />
+              {heart}
+            </View>
+          </GestureDetector>
+          {onSave && (
+            <IconButton
+              icon={BookmarkPlus}
+              variant="overlay"
+              size={32}
+              accessibilityLabel="Save to a collection"
+              onPress={() => onSave(look)}
+              style={styles.save}
+            />
+          )}
+          {!!look.serviceName && (
+            <View style={styles.service} pointerEvents="none">
+              <Text variant="footnote" style={styles.serviceText} numberOfLines={1}>
+                {look.serviceName}
+              </Text>
+              {!!price && (
+                <Text variant="footnote" style={styles.serviceText}>
+                  · {price}
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+      </Animated.View>
+
+      {details &&
+        (startedBare ? (
+          <Animated.View entering={FadeIn.duration(180)} style={styles.below}>
+            {below}
+          </Animated.View>
+        ) : (
+          below
+        ))}
     </View>
   );
 });

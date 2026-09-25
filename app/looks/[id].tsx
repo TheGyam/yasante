@@ -14,6 +14,7 @@ import { Image } from 'expo-image';
 import { FlashList, useRecyclingState, type FlashListRef } from '@shopify/flash-list';
 import Animated, {
   Extrapolation,
+  FadeIn,
   interpolate,
   measure,
   useAnimatedRef,
@@ -73,6 +74,9 @@ import { track } from '@/shared/lib/analytics';
 const AnimatedFlashList = Animated.createAnimatedComponent(
   FlashList
 ) as unknown as typeof FlashList;
+
+/** Comments built in the first frame after landing; the rest come a frame later. */
+const FIRST_COMMENTS = 3;
 
 /** Where a reply's avatar sits: under its thread's first comment, not beside it. */
 const REPLY_INDENT = 30 + space.sm;
@@ -505,11 +509,27 @@ function LookThread({
   usePrefetchStylistPage(settled ? look?.stylist?.handle : undefined);
   const thread = useComments(id);
   const focused = useIsFocused();
-  // Fetched straight away, built only once the page has arrived.
-  const comments = useMemo(
-    () => (settled ? (thread.data?.pages.flatMap(page => page.data) ?? []) : []),
-    [thread.data, settled]
-  );
+  // What's built, one step a frame once the photo has landed, so no single frame
+  // carries the whole page: 1 the look's details, 2 the comment bar, 3 the first
+  // few comments, 4 the rest. Until then (0) only who posted it and the photo,
+  // which is all the flight needs. (Built together, the page cost one 74ms frame
+  // before the photo moved and one 57ms frame after it landed.)
+  const [stage, setStage] = useState(0);
+  useEffect(() => {
+    if (!settled) return;
+    let frame = 0;
+    const next = () => {
+      setStage(s => s + 1);
+      if (++frame < 4) raf = requestAnimationFrame(next);
+    };
+    let raf = requestAnimationFrame(next);
+    return () => cancelAnimationFrame(raf);
+  }, [settled]);
+  // Fetched straight away, built from stage 3.
+  const comments = useMemo(() => {
+    const all = thread.data?.pages.flatMap(page => page.data) ?? [];
+    return stage < 3 ? [] : stage === 3 ? all.slice(0, FIRST_COMMENTS) : all;
+  }, [thread.data, stage]);
 
   const onOptions = useCallback(
     (comment: LookComment) =>
@@ -558,17 +578,23 @@ function LookThread({
               photoRef={photoRef}
               onPhotoLayout={onPhotoLayout}
               photoStyle={photoStyle}
+              details={stage >= 1}
             />
-            <Text variant="overline" tone="tertiary" style={styles.heading}>
-              {look.commentCount
-                ? `${look.commentCount} ${look.commentCount === 1 ? 'comment' : 'comments'}`
-                : 'Comments'}
-            </Text>
-            {(thread.isLoading || !settled) && <Skeleton height={60} />}
+            {stage >= 1 && (
+              <Animated.View entering={FadeIn.duration(180)}>
+                <Text variant="overline" tone="tertiary" style={styles.heading}>
+                  {look.commentCount
+                    ? `${look.commentCount} ${look.commentCount === 1 ? 'comment' : 'comments'}`
+                    : 'Comments'}
+                </Text>
+                {/* Only for a real wait: a shimmer running under the flight costs frames. */}
+                {thread.isLoading && <Skeleton height={60} />}
+              </Animated.View>
+            )}
           </View>
         }
         ListEmptyComponent={
-          thread.isLoading || !settled ? null : (
+          thread.isLoading || stage < 3 ? null : (
             <Text variant="subhead" tone="secondary">
               No comments yet. Say what you love about it.
             </Text>
@@ -595,29 +621,34 @@ function LookThread({
           paddingHorizontal: GUTTER,
         }}
       />
-      {!isAuthenticated ? (
+      {stage < 2 ? null : !isAuthenticated ? (
         // Anyone can read the conversation; joining it takes an account.
-        <View style={[styles.composer, { paddingBottom: safe.bottom + space.sm }]}>
+        <Animated.View
+          entering={FadeIn.duration(180)}
+          style={[styles.composer, { paddingBottom: safe.bottom + space.sm }]}
+        >
           <Button
             label="Sign in to comment"
             variant="secondary"
             onPress={() => router.push('/auth/join')}
             fullWidth
           />
-        </View>
+        </Animated.View>
       ) : (
         <KeyboardStickyView offset={{ closed: 0, opened: safe.bottom }}>
-          <Composer
-            lookId={id}
-            bottom={safe.bottom + space.sm}
-            replyingTo={replyingTo}
-            onCancelReply={() => setReplyingTo(undefined)}
-            onSent={reply => {
-              setReplyingTo(undefined);
-              // A new thread goes on top; a reply shows in its own open thread.
-              if (!reply) listRef.current?.scrollToOffset({ offset: 0, animated: true });
-            }}
-          />
+          <Animated.View entering={FadeIn.duration(180)}>
+            <Composer
+              lookId={id}
+              bottom={safe.bottom + space.sm}
+              replyingTo={replyingTo}
+              onCancelReply={() => setReplyingTo(undefined)}
+              onSent={reply => {
+                setReplyingTo(undefined);
+                // A new thread goes on top; a reply shows in its own open thread.
+                if (!reply) listRef.current?.scrollToOffset({ offset: 0, animated: true });
+              }}
+            />
+          </Animated.View>
         </KeyboardStickyView>
       )}
     </View>
