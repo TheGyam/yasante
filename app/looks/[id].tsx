@@ -644,6 +644,7 @@ function LookThread({
         <KeyboardStickyView offset={{ closed: 0, opened: safe.bottom }}>
           <Composer
             lookId={id}
+            ready={settled}
             bottom={safe.bottom + space.sm}
             replyingTo={replyingTo}
             onCancelReply={() => setReplyingTo(undefined)}
@@ -661,12 +662,15 @@ function LookThread({
 
 function Composer({
   lookId,
+  ready: pageReady,
   bottom,
   replyingTo,
   onCancelReply,
   onSent,
 }: {
   lookId: string;
+  /** False while the page is arriving: the text field is made once it has. */
+  ready: boolean;
   bottom: number;
   replyingTo?: LookComment;
   onCancelReply: () => void;
@@ -733,18 +737,29 @@ function Composer({
         </View>
       )}
       <View style={styles.composerRow}>
-        <TextInput
-          ref={input}
-          value={body}
-          onChangeText={setBody}
-          placeholder={replyingTo ? `Reply to ${replyingTo.authorName}` : 'Add a comment'}
-          placeholderTextColor={theme.colors.text.tertiary}
-          multiline
-          maxLength={500}
-          style={styles.input}
-          accessibilityLabel={replyingTo ? `Reply to ${replyingTo.authorName}` : 'Add a comment'}
-          testID="comment-input"
-        />
+        {!pageReady ? (
+          // A lookalike until the photo has landed. Creating a text field is one of
+          // the costliest things an Android page does as it opens, and this one
+          // would be made in the same moments the photo is setting off.
+          <View style={styles.input}>
+            <Text variant="callout" tone="tertiary">
+              Add a comment
+            </Text>
+          </View>
+        ) : (
+          <TextInput
+            ref={input}
+            value={body}
+            onChangeText={setBody}
+            placeholder={replyingTo ? `Reply to ${replyingTo.authorName}` : 'Add a comment'}
+            placeholderTextColor={theme.colors.text.tertiary}
+            multiline
+            maxLength={500}
+            style={styles.input}
+            accessibilityLabel={replyingTo ? `Reply to ${replyingTo.authorName}` : 'Add a comment'}
+            testID="comment-input"
+          />
+        )}
         <PressableScale
           onPress={send}
           disabled={!ready}
