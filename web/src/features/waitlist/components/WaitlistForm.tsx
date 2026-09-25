@@ -8,7 +8,7 @@ import { Rise } from '@/shared/ui/Rise';
 import { Text } from '@/shared/ui/Text';
 import { joinWaitlist } from '../api';
 import type { WaitlistRole } from '../types';
-import styles from './WaitlistForm.module.css';
+import * as styles from './WaitlistForm.css';
 
 export interface WaitlistFormProps {
   /** Where they came from (a stylist's page, a campaign), kept with the entry. */

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import styles from './Skeleton.module.css';
+import * as styles from './Skeleton.css';
 
 /** The shape of something still on its way. Only opacity moves. */
 export function Skeleton({ style, className }: { style?: CSSProperties; className?: string }) {

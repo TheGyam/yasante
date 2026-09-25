@@ -2,7 +2,7 @@ import { BrandMark } from './BrandMark';
 import { Button } from './Button';
 import { Glass } from './Glass';
 import { Link, NavLink } from './Link';
-import styles from './SiteHeader.module.css';
+import * as styles from './SiteHeader.css';
 
 export interface SiteHeaderProps {
   links: { label: string; to: string; preload?: () => void }[];

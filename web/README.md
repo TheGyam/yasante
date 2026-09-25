@@ -53,7 +53,7 @@ both. A new page is added in three places: `src/routes/index.tsx`,
 src/routes/            One file per page. Reads the address, renders a feature's screen.
 src/features/<name>/   api.ts · hooks.ts · types.ts · format.ts · components/ · index.ts
 src/shared/ui/         The design system: Page, Text, Button, Glass, Chip, ListRow, Section…
-src/shared/theme/      theme.css (the app's tokens as CSS variables), global.css
+src/shared/theme/      themes.ts and tokens.ts (the app's), vars.css.ts, global.css.ts
 src/shared/lib/        The API client, errors, formatting, page data, the query client
 ```
 
@@ -68,9 +68,14 @@ The same three rules as the app, enforced by ESLint:
 
 ## The design system, on the web
 
-- **The tokens are the app's.** `theme.css` holds the app's colours, spacing and radii
-  as CSS variables, for light and dark. A test compiles the app's `themes.ts` and
-  `tokens.ts` and fails if the two ever differ. Never hard-code a colour.
+- **Styles are TypeScript, like the app's.** Each component's styles sit beside it in a
+  `.css.ts` file (vanilla-extract) — the web's `makeStyles`. They read typed tokens:
+  `space.lg`, `radius.md`, `vars.color.accent`, `media.wide`. A typo is a type error, and
+  it all compiles to plain CSS at build time, so nothing runs in the browser for it.
+- **The tokens are the app's.** `themes.ts` and `tokens.ts` mirror the app's files of
+  the same names, value for value, and a test compiles the app's and fails if they ever
+  differ. `vars.css.ts` turns the colours into CSS variables that switch between light
+  and dark with the reader's setting. Never hard-code a colour.
 - **Every page is a `<Page>`**, which owns the width, gutters and the tab's title.
 - **Type goes through `<Text variant>`**: the app's scale, in `rem` so it follows the
   reader's text size.

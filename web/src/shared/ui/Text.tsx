@@ -1,6 +1,6 @@
 import type { CSSProperties, ElementType, ReactNode } from 'react';
 import type { TypeVariant } from '@/shared/theme';
-import styles from './Text.module.css';
+import * as styles from './Text.css';
 
 export type TextTone = 'primary' | 'secondary' | 'tertiary' | 'accent' | 'danger' | 'success';
 
@@ -41,8 +41,8 @@ export function Text({
   const Element = as ?? ELEMENT[variant] ?? 'span';
   const classes = [
     styles.text,
-    styles[variant],
-    styles[tone],
+    styles.variant[variant],
+    styles.tone[tone],
     lines ? styles.clamp : '',
     tabular ? styles.tabular : '',
     className ?? '',

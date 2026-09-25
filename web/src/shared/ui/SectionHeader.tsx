@@ -1,6 +1,6 @@
 import { Link } from './Link';
 import { Text } from './Text';
-import styles from './SectionHeader.module.css';
+import * as styles from './SectionHeader.css';
 
 export interface SectionHeaderProps {
   title: string;

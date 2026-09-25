@@ -1,5 +1,5 @@
 import { CircleAlert, CircleCheck, Info } from 'lucide-react';
-import styles from './InlineAlert.module.css';
+import * as styles from './InlineAlert.css';
 
 export interface InlineAlertProps {
   tone?: 'danger' | 'success' | 'info';
@@ -12,7 +12,7 @@ export function InlineAlert({ tone = 'danger', message }: InlineAlertProps) {
   const Icon = ICON[tone];
   return (
     <div
-      className={`${styles.alert} ${styles[tone]}`}
+      className={`${styles.alert} ${styles.tone[tone]}`}
       role={tone === 'danger' ? 'alert' : 'status'}
     >
       <Icon size={16} strokeWidth={2.2} aria-hidden />

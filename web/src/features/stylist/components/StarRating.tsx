@@ -1,4 +1,5 @@
 import { Star } from 'lucide-react';
+import { vars } from '@/shared/theme/vars.css';
 
 /** Five stars, `value` of them filled. Read out as words, not five images. */
 export function StarRating({ value, size = 14 }: { value: number; size?: number }) {
@@ -15,8 +16,8 @@ export function StarRating({ value, size = 14 }: { value: number; size?: number 
           strokeWidth={2}
           aria-hidden
           style={{
-            color: 'var(--gold)',
-            fill: n <= value ? 'var(--gold)' : 'transparent',
+            color: vars.color.gold,
+            fill: n <= value ? vars.color.gold : 'transparent',
           }}
         />
       ))}

@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { Link } from './Link';
-import styles from './Chip.module.css';
+import * as styles from './Chip.css';
 
 export interface ChipProps {
   label: string;
@@ -34,5 +34,5 @@ export function Chip({ label, selected = false, icon: Icon, to, onClick }: ChipP
       </button>
     );
   }
-  return <span className={`${classes} ${styles.static}`}>{inner}</span>;
+  return <span className={`${classes} ${styles.inert}`}>{inner}</span>;
 }

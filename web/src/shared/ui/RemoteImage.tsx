@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react';
-import styles from './RemoteImage.module.css';
+import * as styles from './RemoteImage.css';
 
 export interface RemoteImageProps {
   src: string | undefined;

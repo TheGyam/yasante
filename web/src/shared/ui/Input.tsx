@@ -1,5 +1,5 @@
 import { useId, type InputHTMLAttributes, type SelectHTMLAttributes } from 'react';
-import styles from './Input.module.css';
+import * as styles from './Input.css';
 
 interface FieldProps {
   label: string;
@@ -44,7 +44,7 @@ export function Select({
       <label htmlFor={id} className={styles.label}>
         {label}
       </label>
-      <select id={id} className={styles.control} {...rest}>
+      <select id={id} className={styles.select} {...rest}>
         {children}
       </select>
       {hint && <span className={styles.hint}>{hint}</span>}

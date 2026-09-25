@@ -9,7 +9,7 @@ import { Text } from '@/shared/ui/Text';
 import { usePolicy } from '../hooks';
 import { policyBlocks } from '../format';
 import type { PolicyType } from '../types';
-import styles from './PolicyScreen.module.css';
+import * as styles from './PolicyScreen.css';
 
 /** Terms, privacy, guidelines: the version in effect, as the app shows it. */
 export function PolicyScreen({ type }: { type: PolicyType }) {

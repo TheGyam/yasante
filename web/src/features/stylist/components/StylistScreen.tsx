@@ -38,7 +38,7 @@ import {
 } from '../format';
 import type { StylistPage } from '../types';
 import { StarRating } from './StarRating';
-import styles from './StylistScreen.module.css';
+import * as styles from './StylistScreen.css';
 
 const PHOTOS_STEP = 12;
 const REVIEWS_STEP = 4;
@@ -180,7 +180,7 @@ function Stylist({ page }: { page: StylistPage }) {
 
           {photos.length > 0 && (
             <section>
-              <div className={styles.workHead}>
+              <div className={styles.subhead}>
                 <Text variant="overline" tone="tertiary" as="h2">
                   Their work
                 </Text>
@@ -195,7 +195,7 @@ function Stylist({ page }: { page: StylistPage }) {
                     <RemoteImage src={photo.thumbUri ?? photo.uri} alt={label} aspect={1} />
                   );
                   return photo.lookId ? (
-                    <Link key={photo.id} to={`/looks/${photo.lookId}`}>
+                    <Link key={photo.id} to={`/looks/${photo.lookId}`} className={styles.workLink}>
                       {image}
                     </Link>
                   ) : (
@@ -217,7 +217,7 @@ function Stylist({ page }: { page: StylistPage }) {
           )}
 
           <section>
-            <div className={styles.reviewsHead}>
+            <div className={styles.subhead}>
               <Text variant="overline" tone="tertiary" as="h2">
                 Reviews
               </Text>
