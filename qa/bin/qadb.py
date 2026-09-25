@@ -31,7 +31,7 @@ ACTIVE = RUNS / ".active"
 TAP_OK = {PKG, "com.google.android.permissioncontroller", "com.android.permissioncontroller"}
 LINK_OK = re.compile(r"^(https://(www\.)?yasante\.com/|yasante://|exp\+yasante://)")
 KEYS = {"BACK": 4, "ENTER": 66, "TAB": 61, "DEL": 67, "ESCAPE": 111}
-DEV_CLIENT_URL = "exp+yasante://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+DEV_CLIENT_URL = "exp+yasante://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8082"
 
 
 class Refused(Exception):
@@ -162,7 +162,12 @@ def match(tree, needle, exact):
         ok = any((f == needle) if exact else (needle.lower() in f.lower()) for f in fields if f)
         if ok:
             hits.append(n)
-    return hits
+    # A button and its own label are two nodes at one spot: keep one, the clickable one.
+    merged = []
+    for h in sorted(hits, key=lambda h: not h["clickable"]):
+        if not any(abs(h["center"][0] - m["center"][0]) <= 12 and abs(h["center"][1] - m["center"][1]) <= 12 for m in merged):
+            merged.append(h)
+    return sorted(merged, key=lambda h: (h["center"][1], h["center"][0]))
 
 
 # ── commands ────────────────────────────────────────────────────────────────
@@ -188,6 +193,9 @@ def cmd_start(run_id):
     }
     # Phone port 8765, not 8000: something on the owner's phone already holds 8000.
     adb("reverse", "tcp:8765", "tcp:8000")
+    # Metro runs on 8082 (8081 is taken on the laptop) and hands out 8082 URLs, so the
+    # phone must reach 8082 as-is; 8081 is forwarded too for the dev client's default.
+    adb("reverse", "tcp:8082", "tcp:8082")
     adb("reverse", "tcp:8081", "tcp:8082")
     (d / "device.json").write_text(json.dumps(info, indent=2))
     journal({"cmd": "start", **info})
@@ -326,11 +334,12 @@ def cmd_step(step_id, *note):
         raise Refused("foreground changed during capture; screenshot discarded, capture again")
     (sd / "screen.png").write_bytes(png)
 
-    texts, ui_error = [], None
+    texts, ids, ui_error = [], [], None
     try:
         tree = ui_tree()
         ET.ElementTree(tree).write(sd / "ui.xml", encoding="unicode")
         texts = visible_text(tree)
+        ids = [n["id"] for n in nodes(tree) if n["id"] and ":id/" not in n["id"]]
     except (Refused, ET.ParseError) as e:
         ui_error = str(e)
     (sd / "visible.txt").write_text("\n".join(texts) + "\n")
@@ -354,6 +363,8 @@ def cmd_step(step_id, *note):
     print(f"   screen.png sha256 {files['screen.png'][:16]}…")
     if ui_error:
         print(f"   UI tree unavailable: {ui_error}")
+    if ids:
+        print(f"   testIDs (tapon targets): {', '.join(ids)}")
     print("   visible text:")
     for t in texts:
         print(f"     | {t}")
