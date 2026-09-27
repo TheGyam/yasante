@@ -350,7 +350,7 @@ class MenuImportRequestSerializer(serializers.Serializer):
 
 
 class PortfolioAddRequestSerializer(serializers.Serializer):
-    photos = serializers.ListField(child=serializers.DictField(), help_text="[{uri, thumbUri?, serviceId?}]")
+    photos = serializers.ListField(child=serializers.DictField(), help_text="[{uri, thumbUri?, serviceId?, lookId?}] — lookId: her own look of the same photo")
     post_as_looks = serializers.BooleanField(required=False)
 
 

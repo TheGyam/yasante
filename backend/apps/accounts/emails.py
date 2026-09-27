@@ -102,7 +102,7 @@ def send_password_reset(email, name, link):
     text = (
         f"Hi {first},\n\n"
         "Someone (hopefully you!) asked to reset the password for your Yasante account.\n\n"
-        "Open this link on your phone to choose a new one:\n\n"
+        "Open this link to choose a new one:\n\n"
         f"{link}\n\n"
         "It works for the next hour, and only once.\n\n"
         "Didn't ask for this? You can ignore this email. Your password stays the same, "
@@ -113,7 +113,7 @@ def send_password_reset(email, name, link):
     body = f"""\
 <p style="margin:0 0 8px;font-size:15px;color:{SOFT};">Hi {escape(first)},</p>
 <h1 style="margin:0 0 16px;font-size:26px;line-height:32px;font-weight:700;letter-spacing:-0.4px;color:{INK};">Let’s get you back in</h1>
-<p style="margin:0 0 28px;font-size:16px;line-height:24px;color:{INK};">Someone (hopefully you!) asked to reset the password for your Yasante account. Tap the button on your phone to choose a new one.</p>
+<p style="margin:0 0 28px;font-size:16px;line-height:24px;color:{INK};">Someone (hopefully you!) asked to reset the password for your Yasante account. Use the button below to choose a new one.</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
   <a href="{escape(link)}" style="display:inline-block;background:{PINK};color:{INK};font-size:16px;font-weight:700;text-decoration:none;padding:16px 36px;border-radius:999px;">Choose a new password</a>
 </td></tr></table>

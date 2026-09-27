@@ -386,50 +386,55 @@ class StylistByHandleView(APIView):
 
         if not viewer or viewer.pk != profile.account_id:
             PageView.objects.create(stylist=profile, viewer=viewer)
+        return Response(stylist_page(profile))
 
-        reviews = [
-            {
-                "id": str(r.pk),
-                "booking_id": str(r.booking_id),
-                "rating": r.rating,
-                "body": r.body,
-                "status": r.status,
-                "author_name": r.author_name,
-                "service_name": r.service_name,
-                "created_at": r.created_at,
-            }
-            for r in Review.objects.filter(
-                booking__stylist_profile=profile, status="published"
-            ).order_by("-created_at")[:10]
-        ]
 
-        data = StylistProfileSerializer(profile).data
-        # Exactly what was checked, so a badge never means more than it says.
-        data["checks"] = sorted(
-            "work" if c == "proof_photo" else c for c in held_checks(profile.account_id)
-        )
-        # The proof photo is for the verification queue, and her payment details go
-        # only to a client she's accepted — neither is on her page.
-        data.pop("proof_photo_uri", None)
-        data.pop("payment_methods", None)
-        data.pop("address", None)
+def stylist_page(profile):
+    """
+    Her public page as the API sends it. The website inlines the same thing into her
+    page's HTML (apps/web/views.py), so it opens on her page rather than a spinner.
+    """
+    reviews = [
+        {
+            "id": str(r.pk),
+            "booking_id": str(r.booking_id),
+            "rating": r.rating,
+            "body": r.body,
+            "status": r.status,
+            "author_name": r.author_name,
+            "service_name": r.service_name,
+            "created_at": r.created_at,
+        }
+        for r in Review.objects.filter(
+            booking__stylist_profile=profile, status="published"
+        ).order_by("-created_at")[:10]
+    ]
 
-        return Response(
-            {
-                "profile": data,
-                "menu": MenuItemSerializer(profile.menu_items.all(), many=True).data,
-                "photos": PortfolioPhotoSerializer(profile.portfolio_photos.all(), many=True).data,
-                "confirmed_styles": profile.confirmed_styles_count,
-                "reviews": reviews,
-                "rating": (
-                    {"average": float(profile.rating_average), "count": profile.rating_count}
-                    if profile.rating_count
-                    else None
-                ),
-                "response_hours": profile.response_hours,
-                "timing_label": timing_label_for(profile),
-            }
-        )
+    data = StylistProfileSerializer(profile).data
+    # Exactly what was checked, so a badge never means more than it says.
+    data["checks"] = sorted(
+        "work" if c == "proof_photo" else c for c in held_checks(profile.account_id)
+    )
+    # The proof photo is for the verification queue, and her payment details go
+    # only to a client she's accepted — neither is on her page.
+    data.pop("proof_photo_uri", None)
+    data.pop("payment_methods", None)
+    data.pop("address", None)
+
+    return {
+        "profile": data,
+        "menu": MenuItemSerializer(profile.menu_items.all(), many=True).data,
+        "photos": PortfolioPhotoSerializer(profile.portfolio_photos.all(), many=True).data,
+        "confirmed_styles": profile.confirmed_styles_count,
+        "reviews": reviews,
+        "rating": (
+            {"average": float(profile.rating_average), "count": profile.rating_count}
+            if profile.rating_count
+            else None
+        ),
+        "response_hours": profile.response_hours,
+        "timing_label": timing_label_for(profile),
+    }
 
 
 # ── Menu ──────────────────────────────────────────────
@@ -580,17 +585,24 @@ class PortfolioListCreateView(APIView):
                 if service_id and _is_uuid(service_id)
                 else None
             )
-            checked.append((uri, str((raw or {}).get("thumb_uri") or ""), service))
+            # A look she already posted of this photo, so her page links to it. Hers only.
+            look_id = (raw or {}).get("look_id")
+            if look_id:
+                from apps.looks.models import Look
+
+                if not (_is_uuid(look_id) and Look.objects.filter(pk=look_id, author=request.user).exists()):
+                    return Response({"message": "That look isn’t yours"}, status=400)
+            checked.append((uri, str((raw or {}).get("thumb_uri") or ""), service, look_id or None))
 
         # Shared to the feed only from a live page: a draft page has nobody to send clients to.
         share = bool(request.data.get("post_as_looks")) and profile.published
         created = []
         with transaction.atomic():
-            for uri, thumb, service in checked:
+            for uri, thumb, service, look_id in checked:
                 photo = PortfolioPhoto.objects.create(
-                    stylist=profile, uri=uri, thumb_uri=thumb, service=service
+                    stylist=profile, uri=uri, thumb_uri=thumb, service=service, look_id=look_id
                 )
-                if share and service:
+                if share and service and not look_id:
                     photo.look_id = self._share(profile, photo, service)
                     if photo.look_id:
                         photo.save(update_fields=["look_id"])

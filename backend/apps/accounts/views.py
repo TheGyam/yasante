@@ -144,8 +144,8 @@ class ForgotPasswordView(APIView):
         try:
             user = User.objects.get(email__iexact=email)
             token = default_token_generator.make_token(user)
-            # A yasante.com link opens the app's reset screen on a phone (and a page
-            # saying so on a computer). It carries who and the one-time token.
+            # A yasante.com link: the app's reset screen on a phone with the app, the
+            # website's anywhere else. It carries who and the one-time token.
             link = f"https://yasante.com/auth/reset-password?uid={user.pk}&token={token}"
             send_password_reset(user.email, user.name, link)
         except User.DoesNotExist:

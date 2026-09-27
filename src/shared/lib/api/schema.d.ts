@@ -1662,6 +1662,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/waitlist/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["waitlist_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2659,7 +2675,7 @@ export interface components {
          */
         PorosityEnum: "low" | "medium" | "high";
         PortfolioAddRequestRequest: {
-            /** @description [{uri, thumbUri?, serviceId?}] */
+            /** @description [{uri, thumbUri?, serviceId?, lookId?}] — lookId: her own look of the same photo */
             photos: {
                 [key: string]: unknown;
             }[];
@@ -3125,6 +3141,18 @@ export interface components {
          * @enum {string}
          */
         VisibilityEnum: "public" | "private";
+        WaitlistRequestRequest: {
+            /** Format: email */
+            email: string;
+            /** @default client */
+            role: components["schemas"]["RoleEnum"];
+            /** @default  */
+            area: string;
+            /** @default  */
+            source: string;
+            /** @default  */
+            website: string;
+        };
         WeekCounts: {
             views: number;
             requests: number;
@@ -5807,6 +5835,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UsernameCheck"];
                 };
+            };
+        };
+    };
+    waitlist_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WaitlistRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

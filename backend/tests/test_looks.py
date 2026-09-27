@@ -282,3 +282,14 @@ def test_top_comments_page_without_repeats_or_gaps(api, make_user, make_look):
             break
     assert sorted(seen) == [f"c{i}" for i in range(7)]
     assert seen == _order(api(), look, limit=20)
+
+
+def test_a_live_stylist_can_post_her_back_catalogue(api, make_user, make_stylist, styles):
+    """30 looks an hour stops a client long before it stops a stylist filling her page."""
+    look = {"photoUri": "https://x.com/a.jpg", "styles": ["knotless"]}
+    client = api(make_user())
+    answers = [client.post("/api/looks/", look).status_code for _ in range(31)]
+    assert answers[:30] == [201] * 30 and answers[30] == 429
+
+    stylist = api(make_stylist().account)
+    assert all(stylist.post("/api/looks/", look).status_code == 201 for _ in range(40))

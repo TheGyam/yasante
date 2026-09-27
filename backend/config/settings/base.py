@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlparse
@@ -207,6 +208,7 @@ REST_FRAMEWORK = {
         "reviewing": "20/day",
         "booking": "20/day",
         "reporting": "10/hour",
+        "waitlist": "10/hour",
         "default": "100/min",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.custom_exception_handler",
@@ -302,6 +304,17 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+
+def _immutable_static(path, url):
+    """Cached for good: files named by their content. Django's hashed names, and the
+    website's build (web/), whose Vite names every file under site/assets/ that way."""
+    return url.startswith(f"{STATIC_URL}site/assets/") or bool(
+        re.match(r"^.+\.[0-9a-f]{12}\..+$", url)
+    )
+
+
+WHITENOISE_IMMUTABLE_FILE_TEST = _immutable_static
 
 MEDIA_URL = "/media/"
 # Where uploaded photos are linked from, whichever address the upload came in on.
