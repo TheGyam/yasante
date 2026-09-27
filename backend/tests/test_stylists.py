@@ -152,6 +152,9 @@ def test_portfolio_posts_tagged_photos_to_looks(api, make_stylist, styles):
     photo_id = second["id"]
     retag = me.patch(f"/api/stylists/me/portfolio/{photo_id}/", {"serviceId": str(knotless.pk)})
     assert retag.json()["serviceId"] == str(knotless.pk)
+    # "No service" arrives as null and clears it.
+    cleared = me.patch(f"/api/stylists/me/portfolio/{photo_id}/", {"serviceId": None})
+    assert "serviceId" not in cleared.json()
     assert me.delete(f"/api/stylists/me/portfolio/{photo_id}/").status_code == 204
     assert len(me.get("/api/stylists/me/portfolio/").json()) == 2
 

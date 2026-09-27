@@ -1,4 +1,5 @@
 export * from './HandleField';
+export * from './LocationField';
 export * from './ModeSwitchOverlay';
 export * from './ModeSwitchRow';
 export * from './PageLinkCard';
