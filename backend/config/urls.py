@@ -13,6 +13,7 @@ from apps.looks import views as looks_views
 from apps.profiles import views as profile_views
 from apps.content import compat as content
 from apps.looks.views import StylistReportView
+from apps.web.api import WaitlistView
 from apps.profiles.views import ConsentBatchView, EventBatchView
 from django.conf import settings
 from django.conf.urls.static import static
@@ -72,6 +73,7 @@ urlpatterns = API_DOCS + [
     path("api/shelf/", include("apps.shelf.shelf_urls")),
     path("api/products/", include("apps.shelf.product_urls")),
     path("api/uploads/", UploadView.as_view(), name="uploads"),
+    path("api/waitlist/", WaitlistView.as_view(), name="waitlist"),
     path("api/reports/mine/", looks_views.MyReportsView.as_view(), name="my-reports"),
     path("api/moderation/mine/", looks_views.MyModerationView.as_view(), name="my-moderation"),
     path(
@@ -133,3 +135,6 @@ if settings.DEBUG:
 
 # Last, so nothing above is shadowed: the public site, including yasante.com/{handle}.
 urlpatterns += [path("", include("apps.web.urls"))]
+
+# Any other address gets the site's own not-found page (only when DEBUG is off).
+handler404 = "apps.web.views.not_found"

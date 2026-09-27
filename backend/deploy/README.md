@@ -1,9 +1,9 @@
 # Deploying the backend
 
-Pushing to `master` with changes under `backend/` runs **CI** (app types, lint and tests,
+Pushing to `master` with changes under `backend/` or `web/` runs **CI** (app and website types, lint and tests,
 plus backend tests against Postgres) and, only if that passes, **deploys** to
 https://yasante.com (`.github/workflows/deploy.yml`). It can also be run by hand:
-Actions → Deploy backend → Run workflow.
+Actions → Deploy backend and website → Run workflow.
 
 A deploy copies the backend to the server and runs `deploy.sh` there, which:
 

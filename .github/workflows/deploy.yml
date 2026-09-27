@@ -1,9 +1,9 @@
-name: Deploy backend
+name: Deploy backend and website
 
 on:
   push:
     branches: [master]
-    paths: ['backend/**', '.github/workflows/deploy.yml', '.github/workflows/ci.yml']
+    paths: ['backend/**', 'web/**', 'openapi.yaml', '.github/workflows/deploy.yml', '.github/workflows/ci.yml']
   workflow_dispatch:
 
 # One deploy at a time; a newer push waits rather than racing the last one.
@@ -30,8 +30,22 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # The website builds into backend/apps/web/static/site/, which isn't in git, so it
+      # joins the backend's files in the package; collectstatic picks it up on the server.
+      - name: Build the website
+        working-directory: web
+        run: npm ci && npx vite build
+
       - name: Package the backend
-        run: git archive --format=tar -o backend.tar HEAD:backend
+        run: |
+          git archive --format=tar -o backend.tar HEAD:backend
+          tar -rf backend.tar -C backend apps/web/static/site
 
       - name: Set up SSH
         env:

@@ -6,3 +6,4 @@ ios/
 dist/
 
 src/shared/lib/api/schema.d.ts
+web/src/shared/lib/api/schema.d.ts
