@@ -27,3 +27,4 @@ export { BookingProgress, stepsFor } from './components/BookingProgress';
 export { ReviewCard } from './components/ReviewCard';
 export { usePrepStore } from './prepStore';
 export { SlotPicker } from './components/SlotPicker';
+export { addToCalendar } from './calendar';

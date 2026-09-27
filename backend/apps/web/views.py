@@ -201,6 +201,11 @@ def policy(request, type):
     )
 
 
+def delete_account(request):
+    """How to delete an account without the app: the Play Store links here."""
+    return page(request, title="Delete your account", description="How to delete your Yasante account, in the app or by email.")
+
+
 def not_found(request, exception=None):
     """Any other address: the site's own not-found page, except under the API and admin."""
     if request.path.startswith(("/api/", "/admin/", "/static/", "/media/")):
@@ -338,7 +343,7 @@ def llms_txt(request):
         "- [Stylist terms](https://yasante.com/stylist-terms)",
         "- [Community guidelines](https://yasante.com/guidelines)",
         "",
-        "Contact: support@yasante.com",
+        "Contact: admin@yasante.com",
         "",
     ]
     return HttpResponse("\n".join(lines), content_type="text/markdown; charset=utf-8")

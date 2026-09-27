@@ -19,6 +19,8 @@ import {
   Scissors,
   TriangleAlert,
   Activity,
+  Wallet,
+  Repeat,
 } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
@@ -27,7 +29,8 @@ import {
   STATUS_LABELS,
   serviceLine,
   blamesClient,
-  calendarLink,
+  addToCalendar,
+  balanceLine,
   directionsLink,
   prepList,
   usePrepStore,
@@ -138,7 +141,7 @@ export default function BookingScreen() {
     const yes = await confirm({
       title: 'Cancel this booking?',
       message: late
-        ? `It's inside ${booking.stylistName}'s ${booking.policy.noticeHours}-hour window, so it counts against you and the deposit stays with her.`
+        ? `It's inside ${booking.stylistName}'s ${booking.policy.noticeHours}-hour window, so it counts against you and the deposit stays with them.`
         : 'You’re in good time, so this costs you nothing.',
       confirmLabel: 'Cancel it',
       cancelLabel: 'Keep it',
@@ -251,14 +254,14 @@ export default function BookingScreen() {
         {booking.status === 'requested' && !booking.proposal && (
           <InlineAlert
             tone="info"
-            message={`With her now. She has until ${booking.expiresAt ? whenLabel(booking.expiresAt) : 'two days from now'} to accept, suggest another time, or say no.`}
+            message={`With them now. They have until ${booking.expiresAt ? whenLabel(booking.expiresAt) : 'two days from now'} to accept, suggest another time, or say no.`}
           />
         )}
 
         {needsAttendance(booking) && (
           <Ask
             title={`Still coming ${dayLabel(booking.scheduledFor!).toLowerCase()}?`}
-            message={`${booking.stylistName} is keeping the time for you. A quick yes lets her plan.`}
+            message={`${booking.stylistName} is keeping the time for you. A quick yes lets them plan.`}
           >
             <Button
               label="Yes, I’m coming"
@@ -308,7 +311,7 @@ export default function BookingScreen() {
         {booking.moveRequest?.by === 'client' && (
           <InlineAlert
             tone="info"
-            message={`You asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}. Until she agrees, it stays where it is.`}
+            message={`You asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}. Until they agree, it stays where it is.`}
           />
         )}
 
@@ -377,7 +380,7 @@ export default function BookingScreen() {
             <ListRow
               title={
                 booking.deposit.status === 'received'
-                  ? 'Deposit received'
+                  ? `${formatMoney(booking.deposit.amount)} deposit received`
                   : `${formatMoney(booking.deposit.amount)} deposit due`
               }
               subtitle={booking.deposit.method || undefined}
@@ -385,16 +388,19 @@ export default function BookingScreen() {
               iconTone={booking.deposit.status === 'received' ? 'success' : 'gold'}
             />
           )}
+          {!!balanceLine(booking) && isLive(booking) && (
+            <ListRow title={balanceLine(booking)!} icon={Wallet} iconTone="neutral" testID="booking-balance" />
+          )}
         </Section>
 
         {booking.status === 'confirmed' && (
           <>
             <Section>
-              {!!calendarLink(booking) && (
+              {!!booking.scheduledFor && (
                 <ListRow
                   title="Add to calendar"
                   icon={CalendarPlus}
-                  onPress={() => Linking.openURL(calendarLink(booking)!).catch(() => {})}
+                  onPress={() => addToCalendar(booking).catch(() => {})}
                   testID="booking-calendar"
                 />
               )}
@@ -558,6 +564,25 @@ export default function BookingScreen() {
               title="Post this as a look"
               icon={Camera}
               onPress={() => router.push(`/looks/new?bookingId=${booking.id}`)}
+            />
+          </Section>
+        )}
+
+        {booking.status === 'completed' && !!booking.stylistHandle && (
+          <Section title={`Book ${booking.stylistName} again`}>
+            <ListRow
+              title="The same again"
+              subtitle={serviceLine(booking)}
+              icon={Repeat}
+              onPress={() => router.push(`/book/${booking.stylistHandle}?again=${booking.id}`)}
+              testID="booking-again"
+            />
+            <ListRow
+              title="Something different"
+              subtitle="Pick another style from their menu"
+              icon={Scissors}
+              onPress={() => router.push(`/book/${booking.stylistHandle}`)}
+              testID="booking-again-different"
             />
           </Section>
         )}

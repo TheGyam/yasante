@@ -18,6 +18,9 @@ export function SiteFooter({ links }: SiteFooterProps) {
             {link.label}
           </Link>
         ))}
+        {/* Where to reach a person: the stores ask for it, and so do people. */}
+        <a href="mailto:admin@yasante.com">Contact us</a>
+        <Link to="/delete-account">Delete your account</Link>
       </nav>
     </footer>
   );

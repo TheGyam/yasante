@@ -30,7 +30,7 @@ function attendance(booking: Booking) {
     return { text: 'Close it out when they leave', icon: ClipboardCheck, tone: 'accent' as const };
   }
   return booking.attendanceConfirmedAt
-    ? { text: `${first} said she’s coming`, icon: UserCheck, tone: 'success' as const }
+    ? { text: `${first} said they’re coming`, icon: UserCheck, tone: 'success' as const }
     : { text: 'Not confirmed yet', icon: CalendarClock, tone: 'neutral' as const };
 }
 
