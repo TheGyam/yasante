@@ -62,10 +62,15 @@ mode: he isn't a stylist yet.
 `S: tapon "Set up your stylist profile"`, wait 2 s, `S: step A1b`. Expect
 `Your name and page` and a `Continue` button (`setup-next`).
 
-**A2: Name and page.** Tap `Name clients know you by`, type `QA Braids Kojo`. **Record**
-the handle it suggests. Tap `A line about your work`, type `QA test page. Braids only.`,
-`S: key BACK`, wait 2 s, `S: step A2`. **Record** whether it says the handle is free.
-`S: tapon setup-next`, wait 2 s.
+**A2: Name and page.** Tap `Name clients know you by`, type `QA Braids Kojo`, wait 2 s,
+`S: step A2`. **Record** the handle it suggests under `Your page address`. **F8:** it has
+been freezing at the first letter (`q`, with `At least 3 characters`). If it shows `q`
+(or anything under 3 characters), mark A2 **FAIL** and quote it, then carry on with the
+workaround: `S: tapon "Your page address"`, `S: clearfield`, `S: type "qabraidskojo"`,
+wait 3 s, `S: step A2b`. Expect `qabraidskojo is free`. Use **`qabraidskojo`** as the
+handle from here on. Tap `A line about your work`, type `QA test page. Braids only.`,
+`S: key BACK`, `S: step A2c`. `S: tapon setup-next`, wait 2 s. If it still doesn't move
+to `Where you work`, stop the run: BLOCKED.
 
 **A3: Where you work.** `S: step A3`. Expect `Where you work` with `At a salon`,
 `From home` and `I travel`. `S: tapon "From home"`. Tap `Your area`, type `Peckham`,
@@ -135,7 +140,7 @@ what each shows for a brand-new page, and any blank screen or error.
 
 ## P: The public page (client device)
 
-**P1.** `C: link "yasante:///stylist/<handle from A2>"`, wait 4 s, `C: step P1`. Expect
+**P1.** `C: link "yasante:///stylist/<the handle from A2/A2b>"`, wait 4 s, `C: step P1`. Expect
 `QA Braids Kojo`, `Peckham` with `District only — the address comes with a confirmed
 booking`, the menu with `QA Knotless` £90, and terms showing the notice and the £10
 deposit. **Record** anything missing or different from what Kojo entered.
