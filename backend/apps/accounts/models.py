@@ -58,6 +58,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         help_text='Account roles: "client", "stylist", "admin".',
     )
     avatar_uri = models.URLField(max_length=500, blank=True, default="")
+    # Who Apple and Google say this is ("sub"): signing in with them finds the account
+    # by these even when the email changes or Apple hides it.
+    apple_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    google_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    # Lets us revoke Sign in with Apple when the account is deleted, as Apple requires.
+    apple_refresh_token = models.CharField(max_length=500, blank=True, default="")
     age_confirmed = models.BooleanField(default=False)
     policy_version = models.CharField(max_length=50, blank=True, default="")
 

@@ -414,3 +414,11 @@ APP_ID = "com.yasante.app"
 # SHA-256 of the Android signing certificate(s), comma-separated (eas credentials shows it).
 ANDROID_CERT_SHA256 = config("ANDROID_CERT_SHA256", default="")
 APPLE_TEAM_ID = config("APPLE_TEAM_ID", default="")
+# Sign in with Apple and Google: whose tokens we accept. Apple's is the app's bundle id;
+# Google's are the OAuth client ids from Google Cloud (web, iOS and Android), comma-separated.
+APPLE_SIGN_IN_AUDIENCES = config("APPLE_SIGN_IN_AUDIENCES", default="com.yasante.app", cast=Csv())
+GOOGLE_CLIENT_IDS = config("GOOGLE_CLIENT_IDS", default="", cast=Csv())
+# A Sign in with Apple key (developer.apple.com, Keys), to revoke Apple's link when
+# an account is deleted: the .p8 file's contents, its line breaks written as \n.
+APPLE_SIGN_IN_KEY_ID = config("APPLE_SIGN_IN_KEY_ID", default="")
+APPLE_SIGN_IN_PRIVATE_KEY = config("APPLE_SIGN_IN_PRIVATE_KEY", default="").replace("\\n", "\n")
