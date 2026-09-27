@@ -193,6 +193,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
           description: ''
+  /api/auth/social/:
+    post:
+      operationId: auth_social_create
+      description: |-
+        POST /api/auth/social/ — Sign in with Apple or Google, which also signs up.
+
+        Finds the account by the provider's id, then by a verified email (linking the
+        two), and otherwise makes a new one. Apple and Google have already proved the
+        email, so it starts confirmed and never needs a password.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialLoginRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialAuthResponse'
+          description: ''
   /api/blocks/:
     get:
       operationId: blocks_list
@@ -4886,6 +4913,14 @@ components:
           - $ref: '#/components/schemas/MoneyMethod'
       required:
       - scheduledFor
+    ProviderEnum:
+      enum:
+      - apple
+      - google
+      type: string
+      description: |-
+        * `apple` - apple
+        * `google` - google
     PublicProfile:
       type: object
       description: 'Her page''s profile: no proof photo, payment details or address,
@@ -5331,6 +5366,54 @@ components:
       - from
       - stylistId
       - to
+    SocialAuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresAt:
+          type: integer
+          description: Milliseconds since the epoch
+        created:
+          type: boolean
+          description: A new account was made just now
+      required:
+      - accessToken
+      - created
+      - expiresAt
+      - refreshToken
+      - user
+    SocialLoginRequest:
+      type: object
+      description: POST /api/auth/social/
+      properties:
+        provider:
+          $ref: '#/components/schemas/ProviderEnum'
+        idToken:
+          type: string
+          minLength: 1
+        authorizationCode:
+          type: string
+        name:
+          type: string
+          maxLength: 150
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          default: client
+        ageConfirmed:
+          type: boolean
+          default: false
+        policyVersion:
+          type: string
+          maxLength: 50
+      required:
+      - idToken
+      - provider
     SourceEnum:
       enum:
       - catalogue

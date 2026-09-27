@@ -8,6 +8,7 @@ import {
   AuthLayout,
   AuthSwitch,
   PasswordStrength,
+  SocialSignIn,
   errorMessage,
   useInvite,
   useSignup,
@@ -118,6 +119,17 @@ export default function SignupScreen() {
     >
       {invite ? <InlineAlert tone="success" message={`Invited by ${invite.invitedBy}`} /> : null}
       {formError ? <InlineAlert message={formError} /> : null}
+
+      <SocialSignIn
+        role={role}
+        onError={setFormError}
+        onDone={created => {
+          setConsent('terms', true);
+          setConsent('privacy', true);
+          // Already confirmed by Apple or Google, so the flow closes on its own.
+          if (created && stylist) useModeStore.getState().setStartAs('stylist');
+        }}
+      />
 
       <Input
         label={stylist ? 'Your name or business name' : 'Name'}

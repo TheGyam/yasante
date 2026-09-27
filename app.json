@@ -9,6 +9,7 @@
     "scheme": "yasante",
     "ios": {
       "supportsTablet": false,
+      "usesAppleSignIn": true,
       "bundleIdentifier": "com.yasante.app",
       "infoPlist": {
         "CADisableMinimumFrameDurationOnPhone": true,
@@ -19,23 +20,37 @@
         "NSPrivacyAccessedAPITypes": [
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
-            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
           },
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
-            "NSPrivacyAccessedAPITypeReasons": ["0A2A.1", "3B52.1", "C617.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "0A2A.1",
+              "3B52.1",
+              "C617.1"
+            ]
           },
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
-            "NSPrivacyAccessedAPITypeReasons": ["E174.1", "85F4.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "E174.1",
+              "85F4.1"
+            ]
           },
           {
             "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategorySystemBootTime",
-            "NSPrivacyAccessedAPITypeReasons": ["35F9.1"]
+            "NSPrivacyAccessedAPITypeReasons": [
+              "35F9.1"
+            ]
           }
         ]
       },
-      "associatedDomains": ["applinks:yasante.com", "applinks:www.yasante.com"]
+      "associatedDomains": [
+        "applinks:yasante.com",
+        "applinks:www.yasante.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -46,7 +61,9 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.yasante.app",
       "googleServicesFile": "./google-services.json",
-      "permissions": ["android.permission.CAMERA"],
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_CALENDAR",
@@ -68,7 +85,10 @@
               "host": "www.yasante.com"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -110,7 +130,12 @@
       ],
       "expo-video",
       "expo-font",
-      ["expo-secure-store", { "faceIDPermission": false }],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
+        }
+      ],
       "@react-native-community/datetimepicker",
       [
         "expo-splash-screen",
@@ -123,13 +148,6 @@
             "image": "./assets/splash-wordmark-dark.png",
             "backgroundColor": "#0B0709"
           }
-        }
-      ],
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow Yasante to use your camera to take photos and scan product barcodes.",
-          "recordAudioAndroid": false
         }
       ]
     ],

@@ -112,6 +112,21 @@ class SignupSerializer(serializers.Serializer):
         return user
 
 
+class SocialLoginSerializer(serializers.Serializer):
+    """POST /api/auth/social/"""
+
+    provider = serializers.ChoiceField(choices=["apple", "google"])
+    id_token = serializers.CharField()
+    # Apple's one-time code, swapped for what revoking the link on deletion needs.
+    authorization_code = serializers.CharField(required=False, allow_blank=True)
+    # Apple only tells the app someone's name, and only the first time.
+    name = serializers.CharField(max_length=150, required=False, allow_blank=True)
+    # Needed only when this creates the account.
+    role = serializers.ChoiceField(choices=["client", "stylist"], required=False, default="client")
+    age_confirmed = serializers.BooleanField(required=False, default=False)
+    policy_version = serializers.CharField(max_length=50, required=False, allow_blank=True)
+
+
 class LoginSerializer(serializers.Serializer):
     """POST /api/auth/login/"""
 
@@ -218,6 +233,10 @@ class AuthResponseSerializer(serializers.Serializer):
     access_token = serializers.CharField()
     refresh_token = serializers.CharField()
     expires_at = serializers.IntegerField(help_text="Milliseconds since the epoch")
+
+
+class SocialAuthResponseSerializer(AuthResponseSerializer):
+    created = serializers.BooleanField(help_text="A new account was made just now")
 
 
 class TokenPairSerializer(serializers.Serializer):

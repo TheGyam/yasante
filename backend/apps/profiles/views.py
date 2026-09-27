@@ -100,6 +100,9 @@ class UserDetailView(APIView):
             )
 
         user = request.user
+        from apps.accounts.social import revoke_apple
+
+        revoke_apple(user)
 
         with transaction.atomic():
             # Anonymise bookings (keep for stylist records)

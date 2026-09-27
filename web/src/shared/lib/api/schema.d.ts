@@ -170,6 +170,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/social/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/auth/social/ — Sign in with Apple or Google, which also signs up.
+         *
+         *     Finds the account by the provider's id, then by a verified email (linking the
+         *     two), and otherwise makes a new one. Apple and Google have already proved the
+         *     email, so it starts confirmed and never needs a password.
+         */
+        post: operations["auth_social_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/blocks/": {
         parameters: {
             query?: never;
@@ -2727,6 +2750,12 @@ export interface components {
             scheduledFor: string;
             deposit?: components["schemas"]["MoneyMethod"];
         };
+        /**
+         * @description * `apple` - apple
+         *     * `google` - google
+         * @enum {string}
+         */
+        ProviderEnum: "apple" | "google";
         /** @description Her page's profile: no proof photo, payment details or address, plus the checks held. */
         PublicProfile: {
             /** Format: uuid */
@@ -2924,6 +2953,27 @@ export interface components {
             from: string;
             /** Format: date */
             to: string;
+        };
+        SocialAuthResponse: {
+            user: components["schemas"]["UserResponse"];
+            accessToken: string;
+            refreshToken: string;
+            /** @description Milliseconds since the epoch */
+            expiresAt: number;
+            /** @description A new account was made just now */
+            created: boolean;
+        };
+        /** @description POST /api/auth/social/ */
+        SocialLoginRequest: {
+            provider: components["schemas"]["ProviderEnum"];
+            idToken: string;
+            authorizationCode?: string;
+            name?: string;
+            /** @default client */
+            role: components["schemas"]["RoleEnum"];
+            /** @default false */
+            ageConfirmed: boolean;
+            policyVersion?: string;
         };
         /**
          * @description * `catalogue` - catalogue
@@ -3396,6 +3446,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuthResponse"];
+                };
+            };
+        };
+    };
+    auth_social_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialLoginRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialAuthResponse"];
                 };
             };
         };
