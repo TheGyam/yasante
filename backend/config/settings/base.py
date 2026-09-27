@@ -417,7 +417,14 @@ APPLE_TEAM_ID = config("APPLE_TEAM_ID", default="")
 # Sign in with Apple and Google: whose tokens we accept. Apple's is the app's bundle id;
 # Google's are the OAuth client ids from Google Cloud (web, iOS and Android), comma-separated.
 APPLE_SIGN_IN_AUDIENCES = config("APPLE_SIGN_IN_AUDIENCES", default="com.yasante.app", cast=Csv())
-GOOGLE_CLIENT_IDS = config("GOOGLE_CLIENT_IDS", default="", cast=Csv())
+# Client ids aren't secrets (they're in every copy of the app), so they live here.
+GOOGLE_CLIENT_IDS = config(
+    "GOOGLE_CLIENT_IDS",
+    default="961915522127-7p2qoh7kl2ftlhbf7c6fol9knteu0go9.apps.googleusercontent.com,"
+    "961915522127-unbtbgps806s9l5rm04kbfce9bfob3gv.apps.googleusercontent.com,"
+    "961915522127-1vgtg70neub2520v1soisnvrs8pitmmu.apps.googleusercontent.com",
+    cast=Csv(),
+)
 # A Sign in with Apple key (developer.apple.com, Keys), to revoke Apple's link when
 # an account is deleted: the .p8 file's contents, its line breaks written as \n.
 APPLE_SIGN_IN_KEY_ID = config("APPLE_SIGN_IN_KEY_ID", default="")
