@@ -387,7 +387,7 @@ def llms_full_txt(request):
 
 # Paths the app opens itself; everything else on the site stays in the browser.
 APP_PATHS = ["/looks/*", "/invite/*", "/waitlist/*", "/book/*", "/*"]
-NOT_APP_PATHS = ["/admin/*", "/api/*", "/static/*", "/media/*", "/terms", "/privacy", "/guidelines"]
+NOT_APP_PATHS = ["/admin/*", "/api/*", "/static/*", "/media/*", "/terms", "/privacy", "/guidelines", "/delete-account"]
 
 
 @cache_control(public=True, max_age=3600)
