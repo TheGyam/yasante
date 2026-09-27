@@ -46,3 +46,24 @@ qa/
 | LOOKS-01 | feed, area filter, search, a look (like, comment, reply), collections, saved, posting public/private, what others see, report, block, take down | written (2 emulators) |
 | PROFILE-01 | edit profile, username, hair profile and quiz, planner, care plans, shelf, learn | written (1 emulator) |
 | SETTINGS-01 | settings, notifications, privacy, data download, FAQs, policies, reports and appeals, sign-out (F1), delete account | written (1 emulator) |
+
+## Building the dev client locally
+
+When the app gains a native module (as `expo-camera` did on 27-09-2026), the old
+dev-client APK can't load it (`Cannot find native module …`). Build a new one here rather
+than waiting for an EAS build:
+
+```
+npx expo prebuild --platform android --no-install        # android/ is gitignored
+cd android && echo "sdk.dir=$HOME/Android/Sdk" > local.properties
+JAVA_HOME=~/Apps/jdk-17 ANDROID_HOME=~/Android/Sdk JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true \
+  ./gradlew :app:assembleDebug -PreactNativeArchitectures=x86_64,arm64-v8a \
+  "-Dorg.gradle.jvmargs=-Xmx4g -Djava.net.preferIPv4Stack=true"
+cp app/build/outputs/apk/debug/app-debug.apk ../qa/apk/dev-client.apk
+```
+
+Needs JDK 17 (RN 0.81's Gradle rejects newer), SDK platform 36, build-tools 36.0.0, NDK
+27.1.12297006, CMake 3.22.1. `preferIPv4Stack` matters on this laptop: IPv6 has no route,
+and Java stalls on it (`Read timed out`) while curl works. The first build takes ~20 min.
+A locally built APK is signed with the debug key, not TheGyam's: `emus up --wipe`
+reinstalls it cleanly, but a device holding the EAS build must uninstall that first.

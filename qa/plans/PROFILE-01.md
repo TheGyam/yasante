@@ -123,8 +123,9 @@ the shelf and `Thanks for adding it. We'll check it over, then everyone can find
 (**record** the exact wording). Server check. Then search `QA Brand` in `shelf-search`,
 `qadb step B4c`: **record** whether the new product shows in the catalogue yet.
 **B5: Barcode scan (needs a dev build with the camera module).** From `Add to your shelf`,
-`qadb tapon shelf-scan`, wait 3 s, `qadb step B5`. Expect `Let Yasante use your camera`
-or Android's camera prompt. For Android's prompt, choose **While using the app** (this
+`qadb tapon shelf-scan`, wait 3 s, `qadb step B5`. Expect `Let Yasante use your camera` /
+`It's only used to read the barcode on your products, and nothing is recorded.`
+`qadb tapon "Allow camera" --exact`, wait 2 s. For Android's camera prompt that follows, choose **While using the app** (this
 plan names it) and say so. `qadb step B5b`. Expect `Scan a product` / `Line the barcode up
 inside the frame` over the camera view. The emulator camera shows a test scene, not a
 barcode, so nothing will scan: **record** what shows after 10 s, then `qadb key BACK`.
