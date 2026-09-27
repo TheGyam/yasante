@@ -116,7 +116,13 @@ export const stylistApi = {
 
   /** PATCH /api/stylists/me/portfolio/:id/ — re-tag a photo. */
   updatePhoto: async (id: string, changes: Partial<PortfolioPhotoDraft>) =>
-    (await apiClient.patch<PortfolioPhoto>(`/api/stylists/me/portfolio/${id}/`, changes)).data,
+    (
+      await apiClient.patch<PortfolioPhoto>(`/api/stylists/me/portfolio/${id}/`, {
+        ...changes,
+        // "No service" is undefined here, and undefined never reaches the server; null clears it.
+        ...('serviceId' in changes && { serviceId: changes.serviceId ?? null }),
+      })
+    ).data,
 
   /** DELETE /api/stylists/me/portfolio/:id/ */
   removePhoto: async (id: string) => {

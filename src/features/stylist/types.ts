@@ -52,6 +52,8 @@ export interface StylistProfile {
   serviceModels: ServiceModel[];
   /** District only. The full address is shared once a booking is confirmed. */
   baseArea: string;
+  /** Her own page only: where clients go, shared with a booking once it's confirmed. */
+  address?: string;
   travelRadiusMiles?: number;
   instagramHandle?: string;
   policies: StylistPolicies;
@@ -75,6 +77,7 @@ export type StylistProfileDraft = Pick<
   | 'bio'
   | 'serviceModels'
   | 'baseArea'
+  | 'address'
   | 'travelRadiusMiles'
   | 'instagramHandle'
   | 'policies'

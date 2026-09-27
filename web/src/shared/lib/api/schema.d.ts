@@ -2630,6 +2630,8 @@ export interface components {
             bio: string;
             serviceModels?: components["schemas"]["ServiceModelEnum"][];
             baseArea?: string;
+            /** @default  */
+            address: string;
             /** Format: double */
             travelRadiusMiles?: number | null;
             /** @default  */
@@ -3032,6 +3034,8 @@ export interface components {
             bio: string;
             serviceModels: components["schemas"]["ServiceModelEnum"][];
             baseArea: string;
+            /** @default  */
+            address: string;
             /** Format: double */
             travelRadiusMiles?: number | null;
             /** @default  */

@@ -6,6 +6,7 @@ import { errorMessage, useAuth, useAuthStore } from '@/features/auth';
 import {
   HandleField,
   PolicyFields,
+  LocationField,
   ServiceModelField,
   pageUrl,
   toHandle,
@@ -201,14 +202,11 @@ export default function StylistSetupScreen() {
                 value={draft.serviceModels}
                 onChange={serviceModels => set({ serviceModels })}
               />
-              <Input
-                label="Your area"
-                icon={MapPin}
-                value={draft.baseArea}
-                onChangeText={baseArea => set({ baseArea })}
-                placeholder="Peckham"
-                autoCapitalize="words"
-                hint="District only — never your address"
+              <LocationField
+                baseArea={draft.baseArea}
+                address={draft.address}
+                needsStreet={draft.serviceModels.some(m => m !== 'mobile')}
+                onChange={set}
               />
               {draft.serviceModels.includes('mobile') && (
                 <Input

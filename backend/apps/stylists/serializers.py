@@ -171,6 +171,8 @@ class StylistProfileDraftSerializer(serializers.Serializer):
         child=serializers.ChoiceField(choices=["salon", "home", "mobile"])
     )
     base_area = serializers.CharField(max_length=100)
+    # Private: shared with a booking once it's confirmed.
+    address = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
     travel_radius_miles = serializers.FloatField(required=False, allow_null=True)
     instagram_handle = serializers.CharField(
         max_length=50, required=False, allow_blank=True, default=""

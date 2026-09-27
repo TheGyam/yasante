@@ -20,6 +20,7 @@ export const EMPTY_DRAFT: SetupDraft = {
   bio: '',
   serviceModels: [],
   baseArea: '',
+  address: '',
   travelRadiusMiles: 5,
   instagramHandle: '',
   policies: { noticeHours: 48, depositType: 'fixed', depositAmount: 20, rescheduleFreeOnce: true },
@@ -37,6 +38,7 @@ export function draftFromProfile(profile: StylistProfile): SetupDraft {
     bio: profile.bio ?? '',
     serviceModels: profile.serviceModels,
     baseArea: profile.baseArea,
+    address: profile.address ?? '',
     travelRadiusMiles: profile.travelRadiusMiles ?? EMPTY_DRAFT.travelRadiusMiles,
     instagramHandle: profile.instagramHandle ?? '',
     policies: {

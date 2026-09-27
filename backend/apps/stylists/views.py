@@ -239,6 +239,7 @@ class StylistCreateView(APIView):
                     bio=data.get("bio", ""),
                     service_models=data["service_models"],
                     base_area=data["base_area"],
+                    address=data.get("address", ""),
                     travel_radius_miles=data.get("travel_radius_miles"),
                     instagram_handle=data.get("instagram_handle", ""),
                     notice_hours=policies.get("notice_hours", 24),
