@@ -41,4 +41,4 @@ qa/
 | :--- | :--- | :--- |
 | AUTH-01 | welcome, sign-in, sign-out, client and stylist sign-up, email code, password reset | run on phone (P+A) and emulator; rerun: `AUTH-01-RERUN.md` |
 | BOOK-01 | request, race for a slot, accept + deposit, attendance, moves, close-out, review, check-ins, suggest/decline, lapse, cancel in time/late, waitlist, no-show | run and audited (3 emulators, `BOOK-01-20260926-2339`) |
-| GAPS-01 | reset link with no token; no attendance question >48 h ahead | written (2 emulators); first run of the new `qadb` report-writing |
+| GAPS-01 | reset link with no token; no attendance question >48 h ahead | run and audited (`GAPS-01-20260927-1055`): both PASS |
