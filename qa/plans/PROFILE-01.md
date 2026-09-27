@@ -108,14 +108,31 @@ the Cantu product.
 **B2: Add.** `qadb tapon shelf-add`, tap `shelf-search`, type `Cantu`, wait 3 s,
 `qadb step B2`. **Record** the results. Tap one that's **not** already on the shelf
 (**record** which), wait 3 s, `qadb step B2b`. Server check. Search `zzqqxx` →
-`qadb step B2c`: expect `Not in the catalogue yet`.
+`qadb step B2c`: expect `Not in the catalogue yet` / `Try the brand name on its own, scan the
+barcode, or add it yourself.`
 **B3: One product.** Open the product added in B2, `qadb step B3`. Tap the 4th star of
 `shelf-rating` (as BOOK-01 C6: use `find` and tap the right part of its bounds, and say
 so). `qadb step B3b`. Then `qadb tapon shelf-finish` (`I've finished it`),
 `qadb step B3c`, and `qadb tapon shelf-repurchase` (`I bought it again`),
 `qadb step B3d`. **Record** `Bought N times` after each. Server check.
-**B4: Remove.** `Take it off my shelf`, confirm (`Take it off your shelf?`),
-`qadb step B4`. Server check.
+**B4: Add your own product.** From `Add to your shelf`, `qadb tapon shelf-add-own`, wait 2 s,
+`qadb step B4`. Expect `Add a product`. `qadb tapon product-brand`, type `QA Brand`;
+`qadb tapon product-name`, type `QA Test Curl Cream`; pick the first product kind shown
+(**record** the kinds). `qadb tapon product-save`, wait 3 s, `qadb step B4b`. Expect it on
+the shelf and `Thanks for adding it. We'll check it over, then everyone can find it too.`
+(**record** the exact wording). Server check. Then search `QA Brand` in `shelf-search`,
+`qadb step B4c`: **record** whether the new product shows in the catalogue yet.
+**B5: Barcode scan (needs a dev build with the camera module).** From `Add to your shelf`,
+`qadb tapon shelf-scan`, wait 3 s, `qadb step B5`. Expect `Let Yasante use your camera`
+or Android's camera prompt. For Android's prompt, choose **While using the app** (this
+plan names it) and say so. `qadb step B5b`. Expect `Scan a product` / `Line the barcode up
+inside the frame` over the camera view. The emulator camera shows a test scene, not a
+barcode, so nothing will scan: **record** what shows after 10 s, then `qadb key BACK`.
+If the screen instead says `Not on your shelf`, or `app.log` has
+`Cannot find native module 'ExpoCamera'`, the installed build is too old: mark
+**BLOCKED** (not FAIL) and quote the line.
+**B6: Remove.** `Take it off my shelf`, confirm (`Take it off your shelf?`),
+`qadb step B6`. Server check.
 
 ---
 

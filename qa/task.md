@@ -16,3 +16,5 @@
 - [x] ~~27-09-2026 18:40~~ Automated suites checked: app jest 37 suites / 157 tests pass; backend pytest (~150) passes. Neither covers F1 or F7.
 - [x] ~~27-09-2026 18:40~~ Emulator plans for the ~55 untested screens: STYLIST-01 (with F4 on a New York emulator), LOOKS-01, PROFILE-01, SETTINGS-01. Harness: `emus tz <role> <zone>`; `emus up` seeds two test photos; `qadb` may drive the photo picker and camera on emulators only.
 - [ ] Antigravity: STYLIST-01, LOOKS-01, PROFILE-01, SETTINGS-01, one at a time; Claude audits each.
+- [x] ~~27-09-2026 19:20~~ Merged origin/master (6 commits: F3 fix "stylist sign-up no longer crashes", shelf catalogue + own products + barcode scan, domain-marker migrations, web SEO). Smoke test on the old dev-client APK: the app runs, but `shelf/scan` fails with `Cannot find native module 'ExpoCamera'`, so barcode scanning needs a new dev build. PROFILE-01 gained B4 (add your own product) and B5 (barcode scan, BLOCKED on an old build).
+- [/] Local dev-client build (JDK 17 + SDK 36 + NDK 27 in user space, `expo run:android`), so tests include native changes without waiting for TheGyam.
