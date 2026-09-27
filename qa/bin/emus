@@ -4,6 +4,7 @@
 #   qa/bin/emus up [--wipe] [N]  boot the first N (default 3; --wipe: factory-reset, reinstall the app)
 #   qa/bin/emus down          shut them all down
 #   qa/bin/emus status        what's running, and whether Yasante is installed
+#   qa/bin/emus tz <client|stylist|client2> <Area/City>   that emulator's time zone (up resets it to London)
 #
 # The dev-client APK is read from qa/apk/dev-client.apk (gitignored; copy TheGyam's
 # latest build there). Only emulators are ever touched here, never a real phone.
@@ -55,6 +56,10 @@ up() {
     # London time, like the stylists: the app shows booking times in Europe/London.
     adb -s "$serial" root >/dev/null 2>&1 || true; sleep 2
     adb -s "$serial" shell "settings put global auto_time_zone 0; setprop persist.sys.timezone Europe/London" >/dev/null 2>&1 || true
+    # Test photos for the app's photo picker (emulator galleries hold nothing else).
+    adb -s "$serial" shell mkdir -p /sdcard/Pictures/QA >/dev/null 2>&1
+    adb -s "$serial" push "$QA"/fixtures/qa-photo-*.jpg /sdcard/Pictures/QA/ >/dev/null 2>&1 || true
+    adb -s "$serial" shell content call --uri content://media --method scan_volume --arg external_primary >/dev/null 2>&1 || true
     if ! adb -s "$serial" shell pm path com.yasante.app >/dev/null 2>&1; then
       [[ -f "$APK" ]] || { echo "no APK at $APK — copy the dev-client build there"; exit 1; }
       adb -s "$serial" install -r "$APK" >/dev/null
@@ -82,9 +87,19 @@ status() {
   done
 }
 
+tz() { # role zone
+  local port
+  for p in "${ALL[@]}"; do [[ "${ROLE[$p]}" == "$1" ]] && port=$p; done
+  [[ -n "${port:-}" && "$2" == */* ]] || { echo "usage: emus tz <client|stylist|client2> <Area/City>"; exit 2; }
+  booted "emulator-$port" || { echo "emulator-$port ($1) is not up"; exit 1; }
+  adb -s "emulator-$port" shell service call alarm 3 s16 "$2" >/dev/null
+  echo "emulator-$port ($1): time zone $2, now $(adb -s "emulator-$port" shell "date '+%a %d %b %H:%M %Z'" | tr -d '\r')"
+}
+
 case "${1:-}" in
   up) shift; w=""; [[ "${1:-}" == --wipe ]] && { w=wipe; shift; }; up "$w" "${1:-3}" ;;
   down) down ;;
   status) status ;;
-  *) sed -n '2,9p' "$0"; exit 2 ;;
+  tz) shift; tz "${1:-}" "${2:-}" ;;
+  *) sed -n '2,10p' "$0"; exit 2 ;;
 esac

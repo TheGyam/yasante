@@ -30,6 +30,11 @@ ACTIVE = RUNS / ".active"
 # Windows allowed to receive a tap: the app, and Android's own permission prompt
 # (the app asks for camera/notifications). Captures are allowed on the same set.
 TAP_OK = {PKG, "com.google.android.permissioncontroller", "com.android.permissioncontroller"}
+# On an emulator only (never the phone, whose gallery is the owner's), the app's photo
+# picker and camera may be driven too: the gallery holds just the test photos `emus` puts
+# there, and posting a look or a proof photo can't be tested without them.
+EMU_ONLY = {"com.google.android.providers.media.module", "com.android.providers.media.module",
+            "com.google.android.photopicker", "com.android.camera2"}
 LINK_OK = re.compile(r"^(https://(www\.)?yasante\.com/|yasante://|exp\+yasante://)")
 KEYS = {"BACK": 4, "ENTER": 66, "TAB": 61, "DEL": 67, "ESCAPE": 111}
 DEV_CLIENT_URL = "exp+yasante://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8082"
@@ -133,6 +138,11 @@ def foreground():
     return m.group(1) if m else "UNKNOWN"
 
 
+def tap_ok():
+    """Windows that may be tapped and captured on this device: the phone never gets EMU_ONLY."""
+    return TAP_OK | EMU_ONLY if device_serial().startswith("emulator-") else TAP_OK
+
+
 def require_foreground(allowed=frozenset({PKG}), what="action"):
     fg = foreground()
     if fg not in allowed:
@@ -183,7 +193,7 @@ def ui_tree():
     # Keep only the app's windows; the status bar and anything else are dropped.
     kept = ET.Element("hierarchy")
     for child in list(root):
-        if child.get("package") in TAP_OK:
+        if child.get("package") in tap_ok():
             kept.append(child)
     return kept
 
@@ -339,14 +349,14 @@ def cmd_link(url):
 
 
 def cmd_tap(x, y):
-    fg = require_foreground(TAP_OK, "tap")
+    fg = require_foreground(tap_ok(), "tap")
     adb("shell", "input", "tap", str(int(x)), str(int(y)))
     journal({"cmd": "tap", "x": int(x), "y": int(y), "foreground": fg})
     print(f"tapped {x},{y}")
 
 
 def cmd_tapon(needle, *flags):
-    fg = require_foreground(TAP_OK, "tapon")
+    fg = require_foreground(tap_ok(), "tapon")
     exact = "--exact" in flags
     nth = next((int(f.split("=")[1]) for f in flags if f.startswith("--nth=")), None)
     hits = match(ui_tree(), needle, exact)
@@ -415,7 +425,7 @@ def cmd_key(name):
     name = name.upper()
     if name not in KEYS:
         raise Refused(f"keys: {', '.join(KEYS)}")
-    require_foreground(TAP_OK, f"key {name}")
+    require_foreground(tap_ok(), f"key {name}")
     adb("shell", "input", "keyevent", str(KEYS[name]))
     journal({"cmd": "key", "key": name})
     print(f"pressed {name}")
@@ -435,7 +445,7 @@ def cmd_swipe(direction):
 
 
 def cmd_find(needle):
-    require_foreground(TAP_OK, "find")
+    require_foreground(tap_ok(), "find")
     hits = match(ui_tree(), needle, False)
     for h in hits:
         print(json.dumps(h))
@@ -452,7 +462,7 @@ def cmd_step(step_id, *note):
     """Evidence for one step: screenshot, app UI tree, visible text, app log since last step."""
     if not re.fullmatch(r"[A-Za-z0-9._-]+", step_id):
         raise Refused("step-id: letters, digits, . - _ only (use the plan's step number, e.g. S03)")
-    fg = require_foreground(TAP_OK, "capture")
+    fg = require_foreground(tap_ok(), "capture")
     d = run_dir()
     steps = d / "steps"
     steps.mkdir(exist_ok=True)

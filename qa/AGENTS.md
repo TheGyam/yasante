@@ -28,6 +28,9 @@ emulators, drive them in turn with `qadb -d <device>`.
   bring Yasante back, stop the run and ask the owner. Do not tap anything else.
 - Android's own permission prompt (camera, notifications) is the one outside window you
   may tap, and only the option the plan names. With no instruction, choose "Don't allow".
+- **On emulators only**, `qadb` also lets you tap Android's photo picker and camera, for
+  plans that post a photo. Their galleries hold only the test photos `emus` puts there.
+  `qadb` refuses both on the phone.
 - Anything else that pops up over the app (Google's "save password?", autofill or a
   keyboard suggestion bar asking for access) is not yours to answer. Stop and ask the owner.
 - Type only the test data written in the plan. Never type the owner's real name, email,
@@ -48,7 +51,7 @@ whole run. Do not "try anyway". A test account made on the live server is real d
 | `qa/bin/qadb …` | every interaction with the phone; `qadb help` lists the commands |
 | `qa/bin/mailbox <RUN> [--to ADDR] [--last]` | the codes and reset links the server "emailed" |
 | `qa/bin/dbcheck <email>` | read-only account state in the local database |
-| `qa/bin/emus up [--wipe] [N]` / `down` / `status` | the test emulators (client, stylist, client2) |
+| `qa/bin/emus up [--wipe] [N]` / `down` / `status` / `tz <role> <Area/City>` | the test emulators (client, stylist, client2); `tz` only where a plan says |
 | `qa/bin/bookings <email> [<booking-id>]` | a person's bookings; with an ID, what each side's app is sent |
 | `qa/bin/timewarp <booking-id> <field> <hours>` | **only where a plan step says so**, with exactly its values |
 | `grep`/`tail` on `qa/runs/<RUN>/server.log` | the server's view of each request |
