@@ -1,10 +1,14 @@
 import { apiClient } from '@/shared/lib/api/client';
-import type { Product, ShelfItem, ShelfStatus } from './types';
+import type { Product, ShelfItem, ShelfStatus, ProductDraft } from './types';
 
 export const shelfApi = {
   /** GET /api/products/?q= — the catalogue, a page at a time. */
   search: async (q: string) =>
     (await apiClient.get<Product[]>('/api/products/', { params: { q, limit: 30 } })).data,
+
+  /** POST /api/products/ — one nobody has yet: theirs at once, everyone's once approved. */
+  create: async (draft: ProductDraft) =>
+    (await apiClient.post<Product>('/api/products/', draft)).data,
 
   /** GET /api/products/barcode/:code/ — the product behind a scanned barcode. */
   byBarcode: async (code: string) =>

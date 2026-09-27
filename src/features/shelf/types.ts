@@ -12,6 +12,16 @@ export interface Product {
   brand: string;
   name: string;
   category: ProductCategory;
+  /** One they added that a moderator hasn't approved yet: theirs to use, not yet everyone's. */
+  pending?: boolean;
+}
+
+/** A product someone can't find, added by them. */
+export interface ProductDraft {
+  brand: string;
+  name: string;
+  category: ProductCategory;
+  barcode?: string;
 }
 
 /** Repurchase is the strongest quality signal there is, so it has its own state. */

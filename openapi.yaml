@@ -1790,8 +1790,10 @@ paths:
   /api/products/:
     get:
       operationId: products_list
-      description: GET /api/products/?q=&limit= — every word must match brand, name
-        or category.
+      description: |-
+        GET /api/products/?q=&limit= — every word must match brand, name or category. When
+        our catalogue has little for it, Open Beauty Facts is asked as well.
+        POST /api/products/ — add one nobody has yet: hers at once, everyone's once approved.
       tags:
       - products
       security:
@@ -1804,6 +1806,29 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ProductResponse'
+          description: ''
+    post:
+      operationId: products_create
+      description: |-
+        GET /api/products/?q=&limit= — every word must match brand, name or category. When
+        our catalogue has little for it, Open Beauty Facts is asked as well.
+        POST /api/products/ — add one nobody has yet: hers at once, everyone's once approved.
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreateRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
           description: ''
   /api/products/barcode/{code}/:
     get:
@@ -4811,6 +4836,27 @@ components:
       - createdAt
       - id
       - uri
+    ProductCreateRequestRequest:
+      type: object
+      description: POST /api/products/ — a product she can't find, added by her.
+      properties:
+        brand:
+          type: string
+          minLength: 1
+          maxLength: 150
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        barcode:
+          type: string
+          maxLength: 20
+      required:
+      - brand
+      - category
+      - name
     ProductResponse:
       type: object
       properties:
@@ -4822,6 +4868,8 @@ components:
           type: string
         category:
           $ref: '#/components/schemas/CategoryEnum'
+        pending:
+          type: boolean
       required:
       - brand
       - category
