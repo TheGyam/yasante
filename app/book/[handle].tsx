@@ -5,7 +5,13 @@ import { useLocalSearchParams } from 'expo-router';
 import { BellRing, CalendarClock, Check, Circle, CircleCheck, Scissors } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
 import { useLook } from '@/features/looks';
-import { SlotPicker, useFreeSlots, useRequestBooking, whenLabel } from '@/features/booking';
+import {
+  SlotPicker,
+  useBooking,
+  useFreeSlots,
+  useRequestBooking,
+  whenLabel,
+} from '@/features/booking';
 import {
   estimate,
   formatDuration,
@@ -87,7 +93,15 @@ export default function RequestBookingScreen() {
     service: fromLookService,
     date: slotDay,
     look: lookId,
-  } = useLocalSearchParams<{ handle: string; service?: string; date?: string; look?: string }>();
+    again,
+  } = useLocalSearchParams<{
+    handle: string;
+    service?: string;
+    date?: string;
+    look?: string;
+    /** A past booking to repeat: its style, options and hair choice come filled in. */
+    again?: string;
+  }>();
   // The look she's booking from: shown here, and to the stylist with the request.
   const { data: fromLookData } = useLook(lookId ?? '');
   const fromLook = lookId ? fromLookData : undefined;
@@ -96,7 +110,10 @@ export default function RequestBookingScreen() {
   const { data, isLoading } = useStylistPage(handle);
   const request = useRequestBooking();
   useEffect(() => {
-    track('start_booking', { handle, from: fromLookService ? 'look' : slotDay ? 'slot' : 'page' });
+    track('start_booking', {
+      handle,
+      from: again ? 'again' : fromLookService ? 'look' : slotDay ? 'slot' : 'page',
+    });
     // Once, when she opens it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -107,6 +124,26 @@ export default function RequestBookingScreen() {
   const [notes, setNotes] = useState('');
   const [accepted, setAccepted] = useState(false);
   const [chosen, setChosen] = useState<ChosenOptions>({});
+
+  // Booking the same again: once both are here, the same style with the same choices,
+  // matched by name, as long as the stylist still offers them.
+  const { data: previous } = useBooking(again ?? '');
+  const [repeated, setRepeated] = useState(false);
+  useEffect(() => {
+    if (repeated || !previous || !data) return;
+    setRepeated(true);
+    const item = data.menu.find(m => m.id === previous.serviceId);
+    if (!item) return;
+    setServiceId(item.id);
+    setOwnHair(previous.bringingOwnHair);
+    const labels = previous.optionLabels ?? [];
+    const same: ChosenOptions = {};
+    for (const g of optionGroups(item)) {
+      const match = g.choices.find(c => labels.includes(c.label));
+      if (match) same[g.group] = match.id;
+    }
+    setChosen(same);
+  }, [previous, data, repeated]);
 
   const service = useMemo(
     () => data?.menu.find(item => item.id === serviceId),
@@ -330,8 +367,8 @@ export default function RequestBookingScreen() {
             {!service
               ? 'Pick a service to see when they’re free.'
               : !quoteReady
-                ? `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')} to see when she’s free.`
-                : `When suits you?${hoursLabel(profile.availability) ? ` She works ${hoursLabel(profile.availability)}.` : ''}`}
+                ? `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')} to see when they’re free.`
+                : `When suits you?${hoursLabel(profile.availability) ? ` They work ${hoursLabel(profile.availability)}.` : ''}`}
           </Text>
           {quoteReady && (
             <SlotPicker

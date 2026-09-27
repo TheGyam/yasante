@@ -1,5 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { FullWindowOverlay } from 'react-native-screens';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -43,6 +45,20 @@ function Backdrop(props: BottomSheetBackdropProps) {
   );
 }
 
+// On iOS a pop-up screen is its own window, and a sheet drawn in the app's root would
+// sit behind it, out of sight. This draws it above everything; touches there need
+// their own gesture root.
+const container =
+  Platform.OS === 'ios'
+    ? ({ children }: { children?: ReactNode }) => (
+        <FullWindowOverlay>
+          <GestureHandlerRootView style={StyleSheet.absoluteFill} pointerEvents="box-none">
+            {children}
+          </GestureHandlerRootView>
+        </FullWindowOverlay>
+      )
+    : undefined;
+
 /**
  * A glass bottom sheet driven by `visible`. The drag, snap and dismiss physics are
  * @gorhom/bottom-sheet's, running on the UI thread.
@@ -63,6 +79,7 @@ export function Sheet({ visible, onClose, children, snapPoints }: SheetProps) {
   return (
     <BottomSheetModal
       ref={ref}
+      containerComponent={container}
       snapPoints={snapPoints}
       animationConfigs={animationConfigs}
       enableDynamicSizing={!snapPoints}

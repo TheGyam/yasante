@@ -84,6 +84,11 @@ class UserDetailView(APIView):
         for field, value in changes.items():
             setattr(user, field, value)
         user.save(update_fields=list(changes.keys()) + ["updated_at"])
+        # One photo: a stylist's page wears the same one as their account.
+        if "avatar_uri" in changes:
+            from apps.stylists.models import StylistProfile
+
+            StylistProfile.objects.filter(account=user).update(avatar_uri=changes["avatar_uri"])
 
         return Response(UserDetailSerializer(user).data)
 

@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router';
 import AreaRoute from './area';
+import DeleteAccountRoute from './delete-account';
 import HomeRoute from './home';
 import Layout from './Layout';
 import LookRoute from './look';
@@ -46,6 +47,7 @@ export const routes = [
       { path: '/stylist-terms', Component: policyRoute('stylist_terms') },
       { path: '/privacy', Component: policyRoute('privacy') },
       { path: '/guidelines', Component: policyRoute('guidelines') },
+      { path: '/delete-account', element: <DeleteAccountRoute /> },
       { path: '/auth/reset-password', element: <ResetPasswordRoute /> },
       // A stylist's account and page, on the web as in the app.
       { path: '/auth/signup', element: <SignupRoute /> },

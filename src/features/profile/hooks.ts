@@ -55,6 +55,8 @@ export function useUpdateUser(userId?: string) {
         // Update user cache
         queryClient.setQueryData([USER_QUERY_KEY, actualUserId], updatedUser);
       }
+      // A stylist's page wears the same photo.
+      queryClient.invalidateQueries({ queryKey: ['stylist'] });
     },
   });
 }

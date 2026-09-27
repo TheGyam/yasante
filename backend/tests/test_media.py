@@ -84,3 +84,22 @@ def test_near_duplicate_portfolios_are_flagged_across_accounts(api, make_user):
     stolen = Media.objects.get(pk=copied["id"])
     assert stolen.moderation_status == "flagged" and stolen.duplicate_of_id is not None
     assert Media.objects.get(pk=different["id"]).moderation_status == "ok"
+
+
+def test_a_new_profile_photo_is_saved(api, make_user, media_root, settings):
+    settings.PUBLIC_BASE_URL = "https://api.yasante.com"
+    user = make_user()
+    uri = _upload(api, user, kind="avatar").json()["uri"]
+    response = api(user).client.patch(f"/api/users/{user.pk}/", {"avatar_uri": uri}, format="json")
+    assert response.status_code == 200, response.json()
+    assert response.json()["avatarUri"] == uri
+
+
+def test_a_stylists_page_wears_the_same_photo(api, make_stylist, settings):
+    settings.PUBLIC_BASE_URL = "https://api.yasante.com"
+    stylist = make_stylist()
+    user = stylist.account
+    uri = _upload(api, user, kind="avatar").json()["uri"]
+    api(user).client.patch(f"/api/users/{user.pk}/", {"avatarUri": uri}, format="json")
+    stylist.refresh_from_db()
+    assert stylist.avatar_uri == uri

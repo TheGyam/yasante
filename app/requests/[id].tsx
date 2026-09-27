@@ -21,6 +21,8 @@ import {
   BookingProgress,
   FromLookCard,
   STATUS_LABELS,
+  balanceLine,
+  isLive,
   serviceLine,
   recordLabel,
   timingText,
@@ -211,6 +213,11 @@ export default function RequestScreen() {
               ? ` · ${STATUS_LABELS[status]}`
               : ''}
           </Text>
+          {isLive(booking) && !!balanceLine(booking) && (
+            <Text variant="footnote" tone="tertiary" testID="request-balance">
+              {balanceLine(booking)}
+            </Text>
+          )}
         </View>
 
         <BookingProgress booking={booking} />
@@ -354,7 +361,7 @@ export default function RequestScreen() {
           <>
             <InlineAlert
               tone="info"
-              message={`Accepted for ${inSentence(whenLabel(booking.scheduledFor ?? ''))}. She's been asked for ${formatMoney(booking.deposit?.amount ?? 0)}${booking.expiresAt ? `, and has until ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Marking it received confirms the booking and shares your address.`}
+              message={`Accepted for ${inSentence(whenLabel(booking.scheduledFor ?? ''))}. They’ve been asked for ${formatMoney(booking.deposit?.amount ?? 0)}${booking.expiresAt ? `, and has until ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Marking it received confirms the booking and shares your address.`}
             />
             <View style={styles.footer}>
               <Button
@@ -394,7 +401,7 @@ export default function RequestScreen() {
               <View style={styles.group}>
                 <InlineAlert
                   tone="info"
-                  message={`${first} asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}. Her deposit and history carry over.`}
+                  message={`${first} asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}. Their deposit and history carry over.`}
                 />
                 <Button
                   label="Move it"
