@@ -318,7 +318,6 @@ function addAccount(id: string, name: string, extra: Partial<User> = {}) {
     id,
     name,
     email: `${name.toLowerCase().replace(/[^a-z]+/g, '.')}@yasante.dev`,
-    phoneVerified: true,
     roles: ['client'],
     avatarUri: chance(0.5) ? pick(PORTRAITS) : undefined,
     hairProfile: {

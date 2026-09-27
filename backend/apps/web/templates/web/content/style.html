@@ -1,0 +1,4 @@
+<h1>{{ c.name }} in London</h1>
+<p>Real {{ c.name|lower }} on real hair, by braiders on Yasante. Open a look to see who did it and book them.</p>
+{% if c.stylists %}<section><h2>Braiders who do {{ c.name|lower }}</h2><ul>{% for s in c.stylists %}<li><a href="{{ s.path }}">{{ s.name }}</a>{% if s.area %} — {{ s.area }}{% endif %}</li>{% endfor %}</ul></section>{% endif %}
+{% if c.looks %}<section><h2>Looks</h2>{% include "web/content/_looks.html" with looks=c.looks %}</section>{% endif %}

@@ -1,0 +1,1 @@
+{% if looks %}<ul class="grid">{% for lk in looks %}<li><a href="{{ lk.path }}"><img src="{{ lk.image }}" alt="{{ lk.alt }}" loading="lazy" width="300" height="375"><br>{{ lk.title }}</a></li>{% endfor %}</ul>{% endif %}

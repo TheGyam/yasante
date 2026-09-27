@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.urls import path, re_path
 
 from . import views
@@ -6,6 +7,9 @@ urlpatterns = [
     path("", views.home, name="web-home"),
     path("robots.txt", views.robots),
     path("sitemap.xml", views.sitemap, name="web-sitemap"),
+    path("llms.txt", views.llms_txt, name="web-llms"),
+    path("llms-full.txt", views.llms_full_txt, name="web-llms-full"),
+    path(f"{settings.INDEXNOW_KEY}.txt", views.indexnow_key),
     path(".well-known/assetlinks.json", views.assetlinks),
     path(".well-known/apple-app-site-association", views.apple_app_site_association),
     path("looks", views.looks, name="web-looks"),

@@ -56,20 +56,53 @@ def page_data(seeds):
     return mark_safe(text)
 
 
-def page(request, *, title=None, description=None, image="", seeds=(), status=200, noindex=False):
-    """Render one page of the site. `seeds` is [(query key, API data)]; `noindex` keeps
-    it out of search (a sign-in form, a page only for the signed-in)."""
+def json_ld(objects):
+    """schema.org JSON-LD, escaped like page_data so it can't close its <script>."""
+    if not objects:
+        return ""
+    text = json.dumps(objects, ensure_ascii=False, default=str, separators=(",", ":"))
+    return mark_safe(text.replace("<", "\\u003c"))
+
+
+def page(
+    request,
+    *,
+    title=None,
+    description=None,
+    image="",
+    seeds=(),
+    status=200,
+    noindex=False,
+    content_template=None,
+    content=None,
+    jsonld=None,
+    og_type="website",
+):
+    """
+    Render one page of the site. `seeds` is [(query key, API data)]; `noindex` keeps it
+    out of search (a sign-in form, a page only for the signed-in). `content_template` and
+    `content` put the page's real content in its HTML for crawlers that don't run
+    JavaScript, and `jsonld` says what the page is in schema.org terms (see seo.py).
+    """
     return render(
         request,
         "web/site.html",
         {
-            "title": f"{title} · Yasante" if title else "Yasante",
+            "title": f"{title} · Yasante" if title else "Yasante — book braiders by their work",
             "og_title": title or "Yasante",
+            "og_type": og_type,
             "description": (description or DESCRIPTION).strip(),
             "image": image,
+            # One address per page: the path, never the query string or a trailing variant.
+            "canonical": f"https://yasante.com{request.path}",
             "assets": assets(),
             "page_data": page_data(seeds),
-            "noindex": noindex,
+            "noindex": noindex or status >= 400,
+            "content_template": content_template,
+            "content": content or {},
+            "jsonld": json_ld(jsonld),
+            "google_verification": getattr(settings, "GOOGLE_SITE_VERIFICATION", ""),
+            "bing_verification": getattr(settings, "BING_SITE_VERIFICATION", ""),
         },
         status=status,
     )

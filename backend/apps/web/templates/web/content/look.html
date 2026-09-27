@@ -1,0 +1,6 @@
+<article>
+<h1>{{ c.title }}</h1>
+<figure><img src="{{ c.image }}" alt="{{ c.alt }}" width="720" height="900"><figcaption>{% if c.caption %}{{ c.caption }}{% endif %}{% if c.stylist %} Hair by <a href="{{ c.stylist.path }}">{{ c.stylist.name }}</a>.{% endif %}</figcaption></figure>
+<p>{% for s in c.styles %}<a href="{{ s.path }}">{{ s.name }}</a>{% if not forloop.last %} · {% endif %}{% endfor %}{% if c.area %} · {{ c.area }}{% endif %}{% if c.price %} · {{ c.price }}{% endif %}</p>
+{% if c.stylist %}<p><a href="{{ c.stylist.path }}">See {{ c.stylist.name }}'s page and book</a></p>{% endif %}
+</article>

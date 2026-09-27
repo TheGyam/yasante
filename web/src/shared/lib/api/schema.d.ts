@@ -3099,7 +3099,6 @@ export interface components {
             readonly email: string;
             readonly emailVerified: boolean;
             readonly phone?: string;
-            readonly phoneVerified: boolean;
             readonly roles: components["schemas"]["RolesEnum"][];
             /** Format: uri */
             readonly avatarUri?: string;
@@ -3119,7 +3118,6 @@ export interface components {
             readonly email: string;
             readonly emailVerified: boolean;
             readonly phone?: string;
-            readonly phoneVerified: boolean;
             readonly roles: components["schemas"]["RolesEnum"][];
             /** Format: uri */
             readonly avatarUri?: string;
