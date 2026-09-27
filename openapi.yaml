@@ -1790,8 +1790,10 @@ paths:
   /api/products/:
     get:
       operationId: products_list
-      description: GET /api/products/?q=&limit= — every word must match brand, name
-        or category.
+      description: |-
+        GET /api/products/?q=&limit= — every word must match brand, name or category. When
+        our catalogue has little for it, Open Beauty Facts is asked as well.
+        POST /api/products/ — add one nobody has yet: hers at once, everyone's once approved.
       tags:
       - products
       security:
@@ -1804,6 +1806,51 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ProductResponse'
+          description: ''
+    post:
+      operationId: products_create
+      description: |-
+        GET /api/products/?q=&limit= — every word must match brand, name or category. When
+        our catalogue has little for it, Open Beauty Facts is asked as well.
+        POST /api/products/ — add one nobody has yet: hers at once, everyone's once approved.
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreateRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+          description: ''
+  /api/products/barcode/{code}/:
+    get:
+      operationId: products_barcode_retrieve
+      description: GET /api/products/barcode/<code>/ — the product behind a scanned
+        barcode.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BarcodeResult'
           description: ''
   /api/reports/mine/:
     get:
@@ -2708,6 +2755,16 @@ components:
       required:
       - blocked
       - week
+    BarcodeResult:
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/ProductResponse'
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+      required:
+      - product
+      - source
     BlankEnum:
       enum:
       - ''
@@ -3516,6 +3573,11 @@ components:
       required:
       - platform
       - token
+    DomainEnum:
+      enum:
+      - hair
+      type: string
+      description: '* `hair` - Hair'
     EmailStartRequest:
       type: object
       description: POST /api/auth/email/start/ — optionally to a corrected address.
@@ -3742,6 +3804,8 @@ components:
         For output-only model serializers: a model field that may be blank or null can be
         left out of the JSON (the renderer drops empty values), so say so in the schema.
       properties:
+        domain:
+          $ref: '#/components/schemas/DomainEnum'
         texture:
           oneOf:
           - $ref: '#/components/schemas/TextureEnum'
@@ -3803,6 +3867,7 @@ components:
           readOnly: true
       required:
       - chemicals
+      - domain
       - goals
       - scalp
       - updatedAt
@@ -4771,6 +4836,27 @@ components:
       - createdAt
       - id
       - uri
+    ProductCreateRequestRequest:
+      type: object
+      description: POST /api/products/ — a product she can't find, added by her.
+      properties:
+        brand:
+          type: string
+          minLength: 1
+          maxLength: 150
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        barcode:
+          type: string
+          maxLength: 20
+      required:
+      - brand
+      - category
+      - name
     ProductResponse:
       type: object
       properties:
@@ -4782,6 +4868,8 @@ components:
           type: string
         category:
           $ref: '#/components/schemas/CategoryEnum'
+        pending:
+          type: boolean
       required:
       - brand
       - category
@@ -5243,6 +5331,14 @@ components:
       - from
       - stylistId
       - to
+    SourceEnum:
+      enum:
+      - catalogue
+      - open_beauty_facts
+      type: string
+      description: |-
+        * `catalogue` - catalogue
+        * `open_beauty_facts` - open_beauty_facts
     StartedOnTimeRequestRequest:
       type: object
       properties:
@@ -5685,9 +5781,6 @@ components:
         phone:
           type: string
           readOnly: true
-        phoneVerified:
-          type: boolean
-          readOnly: true
         roles:
           type: array
           items:
@@ -5715,7 +5808,6 @@ components:
       - emailVerified
       - id
       - name
-      - phoneVerified
       - roles
       - updatedAt
     UserResponse:
@@ -5742,9 +5834,6 @@ components:
         phone:
           type: string
           readOnly: true
-        phoneVerified:
-          type: boolean
-          readOnly: true
         roles:
           type: array
           items:
@@ -5768,7 +5857,6 @@ components:
       - emailVerified
       - id
       - name
-      - phoneVerified
       - roles
       - updatedAt
     UsernameCheck:

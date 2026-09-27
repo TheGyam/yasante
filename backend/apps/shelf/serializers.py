@@ -66,6 +66,22 @@ class ProductResponseSerializer(serializers.Serializer):
     brand = serializers.CharField()
     name = serializers.CharField()
     category = serializers.ChoiceField(choices=Product.CATEGORY_CHOICES)
+    # Only on a product she added that a moderator hasn't approved yet.
+    pending = optional(serializers.BooleanField())
+
+
+class ProductCreateRequestSerializer(serializers.Serializer):
+    """POST /api/products/ — a product she can't find, added by her."""
+
+    brand = serializers.CharField(max_length=150)
+    name = serializers.CharField(max_length=150)
+    category = serializers.ChoiceField(choices=Product.CATEGORY_CHOICES)
+    barcode = serializers.CharField(max_length=20, required=False, allow_blank=True)
+
+
+class BarcodeResultSerializer(serializers.Serializer):
+    product = ProductResponseSerializer()
+    source = serializers.ChoiceField(choices=["catalogue", "open_beauty_facts"])
 
 
 class ShelfItemResponseSerializer(serializers.Serializer):

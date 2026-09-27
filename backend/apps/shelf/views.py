@@ -12,8 +12,11 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from . import barcodes, openbeauty
 from .models import Product, ShelfItem
 from .serializers import (
+    BarcodeResultSerializer,
+    ProductCreateRequestSerializer,
     ProductResponseSerializer,
     ShelfAddRequestSerializer,
     ShelfItemResponseSerializer,
@@ -24,7 +27,14 @@ logger = logging.getLogger(__name__)
 
 
 def present_product(p):
-    return {"id": str(p.pk), "brand": p.brand, "name": p.name, "category": p.category}
+    data = {"id": str(p.pk), "brand": p.brand, "name": p.name, "category": p.category}
+    if p.status == "pending":
+        data["pending"] = True
+    return data
+
+
+# Fewer results than this here, and Open Beauty Facts is asked too.
+FALLBACK_BELOW = 5
 
 
 def present_item(i):
@@ -55,9 +65,55 @@ def _hair_now(user):
     }
 
 
-@extend_schema_view(get=extend_schema(responses=ProductResponseSerializer(many=True)))
+@extend_schema_view(get=extend_schema(responses=BarcodeResultSerializer))
+class ProductBarcodeView(APIView):
+    """GET /api/products/barcode/<code>/ — the product behind a scanned barcode."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, code):
+        digits = barcodes.clean(code)
+        if not digits:
+            return Response(
+                {"message": "That barcode didn’t scan properly. Try again, a little closer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        product, source = barcodes.find(digits, request.user)
+        if product is None:
+            return Response(
+                {"message": "We don’t know that one yet. Search for it by name instead."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response({"product": present_product(product), "source": source})
+
+
+def _matching(user, q):
+    qs = Product.objects.visible_to(user)
+    for word in q.split():
+        qs = qs.filter(Q(brand__icontains=word) | Q(name__icontains=word) | Q(category__icontains=word))
+    return qs
+
+
+def _learn_from_open_beauty_facts(q):
+    """Hair products matching the search on Open Beauty Facts, kept in our catalogue."""
+    for found in openbeauty.search(q):
+        code = barcodes.clean(found.get("code"))
+        values = openbeauty.fields(found)
+        if not code or not values:
+            continue
+        Product.objects.get_or_create(barcode=code, defaults={**values, "source": "open_beauty_facts"})
+
+
+@extend_schema_view(
+    get=extend_schema(responses=ProductResponseSerializer(many=True)),
+    post=extend_schema(request=ProductCreateRequestSerializer, responses={201: ProductResponseSerializer}),
+)
 class ProductSearchView(APIView):
-    """GET /api/products/?q=&limit= — every word must match brand, name or category."""
+    """
+    GET /api/products/?q=&limit= — every word must match brand, name or category. When
+    our catalogue has little for it, Open Beauty Facts is asked as well.
+    POST /api/products/ — add one nobody has yet: hers at once, everyone's once approved.
+    """
 
     permission_classes = [permissions.IsAuthenticated]
 
@@ -66,12 +122,33 @@ class ProductSearchView(APIView):
             limit = max(1, min(int(request.query_params.get("limit", 30)), 50))
         except (TypeError, ValueError):
             limit = 30
-        qs = Product.objects.all()
-        for word in request.query_params.get("q", "").split():
-            qs = qs.filter(
-                Q(brand__icontains=word) | Q(name__icontains=word) | Q(category__icontains=word)
-            )
+        q = request.query_params.get("q", "").strip()
+        qs = _matching(request.user, q)
+        if len(q) >= 3 and qs.count() < FALLBACK_BELOW:
+            _learn_from_open_beauty_facts(q)
+            qs = _matching(request.user, q)
         return Response([present_product(p) for p in qs.order_by("brand", "name")[:limit]])
+
+    def post(self, request):
+        body = ProductCreateRequestSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        data = body.validated_data
+        brand, name = data["brand"].strip(), data["name"].strip()
+        code = barcodes.clean(data.get("barcode") or "")
+        # Already here (approved, or hers): that one, not a second copy.
+        existing = Product.objects.visible_to(request.user).filter(
+            Q(barcode=code) if code else Q(brand__iexact=brand, name__iexact=name)
+        ).first()
+        if existing:
+            return Response(present_product(existing), status=status.HTTP_200_OK)
+        if code and Product.objects.filter(barcode=code).exists():
+            # Someone else's addition with that barcode is awaiting review.
+            code = None
+        product = Product.objects.create(
+            brand=brand, name=name, category=data["category"], barcode=code,
+            source="community", status="pending", added_by=request.user,
+        )
+        return Response(present_product(product), status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(get=extend_schema(responses=ShelfItemResponseSerializer(many=True)), post=extend_schema(request=ShelfAddRequestSerializer, responses={201: ShelfItemResponseSerializer}))
@@ -91,7 +168,7 @@ class ShelfListCreateView(APIView):
     def post(self, request):
         product_id = request.data.get("product_id")
         try:
-            product = Product.objects.filter(pk=uuid.UUID(str(product_id))).first()
+            product = Product.objects.visible_to(request.user).filter(pk=uuid.UUID(str(product_id))).first()
         except (TypeError, ValueError):
             product = None
         if product is None:

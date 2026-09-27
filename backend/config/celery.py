@@ -54,4 +54,8 @@ app.conf.beat_schedule = {
         "task": "apps.bookings.tasks.insurance_reminders",
         "schedule": crontab(hour=9, minute=0),
     },
+    "product-import": {
+        "task": "apps.shelf.tasks.weekly_product_import",
+        "schedule": crontab(hour=3, minute=30, day_of_week="wed"),
+    },
 }

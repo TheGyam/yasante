@@ -17,6 +17,9 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+# Tell search engines about new and changed pages the moment they happen.
+INDEXNOW_ENABLED = config("INDEXNOW_ENABLED", default=True, cast=bool)  # noqa: F405
+
 # Email — SMTP
 _email_host = config("EMAIL_HOST", default="")  # noqa: F405
 if _email_host:

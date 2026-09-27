@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import Animated, { FadeIn, Keyframe } from 'react-native-reanimated';
 import { Check, Circle } from 'lucide-react-native';
 import { EASE_OUT, makeStyles, space, useTheme } from '@/shared/theme';
@@ -20,6 +20,9 @@ const POP = new Keyframe({
   100: { opacity: 1, transform: [{ scale: 1 }] },
 }).duration(260);
 const APPEAR = FadeIn.duration(200);
+// The tick pops on phones. On the web, Reanimated's layout animations throw when a
+// tick comes and goes faster than its animation (typing quickly does exactly that).
+const POP_ON_DEVICE = Platform.OS === 'web' ? undefined : POP;
 
 const useStyles = makeStyles(() => ({
   wrap: { gap: space.sm + 2 },
@@ -55,7 +58,7 @@ export function PasswordStrength({ password }: { password: string }) {
           return (
             <View key={rule.label} style={styles.rule}>
               {met ? (
-                <Animated.View key="met" entering={POP}>
+                <Animated.View key="met" entering={POP_ON_DEVICE}>
                   <Check size={13} color={color} strokeWidth={3} />
                 </Animated.View>
               ) : (

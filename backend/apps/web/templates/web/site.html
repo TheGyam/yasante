@@ -7,28 +7,35 @@
 <meta name="theme-color" content="#0B0709" media="(prefers-color-scheme: dark)">
 <title>{{ title }}</title>
 <meta name="description" content="{{ description }}">
+{% if noindex %}<meta name="robots" content="noindex">{% else %}<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">{% endif %}
+<link rel="canonical" href="{{ canonical }}">
 <meta property="og:site_name" content="Yasante">
+<meta property="og:type" content="{{ og_type }}">
+<meta property="og:locale" content="en_GB">
 <meta property="og:title" content="{{ og_title }}">
 <meta property="og:description" content="{{ description }}">
-<meta property="og:url" content="{{ request.build_absolute_uri }}">
+<meta property="og:url" content="{{ canonical }}">
 {% if image %}<meta property="og:image" content="{{ image }}">
-<meta name="twitter:card" content="summary_large_image">{% else %}<meta name="twitter:card" content="summary">{% endif %}
-<link rel="canonical" href="{{ request.build_absolute_uri }}">
-{% if noindex %}<meta name="robots" content="noindex">{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{{ image }}">{% else %}<meta name="twitter:card" content="summary">{% endif %}
+<meta name="twitter:title" content="{{ og_title }}">
+<meta name="twitter:description" content="{{ description }}">
+{% if google_verification %}<meta name="google-site-verification" content="{{ google_verification }}">{% endif %}
+{% if bing_verification %}<meta name="msvalidate.01" content="{{ bing_verification }}">{% endif %}
+<link rel="alternate" type="text/markdown" href="/llms.txt" title="Yasante for AI assistants">
 {% if assets %}<link rel="icon" type="image/png" href="{% static 'site/favicon.png' %}">
 {% for href in assets.styles %}<link rel="stylesheet" href="{{ href }}">
 {% endfor %}<script type="module" src="{{ assets.script }}"></script>{% endif %}
-<style>body{margin:0;background:#F7F2F4;color:#1B0E14}@media (prefers-color-scheme:dark){body{background:#0B0709;color:#F8F1F4}}</style>
+{% if jsonld %}<script type="application/ld+json">{{ jsonld }}</script>{% endif %}
+<style>body{margin:0;background:#F7F2F4;color:#1B0E14}@media (prefers-color-scheme:dark){body{background:#0B0709;color:#F8F1F4}}
+.ssr{max-width:720px;margin:0 auto;padding:24px 16px 48px;font:16px/1.55 "Instrument Sans",system-ui,sans-serif}
+.ssr a{color:inherit}.ssr img{max-width:100%;height:auto;border-radius:12px}
+.ssr ul.grid{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.ssr .muted{opacity:.7}</style>
 </head>
 <body>
-<div id="root"></div>
+{# The page's real content, for search engines and AI assistants that don't run JavaScript, and for anyone before the app loads. The React app replaces it as it starts. #}
+<div id="root">{% if content_template %}<main class="ssr">{% include content_template with c=content %}</main>{% endif %}</div>
 {% if page_data %}<script id="page-data" type="application/json">{{ page_data }}</script>{% endif %}
-<noscript>
-<main style="max-width:640px;margin:0 auto;padding:24px 16px;font:16px/1.5 system-ui,sans-serif">
-<h1>{{ og_title }}</h1>
-<p>{{ description }}</p>
-<p>This page needs JavaScript. The Yasante app has everything here too.</p>
-</main>
-</noscript>
 </body>
 </html>

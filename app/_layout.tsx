@@ -15,7 +15,7 @@ import {
   InstrumentSans_600SemiBold,
   InstrumentSans_700Bold,
 } from '@expo-google-fonts/instrument-sans';
-import { AuthProvider, useAuth, useAuthStore } from '@/features/auth';
+import { AuthProvider, useAuth } from '@/features/auth';
 import { ATTENDANCE_CATEGORY, bookingApi } from '@/features/booking';
 import { useHairProfileSync, useUserStore } from '@/features/profile';
 import { ModeSwitchOverlay, useActiveMode, useModeStore } from '@/features/stylist';
@@ -134,6 +134,22 @@ function RootNavigator() {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
+  // Signing up continues into email verification, so the auth flow stays open until
+  // the email is confirmed. (Only an explicit false counts: accounts saved before
+  // emails were checked have no value at all, and they're all confirmed.)
+  const emailUnconfirmed = isAuthenticated && user?.emailVerified === false;
+  const inAuthFlowNow = !isAuthenticated || emailUnconfirmed;
+
+  // A new stylist account opens in stylist mode, with the usual switch, once the
+  // sign-up screens have closed (switching under them crashed).
+  const startAs = useModeStore(s => s.startAs);
+  useEffect(() => {
+    if (!ready || !startAs || !isAuthenticated || inAuthFlowNow) return;
+    const store = useModeStore.getState();
+    store.setStartAs(null);
+    if (startAs !== store.mode) store.beginSwitch(startAs);
+  }, [ready, startAs, isAuthenticated, inAuthFlowNow]);
+
   // Opened the app signed in but with her email still unconfirmed (she left mid
   // sign-up): straight back to the code. Checked once at launch; sign-up and sign-in
   // take her there themselves.
@@ -151,11 +167,7 @@ function RootNavigator() {
 
   // Someone who has taken the quiz or signed in is inside the app, even as a guest.
   const entered = isAuthenticated || onboarded;
-  // Signing up continues into email verification, so the auth flow stays open until
-  // the email is confirmed. (Only an explicit false counts: accounts saved before
-  // emails were checked have no value at all, and they're all confirmed.)
-  const emailUnconfirmed = isAuthenticated && user?.emailVerified === false;
-  const inAuthFlow = !isAuthenticated || emailUnconfirmed;
+  const inAuthFlow = inAuthFlowNow;
 
   return (
     <>
@@ -222,6 +234,8 @@ function RootNavigator() {
           <Stack.Screen name="check-in/[id]" options={modal} />
           <Stack.Screen name="shelf/index" />
           <Stack.Screen name="shelf/add" options={modal} />
+          <Stack.Screen name="shelf/scan" options={modal} />
+          <Stack.Screen name="shelf/new-product" options={modal} />
           <Stack.Screen name="shelf/[id]" />
           <Stack.Screen name="collections/[id]" />
           <Stack.Screen name="collections/new" options={modal} />

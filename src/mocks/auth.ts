@@ -34,7 +34,6 @@ defineMocks({
       name: body.name,
       email: body.email,
       emailVerified: false,
-      phoneVerified: false,
       roles: stylist ? ['client', 'stylist'] : ['client'],
       createdAt: now,
       updatedAt: now,

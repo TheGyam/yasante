@@ -1157,8 +1157,34 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description GET /api/products/?q=&limit= — every word must match brand, name or category. */
+        /**
+         * @description GET /api/products/?q=&limit= — every word must match brand, name or category. When
+         *     our catalogue has little for it, Open Beauty Facts is asked as well.
+         *     POST /api/products/ — add one nobody has yet: hers at once, everyone's once approved.
+         */
         get: operations["products_list"];
+        put?: never;
+        /**
+         * @description GET /api/products/?q=&limit= — every word must match brand, name or category. When
+         *     our catalogue has little for it, Open Beauty Facts is asked as well.
+         *     POST /api/products/ — add one nobody has yet: hers at once, everyone's once approved.
+         */
+        post: operations["products_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products/barcode/{code}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/products/barcode/<code>/ — the product behind a scanned barcode. */
+        get: operations["products_barcode_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1748,6 +1774,10 @@ export interface components {
             ];
             blocked: string[];
         };
+        BarcodeResult: {
+            product: components["schemas"]["ProductResponse"];
+            source: components["schemas"]["SourceEnum"];
+        };
         /** @enum {unknown} */
         BlankEnum: "";
         Block: {
@@ -2114,6 +2144,11 @@ export interface components {
             token: string;
             platform: string;
         };
+        /**
+         * @description * `hair` - Hair
+         * @enum {string}
+         */
+        DomainEnum: "hair";
         /** @description POST /api/auth/email/start/ — optionally to a corrected address. */
         EmailStartRequest: {
             /** Format: email */
@@ -2228,6 +2263,7 @@ export interface components {
          *     left out of the JSON (the renderer drops empty values), so say so in the schema.
          */
         HairProfileResponse: {
+            domain: components["schemas"]["DomainEnum"];
             texture?: components["schemas"]["TextureEnum"] | components["schemas"]["BlankEnum"];
             length?: components["schemas"]["LengthEnum"] | components["schemas"]["BlankEnum"];
             shrunkLength?: components["schemas"]["ShrunkLengthEnum"] | components["schemas"]["BlankEnum"];
@@ -2672,11 +2708,19 @@ export interface components {
             /** Format: date-time */
             readonly createdAt: string;
         };
+        /** @description POST /api/products/ — a product she can't find, added by her. */
+        ProductCreateRequestRequest: {
+            brand: string;
+            name: string;
+            category: components["schemas"]["CategoryEnum"];
+            barcode?: string;
+        };
         ProductResponse: {
             id: string;
             brand: string;
             name: string;
             category: components["schemas"]["CategoryEnum"];
+            pending?: boolean;
         };
         Proposal: {
             /** Format: date-time */
@@ -2881,6 +2925,12 @@ export interface components {
             /** Format: date */
             to: string;
         };
+        /**
+         * @description * `catalogue` - catalogue
+         *     * `open_beauty_facts` - open_beauty_facts
+         * @enum {string}
+         */
+        SourceEnum: "catalogue" | "open_beauty_facts";
         StartedOnTimeRequestRequest: {
             onTime: boolean;
         };
@@ -3066,7 +3116,6 @@ export interface components {
             readonly email: string;
             readonly emailVerified: boolean;
             readonly phone?: string;
-            readonly phoneVerified: boolean;
             readonly roles: components["schemas"]["RolesEnum"][];
             /** Format: uri */
             readonly avatarUri?: string;
@@ -3086,7 +3135,6 @@ export interface components {
             readonly email: string;
             readonly emailVerified: boolean;
             readonly phone?: string;
-            readonly phoneVerified: boolean;
             readonly roles: components["schemas"]["RolesEnum"][];
             /** Format: uri */
             readonly avatarUri?: string;
@@ -4973,6 +5021,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductResponse"][];
+                };
+            };
+        };
+    };
+    products_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductCreateRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponse"];
+                };
+            };
+        };
+    };
+    products_barcode_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BarcodeResult"];
                 };
             };
         };

@@ -13,6 +13,13 @@ interface ModeState {
   switchingTo: AppMode | null;
   /** Where the switch was tapped; the transition grows from there. */
   origin: { x: number; y: number } | null;
+  /**
+   * The mode a new account opens in, once sign-up has closed. Switching while the
+   * sign-up screens are still up swapped every tab underneath them in the same moment
+   * the account signed in, and crashed; this waits, then plays the normal switch.
+   */
+  startAs: AppMode | null;
+  setStartAs: (mode: AppMode | null) => void;
   setMode: (mode: AppMode) => void;
   beginSwitch: (to: AppMode, origin?: { x: number; y: number }) => void;
   endSwitch: () => void;
@@ -24,6 +31,8 @@ export const useModeStore = create<ModeState>()(
       mode: 'client',
       switchingTo: null,
       origin: null,
+      startAs: null,
+      setStartAs: startAs => set({ startAs }),
       setMode: mode => set({ mode }),
       beginSwitch: (to, origin) => {
         track('switch_mode', { to });
@@ -34,7 +43,7 @@ export const useModeStore = create<ModeState>()(
     {
       name: '@yasante:mode',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: state => ({ mode: state.mode }),
+      partialize: state => ({ mode: state.mode, startAs: state.startAs }),
     }
   )
 );

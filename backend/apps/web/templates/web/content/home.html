@@ -1,0 +1,7 @@
+<header><h1>Yasante — book braiders by their work</h1><p>{{ c.about }}</p></header>
+<nav aria-label="Get started"><p><a href="/looks">Browse looks</a> · <a href="/auth/signup?role=stylist">Set up a free stylist page</a></p></nav>
+{% if c.styles %}<section><h2>Styles</h2><ul>{% for s in c.styles %}<li><a href="{{ s.path }}">{{ s.name }}</a></li>{% endfor %}</ul></section>{% endif %}
+{% if c.stylists %}<section><h2>Braiders on Yasante</h2><ul>{% for s in c.stylists %}<li><a href="{{ s.path }}">{{ s.name }}</a>{% if s.area %} — {{ s.area }}{% endif %}{% if s.bio %}. {{ s.bio }}{% endif %}</li>{% endfor %}</ul></section>{% endif %}
+{% if c.areas %}<section><h2>Areas</h2><ul>{% for a in c.areas %}<li><a href="{{ a.path }}">Braiders in {{ a.name }}</a></li>{% endfor %}</ul></section>{% endif %}
+{% if c.looks %}<section><h2>Popular looks</h2>{% include "web/content/_looks.html" with looks=c.looks %}</section>{% endif %}
+<section><h2>How it works</h2><ol><li>Find a style you love from real photos of real hair.</li><li>Open the braider's page: their work, prices, hours and policies.</li><li>Ask for a date. They reply within 48 hours; any deposit goes straight to them.</li></ol></section>

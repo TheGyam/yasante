@@ -24,7 +24,6 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "email_verified",
             "phone",
-            "phone_verified",
             "roles",
             "avatar_uri",
             "created_at",

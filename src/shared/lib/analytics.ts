@@ -17,6 +17,7 @@ export type EventName =
   | 'post_look'
   | 'leave_review'
   | 'add_shelf_item'
+  | 'add_product'
   | 'complete_checkin'
   | 'share_link'
   | 'switch_mode'

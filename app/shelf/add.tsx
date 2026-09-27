@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { Check, Plus, SearchX } from 'lucide-react-native';
+import { Check, Plus, ScanBarcode, SearchX } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
   CATEGORY_LABELS,
@@ -11,16 +11,26 @@ import {
   type Product,
 } from '@/features/shelf';
 import { haptics } from '@/shared/lib/haptics';
+import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { notify } from '@/shared/ui/dialog';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { IconButton } from '@/shared/ui/IconButton';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen } from '@/shared/ui/Screen';
 import { SearchField } from '@/shared/ui/SearchField';
 import { Text } from '@/shared/ui/Text';
 
 const useStyles = makeStyles(t => ({
-  search: { paddingHorizontal: GUTTER, paddingBottom: space.md },
+  search: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    paddingHorizontal: GUTTER,
+    paddingBottom: space.md,
+  },
+  field: { flex: 1 },
+  addOwn: { paddingVertical: space.lg, alignItems: 'center' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -45,12 +55,16 @@ const useStyles = makeStyles(t => ({
 export default function AddToShelfScreen() {
   const styles = useStyles();
   const theme = useTheme();
+  const router = useRouter();
   const [q, setQ] = useState('');
   const { data: results = [], isLoading } = useProductSearch(q);
   const { data: shelf = [] } = useShelf();
   const add = useAddToShelf();
   // Ticked the moment she taps, rather than when the shelf re-reads.
   const [added, setAdded] = useState<Set<string>>(new Set());
+
+  const addOwn = () =>
+    router.push(`/shelf/new-product${q.trim() ? `?name=${encodeURIComponent(q.trim())}` : ''}`);
 
   const onShelf = (product: Product) =>
     added.has(product.id) || shelf.some(item => item.product.id === product.id);
@@ -77,14 +91,25 @@ export default function AddToShelfScreen() {
   return (
     <Screen title="Add to your shelf" modal scroll={false} padded={false} testID="shelf-add-screen">
       <View style={styles.search}>
-        <SearchField
-          placeholder="Brand or product"
-          value={q}
-          onChangeText={setQ}
-          autoFocus
-          autoCorrect={false}
-          returnKeyType="search"
-          testID="shelf-search"
+        <View style={styles.field}>
+          <SearchField
+            placeholder="Brand or product"
+            value={q}
+            onChangeText={setQ}
+            autoFocus
+            autoCorrect={false}
+            returnKeyType="search"
+            testID="shelf-search"
+          />
+        </View>
+        {/* Quicker than typing: point the camera at the barcode. */}
+        <IconButton
+          icon={ScanBarcode}
+          variant="accent"
+          size={44}
+          accessibilityLabel="Scan a barcode"
+          onPress={() => router.push('/shelf/scan')}
+          testID="shelf-scan"
         />
       </View>
       <FlashList
@@ -107,6 +132,7 @@ export default function AddToShelfScreen() {
               <View style={styles.text}>
                 <Text variant="caption" tone="tertiary">
                   {item.brand} · {CATEGORY_LABELS[item.category]}
+                  {item.pending ? ' · Added by you, awaiting review' : ''}
                 </Text>
                 <Text variant="callout" numberOfLines={2}>
                   {item.name}
@@ -129,9 +155,25 @@ export default function AddToShelfScreen() {
             <EmptyState
               icon={SearchX}
               title="Not in the catalogue yet"
-              message="Try the brand name on its own. We add products people ask for."
+              message="Try the brand name on its own, scan the barcode, or add it yourself."
+              actionLabel="Add it yourself"
+              onAction={addOwn}
             />
           )
+        }
+        ListFooterComponent={
+          results.length > 0 && q.trim() ? (
+            <PressableScale
+              onPress={addOwn}
+              accessibilityRole="button"
+              style={styles.addOwn}
+              testID="shelf-add-own"
+            >
+              <Text variant="subhead" tone="accent">
+                Can’t find it? Add it yourself
+              </Text>
+            </PressableScale>
+          ) : null
         }
         contentContainerStyle={{ paddingHorizontal: GUTTER, paddingBottom: space.xxl }}
       />

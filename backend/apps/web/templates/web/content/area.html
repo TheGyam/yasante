@@ -1,0 +1,4 @@
+<h1>Braiders in {{ c.name }}</h1>
+<p>Braiders based in {{ c.name }}, London, and their work. Open a page to see prices and hours, and book.</p>
+{% if c.stylists %}<section><h2>Braiders</h2><ul>{% for s in c.stylists %}<li><a href="{{ s.path }}">{{ s.name }}</a>{% if s.bio %}. {{ s.bio }}{% endif %}</li>{% endfor %}</ul></section>{% endif %}
+{% if c.looks %}<section><h2>Their work</h2>{% include "web/content/_looks.html" with looks=c.looks %}</section>{% endif %}

@@ -358,6 +358,14 @@ CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # A reset link works for an hour (Django's default is three days).
 PASSWORD_RESET_TIMEOUT = 60 * 60
+
+# Search. IndexNow's key is public by design (served at /<key>.txt); pings go out only
+# where INDEXNOW_ENABLED is on (production). The verification codes come from Google
+# Search Console and Bing Webmaster Tools when the site is added there.
+INDEXNOW_KEY = config("INDEXNOW_KEY", default="0a27ecf24379b996538b2cd494f109af")
+INDEXNOW_ENABLED = config("INDEXNOW_ENABLED", default=False, cast=bool)
+GOOGLE_SITE_VERIFICATION = config("GOOGLE_SITE_VERIFICATION", default="")
+BING_SITE_VERIFICATION = config("BING_SITE_VERIFICATION", default="")
 DEFAULT_FROM_EMAIL = config(
     "DEFAULT_FROM_EMAIL", default="Yasante <noreply@yasante.com>"
 )

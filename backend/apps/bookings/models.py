@@ -7,6 +7,7 @@ import uuid
 from apps.common.models import TimeStampedModel
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
+from apps.common.domains import domain_field
 from django.db import models
 from django.utils import timezone
 
@@ -244,6 +245,7 @@ class CheckIn(models.Model):
         Booking, on_delete=models.CASCADE, related_name="check_ins"
     )
     week = models.PositiveSmallIntegerField()  # 2 or 4
+    domain = domain_field()
     holding = models.CharField(max_length=20)  # fresh, okay, tired
     scalp = models.CharField(max_length=20)  # comfortable, itchy, sore
     again = models.CharField(max_length=10)  # yes, maybe, no
