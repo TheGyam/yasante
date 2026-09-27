@@ -30,7 +30,6 @@ describe('a forgotten password, on the web', () => {
         name: 'Ama',
         email: 'a@b.c',
         emailVerified: true,
-        phoneVerified: false,
         roles: ['stylist'],
         createdAt: '',
         updatedAt: '',

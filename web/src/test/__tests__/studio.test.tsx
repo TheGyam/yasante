@@ -8,7 +8,6 @@ const user = {
   name: 'Braids by Ama',
   email: 'ama@example.com',
   emailVerified: true,
-  phoneVerified: false,
   roles: ['stylist' as const],
   createdAt: '2026-09-25T00:00:00Z',
   updatedAt: '2026-09-25T00:00:00Z',

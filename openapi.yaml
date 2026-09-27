@@ -5733,9 +5733,6 @@ components:
         phone:
           type: string
           readOnly: true
-        phoneVerified:
-          type: boolean
-          readOnly: true
         roles:
           type: array
           items:
@@ -5763,7 +5760,6 @@ components:
       - emailVerified
       - id
       - name
-      - phoneVerified
       - roles
       - updatedAt
     UserResponse:
@@ -5790,9 +5786,6 @@ components:
         phone:
           type: string
           readOnly: true
-        phoneVerified:
-          type: boolean
-          readOnly: true
         roles:
           type: array
           items:
@@ -5816,7 +5809,6 @@ components:
       - emailVerified
       - id
       - name
-      - phoneVerified
       - roles
       - updatedAt
     UsernameCheck:

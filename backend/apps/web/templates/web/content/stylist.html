@@ -1,0 +1,10 @@
+<article>
+<header><h1>{{ c.name }}</h1><p class="muted">@{{ c.handle }} · {{ c.area }}{% if c.travels %} · travels up to {{ c.travels|floatformat:0 }} miles{% endif %}</p>{% if c.bio %}<p>{{ c.bio }}</p>{% endif %}
+{% if c.rating %}<p>Rated {{ c.rating.average|floatformat:1 }} out of 5 from {{ c.rating.count }} review{{ c.rating.count|pluralize }}.</p>{% endif %}
+<p><a href="/book/{{ c.handle }}">Request a booking</a></p></header>
+{% if c.menu %}<section><h2>Menu and prices</h2><ul>{% for m in c.menu %}<li><strong>{{ m.name }}</strong> — {{ m.price }}{% if m.duration %}, {{ m.duration }}{% endif %}{% if m.note %}. {{ m.note }}{% endif %}</li>{% endfor %}</ul></section>{% endif %}
+{% if c.hours %}<section><h2>Hours</h2><ul>{% for h in c.hours %}<li>{{ h.day }}: {{ h.opens }}–{{ h.closes }}</li>{% endfor %}</ul></section>{% endif %}
+{% if c.photos %}<section><h2>Their work</h2><ul class="grid">{% for p in c.photos %}<li><img src="{{ p.src }}" alt="{{ p.alt }}" loading="lazy" width="300" height="375"></li>{% endfor %}</ul></section>{% endif %}
+{% if c.reviews %}<section><h2>Reviews</h2><ul>{% for r in c.reviews %}<li><p>{{ r.rating }} out of 5{% if r.service %} · {{ r.service }}{% endif %}</p>{% if r.body %}<blockquote>{{ r.body }}</blockquote>{% endif %}<p class="muted">{{ r.author|default:"A client" }}</p></li>{% endfor %}</ul></section>{% endif %}
+<section><h2>Booking</h2><p>Ask for a date and they reply within 48 hours. Cancelling needs {{ c.notice_hours }} hours' notice. Any deposit is paid straight to them; Yasante never handles payments.</p></section>
+</article>

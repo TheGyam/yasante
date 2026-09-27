@@ -25,7 +25,7 @@ def test_signup_returns_a_session_in_the_apps_shape(api):
     assert set(body) >= {"user", "accessToken", "refreshToken", "expiresAt"}
     assert body["user"]["email"] == "new@test.dev"
     assert body["user"]["roles"] == ["client"]
-    assert body["user"]["phoneVerified"] is False
+    assert "phoneVerified" not in body["user"]
 
 
 def test_signup_refuses_under_18_and_a_taken_email(api, make_user):

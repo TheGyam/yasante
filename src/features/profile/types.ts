@@ -57,9 +57,8 @@ export interface User {
   email?: string;
   /** Proved with a code sent to it. `false` holds sign-up open until it is. */
   emailVerified?: boolean;
-  /** E.164. Verified by a one-time code before booking or publishing a stylist page. */
+  /** E.164, if they added one. */
   phone?: string;
-  phoneVerified?: boolean;
   avatarUri?: string;
   hairProfile?: HairProfile;
   createdAt: string;

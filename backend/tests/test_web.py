@@ -22,7 +22,7 @@ def test_her_page_is_public_only_once_published(make_stylist, api):
     page = web.get(f"/{profile.handle}")
     assert page.status_code == 200
     body = page.content.decode()
-    assert f"<title>{profile.display_name} (@{profile.handle}) · Yasante</title>" in body
+    assert f"<title>{profile.display_name} (@{profile.handle}) — braider in {profile.base_area} · Yasante</title>" in body
     assert 'property="og:title"' in body
     # It opens on exactly what the API would send, under the key the site reads.
     data = _page_data(page)[("stylist", profile.handle)]
@@ -73,7 +73,7 @@ def test_a_stylist_can_sign_up_on_the_web():
     web = Client()
     signup = web.get("/auth/signup").content.decode()
     assert "<title>Set up your stylist account · Yasante</title>" in signup
-    assert 'name="robots"' not in signup
+    assert 'content="noindex"' not in signup
     # Signing in, the code and setup are for one person: kept out of search.
     for path in (
         "/auth/login",

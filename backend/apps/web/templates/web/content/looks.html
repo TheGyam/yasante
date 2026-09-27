@@ -1,0 +1,4 @@
+<h1>Looks</h1>
+<p>Real looks on real hair, from braiders in London. Open one to see who did it and book them.</p>
+{% if c.styles %}<nav aria-label="Styles"><ul>{% for s in c.styles %}<li><a href="{{ s.path }}">{{ s.name }}</a></li>{% endfor %}</ul></nav>{% endif %}
+{% include "web/content/_looks.html" with looks=c.looks %}
