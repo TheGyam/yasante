@@ -68,6 +68,11 @@ class ProductResponseSerializer(serializers.Serializer):
     category = serializers.ChoiceField(choices=Product.CATEGORY_CHOICES)
 
 
+class BarcodeResultSerializer(serializers.Serializer):
+    product = ProductResponseSerializer()
+    source = serializers.ChoiceField(choices=["catalogue", "open_beauty_facts"])
+
+
 class ShelfItemResponseSerializer(serializers.Serializer):
     id = serializers.CharField()
     product = ProductResponseSerializer()

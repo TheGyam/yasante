@@ -76,6 +76,16 @@ defineMocks({
     }).slice(0, limit);
   },
 
+  // Any barcode ending in 0 is unknown; the rest map onto the catalogue.
+  'GET /api/products/barcode/:code/': request => {
+    const code = String(request.params.code).replace(/\D/g, '');
+    if (code.length < 8)
+      throw new MockError(400, 'That barcode didn’t scan properly. Try again, a little closer.');
+    if (code.endsWith('0'))
+      throw new MockError(404, 'We don’t know that one yet. Search for it by name instead.');
+    return { product: CATALOGUE[Number(code.slice(-2)) % CATALOGUE.length], source: 'catalogue' };
+  },
+
   'GET /api/shelf/': request =>
     [...shelfOf(requireAccount(request))].sort((a, b) => b.startedAt.localeCompare(a.startedAt)),
 

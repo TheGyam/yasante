@@ -1805,6 +1805,28 @@ paths:
                 items:
                   $ref: '#/components/schemas/ProductResponse'
           description: ''
+  /api/products/barcode/{code}/:
+    get:
+      operationId: products_barcode_retrieve
+      description: GET /api/products/barcode/<code>/ — the product behind a scanned
+        barcode.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BarcodeResult'
+          description: ''
   /api/reports/mine/:
     get:
       operationId: reports_mine_list
@@ -2692,6 +2714,16 @@ components:
       required:
       - blocked
       - week
+    BarcodeResult:
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/ProductResponse'
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+      required:
+      - product
+      - source
     BlankEnum:
       enum:
       - ''
@@ -3500,6 +3532,11 @@ components:
       required:
       - platform
       - token
+    DomainEnum:
+      enum:
+      - hair
+      type: string
+      description: '* `hair` - Hair'
     EmailStartRequest:
       type: object
       description: POST /api/auth/email/start/ — optionally to a corrected address.
@@ -3726,6 +3763,8 @@ components:
         For output-only model serializers: a model field that may be blank or null can be
         left out of the JSON (the renderer drops empty values), so say so in the schema.
       properties:
+        domain:
+          $ref: '#/components/schemas/DomainEnum'
         texture:
           oneOf:
           - $ref: '#/components/schemas/TextureEnum'
@@ -3787,6 +3826,7 @@ components:
           readOnly: true
       required:
       - chemicals
+      - domain
       - goals
       - scalp
       - updatedAt
@@ -5226,6 +5266,14 @@ components:
       - from
       - stylistId
       - to
+    SourceEnum:
+      enum:
+      - catalogue
+      - open_beauty_facts
+      type: string
+      description: |-
+        * `catalogue` - catalogue
+        * `open_beauty_facts` - open_beauty_facts
     StartedOnTimeRequestRequest:
       type: object
       properties:

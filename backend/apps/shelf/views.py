@@ -12,8 +12,10 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from . import barcodes
 from .models import Product, ShelfItem
 from .serializers import (
+    BarcodeResultSerializer,
     ProductResponseSerializer,
     ShelfAddRequestSerializer,
     ShelfItemResponseSerializer,
@@ -53,6 +55,28 @@ def _hair_now(user):
         "scalp": hair.scalp,
         "chemicals": hair.chemicals,
     }
+
+
+@extend_schema_view(get=extend_schema(responses=BarcodeResultSerializer))
+class ProductBarcodeView(APIView):
+    """GET /api/products/barcode/<code>/ — the product behind a scanned barcode."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, code):
+        digits = barcodes.clean(code)
+        if not digits:
+            return Response(
+                {"message": "That barcode didn’t scan properly. Try again, a little closer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        product, source = barcodes.find(digits)
+        if product is None:
+            return Response(
+                {"message": "We don’t know that one yet. Search for it by name instead."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        return Response({"product": present_product(product), "source": source})
 
 
 @extend_schema_view(get=extend_schema(responses=ProductResponseSerializer(many=True)))

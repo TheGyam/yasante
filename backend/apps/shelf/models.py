@@ -3,6 +3,7 @@ Shelf models: Product (catalogue) and ShelfItem (user's shelf).
 """
 
 
+from apps.common.domains import domain_field
 from apps.common.models import TimeStampedModel
 from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
@@ -24,6 +25,9 @@ class Product(TimeStampedModel):
         ("treatment", "Treatment"),
     ]
     category = models.CharField(max_length=100, choices=CATEGORY_CHOICES)
+    domain = domain_field()
+    # The number under the barcode (EAN-13, UPC-A and the like), once anyone has scanned it.
+    barcode = models.CharField(max_length=14, null=True, blank=True, unique=True)
     description = models.TextField(max_length=2000, blank=True, default="")
     ingredients = models.TextField(max_length=2000, blank=True, default="")
     photo_uri = models.URLField(max_length=500, blank=True, default="")
@@ -59,6 +63,7 @@ class ShelfItem(TimeStampedModel):
         Product, on_delete=models.CASCADE, related_name="shelved_by"
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="using")
+    domain = domain_field()
     rating = models.PositiveSmallIntegerField(null=True, blank=True)  # 1-5
     review = models.TextField(max_length=500, blank=True, default="")
     times_bought = models.PositiveIntegerField(default=1)

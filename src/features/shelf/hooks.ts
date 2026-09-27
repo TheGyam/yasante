@@ -31,6 +31,11 @@ function useRefresh() {
   return () => queryClient.invalidateQueries({ queryKey: [KEY] });
 }
 
+/** Looks up a scanned barcode. A mutation: each scan is its own question. */
+export function useProductByBarcode() {
+  return useMutation({ mutationFn: shelfApi.byBarcode });
+}
+
 export function useAddToShelf() {
   const onSuccess = useRefresh();
   return useMutation({
