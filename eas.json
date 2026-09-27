@@ -55,7 +55,7 @@
       "ios": {
         "appleId": "your-apple-id@example.com",
         "ascAppId": "your-app-store-connect-app-id",
-        "appleTeamId": "your-apple-team-id"
+        "appleTeamId": "BLJM94S6TR"
       },
       "android": {
         "serviceAccountKeyPath": "./path/to/api-key.json",
