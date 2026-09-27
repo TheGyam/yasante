@@ -7,4 +7,6 @@
 - [x] ~~26-09-2026 06:30~~ AUTH-01 run on the phone (1033: P+A) and the emulator (0508: all parts), both audited. Emulator run: one undisclosed stray signup from scrambled typing, D2 is a real crash (F3). See each report's Audit section.
 - [x] ~~26-09-2026 06:30~~ Emulator vs phone split written (qa/DEVICES.md); phone-only checks go into PHONE-01.
 - [ ] Next plans: looks feed, booking lifecycle (two accounts), client/stylist mode switch.
+- [x] ~~26-09-2026 22:40~~ BOOK-01 written for three emulators (client, stylist, client2), grounded in a dry run: request, slot race, accept + deposit, address privacy, moves, close-out, review, check-ins, lapse, cancellations, waitlist, no-show. New tools: emus (3 wiped emulators on London time), bookings (what each side is sent), timewarp (booking clocks), qadb -d, typing read-back, clearfield. AUTH-01-RERUN.md for a clean emulator rerun. Candidate F4 (request screen mixes time zones).
+- [ ] Antigravity: AUTH-01-RERUN, then BOOK-01; Claude audits each.
 - [ ] Write PHONE-01 (confirm F3, scrolling, real keyboard + password prompt, yasante.com link, camera, background kill).

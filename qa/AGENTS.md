@@ -1,9 +1,18 @@
 # QA executor rules — read all of this before running any plan
 
-You are executing a manual test plan for the Yasante Android app on **the owner's
-personal phone**. Claude wrote the plan and will audit your run afterwards against the
+You are executing a manual test plan for the Yasante Android app, on **emulators** or on
+**the owner's personal phone**. Each plan says which at the top (`Device:`). The rules in
+section 1 hold on both. They matter most on the phone, and on the emulators they keep
+the evidence honest. Claude wrote the plan and will audit your run afterwards against the
 raw evidence on disk. Your job is to follow the plan exactly and report what actually
 happened, nothing more.
+
+## 0. One run, one agent
+
+Run one plan at a time, as one agent, in the order written. **No parallel runs, no
+sub-agents or "team" mode.** Every run shares one backend: `--reseed` wipes it, the
+rate limits are shared, and `qadb` keeps one active run. Within a plan that uses several
+emulators, drive them in turn with `qadb -d <device>`.
 
 ## 1. The phone is personal. These are hard limits.
 
@@ -39,11 +48,15 @@ whole run. Do not "try anyway". A test account made on the live server is real d
 | `qa/bin/qadb …` | every interaction with the phone; `qadb help` lists the commands |
 | `qa/bin/mailbox <RUN> [--to ADDR] [--last]` | the codes and reset links the server "emailed" |
 | `qa/bin/dbcheck <email>` | read-only account state in the local database |
+| `qa/bin/emus up [--wipe] [N]` / `down` / `status` | the test emulators (client, stylist, client2) |
+| `qa/bin/bookings <email> [<booking-id>]` | a person's bookings; with an ID, what each side's app is sent |
+| `qa/bin/timewarp <booking-id> <field> <hours>` | **only where a plan step says so**, with exactly its values |
 | `grep`/`tail` on `qa/runs/<RUN>/server.log` | the server's view of each request |
 | `qa/bin/env-down` | stop everything at the end |
 
 Nothing else: no editing app or backend code, no `manage.py` commands of your own, no
-database edits, no git commands.
+database edits (other than a plan's `timewarp`), no git commands, no raw `adb` or
+`emulator` commands.
 
 ## 4. Evidence: no capture, no verdict
 
@@ -89,8 +102,15 @@ Each capture lists the screen's **testIDs**. They are the steadiest targets
 (`qadb tapon email-input`), so use them whenever the plan names one.
 
 To type into a field: `qadb tapon <testID or label>`, then `qadb type "…"`.
-`qadb type` does not clear a field. To clear one, `qadb key DEL` repeatedly, or clear
-the app data where the plan says so.
+`qadb type` doesn't clear the field; `qadb clearfield` empties the focused one.
+`qadb type` reads the field back afterwards:
+- **`TYPE_MISMATCH`**: what landed isn't what you typed. **Never submit it.**
+  `qadb clearfield`, type again, and note it under Other observations.
+- `not checked (password field)` or `(UI tree unavailable)`: look at the next capture.
+
+**Requests you didn't intend.** If the server log shows a request the plan didn't ask
+for (an extra sign-up, a booking, a cancel), report it in the step where it happened,
+with the log line. Hiding one is worse than causing one.
 
 **`UI tree unavailable`** happens on screens that never stop moving (the email-code
 screen's blinking cursor, animated feeds). Then `visible text` is empty and the
@@ -109,6 +129,9 @@ was open went nowhere.
 Write `qa/reports/<RUN>.md` from `qa/reports/TEMPLATE.md`. Fill in every step of the
 plan in order, including the ones you did not run. Finish with `qadb end` and
 `qa/bin/env-down`, and paste the output of `qadb end` at the bottom of the report.
+
+Report each step. Don't add an overall verdict, certificate or "victory" summary: Claude
+audits the run and decides what it shows.
 
 Timing matters to Claude's audit: do not batch-capture steps at the end, and do not
 reorder them. The journal records when each capture happened.

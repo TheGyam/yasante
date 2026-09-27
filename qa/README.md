@@ -17,6 +17,7 @@ qa/
 
 1. Plug the phone in, unlock it, and turn on Do Not Disturb.
 2. Tell Antigravity: *"Read qa/AGENTS.md, then execute qa/plans/<ID>.md (parts …)."*
+   One plan at a time, as a single agent. Runs share one backend, so they can't run in parallel.
 3. When it's done, tell Claude: *"Audit run <RUN>."* Claude checks the journal, hashes,
    screenshots, server log and database, then writes findings into the report's
    `## Audit` section.
@@ -38,4 +39,5 @@ qa/
 
 | ID | Covers | Status |
 | :--- | :--- | :--- |
-| AUTH-01 | welcome, sign-in, sign-out, client and stylist sign-up, email code, password reset | written |
+| AUTH-01 | welcome, sign-in, sign-out, client and stylist sign-up, email code, password reset | run on phone (P+A) and emulator; rerun: `AUTH-01-RERUN.md` |
+| BOOK-01 | request, race for a slot, accept + deposit, attendance, moves, close-out, review, check-ins, suggest/decline, lapse, cancel in time/late, waitlist, no-show | written (3 emulators) |

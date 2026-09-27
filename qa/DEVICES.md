@@ -6,8 +6,9 @@ nobody has to keep it flat or dismiss popups, and two can run side by side (clie
 stylist). The **owner's phone** (Samsung S948B, One UI, Android 16) is for what an
 emulator cannot show, gathered into one device plan that runs now and then.
 
-Emulator on this laptop: `Pixel_8_API_34` (Android 14, x86_64) in `~/Android/Sdk`.
-TheGyam's dev-client APK runs on it.
+Emulators on this laptop (`qa/bin/emus`): `client` emulator-5554, `stylist` emulator-5556,
+`client2` emulator-5558. All three are Pixel 8, Android 14 x86_64, on London time with
+autofill off. TheGyam's dev-client APK (`qa/apk/dev-client.apk`, gitignored) includes x86_64.
 
 ## Emulator (default)
 

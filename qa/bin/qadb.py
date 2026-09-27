@@ -13,6 +13,7 @@ Run `qadb help` for the commands.
 import datetime as dt
 import hashlib
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -52,17 +53,50 @@ def adb(*args, binary=False, check=True, timeout=30):
 
 
 _serial = None
+# Which device a command is for: `qadb -d <alias> …`, or QADB_DEVICE=<alias>. Aliases
+# (client, stylist, phone…) are fixed per run by `qadb start <run> alias=serial …`.
+_alias = None
+
+
+def attached():
+    lines = subprocess.run(["adb", "devices"], capture_output=True, text=True).stdout.splitlines()[1:]
+    return [l.split()[0] for l in lines if l.strip().endswith("device")]
+
+
+def run_devices():
+    f = RUNS / ACTIVE.read_text().strip() / "devices.json" if ACTIVE.exists() else None
+    return json.loads(f.read_text()) if f and f.exists() else {}
 
 
 def device_serial():
     global _serial
     if _serial:
         return _serial
-    lines = subprocess.run(["adb", "devices"], capture_output=True, text=True).stdout.splitlines()[1:]
-    devices = [l.split()[0] for l in lines if l.strip().endswith("device")]
-    if len(devices) != 1:
-        raise Refused(f"expected exactly one authorised device, found {len(devices)}: {devices}")
-    _serial = devices[0]
+    mapping = run_devices()
+    here = attached()
+    if _alias:
+        serial = mapping.get(_alias) or (_alias if _alias in here else None)
+        if not serial:
+            raise Refused(f"no device '{_alias}' in this run (have: {', '.join(mapping) or 'none'})")
+    elif len(mapping) == 1:
+        serial = next(iter(mapping.values()))
+    elif len(mapping) > 1:
+        raise Refused(f"this run has several devices; say which with -d ({', '.join(mapping)})")
+    elif len(here) == 1:
+        serial = here[0]
+    else:
+        raise Refused(f"expected exactly one authorised device, found {len(here)}: {here}")
+    if serial not in here:
+        raise Refused(f"device {serial} is not connected")
+    _serial = serial
+    return _serial
+
+
+def device_alias():
+    device_serial()
+    for alias, serial in run_devices().items():
+        if serial == _serial:
+            return alias
     return _serial
 
 
@@ -80,6 +114,8 @@ def device_time():
 
 def journal(entry):
     entry = {"host_time": dt.datetime.now().isoformat(timespec="milliseconds"), **entry}
+    if _serial and len(run_devices()) > 1:
+        entry["device"] = device_alias()
     with open(run_dir() / "journal.jsonl", "a") as f:
         f.write(json.dumps(entry) + "\n")
 
@@ -197,12 +233,37 @@ def match(tree, needle, exact):
 # ── commands ────────────────────────────────────────────────────────────────
 
 
-def cmd_start(run_id):
+def cmd_start(run_id, *pairs):
+    """start <run> for one device; start <run> client=emulator-5554 stylist=emulator-5556 for several."""
+    global _serial
     if not re.fullmatch(r"[A-Za-z0-9_-]+", run_id):
         raise Refused("run-id: letters, digits, - and _ only")
     RUNS.mkdir(exist_ok=True)
     ACTIVE.write_text(run_id)
     d = run_dir()
+    mapping = {}
+    for pair in pairs:
+        alias, _, serial = pair.partition("=")
+        if not re.fullmatch(r"[a-z][a-z0-9]*", alias) or not serial:
+            raise Refused(f"device pairs look like client=emulator-5554, not {pair!r}")
+        mapping[alias] = serial
+    if not mapping:
+        here = attached()
+        if len(here) != 1:
+            raise Refused(f"{len(here)} devices attached; name them: start {run_id} client=<serial> stylist=<serial>")
+        mapping = {"phone" if not here[0].startswith("emulator-") else "emu": here[0]}
+    (d / "devices.json").write_text(json.dumps(mapping, indent=2))
+    for alias, serial in mapping.items():
+        _serial = None
+        globals()["_alias"] = alias
+        start_one(d, alias, serial)
+    globals()["_alias"] = None
+    _serial = None
+
+
+def start_one(d, alias, serial):
+    if serial not in attached():
+        raise Refused(f"{alias}: device {serial} is not connected")
     pkg = adb("shell", "dumpsys", "package", PKG)
     if "versionName" not in pkg:
         raise Refused(f"{PKG} is not installed on the device")
@@ -221,7 +282,10 @@ def cmd_start(run_id):
     # phone must reach 8082 as-is; 8081 is forwarded too for the dev client's default.
     adb("reverse", "tcp:8082", "tcp:8082")
     adb("reverse", "tcp:8081", "tcp:8082")
-    (d / "device.json").write_text(json.dumps(info, indent=2))
+    info["alias"] = alias
+    (d / f"device-{alias}.json").write_text(json.dumps(info, indent=2))
+    if len(run_devices()) == 1:
+        (d / "device.json").write_text(json.dumps(info, indent=2))
     journal({"cmd": "start", **info})
     print(json.dumps(info, indent=2))
     if not info["dev_client"]:
@@ -233,7 +297,9 @@ def cmd_start(run_id):
 
 def cmd_launch():
     """Open the app. A dev client is pointed at local Metro; a plain build just starts."""
-    info = json.loads((run_dir() / "device.json").read_text())
+    d = run_dir()
+    f = d / f"device-{device_alias()}.json"
+    info = json.loads((f if f.exists() else d / "device.json").read_text())
     if info["dev_client"]:
         adb("shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", DEV_CLIENT_URL, PKG)
     else:
@@ -295,13 +361,54 @@ def cmd_tapon(needle, *flags):
     print(f"tapped '{h['text'] or h['desc'] or h['id']}' at {h['center']}")
 
 
+def focused_field():
+    try:
+        for n in ui_tree().iter("node"):
+            if n.get("focused") == "true" and "EditText" in n.get("class", ""):
+                return n
+    except (Refused, ET.ParseError):
+        pass
+    return None
+
+
 def cmd_type(text):
+    """Types in small pieces (a controlled input dropped or reordered characters when a whole
+    string arrived at once), then reads the field back and says if it doesn't match."""
     require_foreground({PKG}, "type")
     if not text.isascii():
         raise Refused("only ASCII can be typed through adb input")
-    adb("shell", "input", "text", shlex.quote(text.replace(" ", "%s")))
-    journal({"cmd": "type", "text": text})
-    print(f"typed {text!r}")
+    if not text:
+        raise Refused("nothing to type: the text is empty (did a command before this print nothing?)")
+    time.sleep(0.4)  # let a field that was just tapped take focus
+    for i in range(0, len(text), 4):
+        adb("shell", "input", "text", shlex.quote(text[i:i + 4].replace(" ", "%s")))
+        time.sleep(0.12)
+    field = focused_field()
+    got = field.get("text", "") if field is not None else None
+    secret = field is not None and field.get("password") == "true"
+    if got is None or secret:
+        verdict = "not checked (UI tree unavailable)" if got is None else "not checked (password field)"
+    elif got.endswith(text):
+        verdict = "field reads back correctly"
+    else:
+        journal({"cmd": "type", "text": text, "readback": got, "mismatch": True})
+        raise Refused(
+            f"TYPE_MISMATCH: typed {text!r} but the field now reads {got!r}. "
+            "Do not submit. Run `qadb clearfield`, then type it again."
+        )
+    journal({"cmd": "type", "text": text, "readback": verdict})
+    print(f"typed {text!r}: {verdict}")
+
+
+def cmd_clearfield():
+    """Empties the focused field: select all, delete."""
+    require_foreground({PKG}, "clearfield")
+    adb("shell", "input", "keycombination", "113", "29")  # CTRL+A
+    adb("shell", "input", "keyevent", "67")
+    field = focused_field()
+    left = field.get("text", "") if field is not None else "?"
+    journal({"cmd": "clearfield", "left": left})
+    print(f"cleared; field now reads {left!r}" if left != "?" else "cleared (UI tree unavailable to confirm)")
 
 
 def cmd_key(name):
@@ -350,7 +457,8 @@ def cmd_step(step_id, *note):
     steps = d / "steps"
     steps.mkdir(exist_ok=True)
     n = len(list(steps.iterdir())) + 1
-    sd = steps / f"{n:03d}-{step_id}"
+    tag = f"{device_alias()}-" if len(run_devices()) > 1 else ""
+    sd = steps / f"{n:03d}-{tag}{step_id}"
     sd.mkdir()
 
     png = adb("exec-out", "screencap", "-p", binary=True)
@@ -368,7 +476,7 @@ def cmd_step(step_id, *note):
         ui_error = str(e)
     (sd / "visible.txt").write_text("\n".join(texts) + "\n")
 
-    since_file = d / ".log_since"
+    since_file = d / f".log_since-{device_alias()}"
     since = since_file.read_text() if since_file.exists() else None
     now = device_time()
     pid = app_pid()
@@ -383,7 +491,7 @@ def cmd_step(step_id, *note):
     entry = {"cmd": "step", "step": step_id, "dir": sd.name, "device_time": now,
              "foreground": fg, "note": " ".join(note), "sha256": files, "ui_error": ui_error}
     journal(entry)
-    print(f"== step {step_id} -> {sd.relative_to(QA)}  (device time {now})")
+    print(f"== step {step_id} [{device_alias()}] -> {sd.relative_to(QA)}  (device time {now})")
     print(f"   screen.png sha256 {files['screen.png'][:16]}…")
     if ui_error:
         print(f"   UI tree unavailable: {ui_error}")
@@ -400,7 +508,12 @@ def cmd_step(step_id, *note):
 
 def cmd_end():
     d = run_dir()
-    adb("reverse", "--remove-all", check=False)
+    global _serial
+    for serial in run_devices().values() or [None]:
+        if serial in attached():
+            _serial = serial
+            adb("reverse", "--remove-all", check=False)
+    _serial = None
     manifest = {str(p.relative_to(d)): sha(p) for p in sorted(d.rglob("*"))
                 if p.is_file() and p.name not in ("MANIFEST.json", "journal.jsonl")}
     (d / "MANIFEST.json").write_text(json.dumps(manifest, indent=2))
@@ -411,7 +524,7 @@ def cmd_end():
 
 
 COMMANDS = {
-    "start": (cmd_start, "start <run-id>            pin the device, record it, set up port forwarding"),
+    "start": (cmd_start, "start <run-id> [alias=serial …]  pin the device(s), record them, set up port forwarding"),
     "launch": (cmd_launch, "launch                    open Yasante (dev client -> local Metro)"),
     "recover": (cmd_recover, "recover                   bring Yasante back to the front"),
     "stop": (cmd_stop, "stop                      force-stop Yasante"),
@@ -420,6 +533,7 @@ COMMANDS = {
     "tap": (cmd_tap, "tap <x> <y>               tap a point (app or its permission prompt only)"),
     "tapon": (cmd_tapon, "tapon <text> [--exact] [--nth=N]  tap the element with that text/label/testID"),
     "type": (cmd_type, "type <text>               type into the focused field (ASCII)"),
+    "clearfield": (cmd_clearfield, "clearfield                empty the focused field"),
     "key": (cmd_key, "key BACK|ENTER|TAB|DEL|ESCAPE"),
     "swipe": (cmd_swipe, "swipe up|down|left|right"),
     "find": (cmd_find, "find <text>               list on-screen elements matching text"),
@@ -430,6 +544,10 @@ COMMANDS = {
 
 
 def main(argv):
+    global _alias
+    _alias = os.environ.get("QADB_DEVICE") or None
+    if argv[:1] == ["-d"] and len(argv) > 1:
+        _alias, argv = argv[1], argv[2:]
     if not argv or argv[0] in ("help", "-h", "--help") or argv[0] not in COMMANDS:
         print(__doc__)
         for _, (_, usage) in COMMANDS.items():

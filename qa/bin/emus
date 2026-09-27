@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# The test emulators: emulator-5554 "client", emulator-5556 "stylist", emulator-5558 "client2".
+#
+#   qa/bin/emus up [--wipe] [N]  boot the first N (default 3; --wipe: factory-reset, reinstall the app)
+#   qa/bin/emus down          shut them all down
+#   qa/bin/emus status        what's running, and whether Yasante is installed
+#
+# The dev-client APK is read from qa/apk/dev-client.apk (gitignored; copy TheGyam's
+# latest build there). Only emulators are ever touched here, never a real phone.
+set -euo pipefail
+
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+SDK="${ANDROID_HOME:-$HOME/Android/Sdk}"
+EMU="$SDK/emulator/emulator"
+AVDM="$(ls -d "$SDK"/cmdline-tools/*/bin 2>/dev/null | head -1)/avdmanager"
+APK="$QA/apk/dev-client.apk"
+IMAGE="system-images;android-34;google_apis;x86_64"
+declare -A AVD=([5554]=Pixel_8_API_34 [5556]=Pixel_8_API_34_B [5558]=Pixel_8_API_34_C)
+declare -A ROLE=([5554]=client [5556]=stylist [5558]=client2)
+ALL=(5554 5556 5558)
+
+ensure_avd() { # name
+  "$EMU" -list-avds | grep -qx "$1" && return
+  echo "creating AVD $1"
+  echo no | "$AVDM" create avd -n "$1" -k "$IMAGE" -d pixel_8 >/dev/null
+  # Same settings as the first one, minus the hardware keyboard (it made typing flaky).
+  sed -i 's/^hw.keyboard=.*/hw.keyboard=no/' "$HOME/.android/avd/$1.avd/config.ini"
+}
+
+booted() { # serial
+  [[ "$(adb -s "$1" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == 1 ]]
+}
+
+up() {
+  local wipe=${1:-} n=${2:-3}
+  local ports=("${ALL[@]:0:$n}")
+  for port in "${ports[@]}"; do
+    local name=${AVD[$port]} serial="emulator-$port"
+    ensure_avd "$name"
+    sed -i 's/^hw.keyboard=.*/hw.keyboard=no/' "$HOME/.android/avd/$name.avd/config.ini"
+    if booted "$serial" && [[ -z "$wipe" ]]; then echo "$serial already up"; continue; fi
+    systemctl --user stop "yasante-emu-$port" 2>/dev/null || true
+    systemctl --user reset-failed "yasante-emu-$port" 2>/dev/null || true
+    systemd-run --user --quiet --unit="yasante-emu-$port" --collect \
+      "$EMU" -avd "$name" -port "$port" -no-snapshot-save -no-boot-anim -no-audio \
+      ${wipe:+-wipe-data}
+  done
+  for port in "${ports[@]}"; do
+    local serial="emulator-$port"
+    for _ in $(seq 120); do booted "$serial" && break; sleep 2; done
+    booted "$serial" || { echo "$serial did not boot"; exit 1; }
+    # Emulator-only settings: no autofill/save-password prompts, screen stays on.
+    adb -s "$serial" shell settings put secure autofill_service null >/dev/null 2>&1 || true
+    adb -s "$serial" shell svc power stayon true >/dev/null 2>&1 || true
+    # London time, like the stylists: the app shows booking times in Europe/London.
+    adb -s "$serial" root >/dev/null 2>&1 || true; sleep 2
+    adb -s "$serial" shell "settings put global auto_time_zone 0; setprop persist.sys.timezone Europe/London" >/dev/null 2>&1 || true
+    if ! adb -s "$serial" shell pm path com.yasante.app >/dev/null 2>&1; then
+      [[ -f "$APK" ]] || { echo "no APK at $APK — copy the dev-client build there"; exit 1; }
+      adb -s "$serial" install -r "$APK" >/dev/null
+    fi
+    echo "$serial (${ROLE[$port]}) up; Yasante $(adb -s "$serial" shell dumpsys package com.yasante.app | grep -m1 -o 'versionName=[^ ]*')"
+  done
+}
+
+down() {
+  for port in "${ALL[@]}"; do
+    adb -s "emulator-$port" emu kill >/dev/null 2>&1 || true
+    systemctl --user stop "yasante-emu-$port" 2>/dev/null || true
+  done
+  echo "emulators down"
+}
+
+status() {
+  for port in "${ALL[@]}"; do
+    local serial="emulator-$port"
+    if booted "$serial"; then
+      echo "$serial (${ROLE[$port]}): up, $(adb -s "$serial" shell pm path com.yasante.app >/dev/null 2>&1 && echo 'Yasante installed' || echo 'Yasante MISSING')"
+    else
+      echo "$serial (${ROLE[$port]}): down"
+    fi
+  done
+}
+
+case "${1:-}" in
+  up) shift; w=""; [[ "${1:-}" == --wipe ]] && { w=wipe; shift; }; up "$w" "${1:-3}" ;;
+  down) down ;;
+  status) status ;;
+  *) sed -n '2,9p' "$0"; exit 2 ;;
+esac
