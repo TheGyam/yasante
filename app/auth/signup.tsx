@@ -86,7 +86,8 @@ export default function SignupScreen() {
       });
       setConsent('terms', true);
       setConsent('privacy', true);
-      if (stylist) useModeStore.getState().setMode('stylist');
+      // Stylist mode starts once sign-up has closed, not under it (see startAs).
+      if (stylist) useModeStore.getState().setStartAs('stylist');
       haptics.success();
       // Signed in now; the flow stays open until the email is confirmed.
       router.push('/auth/verify-email');
