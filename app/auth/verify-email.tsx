@@ -11,7 +11,6 @@ import {
   useVerifyEmail,
 } from '@/features/auth';
 import { haptics } from '@/shared/lib/haptics';
-import { useRouter } from '@/shared/lib/navigation';
 import { EASE_OUT, makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { CodeInput, type CodeStatus } from '@/shared/ui/CodeInput';
@@ -38,7 +37,6 @@ const useStyles = makeStyles(() => ({
  */
 export default function VerifyEmailScreen() {
   const styles = useStyles();
-  const router = useRouter();
   const { user, logout } = useAuth();
   const start = useStartEmailVerification();
   const verify = useVerifyEmail();
