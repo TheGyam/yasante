@@ -76,6 +76,20 @@ defineMocks({
     }).slice(0, limit);
   },
 
+  'POST /api/products/': request => {
+    requireAccount(request);
+    const { brand, name, category } = request.body ?? {};
+    const same = CATALOGUE.find(
+      p =>
+        p.brand.toLowerCase() === String(brand).toLowerCase() &&
+        p.name.toLowerCase() === String(name).toLowerCase()
+    );
+    if (same) return same;
+    const product: Product = { id: `prd_own_${Date.now()}`, brand, name, category, pending: true };
+    CATALOGUE.push(product);
+    return product;
+  },
+
   // Any barcode ending in 0 is unknown; the rest map onto the catalogue.
   'GET /api/products/barcode/:code/': request => {
     const code = String(request.params.code).replace(/\D/g, '');

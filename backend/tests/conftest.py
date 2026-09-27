@@ -17,6 +17,12 @@ _seq = itertools.count(1)
 
 
 @pytest.fixture(autouse=True)
+def _no_open_beauty_facts(monkeypatch):
+    # Tests never reach the internet: Open Beauty Facts knows nothing unless a test says so.
+    monkeypatch.setattr("apps.shelf.openbeauty._get", lambda *args, **kwargs: None)
+
+
+@pytest.fixture(autouse=True)
 def _clean_cache():
     # Rate-limit counters and idempotency keys live in the cache.
     cache.clear()

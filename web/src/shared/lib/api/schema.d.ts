@@ -1157,10 +1157,19 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description GET /api/products/?q=&limit= — every word must match brand, name or category. */
+        /**
+         * @description GET /api/products/?q=&limit= — every word must match brand, name or category. When
+         *     our catalogue has little for it, Open Beauty Facts is asked as well.
+         *     POST /api/products/ — add one nobody has yet: hers at once, everyone's once approved.
+         */
         get: operations["products_list"];
         put?: never;
-        post?: never;
+        /**
+         * @description GET /api/products/?q=&limit= — every word must match brand, name or category. When
+         *     our catalogue has little for it, Open Beauty Facts is asked as well.
+         *     POST /api/products/ — add one nobody has yet: hers at once, everyone's once approved.
+         */
+        post: operations["products_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2699,11 +2708,19 @@ export interface components {
             /** Format: date-time */
             readonly createdAt: string;
         };
+        /** @description POST /api/products/ — a product she can't find, added by her. */
+        ProductCreateRequestRequest: {
+            brand: string;
+            name: string;
+            category: components["schemas"]["CategoryEnum"];
+            barcode?: string;
+        };
         ProductResponse: {
             id: string;
             brand: string;
             name: string;
             category: components["schemas"]["CategoryEnum"];
+            pending?: boolean;
         };
         Proposal: {
             /** Format: date-time */
@@ -5004,6 +5021,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductResponse"][];
+                };
+            };
+        };
+    };
+    products_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductCreateRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponse"];
                 };
             };
         };

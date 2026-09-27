@@ -13,26 +13,26 @@ def product(db):
 
 
 def test_a_known_barcode_comes_from_the_catalogue(api, make_user, product, monkeypatch):
-    from apps.shelf import barcodes
+    from apps.shelf import openbeauty
 
-    monkeypatch.setattr(barcodes, "_fetch", lambda code: pytest.fail("shouldn't look elsewhere"))
+    monkeypatch.setattr(openbeauty, "product", lambda code: pytest.fail("shouldn't look elsewhere"))
     found = api(make_user()).get("/api/products/barcode/0817513010034/")
     assert found.status_code == 200
     assert found.json()["product"]["id"] == str(product.pk) and found.json()["source"] == "catalogue"
 
 
 def test_an_unknown_barcode_is_looked_up_once_then_kept(api, make_user, monkeypatch):
-    from apps.shelf import barcodes
+    from apps.shelf import openbeauty
     from apps.shelf.models import Product
 
     calls = []
 
     def fake(code):
         calls.append(code)
-        return {"status": 1, "product": {"product_name": "Curl Enhancing Smoothie", "brands": "SheaMoisture, Sundial",
-                                          "categories_tags": ["en:hair-styling-creams"], "ingredients_text": "Water, shea butter"}}
+        return {"product_name": "Curl Enhancing Smoothie", "brands": "SheaMoisture, Sundial",
+                "categories_tags": ["en:hair-styling-creams"], "ingredients_text": "Water, shea butter"}
 
-    monkeypatch.setattr(barcodes, "_fetch", fake)
+    monkeypatch.setattr(openbeauty, "product", fake)
     me = api(make_user())
     first = me.get("/api/products/barcode/764302290087/").json()
     assert first["source"] == "open_beauty_facts"
@@ -43,9 +43,9 @@ def test_an_unknown_barcode_is_looked_up_once_then_kept(api, make_user, monkeypa
 
 
 def test_nobody_knows_it_or_it_isnt_a_barcode(api, make_user, monkeypatch):
-    from apps.shelf import barcodes
+    from apps.shelf import openbeauty
 
-    monkeypatch.setattr(barcodes, "_fetch", lambda code: {"status": 0})
+    monkeypatch.setattr(openbeauty, "product", lambda code: None)
     me = api(make_user())
     missing = me.get("/api/products/barcode/5000000000001/")
     assert missing.status_code == 404 and "by name" in missing.json()["message"]

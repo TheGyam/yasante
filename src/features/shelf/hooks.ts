@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { shelfApi } from './api';
-import type { ShelfStatus } from './types';
+import type { ShelfStatus, ProductDraft } from './types';
 import { track } from '@/shared/lib/analytics';
 
 const KEY = 'shelf';
@@ -34,6 +34,22 @@ function useRefresh() {
 /** Looks up a scanned barcode. A mutation: each scan is its own question. */
 export function useProductByBarcode() {
   return useMutation({ mutationFn: shelfApi.byBarcode });
+}
+
+/** Adds a product nobody has yet, then puts it on their shelf. */
+export function useCreateProduct() {
+  const onSuccess = useRefresh();
+  return useMutation({
+    mutationFn: async (draft: ProductDraft) => {
+      const product = await shelfApi.create(draft);
+      await shelfApi.add(product.id).catch(() => undefined); // Already on it is fine.
+      return product;
+    },
+    onSuccess: product => {
+      track('add_product', { category: product.category, pending: !!product.pending });
+      return onSuccess();
+    },
+  });
 }
 
 export function useAddToShelf() {

@@ -235,6 +235,7 @@ function RootNavigator() {
           <Stack.Screen name="shelf/index" />
           <Stack.Screen name="shelf/add" options={modal} />
           <Stack.Screen name="shelf/scan" options={modal} />
+          <Stack.Screen name="shelf/new-product" options={modal} />
           <Stack.Screen name="shelf/[id]" />
           <Stack.Screen name="collections/[id]" />
           <Stack.Screen name="collections/new" options={modal} />

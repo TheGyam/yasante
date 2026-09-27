@@ -78,12 +78,15 @@ export default function ScanProductScreen() {
   const { data: shelf = [] } = useShelf();
   const [found, setFound] = useState<Found>();
   const [added, setAdded] = useState(false);
+  // The barcode behind a "we don't know it", so adding it keeps the code.
+  const [lastCode, setLastCode] = useState<string>();
   // One scan at a time: the camera reports the same code many times a second.
   const busy = useRef(false);
 
   const onScanned = async ({ data }: BarcodeScanningResult) => {
     if (busy.current || found) return;
     busy.current = true;
+    setLastCode(data.replace(/[^0-9]/g, '') || undefined);
     haptics.light();
     try {
       const result = await lookup.mutateAsync(data);
@@ -207,8 +210,16 @@ export default function ScanProductScreen() {
               </Text>
             </View>
             <View style={styles.actions}>
+              {lastCode ? (
+                <Button
+                  label="Add it yourself"
+                  onPress={() => router.replace(`/shelf/new-product?barcode=${lastCode}`)}
+                  fullWidth
+                />
+              ) : null}
               <Button
                 label="Search by name"
+                variant={lastCode ? 'secondary' : 'primary'}
                 onPress={() => router.replace('/shelf/add')}
                 fullWidth
               />

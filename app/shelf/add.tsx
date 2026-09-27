@@ -30,6 +30,7 @@ const useStyles = makeStyles(t => ({
     paddingBottom: space.md,
   },
   field: { flex: 1 },
+  addOwn: { paddingVertical: space.lg, alignItems: 'center' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -61,6 +62,9 @@ export default function AddToShelfScreen() {
   const add = useAddToShelf();
   // Ticked the moment she taps, rather than when the shelf re-reads.
   const [added, setAdded] = useState<Set<string>>(new Set());
+
+  const addOwn = () =>
+    router.push(`/shelf/new-product${q.trim() ? `?name=${encodeURIComponent(q.trim())}` : ''}`);
 
   const onShelf = (product: Product) =>
     added.has(product.id) || shelf.some(item => item.product.id === product.id);
@@ -128,6 +132,7 @@ export default function AddToShelfScreen() {
               <View style={styles.text}>
                 <Text variant="caption" tone="tertiary">
                   {item.brand} · {CATEGORY_LABELS[item.category]}
+                  {item.pending ? ' · Added by you, awaiting review' : ''}
                 </Text>
                 <Text variant="callout" numberOfLines={2}>
                   {item.name}
@@ -150,9 +155,25 @@ export default function AddToShelfScreen() {
             <EmptyState
               icon={SearchX}
               title="Not in the catalogue yet"
-              message="Try the brand name on its own, or scan the barcode on the bottle."
+              message="Try the brand name on its own, scan the barcode, or add it yourself."
+              actionLabel="Add it yourself"
+              onAction={addOwn}
             />
           )
+        }
+        ListFooterComponent={
+          results.length > 0 && q.trim() ? (
+            <PressableScale
+              onPress={addOwn}
+              accessibilityRole="button"
+              style={styles.addOwn}
+              testID="shelf-add-own"
+            >
+              <Text variant="subhead" tone="accent">
+                Can’t find it? Add it yourself
+              </Text>
+            </PressableScale>
+          ) : null
         }
         contentContainerStyle={{ paddingHorizontal: GUTTER, paddingBottom: space.xxl }}
       />
