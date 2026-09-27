@@ -6,7 +6,15 @@ export const shelfApi = {
   search: async (q: string) =>
     (await apiClient.get<Product[]>('/api/products/', { params: { q, limit: 30 } })).data,
 
-  /** GET /api/shelf/ — hers, most recently started first. */
+  /** GET /api/products/barcode/:code/ — the product behind a scanned barcode. */
+  byBarcode: async (code: string) =>
+    (
+      await apiClient.get<{ product: Product; source: 'catalogue' | 'open_beauty_facts' }>(
+        `/api/products/barcode/${encodeURIComponent(code)}/`
+      )
+    ).data,
+
+  /** GET /api/shelf/ — theirs, most recently started first. */
   list: async () => (await apiClient.get<ShelfItem[]>('/api/shelf/')).data,
 
   /** POST /api/shelf/ — she's started using it. */

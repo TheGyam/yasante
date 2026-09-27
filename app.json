@@ -14,10 +14,7 @@
         "CADisableMinimumFrameDurationOnPhone": true,
         "ITSAppUsesNonExemptEncryption": false
       },
-      "associatedDomains": [
-        "applinks:yasante.com",
-        "applinks:www.yasante.com"
-      ]
+      "associatedDomains": ["applinks:yasante.com", "applinks:www.yasante.com"]
     },
     "android": {
       "adaptiveIcon": {
@@ -28,10 +25,7 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.yasante.app",
       "googleServicesFile": "./google-services.json",
-      "permissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.CAMERA"
-      ],
+      "permissions": ["android.permission.RECORD_AUDIO", "android.permission.CAMERA"],
       "softwareKeyboardLayoutMode": "resize",
       "intentFilters": [
         {
@@ -47,10 +41,7 @@
               "host": "www.yasante.com"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
@@ -63,7 +54,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow Yasante to use your photos for your boards and profile picture.",
-          "cameraPermission": "Allow Yasante to use your camera for your boards and profile picture."
+          "cameraPermission": "Allow Yasante to use your camera to take photos and scan product barcodes."
         }
       ],
       [
@@ -89,6 +80,13 @@
             "image": "./assets/splash-wordmark-dark.png",
             "backgroundColor": "#0B0709"
           }
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Yasante to use your camera to take photos and scan product barcodes.",
+          "recordAudioAndroid": false
         }
       ]
     ],

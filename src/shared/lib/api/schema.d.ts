@@ -1167,6 +1167,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/products/barcode/{code}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/products/barcode/<code>/ — the product behind a scanned barcode. */
+        get: operations["products_barcode_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/reports/mine/": {
         parameters: {
             query?: never;
@@ -1732,6 +1749,10 @@ export interface components {
             ];
             blocked: string[];
         };
+        BarcodeResult: {
+            product: components["schemas"]["ProductResponse"];
+            source: components["schemas"]["SourceEnum"];
+        };
         /** @enum {unknown} */
         BlankEnum: "";
         Block: {
@@ -2098,6 +2119,11 @@ export interface components {
             token: string;
             platform: string;
         };
+        /**
+         * @description * `hair` - Hair
+         * @enum {string}
+         */
+        DomainEnum: "hair";
         /** @description POST /api/auth/email/start/ — optionally to a corrected address. */
         EmailStartRequest: {
             /** Format: email */
@@ -2212,6 +2238,7 @@ export interface components {
          *     left out of the JSON (the renderer drops empty values), so say so in the schema.
          */
         HairProfileResponse: {
+            domain: components["schemas"]["DomainEnum"];
             texture?: components["schemas"]["TextureEnum"] | components["schemas"]["BlankEnum"];
             length?: components["schemas"]["LengthEnum"] | components["schemas"]["BlankEnum"];
             shrunkLength?: components["schemas"]["ShrunkLengthEnum"] | components["schemas"]["BlankEnum"];
@@ -2865,6 +2892,12 @@ export interface components {
             /** Format: date */
             to: string;
         };
+        /**
+         * @description * `catalogue` - catalogue
+         *     * `open_beauty_facts` - open_beauty_facts
+         * @enum {string}
+         */
+        SourceEnum: "catalogue" | "open_beauty_facts";
         StartedOnTimeRequestRequest: {
             onTime: boolean;
         };
@@ -4945,6 +4978,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductResponse"][];
+                };
+            };
+        };
+    };
+    products_barcode_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BarcodeResult"];
                 };
             };
         };

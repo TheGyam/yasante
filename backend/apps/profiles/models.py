@@ -6,6 +6,7 @@ import uuid
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
+from apps.common.domains import domain_field
 from django.db import models
 
 # ── Choices ──────────────────────────────────────────
@@ -78,6 +79,7 @@ class HairProfile(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hair_profile"
     )
+    domain = domain_field()
     texture = models.CharField(
         max_length=20, choices=TEXTURE_CHOICES, blank=True, default=""
     )
@@ -138,6 +140,7 @@ class HairProfileSnapshot(models.Model):
         on_delete=models.CASCADE,
         related_name="hair_snapshots",
     )
+    domain = domain_field()
     # Mirror all hair profile fields
     texture = models.CharField(max_length=20, blank=True, default="")
     length = models.CharField(max_length=20, blank=True, default="")
@@ -261,6 +264,7 @@ class HairLog(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hair_log")
     kind = models.CharField(max_length=20, choices=KIND_CHOICES, db_index=True)
+    domain = domain_field()
     at = models.DateTimeField(db_index=True)
     local_at = models.CharField(max_length=40, blank=True, default="")
     local_weekday = models.PositiveSmallIntegerField(null=True, blank=True)

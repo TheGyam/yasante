@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { Check, Plus, SearchX } from 'lucide-react-native';
+import { Check, Plus, ScanBarcode, SearchX } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
   CATEGORY_LABELS,
@@ -11,16 +11,25 @@ import {
   type Product,
 } from '@/features/shelf';
 import { haptics } from '@/shared/lib/haptics';
+import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { notify } from '@/shared/ui/dialog';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { IconButton } from '@/shared/ui/IconButton';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen } from '@/shared/ui/Screen';
 import { SearchField } from '@/shared/ui/SearchField';
 import { Text } from '@/shared/ui/Text';
 
 const useStyles = makeStyles(t => ({
-  search: { paddingHorizontal: GUTTER, paddingBottom: space.md },
+  search: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    paddingHorizontal: GUTTER,
+    paddingBottom: space.md,
+  },
+  field: { flex: 1 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -45,6 +54,7 @@ const useStyles = makeStyles(t => ({
 export default function AddToShelfScreen() {
   const styles = useStyles();
   const theme = useTheme();
+  const router = useRouter();
   const [q, setQ] = useState('');
   const { data: results = [], isLoading } = useProductSearch(q);
   const { data: shelf = [] } = useShelf();
@@ -77,14 +87,25 @@ export default function AddToShelfScreen() {
   return (
     <Screen title="Add to your shelf" modal scroll={false} padded={false} testID="shelf-add-screen">
       <View style={styles.search}>
-        <SearchField
-          placeholder="Brand or product"
-          value={q}
-          onChangeText={setQ}
-          autoFocus
-          autoCorrect={false}
-          returnKeyType="search"
-          testID="shelf-search"
+        <View style={styles.field}>
+          <SearchField
+            placeholder="Brand or product"
+            value={q}
+            onChangeText={setQ}
+            autoFocus
+            autoCorrect={false}
+            returnKeyType="search"
+            testID="shelf-search"
+          />
+        </View>
+        {/* Quicker than typing: point the camera at the barcode. */}
+        <IconButton
+          icon={ScanBarcode}
+          variant="accent"
+          size={44}
+          accessibilityLabel="Scan a barcode"
+          onPress={() => router.push('/shelf/scan')}
+          testID="shelf-scan"
         />
       </View>
       <FlashList
@@ -129,7 +150,7 @@ export default function AddToShelfScreen() {
             <EmptyState
               icon={SearchX}
               title="Not in the catalogue yet"
-              message="Try the brand name on its own. We add products people ask for."
+              message="Try the brand name on its own, or scan the barcode on the bottle."
             />
           )
         }
