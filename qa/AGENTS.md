@@ -62,10 +62,12 @@ database edits (other than a plan's `timewarp`), no git commands, no raw `adb` o
 
 - Every numbered step in a plan ends with `qadb step <STEP-ID>`. That writes
   `screen.png`, `ui.xml` (the app's UI tree), `visible.txt` and `app.log`, hashes them
-  into `qa/runs/<RUN>/journal.jsonl`, and prints a summary.
-- **Paste that printed summary verbatim into your report** under the step. Do not
-  shorten, reword or "clean up" it. Claude compares it byte for byte with
-  `visible.txt` and the journal.
+  into `qa/runs/<RUN>/journal.jsonl`, prints a summary, and **opens that step's section
+  in `qa/reports/<RUN>.md` with the summary already written in**.
+- **Before the next step, fill in the section `qadb step` just opened:** the verdict,
+  the checks' commands and raw output, and observed vs expected. Never edit, shorten or
+  retype the summary `qadb` wrote. Claude compares it with `visible.txt` and the journal.
+  If `qadb` flags a reused step ID, say in that section why you captured again.
 - When a step says **server check**, paste the exact `grep` command and its raw output.
   When it says **db check**, paste the `dbcheck` output.
 - Never edit, delete, rename or re-create anything under `qa/runs/`. If you captured
@@ -126,8 +128,9 @@ was open went nowhere.
 
 ## 7. Report
 
-Write `qa/reports/<RUN>.md` from `qa/reports/TEMPLATE.md`. Fill in every step of the
-plan in order, including the ones you did not run. Finish with `qadb end` and
+The first `qadb step` creates `qa/reports/<RUN>.md` from `qa/reports/TEMPLATE.md`; each
+step adds its own section. Fill in the header, the summary table and each section as
+you go, and add a section by hand for every step you did not run (verdict NOT RUN). Finish with `qadb end` and
 `qa/bin/env-down`, and paste the output of `qadb end` at the bottom of the report.
 
 Report each step. Don't add an overall verdict, certificate or "victory" summary: Claude

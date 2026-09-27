@@ -490,20 +490,66 @@ def cmd_step(step_id, *note):
     files = {p.name: sha(p) for p in sorted(sd.iterdir())}
     entry = {"cmd": "step", "step": step_id, "dir": sd.name, "device_time": now,
              "foreground": fg, "note": " ".join(note), "sha256": files, "ui_error": ui_error}
+    reused = step_used(d, step_id)
     journal(entry)
-    print(f"== step {step_id} [{device_alias()}] -> {sd.relative_to(QA)}  (device time {now})")
-    print(f"   screen.png sha256 {files['screen.png'][:16]}…")
+    out = [f"== step {step_id} [{device_alias()}] -> {sd.relative_to(QA)}  (device time {now})",
+           f"   screen.png sha256 {files['screen.png'][:16]}…"]
     if ui_error:
-        print(f"   UI tree unavailable: {ui_error}")
+        out.append(f"   UI tree unavailable: {ui_error}")
     if ids:
-        print(f"   testIDs (tapon targets): {', '.join(ids)}")
-    print("   visible text:")
-    for t in texts:
-        print(f"     | {t}")
+        out.append(f"   testIDs (tapon targets): {', '.join(ids)}")
+    out.append("   visible text:")
+    out += [f"     | {t}" for t in texts]
     errs = [l for l in log.splitlines() if re.search(r"\b(E|F)/|Error|Exception|Warning", l)]
-    print(f"   app log: {len(log.splitlines())} lines, {len(errs)} error/warning lines")
-    for l in errs[:15]:
-        print(f"     ! {l[:200]}")
+    out.append(f"   app log: {len(log.splitlines())} lines, {len(errs)} error/warning lines")
+    out += [f"     ! {l[:200]}" for l in errs[:15]]
+    print("\n".join(out))
+    report_step(d, f"{tag}{step_id}", out, reused)
+    print(f"   report: section {tag}{step_id} opened in {report_path(d).relative_to(QA)}"
+          " — fill in its verdict and what you saw before the next step")
+    if reused:
+        print(f"   WARNING: step ID {step_id} was already used on this device; flagged in the report")
+
+
+def step_used(d, step_id):
+    """True if this device already captured a step with this ID in this run."""
+    f = d / "journal.jsonl"
+    if not f.exists():
+        return False
+    alias = device_alias() if len(run_devices()) > 1 else None
+    for line in f.read_text().splitlines():
+        e = json.loads(line)
+        if e.get("cmd") == "step" and e.get("step") == step_id and e.get("device") == alias:
+            return True
+    return False
+
+
+def report_path(d):
+    return QA / "reports" / f"{d.name}.md"
+
+
+def report_step(d, heading, summary, reused):
+    """Opens the step's section in qa/reports/<run>.md, with the capture summary written in
+    verbatim, so the report grows as the run goes and can't be rewritten from memory. The
+    executor fills in the verdict, the checks and what it saw."""
+    rep = report_path(d)
+    text = rep.read_text() if rep.exists() else ""
+    if not text.strip():
+        tpl = (QA / "reports" / "TEMPLATE.md").read_text()
+        plan = d.name.rsplit("-", 2)[0]
+        head = tpl.split("## Steps")[0].replace("<RUN>", d.name).replace("<PLAN>", plan)
+        text = head + "## Steps\n\n" + tpl[tpl.index("## Other observations"):]
+    flag = ("**qadb:** this step ID was already used on this device. Say why it was "
+            "captured again, and use a suffix (`S07b`) next time.\n\n") if reused else ""
+    section = (f"### {heading}\n**Verdict:** \n\n{flag}"
+               "`qadb step` output (written by qadb; do not edit):\n```\n"
+               + "\n".join(summary) + "\n```\n\n"
+               "Checks (server / db / mailbox commands and raw output, pasted):\n```\n```\n\n"
+               "Observed vs expected:\n\n---\n\n")
+    marker = "## Other observations"
+    at = text.find(marker, text.find("## Steps"))
+    text = text[:at] + section + text[at:] if at >= 0 else text.rstrip("\n") + "\n\n" + section
+    rep.write_text(text)
 
 
 def cmd_end():
