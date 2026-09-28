@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 
-from .models import ContentItem
+from .models import ContentItem, Tip
 
 
 @admin.register(ContentItem)
@@ -11,3 +11,10 @@ class ContentItemAdmin(admin.ModelAdmin):
     list_filter = ("kind", "published")
     search_fields = ("title", "body")
     prepopulated_fields = {"slug": ("title",)}
+
+
+@admin.register(Tip)
+class TipAdmin(admin.ModelAdmin):
+    list_display = ("text", "active", "sort_order")
+    list_editable = ("active", "sort_order")
+    search_fields = ("text",)

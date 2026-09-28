@@ -143,6 +143,42 @@ def _checks_on_setup(user, profile):
         record_check(user.pk, "proof_photo", "pending", profile.proof_photo_uri)
 
 
+def _number(value, default):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _origin(params, viewer):
+    """(latitude, longitude) to measure from: ?postcode=, or ?near=me and their hair profile."""
+    from apps.common.geo import locate
+
+    if params.get("postcode"):
+        return locate(params["postcode"])
+    if params.get("near") == "me" and viewer is not None:
+        hair = getattr(viewer, "hair_profile", None)
+        if hair is None:
+            return None
+        if hair.latitude is not None:
+            return (hair.latitude, hair.longitude)
+        return locate(hair.postcode) or locate(hair.area)
+    return None
+
+
+def _place(profile):
+    """Put a stylist on the map: their address's postcode, or else their area."""
+    from apps.common.geo import locate, postcode_in
+
+    point = locate(postcode_in(profile.address)) or locate(profile.base_area)
+    profile.latitude, profile.longitude = point or (None, None)
+    StylistProfile.objects.filter(pk=profile.pk).update(latitude=profile.latitude, longitude=profile.longitude)
+
+
+# How far clients will usually go for a style, in miles; they can widen it.
+NEAR_MILES = 10
+
+
 def _for_style(profiles, slug, name, viewer):
     """
     For a list of who does one style: each stylist's service for it and what it starts
@@ -250,17 +286,41 @@ class StylistCreateView(APIView):
         blocked = blocked_account_ids(viewer) if viewer else set()
         if blocked:
             qs = qs.exclude(account_id__in=blocked)
-        qs = list(qs.order_by("-verification_tier", "-rating_count", "display_name")[:20])
+        # Near someone: where they asked about, or where their hair profile says.
+        origin = _origin(params, viewer)
+        qs = list(qs.order_by("-verification_tier", "-rating_count", "display_name")[: 200 if origin else 20])
+        away = {}
+        if origin:
+            from apps.common.geo import miles
+
+            # Pages from before the map: placed now, a few at a time (each is cached).
+            for p in [p for p in qs if p.latitude is None][:10]:
+                _place(p)
+            within = params.get("within", "")
+            radius = None if within == "any" else _number(within, NEAR_MILES)
+            kept = []
+            for p in qs:
+                if p.latitude is None:
+                    continue
+                gap = miles(origin, (p.latitude, p.longitude))
+                # A stylist who travels reaches them if they're inside the stylist's radius.
+                reach = max(radius or 0, p.travel_radius_miles or 0) if "mobile" in (p.service_models or []) else radius
+                if radius is None or gap <= reach:
+                    away[p.pk] = gap
+                    kept.append(p)
+            qs = kept
         extra = _for_style(qs, style, name, viewer) if style else {}
-        if style:
-            # Work in this style first, then near the viewer, then checked and well rated.
-            near = (getattr(getattr(viewer, "hair_profile", None), "area", "") or "").lower()
+        for pk, gap in away.items():
+            extra.setdefault(pk, {})["miles"] = round(gap, 1)
+        if style or origin:
+            # Their work in this style first, then the nearest, then checked and well rated.
             qs.sort(key=lambda p: (
-                not extra[p.pk].get("photo_uri"),
-                not (near and p.base_area.lower() == near),
+                not extra.get(p.pk, {}).get("photo_of_style"),
+                round(away.get(p.pk, 0)),
                 -p.verification_tier,
                 -(p.rating_count or 0),
             ))
+        qs = qs[:20]
         log_search(
             request,
             "stylists",
@@ -326,6 +386,7 @@ class StylistCreateView(APIView):
         except IntegrityError:
             return Response({"message": "That handle has just been taken"}, status=409)
 
+        _place(profile)
         return Response(StylistProfileSerializer(profile).data, status=201)
 
 
@@ -415,6 +476,8 @@ class StylistMeView(APIView):
                     PaymentMethod.objects.create(stylist=profile, **m)
             if update_fields:
                 profile.save(update_fields=update_fields + ["updated_at"])
+        if {"base_area", "address"} & set(update_fields):
+            _place(profile)
 
         profile.refresh_from_db()
         return Response(StylistProfileSerializer(profile).data)

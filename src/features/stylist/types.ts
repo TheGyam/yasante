@@ -205,6 +205,8 @@ export interface StylistSearchResult {
   lookId?: string;
   /** The photo shows this style, rather than just their recent work. */
   photoOfStyle?: boolean;
+  /** How far, when searching near someone. */
+  miles?: number;
 }
 
 export interface StylistSummary {

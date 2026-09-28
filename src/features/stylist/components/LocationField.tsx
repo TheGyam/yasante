@@ -7,31 +7,12 @@ import { Chip } from '@/shared/ui/Chip';
 import { Input } from '@/shared/ui/Input';
 import { Text } from '@/shared/ui/Text';
 import {
+  areasFor,
   joinAddress,
   POSTCODE,
   splitAddress as split,
   tidyPostcode as tidy,
 } from '@/shared/utils/postcode';
-
-/**
- * The names people use for where a postcode is: the constituency ("Peckham"), the
- * ward ("Rye Lane") and the borough ("Southwark"), from postcodes.io (free, no key,
- * UK open data). Long official names are left out; nobody says them.
- */
-async function areasFor(postcode: string): Promise<string[]> {
-  const response = await fetch(
-    `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode.replace(/\s+/g, ''))}`
-  );
-  if (response.status === 404) return [];
-  if (!response.ok) throw new Error('Postcode lookup failed');
-  const { result } = await response.json();
-  const names: string[] = [
-    result.parliamentary_constituency,
-    result.admin_ward,
-    result.admin_district,
-  ].filter((n): n is string => !!n && n.length <= 24 && !/ and |,/.test(n));
-  return [...new Set(names)];
-}
 
 const useStyles = makeStyles(() => ({
   group: { gap: space.sm },

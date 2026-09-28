@@ -166,3 +166,25 @@ class FavoriteToggleView(APIView):
             {"is_favorite": True, "favorite": present_favorite(favorite)},
             status=status.HTTP_200_OK,
         )
+
+
+class TipSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    text = serializers.CharField()
+
+
+@extend_schema_view(get=extend_schema(responses=TipSerializer(many=True)))
+class TipListView(APIView):
+    """GET /api/tips/ — the tips the home screen rotates through, one a day. Public."""
+
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        from .models import Tip
+
+        tips = [{"id": t.id, "text": t.text} for t in Tip.objects.filter(active=True)]
+        response = Response(tips)
+        # The same for everyone and slow to change.
+        response["Cache-Control"] = "public, max-age=3600"
+        return response

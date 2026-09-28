@@ -88,6 +88,7 @@ urlpatterns = API_DOCS + [
     path("api/media/<uuid:pk>/", PrivateMediaView.as_view(), name="private-media"),
     # The education library and favourites, on the paths the app calls.
     path("api/content/content/", content.ContentListView.as_view(), name="content-list-compat"),
+    path("api/tips/", content.TipListView.as_view(), name="tips"),
     path(
         "api/content/content/search/",
         content.ContentSearchView.as_view(),

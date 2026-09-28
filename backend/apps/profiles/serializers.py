@@ -11,7 +11,8 @@ from .models import HairProfile
 class HairProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = HairProfile
-        exclude = ["id", "user"]
+        # The map point is worked out here, never sent or set from outside.
+        exclude = ["id", "user", "latitude", "longitude"]
 
 
 class UserDetailSerializer(UserSerializer):
@@ -128,6 +129,7 @@ class HairProfileRequestSerializer(serializers.Serializer):
     scalp = serializers.ListField(child=serializers.CharField(), required=False)
     chemicals = serializers.ListField(child=serializers.CharField(), required=False)
     area = serializers.CharField(required=False, allow_blank=True)
+    postcode = serializers.CharField(required=False, allow_blank=True)
     budget = serializers.CharField(required=False, allow_blank=True)
     photo_uri = serializers.CharField(required=False, allow_blank=True)
     length_measured_at = serializers.DateTimeField(required=False, allow_null=True)

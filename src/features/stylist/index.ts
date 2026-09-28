@@ -21,7 +21,7 @@ export type {
   ServiceTiming,
   VerificationTier,
 } from './types';
-export { stylistApi } from './api';
+export { stylistApi, type Within } from './api';
 export * from './handle';
 export * from './priceList';
 export * from './setupDraft';

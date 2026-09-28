@@ -53,6 +53,7 @@ export function feedAspectRatio(id: string): number {
   return RATIOS[Math.abs(hash) % RATIOS.length];
 }
 
+/** Built in, for before the server's list has arrived (or with no signal). */
 const TIPS = [
   'Use a heat protectant before any heat styling. It’s the cheapest insurance your ends will ever get.',
   'Deep condition once a week. Consistency does more for moisture than any single product.',
@@ -61,11 +62,12 @@ const TIPS = [
   'Detangle wet hair with a wide-tooth comb or your fingers, starting from the ends.',
 ];
 
-/** The same tip all day, a different one tomorrow. */
-export function tipOfTheDay(date = new Date()): string {
+/** The same tip all day, a different one tomorrow, from the server's list when there is one. */
+export function tipOfTheDay(date = new Date(), tips: readonly string[] = TIPS): string {
+  const list = tips.length ? tips : TIPS;
   const start = new Date(date.getFullYear(), 0, 0).getTime();
   const day = Math.floor((date.getTime() - start) / 86_400_000);
-  return TIPS[day % TIPS.length];
+  return list[day % list.length];
 }
 
 export function shareContent(content: Pick<Content, 'title' | 'description'>) {

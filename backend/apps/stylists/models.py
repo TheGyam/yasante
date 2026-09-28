@@ -126,6 +126,10 @@ class StylistProfile(TimeStampedModel):
     # Private: copied onto a booking and shown to her client only once confirmed.
     address = models.CharField(max_length=500, blank=True, default="")
     travel_radius_miles = models.FloatField(null=True, blank=True)
+    # Where they are on the map, from the address's postcode or else the area: for
+    # "stylists near you". Never shown.
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     instagram_handle = models.CharField(max_length=50, blank=True, default="")
 
     # Policies

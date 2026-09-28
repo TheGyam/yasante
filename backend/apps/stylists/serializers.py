@@ -256,6 +256,8 @@ class StylistSearchResultSerializer(serializers.Serializer):
     photo_uri = optional(serializers.CharField())
     look_id = optional(serializers.CharField())
     photo_of_style = optional(serializers.BooleanField())
+    # With ?near=me or ?postcode=: how far, as the crow flies.
+    miles = optional(serializers.FloatField())
 
 
 class HandleCheckResponseSerializer(serializers.Serializer):
