@@ -86,5 +86,14 @@
   "private": true,
   "overrides": {
     "react-native-safe-area-context": "$react-native-safe-area-context"
+  },
+  "expo": {
+    "autolinking": {
+      "ios": {
+        "exclude": [
+          "@react-native-google-signin/google-signin"
+        ]
+      }
+    }
   }
 }
