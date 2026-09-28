@@ -393,7 +393,12 @@ export default function BookingScreen() {
             />
           )}
           {!!balanceLine(booking) && isLive(booking) && (
-            <ListRow title={balanceLine(booking)!} icon={Wallet} iconTone="neutral" testID="booking-balance" />
+            <ListRow
+              title={balanceLine(booking)!}
+              icon={Wallet}
+              iconTone="neutral"
+              testID="booking-balance"
+            />
           )}
         </Section>
 

@@ -18,7 +18,7 @@ import {
   useRefreshLooks,
   type Look,
 } from '@/features/looks';
-import { useUser } from '@/features/profile';
+import { NudgeHost, useUser } from '@/features/profile';
 import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -84,6 +84,8 @@ export default function HomeScreen() {
         onClose={() => setAuthPrompt(false)}
         feature="favorites"
       />
+      {/* The occasional question about their hair, asked once the feed has settled. */}
+      {isAuthenticated && <NudgeHost />}
     </Screen>
   );
 }
@@ -148,6 +150,7 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
         onOpen={actions.onOpen}
         onLike={actions.onLike}
         onSave={look.mine ? undefined : actions.onSave}
+        onFindStylists={actions.onFindStylists}
         dimmed={dimmed}
       />
     ),

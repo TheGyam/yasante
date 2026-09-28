@@ -203,6 +203,7 @@ function RootNavigator() {
         <Stack.Screen name="looks/area" options={modal} />
         <Stack.Screen name="looks/[id]" options={overlay} />
         <Stack.Screen name="stylist/[handle]" />
+        <Stack.Screen name="who/[style]" options={modal} />
         <Stack.Screen
           name="work/[handle]"
           options={{ presentation: 'fullScreenModal', animation: 'fade', animationDuration: 200 }}

@@ -25,6 +25,10 @@ export const stylistApi = {
   search: async (q: string) =>
     (await apiClient.get<StylistSearchResult[]>('/api/stylists/', { params: { q } })).data,
 
+  /** GET /api/stylists/?style= — who does a style: their price for it and their work in it. */
+  byStyle: async (style: string) =>
+    (await apiClient.get<StylistSearchResult[]>('/api/stylists/', { params: { style } })).data,
+
   /** GET /api/stylists/me/ — 404 when the account has no stylist profile yet. */
   getMine: async () => (await apiClient.get<StylistProfile>('/api/stylists/me/')).data,
 

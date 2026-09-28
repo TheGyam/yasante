@@ -23,7 +23,9 @@
 {% if google_verification %}<meta name="google-site-verification" content="{{ google_verification }}">{% endif %}
 {% if bing_verification %}<meta name="msvalidate.01" content="{{ bing_verification }}">{% endif %}
 <link rel="alternate" type="text/markdown" href="/llms.txt" title="Yasante for AI assistants">
-{% if assets %}<link rel="icon" type="image/png" href="{% static 'site/favicon.png' %}">
+{% if assets %}<link rel="icon" type="image/svg+xml" href="{% static 'site/icon.svg' %}">
+<link rel="icon" type="image/png" href="{% static 'site/favicon.png' %}">
+<link rel="apple-touch-icon" href="{% static 'site/apple-touch-icon.png' %}">
 {% for href in assets.styles %}<link rel="stylesheet" href="{{ href }}">
 {% endfor %}<script type="module" src="{{ assets.script }}"></script>{% endif %}
 {% if jsonld %}<script type="application/ld+json">{{ jsonld }}</script>{% endif %}

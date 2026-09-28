@@ -5753,6 +5753,22 @@ components:
           type: string
         baseArea:
           type: string
+        serviceId:
+          type: string
+        fromPrice:
+          type: number
+          format: double
+        rating:
+          type: number
+          format: double
+        ratingCount:
+          type: integer
+        verificationTier:
+          type: integer
+        photoUri:
+          type: string
+        lookId:
+          type: string
       required:
       - accountId
       - baseArea

@@ -21,6 +21,8 @@ export interface LookTileProps {
   onSave?: (look: Look) => void;
   /** Faded while newer results load. */
   dimmed?: boolean;
+  /** Press and hold: who does this style. */
+  onFindStylists?: (look: Look) => void;
 }
 
 // A mix of heights so the grid reads as a wall of photos, not a spreadsheet. The
@@ -72,6 +74,7 @@ export const LookTile = memo(function LookTile({
   onLike,
   onSave,
   dimmed,
+  onFindStylists,
 }: LookTileProps) {
   const styles = useStyles();
   // The photo grows out of this tile into the look's page (see heroTransition).
@@ -81,7 +84,13 @@ export const LookTile = memo(function LookTile({
       openWithHero(photo.current, { lookId: l.id, uri: l.thumbUri ?? l.photoUri }, () => onOpen(l)),
     [onOpen]
   );
-  const { gesture, heart } = usePhotoTaps(look, openFromHere, onLike, 64);
+  const { gesture, heart } = usePhotoTaps(
+    look,
+    openFromHere,
+    onLike,
+    64,
+    look.styles.length ? onFindStylists : undefined
+  );
   const price = look.price
     ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
     : undefined;

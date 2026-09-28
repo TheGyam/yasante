@@ -143,6 +143,41 @@ def _checks_on_setup(user, profile):
         record_check(user.pk, "proof_photo", "pending", profile.proof_photo_uri)
 
 
+def _for_style(profiles, slug, name, viewer):
+    """
+    For a list of who does one style: each stylist's service for it and what it starts
+    at, their rating and checks, and a photo of their work in it. Fetched for all of
+    them at once.
+    """
+    from apps.looks.models import Look
+
+    ids = [p.pk for p in profiles]
+    services = {}
+    for item in MenuItem.objects.filter(stylist_id__in=ids).filter(
+        Q(styles__contains=[slug]) | Q(name__icontains=name)
+    ).order_by("price"):
+        services.setdefault(item.stylist_id, item)
+    photos = {}
+    for look in Look.objects.filter(
+        stylist_id__in=[str(p.account_id) for p in profiles], styles__slug=slug, status="live",
+        visibility="public",
+    ).order_by("-like_count", "-created_at").only("stylist_id", "thumb_uri", "photo_uri", "id"):
+        photos.setdefault(look.stylist_id, look)
+    out = {}
+    for p in profiles:
+        service, look = services.get(p.pk), photos.get(str(p.account_id))
+        out[p.pk] = {
+            "service_id": str(service.pk) if service else None,
+            "from_price": float(service.price) if service else None,
+            "rating": float(p.rating_average) if p.rating_average is not None else None,
+            "rating_count": p.rating_count,
+            "verification_tier": p.verification_tier,
+            "photo_uri": (look.thumb_uri or look.photo_uri) if look else None,
+            "look_id": str(look.pk) if look else None,
+        }
+    return out
+
+
 @extend_schema_view(get=extend_schema(responses=StylistSearchResultSerializer(many=True)), post=extend_schema(request=StylistProfileDraftSerializer, responses={201: StylistProfileSerializer}))
 class StylistCreateView(APIView):
     """
@@ -177,7 +212,9 @@ class StylistCreateView(APIView):
                 "stylist_id", flat=True
             )
             qs = qs.filter(
-                Q(account_id__in=[t for t in tagged if t]) | Q(menu_items__name__icontains=name)
+                Q(account_id__in=[t for t in tagged if t])
+                | Q(menu_items__name__icontains=name)
+                | Q(menu_items__styles__contains=[style])
             ).distinct()
         if service_model in ("salon", "home", "mobile"):
             qs = qs.filter(service_models__contains=[service_model])
@@ -196,6 +233,16 @@ class StylistCreateView(APIView):
         if blocked:
             qs = qs.exclude(account_id__in=blocked)
         qs = list(qs.order_by("-verification_tier", "-rating_count", "display_name")[:20])
+        extra = _for_style(qs, style, name, viewer) if style else {}
+        if style:
+            # Work in this style first, then near the viewer, then checked and well rated.
+            near = (getattr(getattr(viewer, "hair_profile", None), "area", "") or "").lower()
+            qs.sort(key=lambda p: (
+                not extra[p.pk].get("photo_uri"),
+                not (near and p.base_area.lower() == near),
+                -p.verification_tier,
+                -(p.rating_count or 0),
+            ))
         log_search(
             request,
             "stylists",
@@ -211,6 +258,7 @@ class StylistCreateView(APIView):
                     "display_name": p.display_name,
                     "avatar_uri": p.avatar_uri,
                     "base_area": p.base_area,
+                    **extra.get(p.pk, {}),
                 }
                 for p in qs
             ]

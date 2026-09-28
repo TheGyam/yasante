@@ -277,8 +277,8 @@ export default function RequestBookingScreen() {
         : comesToMe && !addressReady
           ? 'Add your street and postcode so they can get to you.'
           : !accepted
-          ? 'Tick their terms above to send.'
-          : undefined;
+            ? 'Tick their terms above to send.'
+            : undefined;
 
   return (
     <Screen title={`Book ${profile.displayName}`} modal keyboard testID="booking-request">

@@ -13,7 +13,7 @@ export interface PageProps {
 
 const SITE = 'Yasante';
 const DEFAULT_DESCRIPTION =
-  'Find a braider whose work you’ve seen on hair like yours, and book them.';
+  'Discover styles on real textured hair, get to know your own, keep track of what works, and book stylists by their work.';
 
 /**
  * Every page is a <Page>. It owns the width, the gutters and the title. The server

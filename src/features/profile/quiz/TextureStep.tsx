@@ -19,7 +19,7 @@ export const TEXTURES: readonly { value: HairTexture; label: string; code: strin
   { value: 'wavy', label: 'Wavy', code: '2A–2C' },
   { value: 'curly', label: 'Curly', code: '3A–3C' },
   { value: 'coily', label: 'Coily', code: '4A–4B' },
-  { value: 'kinky', label: 'Zig-zag', code: '4C' },
+  { value: 'kinky', label: 'Kinky', code: '4C · zig-zag' },
 ];
 
 // Generated once for the life of the app.

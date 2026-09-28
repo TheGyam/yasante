@@ -5,7 +5,7 @@ const TEXTURE: Record<HairTexture, string> = {
   wavy: 'Wavy',
   curly: 'Curly',
   coily: 'Coily',
-  kinky: 'Zig-zag coils',
+  kinky: 'Kinky (4C)',
 };
 /** How each texture is named to people, not in the chart's numbers. */
 export const TEXTURE_LABELS = TEXTURE;

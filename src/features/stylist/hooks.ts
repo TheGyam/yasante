@@ -31,6 +31,16 @@ export function useMyStylistProfile() {
   });
 }
 
+/** Who does a style, with their price for it and a photo of their work in it. */
+export function useStylistsForStyle(style?: string, { enabled = true } = {}) {
+  return useQuery({
+    queryKey: [KEY, 'style', style],
+    queryFn: () => stylistApi.byStyle(style!),
+    enabled: enabled && !!style,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 /** Stylists whose name, handle or area matches what's typed. */
 export function useStylistSearch(q: string, { enabled = true } = {}) {
   return useQuery({

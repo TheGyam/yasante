@@ -26,7 +26,8 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowUp, ImageOff, MoreHorizontal, X } from 'lucide-react-native';
+import { ArrowUp, ChevronRight, ImageOff, MoreHorizontal, X } from 'lucide-react-native';
+import { formatMoney } from '@/shared/lib/format';
 import { errorMessage, useAuth } from '@/features/auth';
 import {
   LikeButton,
@@ -42,7 +43,7 @@ import {
   type LookComment,
 } from '@/features/looks';
 import { useNeedsUsername } from '@/features/profile';
-import { usePrefetchStylistPage } from '@/features/stylist';
+import { usePrefetchStylistPage, useStylistsForStyle } from '@/features/stylist';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import {
@@ -580,6 +581,9 @@ function LookThread({
               photoStyle={photoStyle}
               details={stage >= 1}
             />
+            {stage >= 2 && !!look.styles[0] && (
+              <WhoDoesThis style={look.styles[0]} name={actions.styleNames[look.styles[0]]} />
+            )}
             {stage >= 1 && (
               <Animated.View entering={FadeIn.duration(180)}>
                 <Text variant="overline" tone="tertiary" style={styles.heading}>
@@ -777,5 +781,53 @@ function Composer({
         </PressableScale>
       </View>
     </View>
+  );
+}
+
+/**
+ * Under a look: who does its style, and what it starts at. Asked for only once the
+ * look has settled, so the opening flight never waits on it.
+ */
+function WhoDoesThis({ style, name }: { style: string; name?: string }) {
+  const router = useRouter();
+  const theme = useTheme();
+  const { data: stylists = [] } = useStylistsForStyle(style);
+  if (!stylists.length || !name) return null;
+  const prices = stylists.map(s => s.fromPrice).filter((p): p is number => !!p);
+  return (
+    <Animated.View entering={FadeIn.duration(200)} style={{ marginBottom: space.xl }}>
+      <PressableScale
+        onPress={() => router.push(`/who/${style}`)}
+        accessibilityRole="button"
+        accessibilityLabel={`Who does ${name}: ${stylists.length} stylists`}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: space.md,
+          padding: space.md,
+          borderRadius: radius.lg,
+          backgroundColor: theme.colors.glass.fill,
+          borderWidth: 1,
+          borderColor: theme.colors.glass.border,
+        }}
+        testID="who-does-this-card"
+      >
+        <View style={{ flexDirection: 'row' }}>
+          {stylists.slice(0, 3).map((s, i) => (
+            <View key={s.accountId} style={{ marginLeft: i ? -12 : 0 }}>
+              <Avatar uri={s.photoUri ?? s.avatarUri} name={s.displayName} size={36} />
+            </View>
+          ))}
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text variant="callout">Who does {name.toLowerCase()}?</Text>
+          <Text variant="footnote" tone="secondary">
+            {stylists.length} {stylists.length === 1 ? 'stylist' : 'stylists'}
+            {prices.length ? ` · from ${formatMoney(Math.min(...prices))}` : ''}
+          </Text>
+        </View>
+        <ChevronRight size={18} color={theme.colors.text.tertiary} />
+      </PressableScale>
+    </Animated.View>
   );
 }

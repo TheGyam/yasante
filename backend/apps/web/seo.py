@@ -20,7 +20,7 @@ from apps.stylists.models import StylistProfile
 
 SITE = "https://yasante.com"
 NAME = "Yasante"
-TAGLINE = "Find a braider whose work you’ve seen on hair like yours, and book them."
+TAGLINE = "Discover styles on real textured hair, get to know your own, keep track of what works, and book stylists by their work."
 ABOUT = (
     "Yasante is an app and website for textured hair, based in London. It helps you find a "
     "hairstyle you love from real photos of real hair, book the independent braider or stylist "
