@@ -22,3 +22,5 @@ export { HairProfileHub } from './quiz/HairProfileHub';
 export { SECTIONS, lengthIsStale, progressOf, sectionFor } from './quiz/sections';
 export type { SectionKey } from './quiz/sections';
 export { ChoiceCard } from './quiz/ChoiceCard';
+export * from './insights';
+export * from './hairLog';

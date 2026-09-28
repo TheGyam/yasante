@@ -1399,6 +1399,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/HairLog'
           description: ''
+  /api/insights/:
+    get:
+      operationId: insights_retrieve
+      description: GET /api/insights/?period=month|all — your hair in numbers, from
+        what's already recorded.
+      tags:
+      - insights
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Insights'
+          description: ''
   /api/invites/{code}/:
     get:
       operationId: invites_retrieve
@@ -2900,6 +2916,9 @@ components:
           - $ref: '#/components/schemas/Deposit'
         area:
           type: string
+        atClient:
+          type: boolean
+          description: The stylist travels to the client
         address:
           type: string
         policy:
@@ -2935,6 +2954,7 @@ components:
           format: date-time
       required:
       - area
+      - atClient
       - bringingOwnHair
       - clientName
       - createdAt
@@ -2983,6 +3003,13 @@ components:
           type: string
           minLength: 1
           description: The look the booking is from
+        atClient:
+          type: boolean
+          description: The stylist comes to the client
+        clientAddress:
+          type: string
+          minLength: 1
+          description: Street and postcode, when at_client
       required:
       - bringingOwnHair
       - policyVersion
@@ -3519,6 +3546,23 @@ components:
           type: boolean
         timing:
           type: boolean
+    CurrentStyle:
+      type: object
+      properties:
+        name:
+          type: string
+        since:
+          type: string
+          format: date-time
+        days:
+          type: integer
+        bookingId:
+          type: string
+      required:
+      - bookingId
+      - days
+      - name
+      - since
     DataExportResponse:
       type: object
       properties:
@@ -3950,6 +3994,55 @@ components:
         * `fresh` - fresh
         * `okay` - okay
         * `tired` - tired
+    Insights:
+      type: object
+      description: GET /api/insights/ — a client's hair in numbers.
+      properties:
+        period:
+          $ref: '#/components/schemas/PeriodEnum'
+        since:
+          type: string
+          format: date-time
+        appointments:
+          type: integer
+        spent:
+          type: number
+          format: double
+        styles:
+          type: array
+          items:
+            type: string
+        stylists:
+          type: integer
+        currentStyle:
+          allOf:
+          - $ref: '#/components/schemas/CurrentStyle'
+        styleLastsDays:
+          type: integer
+        washes:
+          type: integer
+        usualWashDay:
+          type: string
+        washEveryDays:
+          type: integer
+        daysSinceTrim:
+          type: integer
+        length:
+          allOf:
+          - $ref: '#/components/schemas/LengthInsight'
+        looksSaved:
+          type: integer
+        productsAdded:
+          type: integer
+      required:
+      - appointments
+      - looksSaved
+      - period
+      - productsAdded
+      - spent
+      - styles
+      - stylists
+      - washes
     InviteResponse:
       type: object
       description: |-
@@ -4011,6 +4104,24 @@ components:
         * `waist` - Waist
         * `hip` - Hip
         * `tailbone` - Tailbone
+    LengthInsight:
+      type: object
+      properties:
+        now:
+          type: string
+        nowCm:
+          type: number
+          format: double
+        measuredAt:
+          type: string
+          format: date-time
+        grewCm:
+          type: number
+          format: double
+        grewSteps:
+          type: integer
+      required:
+      - now
     LoginRequest:
       type: object
       description: POST /api/auth/login/
@@ -4734,6 +4845,14 @@ components:
       required:
       - details
       - label
+    PeriodEnum:
+      enum:
+      - month
+      - all
+      type: string
+      description: |-
+        * `month` - month
+        * `all` - all
     Policies:
       type: object
       properties:

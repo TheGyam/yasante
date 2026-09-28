@@ -81,6 +81,8 @@ export interface Booking {
 
   /** The district. The full address arrives only once the booking is confirmed. */
   area: string;
+  /** The stylist travels to the client; `area` is then the client's postcode district. */
+  atClient?: boolean;
   address?: string;
 
   policy: StylistPolicies;
@@ -128,6 +130,9 @@ export interface BookingDraft {
   policyVersion: string;
   /** The look she's booking from, so the stylist sees the picture. */
   lookId?: string;
+  /** The stylist comes to the client, at this street and postcode. */
+  atClient?: boolean;
+  clientAddress?: string;
 }
 
 /** A stylist's free start times for one service, day by day. Only days with room. */

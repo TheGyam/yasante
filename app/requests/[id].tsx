@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { setHours, startOfHour } from 'date-fns';
 import {
@@ -9,6 +9,8 @@ import {
   Check,
   ClipboardCheck,
   Hourglass,
+  MapPin,
+  Navigation,
   Plus,
   Scissors,
   Send,
@@ -22,6 +24,7 @@ import {
   FromLookCard,
   STATUS_LABELS,
   balanceLine,
+  directionsLink,
   isLive,
   serviceLine,
   recordLabel,
@@ -239,6 +242,25 @@ export default function RequestScreen() {
             value={booking.bringingOwnHair ? 'Own hair' : undefined}
             icon={Scissors}
           />
+          {booking.atClient && (
+            <ListRow
+              title={booking.address ?? `At their place · ${booking.area}`}
+              subtitle={
+                booking.address
+                  ? 'You’re going to them. Tap for directions'
+                  : 'You go to them. Their street arrives once you confirm'
+              }
+              icon={booking.address ? Navigation : MapPin}
+              iconTone={booking.address ? 'success' : 'neutral'}
+              onPress={
+                booking.address
+                  ? () =>
+                      Linking.openURL(directionsLink(booking.address!, Platform.OS)).catch(() => {})
+                  : undefined
+              }
+              testID="request-where"
+            />
+          )}
         </Section>
 
         {!!booking.notes && (
@@ -361,7 +383,7 @@ export default function RequestScreen() {
           <>
             <InlineAlert
               tone="info"
-              message={`Accepted for ${inSentence(whenLabel(booking.scheduledFor ?? ''))}. They’ve been asked for ${formatMoney(booking.deposit?.amount ?? 0)}${booking.expiresAt ? `, and has until ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Marking it received confirms the booking and shares your address.`}
+              message={`Accepted for ${inSentence(whenLabel(booking.scheduledFor ?? ''))}. They’ve been asked for ${formatMoney(booking.deposit?.amount ?? 0)}${booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Marking it received confirms the booking and ${booking.atClient ? 'sends you their address' : 'shares your address'}.`}
             />
             <View style={styles.footer}>
               <Button

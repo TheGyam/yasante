@@ -34,6 +34,7 @@ import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
+import { PressableScale } from '@/shared/ui/PressableScale';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
@@ -52,6 +53,7 @@ const useStyles = makeStyles(() => ({
   names: { alignItems: 'center', gap: 2 },
   work: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   photo: { width: '31%', aspectRatio: 0.8, borderRadius: radius.sm, overflow: 'hidden' },
+  photoFill: { flex: 1 },
   reviews: { gap: space.sm },
   reviewsHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   average: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
@@ -238,7 +240,15 @@ export default function StylistPageScreen() {
               {photos.slice(0, photosShown).map((photo, index) => (
                 // The box is sized; the picture fills it. (Sized on the image itself,
                 // Android drew every photo zero pixels tall.)
-                <View key={photo.id} style={styles.photo}>
+                <PressableScale
+                  key={photo.id}
+                  // The size on the outside, where the grid lays it out.
+                  containerStyle={styles.photo}
+                  style={styles.photoFill}
+                  onPress={() => router.push(`/work/${profile.handle}?index=${index}`)}
+                  accessibilityRole="imagebutton"
+                  accessibilityHint="Opens it full screen"
+                >
                   <RemoteImage
                     uri={photo.thumbUri ?? photo.uri}
                     style={StyleSheet.absoluteFill}
@@ -248,7 +258,7 @@ export default function StylistPageScreen() {
                       `photo ${index + 1} of ${photos.length}`,
                     ].join(', ')}
                   />
-                </View>
+                </PressableScale>
               ))}
             </View>
             {photos.length > photosShown && (

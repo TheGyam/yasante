@@ -117,8 +117,10 @@ function PortfolioGrid() {
         renderItem={({ item, index }) => (
           <View style={styles.cell}>
             <PressableScale
-              onPress={() => setTagging(item)}
+              onPress={() => router.push(`/work/me?mine=1&index=${index}`)}
+              onLongPress={() => setTagging(item)}
               accessibilityLabel={`Photo ${index + 1}, ${nameOf(item.serviceId) ?? 'no service'}`}
+              accessibilityHint="Opens it full screen. Press and hold to tag or remove it"
             >
               {/* Sized box, filling picture: sized on the image, Android drew it 0px tall. */}
               <View style={styles.photo}>

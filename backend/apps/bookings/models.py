@@ -112,7 +112,10 @@ class Booking(TimeStampedModel):
 
     # Location
     area = models.CharField(max_length=100)
+    # Where it happens: the stylist's address, or the client's when the stylist travels.
     address = models.CharField(max_length=500, blank=True, default="")
+    # The stylist goes to the client. `area` is then the client's postcode district.
+    at_client = models.BooleanField(default=False)
 
     # Policies snapshot
     policy = models.JSONField(default=dict)

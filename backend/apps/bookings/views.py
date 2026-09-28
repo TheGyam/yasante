@@ -4,6 +4,7 @@ decides it. Every transition not allowed by the state machine is refused (409).
 """
 
 import logging
+import re
 import uuid
 from datetime import timedelta
 
@@ -129,7 +130,19 @@ def _take(booking, scheduled_for, deposit):
     booking.save()
 
 
+# A UK postcode at the end of an address ("12 Bellenden Road, SE15 4QJ").
+_POSTCODE = re.compile(r"([A-Z]{1,2}\d[A-Z\d]?)\s*(\d[A-Z]{2})\s*$", re.IGNORECASE)
+
+
+def _outcode(address):
+    """"SE15" from an address ending in a postcode, or "" if it doesn't."""
+    match = _POSTCODE.search(address or "")
+    return match.group(1).upper() if match else ""
+
+
 @extend_schema_view(get=extend_schema(responses=BookingSerializer(many=True)), post=extend_schema(request=BookingCreateRequestSerializer, responses={201: BookingSerializer}))
+
+
 class BookingListCreateView(APIView):
     """GET /api/bookings/?role=&status= · POST /api/bookings/"""
 
@@ -194,6 +207,18 @@ class BookingListCreateView(APIView):
         if not data.get("policy_version"):
             return _err("The stylist’s terms have to be accepted", 400)
 
+        # Where: at the stylist's, or at the client's when the stylist travels. A stylist
+        # who only travels always comes to the client.
+        models_offered = set(profile.service_models or [])
+        at_client = bool(data.get("at_client")) or models_offered == {"mobile"}
+        client_address = str(data.get("client_address") or "").strip()[:500]
+        if at_client:
+            if "mobile" not in models_offered:
+                return _err("This stylist doesn’t travel to clients. Book at their place instead", 400)
+            outcode = _outcode(client_address)
+            if not outcode:
+                return _err("Add your street and postcode so the stylist can get to you", 400)
+
         with transaction.atomic():
             # One request at a time per stylist, so two clients can't take one slot.
             StylistProfile.objects.select_for_update().get(pk=profile.pk)
@@ -221,9 +246,12 @@ class BookingListCreateView(APIView):
                 notes=str(data.get("notes") or "").strip()[:1000],
                 requested_times=starts,
                 expires_at=timezone.now() + settings.BOOKING_REQUEST_LAPSE_HOURS * HOUR,
-                area=profile.base_area,
+                # The client's postcode district when the stylist travels, so they can
+                # judge the journey before saying yes; the street waits for confirming.
+                area=outcode if at_client else profile.base_area,
                 # Held, not sent until it's confirmed.
-                address=profile.address,
+                address=client_address if at_client else profile.address,
+                at_client=at_client,
                 policy=profile.policies,
                 policy_version=str(data["policy_version"])[:50],
             )

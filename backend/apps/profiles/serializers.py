@@ -147,3 +147,38 @@ class HairLogRequestSerializer(serializers.Serializer):
     at = serializers.DateTimeField(required=False, help_text="When it happened; now if left out")
     local_at = serializers.CharField(required=False, help_text="The phone's own clock, ISO without offset")
     booking_id = serializers.UUIDField(required=False)
+
+
+class CurrentStyleSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    since = serializers.DateTimeField()
+    days = serializers.IntegerField()
+    booking_id = serializers.CharField()
+
+
+class LengthInsightSerializer(serializers.Serializer):
+    now = serializers.CharField()
+    now_cm = optional(serializers.FloatField())
+    measured_at = optional(serializers.DateTimeField())
+    grew_cm = optional(serializers.FloatField())
+    grew_steps = optional(serializers.IntegerField())
+
+
+class InsightsSerializer(serializers.Serializer):
+    """GET /api/insights/ — a client's hair in numbers."""
+
+    period = serializers.ChoiceField(choices=["month", "all"])
+    since = optional(serializers.DateTimeField())
+    appointments = serializers.IntegerField()
+    spent = serializers.FloatField()
+    styles = serializers.ListField(child=serializers.CharField())
+    stylists = serializers.IntegerField()
+    current_style = optional(CurrentStyleSerializer())
+    style_lasts_days = optional(serializers.IntegerField())
+    washes = serializers.IntegerField()
+    usual_wash_day = optional(serializers.CharField())
+    wash_every_days = optional(serializers.IntegerField())
+    days_since_trim = optional(serializers.IntegerField())
+    length = optional(LengthInsightSerializer())
+    looks_saved = serializers.IntegerField()
+    products_added = serializers.IntegerField()

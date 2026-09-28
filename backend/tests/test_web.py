@@ -162,7 +162,7 @@ def test_terms_and_privacy_are_published():
 
 def test_the_privacy_policy_names_who_sends_our_emails(api):
     current = api().get("/api/policies/privacy/").json()
-    assert current["version"] == "2026-09-25"
+    assert current["version"] == "2026-09-28"
     assert "IONOS" in current["body"] and "confirm by emailing you a code" in current["body"]
 
 

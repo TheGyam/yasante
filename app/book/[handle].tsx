@@ -2,12 +2,23 @@ import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { useLocalSearchParams } from 'expo-router';
-import { BellRing, CalendarClock, Check, Circle, CircleCheck, Scissors } from 'lucide-react-native';
+import {
+  BellRing,
+  CalendarClock,
+  Car,
+  Check,
+  Circle,
+  CircleCheck,
+  House,
+  MapPin,
+  Scissors,
+} from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
 import { useLook } from '@/features/looks';
 import {
   SlotPicker,
   useBooking,
+  useBookings,
   useFreeSlots,
   useRequestBooking,
   whenLabel,
@@ -40,6 +51,7 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
 import { track } from '@/shared/lib/analytics';
+import { joinAddress, POSTCODE, splitAddress } from '@/shared/utils/postcode';
 
 const useStyles = makeStyles(t => ({
   body: { gap: space.xl },
@@ -124,6 +136,24 @@ export default function RequestBookingScreen() {
   const [notes, setNotes] = useState('');
   const [accepted, setAccepted] = useState(false);
   const [chosen, setChosen] = useState<ChosenOptions>({});
+  // Where: at theirs, or at the client's when they travel. A stylist who only
+  // travels always comes to the client.
+  const [atClient, setAtClient] = useState(false);
+  const [street, setStreet] = useState('');
+  const [postcode, setPostcode] = useState('');
+  const offers = data?.profile.serviceModels ?? [];
+  const comesToMe = offers.includes('mobile') && (atClient || offers.every(m => m === 'mobile'));
+  // The address from their last home visit, so it's typed once.
+  const { data: past = [] } = useBookings('client');
+  const lastHome = past.find(b => b.atClient && b.address)?.address;
+  useEffect(() => {
+    if (!lastHome || street || postcode) return;
+    const known = splitAddress(lastHome);
+    setStreet(known.street);
+    setPostcode(known.postcode);
+    // Once, when it arrives.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastHome]);
 
   // Booking the same again: once both are here, the same style with the same choices,
   // matched by name, as long as the stylist still offers them.
@@ -179,6 +209,8 @@ export default function RequestBookingScreen() {
         notes: notes.trim() || undefined,
         policyVersion: POLICY_VERSION,
         lookId: fromLook?.id,
+        atClient: comesToMe,
+        clientAddress: comesToMe ? joinAddress(street, postcode) : undefined,
       });
       haptics.success();
       // A beat to see it went, then the booking itself.
@@ -230,6 +262,10 @@ export default function RequestBookingScreen() {
         ? Math.round((quote.price * (profile.policies.depositAmount ?? 0)) / 100)
         : (profile.policies.depositAmount ?? 0);
 
+  const travels = profile.serviceModels.includes('mobile');
+  const hosts = profile.serviceModels.some(m => m !== 'mobile');
+  const addressReady = !!street.trim() && POSTCODE.test(postcode.trim());
+
   // The button stays off until everything's there; say what's left, so it never
   // just looks broken.
   const missing = !service
@@ -238,7 +274,9 @@ export default function RequestBookingScreen() {
       ? `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')}.`
       : !time
         ? 'Pick a time and they have 48 hours to reply.'
-        : !accepted
+        : comesToMe && !addressReady
+          ? 'Add your street and postcode so they can get to you.'
+          : !accepted
           ? 'Tick their terms above to send.'
           : undefined;
 
@@ -390,6 +428,58 @@ export default function RequestBookingScreen() {
             />
           )}
         </View>
+
+        {travels && (
+          <View style={styles.group}>
+            <Text variant="footnote" tone="secondary" style={styles.label}>
+              {hosts ? 'Where?' : `${profile.displayName} comes to you`}
+            </Text>
+            {hosts && (
+              <View style={styles.chips}>
+                <Chip
+                  label={`At theirs · ${profile.baseArea}`}
+                  icon={House}
+                  selected={!atClient}
+                  onPress={() => setAtClient(false)}
+                />
+                <Chip
+                  label="Come to me"
+                  icon={Car}
+                  selected={atClient}
+                  onPress={() => setAtClient(true)}
+                />
+              </View>
+            )}
+            {comesToMe && (
+              <>
+                <Input
+                  label="Your house number and street"
+                  icon={MapPin}
+                  value={street}
+                  onChangeText={setStreet}
+                  placeholder="4 Choumert Grove"
+                  autoCapitalize="words"
+                  autoComplete="street-address"
+                  textContentType="streetAddressLine1"
+                  testID="booking-street"
+                />
+                <Input
+                  label="Your postcode"
+                  value={postcode}
+                  onChangeText={setPostcode}
+                  placeholder="SE15 4RB"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  autoComplete="postal-code"
+                  textContentType="postalCode"
+                  maxLength={8}
+                  hint={`They see your postcode area first${profile.travelRadiusMiles ? ` (they travel up to ${profile.travelRadiusMiles} miles from ${profile.baseArea})` : ''}, and your street once they confirm.`}
+                  testID="booking-postcode"
+                />
+              </>
+            )}
+          </View>
+        )}
 
         <Section footer="They'll know not to order hair for you.">
           <ListRow

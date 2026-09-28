@@ -6,23 +6,12 @@ import { makeStyles, space, useTheme } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
 import { Input } from '@/shared/ui/Input';
 import { Text } from '@/shared/ui/Text';
-
-const POSTCODE = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
-
-/** "se154qj" → "SE15 4QJ". */
-const tidy = (postcode: string) => {
-  const bare = postcode.replace(/\s+/g, '').toUpperCase();
-  return bare.length > 3 ? `${bare.slice(0, -3)} ${bare.slice(-3)}` : bare;
-};
-
-/** The street and postcode back out of a saved address ("12 Bellenden Road, SE15 4QJ"). */
-function split(address = '') {
-  const parts = address.split(',').map(p => p.trim());
-  const last = parts[parts.length - 1] ?? '';
-  return POSTCODE.test(last)
-    ? { street: parts.slice(0, -1).join(', '), postcode: last }
-    : { street: address, postcode: '' };
-}
+import {
+  joinAddress,
+  POSTCODE,
+  splitAddress as split,
+  tidyPostcode as tidy,
+} from '@/shared/utils/postcode';
 
 /**
  * The names people use for where a postcode is: the constituency ("Peckham"), the
@@ -90,11 +79,8 @@ export function LocationField({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [areas]);
 
-  const save = (next: { street?: string; postcode?: string }) => {
-    const s = (next.street ?? street).trim();
-    const p = next.postcode ?? postcode;
-    onChange({ address: [s, POSTCODE.test(p.trim()) ? tidy(p) : ''].filter(Boolean).join(', ') });
-  };
+  const save = (next: { street?: string; postcode?: string }) =>
+    onChange({ address: joinAddress(next.street ?? street, next.postcode ?? postcode) });
 
   const notFound = valid && lookup.isSuccess && areas.length === 0;
 
