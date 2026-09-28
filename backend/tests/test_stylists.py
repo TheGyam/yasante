@@ -347,3 +347,9 @@ def test_a_place_name_prefers_london(monkeypatch):
         {"region": "London", "latitude": 51.54, "longitude": -0.003},
     ])
     assert geo.locate("Stratford") == (51.54, -0.003)
+
+
+def test_who_does_a_style_leaves_out_the_one_asking(api, make_stylist):
+    me = make_stylist()
+    found = api(me.account).get("/api/stylists/?style=knotless").json()
+    assert me.handle not in [s["handle"] for s in found]
