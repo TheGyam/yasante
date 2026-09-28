@@ -13,19 +13,29 @@ class UserAdmin(BaseUserAdmin):
     list_display = (
         "email",
         "name",
-        "phone",
-        "phone_verified",
+        "email_verified",
         "roles_display",
         "is_active",
         "created_at",
     )
-    list_filter = ("is_active", "is_staff", "phone_verified", "roles")
+    list_filter = ("is_active", "is_staff", "email_verified", "roles")
+    # Set by signing in with Apple or Google, and by the phone: not typed here.
+    readonly_fields = ("apple_id", "google_id", "time_zone")
     search_fields = ("email", "name", "phone")
     ordering = ("-created_at",)
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Personal", {"fields": ("name", "phone", "phone_verified", "avatar_uri")}),
+        ("Personal", {"fields": ("name", "username", "email_verified", "avatar_uri", "time_zone")}),
+        (
+            "Stylist checks",
+            {
+                "description": "Only for stylists: tick after checking their phone yourself (a call "
+                "or video). It earns the “Phone and work checked” badge. Not needed for clients.",
+                "fields": ("phone", "phone_verified"),
+            },
+        ),
+        ("Signed in with", {"fields": ("apple_id", "google_id")}),
         ("Roles", {"fields": ("roles", "age_confirmed", "policy_version")}),
         (
             "Permissions",
