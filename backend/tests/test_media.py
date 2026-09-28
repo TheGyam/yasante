@@ -116,3 +116,12 @@ def test_the_app_can_report_a_crash(api):
     assert response.status_code == 204
     error = ClientError.objects.get()
     assert error.kind == "stall" and error.platform == "ios" and error.context == {"auth": False}
+
+
+def test_start_up_checkpoints_can_be_read_back(api):
+    client = api().client
+    client.post("/api/client-errors/", {"kind": "boot", "message": "js started", "platform": "ios", "context": {"launch": "ab12", "ms": 40}}, format="json")
+    client.post("/api/client-errors/", {"kind": "crash", "message": "private detail"}, format="json")
+    rows = client.get("/api/client-errors/").json()
+    assert [r["checkpoint"] for r in rows] == ["js started"]  # crashes aren't listed
+    assert rows[0]["platform"] == "ios" and rows[0]["launch"] == "ab12"

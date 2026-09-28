@@ -10,7 +10,7 @@ from .throttling import ClientErrorThrottle
 
 
 class ClientErrorSerializer(serializers.Serializer):
-    kind = serializers.ChoiceField(choices=["crash", "stall"], default="crash")
+    kind = serializers.ChoiceField(choices=["crash", "stall", "boot"], default="crash")
     message = serializers.CharField(max_length=2000)
     stack = serializers.CharField(required=False, allow_blank=True, max_length=20000)
     platform = serializers.CharField(required=False, allow_blank=True, max_length=20)
@@ -19,7 +19,7 @@ class ClientErrorSerializer(serializers.Serializer):
     context = serializers.DictField(required=False)
 
 
-@extend_schema_view(post=extend_schema(request=ClientErrorSerializer, responses={204: None}))
+@extend_schema_view(post=extend_schema(request=ClientErrorSerializer, responses={204: None}), get=extend_schema(responses={200: None}))
 class ClientErrorView(APIView):
     # Anyone: a crash can come before signing in, or be why signing in fails.
     permission_classes = [permissions.AllowAny]
@@ -41,3 +41,25 @@ class ClientErrorView(APIView):
             context=data.get("context") or {},
         )
         return Response(status=204)
+
+    def get(self, request):
+        """
+        GET /api/client-errors/ — the latest start-up checkpoints, to see how far a phone
+        nobody here can plug in gets. Checkpoints only: nothing from crashes, nothing
+        about who.
+        """
+        rows = ClientError.objects.filter(kind="boot").order_by("-created_at")[:60]
+        return Response(
+            [
+                {
+                    "at": r.created_at,
+                    "checkpoint": r.message,
+                    "platform": r.platform,
+                    "os": r.os_version,
+                    "app": r.app_version,
+                    "launch": (r.context or {}).get("launch"),
+                    "ms": (r.context or {}).get("ms"),
+                }
+                for r in rows
+            ]
+        )

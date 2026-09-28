@@ -859,6 +859,20 @@ paths:
                 $ref: '#/components/schemas/CarePlanSessionResponse'
           description: ''
   /api/client-errors/:
+    get:
+      operationId: client_errors_retrieve
+      description: |-
+        GET /api/client-errors/ — the latest start-up checkpoints, to see how far a phone
+        nobody here can plug in gets. Checkpoints only: nothing from crashes, nothing
+        about who.
+      tags:
+      - client-errors
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
     post:
       operationId: client_errors_create
       tags:
@@ -3301,10 +3315,12 @@ components:
       enum:
       - crash
       - stall
+      - boot
       type: string
       description: |-
         * `crash` - crash
         * `stall` - stall
+        * `boot` - boot
     ClientErrorRequest:
       type: object
       properties:
