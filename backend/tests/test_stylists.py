@@ -282,3 +282,21 @@ def test_a_photo_she_posted_as_a_look_joins_her_page_linked_to_it(api, make_styl
         {"photos": [{"uri": "https://x.com/b.jpg", "lookId": theirs["id"]}]},
     )
     assert refused.status_code == 400
+
+
+def test_who_does_a_style_comes_with_a_price_and_their_work(api, make_stylist, make_user, styles):
+    from apps.looks.models import Look
+
+    with_work, menu_only = make_stylist(), make_stylist()
+    look = Look.objects.create(
+        author=with_work.account, photo_uri="https://yasante.com/media/k.jpg",
+        thumb_uri="https://yasante.com/media/k_w400.jpg", stylist_id=str(with_work.account_id),
+    )
+    look.styles.add(styles["knotless"])
+    found = api(make_user()).get("/api/stylists/?style=knotless").json()
+    assert [s["handle"] for s in found] == [with_work.handle, menu_only.handle]  # work first
+    first = found[0]
+    knotless = with_work.menu_items.get(name="Knotless braids")
+    assert first["serviceId"] == str(knotless.pk) and first["fromPrice"] == float(knotless.price)
+    assert first["photoUri"].endswith("k_w400.jpg") and first["lookId"] == str(look.pk)
+    assert "photoUri" not in found[1] and found[1]["fromPrice"]

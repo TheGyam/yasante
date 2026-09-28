@@ -50,6 +50,8 @@ export interface Booking {
 
   serviceId: string;
   serviceName: string;
+  /** Style ids from the taxonomy, from the service. */
+  styles?: string[];
   /** The length and size she chose, as the stylist named them. */
   optionLabels?: string[];
   price: number;

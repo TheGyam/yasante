@@ -247,6 +247,14 @@ class StylistSearchResultSerializer(serializers.Serializer):
     display_name = serializers.CharField()
     avatar_uri = optional(serializers.CharField())
     base_area = serializers.CharField()
+    # With ?style=: their service for it and its price, a photo of their work in it.
+    service_id = optional(serializers.CharField())
+    from_price = optional(serializers.FloatField())
+    rating = optional(serializers.FloatField())
+    rating_count = optional(serializers.IntegerField())
+    verification_tier = optional(serializers.IntegerField())
+    photo_uri = optional(serializers.CharField())
+    look_id = optional(serializers.CharField())
 
 
 class HandleCheckResponseSerializer(serializers.Serializer):

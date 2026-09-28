@@ -87,7 +87,8 @@ export default function InsightsScreen() {
                   </Text>
                   {!!i.length.grewCm && i.length.grewCm > 0 && (
                     <Text variant="subhead" tone="success">
-                      Up {i.length.grewCm} cm {period === 'month' ? 'this month' : 'since you started'}
+                      Up {i.length.grewCm} cm{' '}
+                      {period === 'month' ? 'this month' : 'since you started'}
                     </Text>
                   )}
                   {!!i.length.measuredAt && (
@@ -124,7 +125,9 @@ export default function InsightsScreen() {
                   <Text variant="overline" tone="tertiary">
                     Your routine
                   </Text>
-                  {!!i.usualWashDay && <Text variant="body">You usually wash on {i.usualWashDay}s.</Text>}
+                  {!!i.usualWashDay && (
+                    <Text variant="body">You usually wash on {i.usualWashDay}s.</Text>
+                  )}
                   {!!i.washEveryDays && (
                     <Text variant="body">About every {i.washEveryDays} days between washes.</Text>
                   )}

@@ -195,6 +195,14 @@ export interface StylistSearchResult {
   displayName: string;
   avatarUri?: string;
   baseArea: string;
+  /** Searching by style: their service for it, what it starts at, and their work in it. */
+  serviceId?: string;
+  fromPrice?: number;
+  rating?: number;
+  ratingCount?: number;
+  verificationTier?: number;
+  photoUri?: string;
+  lookId?: string;
 }
 
 export interface StylistSummary {

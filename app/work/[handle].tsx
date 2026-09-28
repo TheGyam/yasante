@@ -62,9 +62,7 @@ export default function WorkViewer() {
   const { data: page } = useStylistPage(mine ? undefined : handle);
   const { data: ownPhotos } = usePortfolio();
   const { data: ownMenu = [] } = useMenu();
-  const data = mine
-    ? ownPhotos && { photos: ownPhotos, menu: ownMenu, profile: undefined }
-    : page;
+  const data = mine ? ownPhotos && { photos: ownPhotos, menu: ownMenu, profile: undefined } : page;
   const retag = useUpdatePhoto();
   const remove = useRemovePhoto();
   const [editing, setEditing] = useState(false);
@@ -89,9 +87,7 @@ export default function WorkViewer() {
         contentFit="contain"
         recyclingKey={item.id}
         priority="high"
-        accessibilityLabel={
-          data?.menu.find(m => m.id === item.serviceId)?.name ?? 'Their work'
-        }
+        accessibilityLabel={data?.menu.find(m => m.id === item.serviceId)?.name ?? 'Their work'}
       />
     </View>
   );
@@ -115,7 +111,12 @@ export default function WorkViewer() {
       />
 
       <View style={[styles.top, { top: insets.top + space.sm }]}>
-        <IconButton icon={X} variant="overlay" accessibilityLabel="Close" onPress={() => router.back()} />
+        <IconButton
+          icon={X}
+          variant="overlay"
+          accessibilityLabel="Close"
+          onPress={() => router.back()}
+        />
         {photos.length > 1 && (
           <Text variant="subhead" style={styles.count} accessibilityLiveRegion="polite">
             {current + 1} of {photos.length}
@@ -130,7 +131,9 @@ export default function WorkViewer() {
               <View>
                 <Text variant="title3">{service.name}</Text>
                 <Text variant="subhead" tone="secondary">
-                  {data.profile ? `${formatPrice(service)} with ${data.profile.displayName}` : formatPrice(service)}
+                  {data.profile
+                    ? `${formatPrice(service)} with ${data.profile.displayName}`
+                    : formatPrice(service)}
                 </Text>
               </View>
             )}

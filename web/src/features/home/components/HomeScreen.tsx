@@ -85,9 +85,10 @@ export function HomeScreen({ source }: { source?: string }) {
   return (
     <Page>
       <Rise className={styles.hero}>
-        <Text variant="display">Braids by someone whose work you’ve seen.</Text>
+        <Text variant="display">Everything for your hair, in one place.</Text>
         <Text variant="body" tone="secondary" className={styles.lede}>
-          Real looks on real hair, from braiders near you. Book the one you like, in the app.
+          Find styles on real hair like yours, learn what your texture loves, keep track of your
+          routine and products, and book stylists whose work you’ve already seen.
         </Text>
         <div className={styles.actions}>
           <Button label="Join the waitlist" href="#waitlist" />

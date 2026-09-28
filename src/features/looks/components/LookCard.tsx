@@ -25,7 +25,7 @@ import type { Look } from '../types';
 import { LikeButton } from './LikeButton';
 import { usePhotoTaps } from './usePhotoTaps';
 
-/** "Coily hair", but "Zig-zag coils" — the word hair only where it reads. */
+/** "Coily hair", "Kinky (4C) hair"; a label already ending in coils keeps it. */
 const hairLabel = (label: string) => (/coils$/i.test(label) ? label : `${label} hair`);
 
 export interface LookCardProps {
@@ -38,6 +38,8 @@ export interface LookCardProps {
   /** Opens a person's page — the author's, or the stylist she tagged. */
   onOpenPerson?: (handle: string) => void;
   onLike: (look: Look, liked: boolean) => void;
+  /** Press and hold the photo: who does this style. */
+  onFindStylists?: (look: Look) => void;
   /** Saves it into a collection. Absent for your own looks. */
   onSave?: (look: Look) => void;
   onShare: (look: Look) => void;
@@ -121,6 +123,7 @@ export const LookCard = memo(function LookCard({
   onOpen,
   onOpenPerson,
   onLike,
+  onFindStylists,
   onSave,
   onShare,
   onBook,
@@ -145,7 +148,13 @@ export const LookCard = memo(function LookCard({
       openWithHero(media.current, { lookId: l.id, uri: l.thumbUri ?? l.photoUri }, () => onOpen(l)),
     [onOpen, media]
   );
-  const { gesture: photoGesture, heart } = usePhotoTaps(look, onOpen && openFromHere, onLike);
+  const { gesture: photoGesture, heart } = usePhotoTaps(
+    look,
+    onOpen && openFromHere,
+    onLike,
+    96,
+    look.styles.length ? onFindStylists : undefined
+  );
   const open = () => onOpen?.(look);
 
   const author = (

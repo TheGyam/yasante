@@ -45,6 +45,7 @@ export function useLookActions({
     return {
       onOpen: (look: Look) => router.push(`/looks/${look.id}`),
       onOpenPerson: (handle: string) => router.push(`/stylist/${handle}`),
+      onFindStylists: (look: Look) => look.styles[0] && router.push(`/who/${look.styles[0]}`),
       onLike: signedIn((look: Look, liked: boolean) => like({ id: look.id, liked })),
       // A look carries its own picture and caption, so the save screen needs only its id.
       onSave: signedIn((look: Look) => router.push(`/collections/save?kind=look&refId=${look.id}`)),

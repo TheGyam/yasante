@@ -24,3 +24,4 @@ export type { SectionKey } from './quiz/sections';
 export { ChoiceCard } from './quiz/ChoiceCard';
 export * from './insights';
 export * from './hairLog';
+export { NudgeHost } from './nudges/NudgeHost';
