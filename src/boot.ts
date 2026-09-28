@@ -35,6 +35,16 @@ export function checkpoint(name: string) {
 
 checkpoint('js started');
 
+// Whether Expo's native modules were set up on this runtime, and which: the app's
+// code can't load without them.
+try {
+  const expo = (globalThis as unknown as { expo?: { modules?: Record<string, unknown> } }).expo;
+  const names = expo?.modules ? Object.keys(expo.modules) : [];
+  checkpoint(expo ? `expo modules (${names.length}): ${names.join(',')}`.slice(0, 480) : 'no expo runtime');
+} catch (e) {
+  checkpoint(`expo modules unreadable: ${String(e)}`.slice(0, 200));
+}
+
 // An error while the app's code loads happens before any other reporter exists, and
 // in a release build it stops the app silently on the splash. Say what it was.
 type Handler = (error: unknown, isFatal?: boolean) => void;
