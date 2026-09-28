@@ -68,9 +68,10 @@ whether an email arrived.
 **T5: Questions.** `qadb link "yasante:///settings/faqs"`, `qadb step T5`. Tap
 `How do I book a stylist?`, `qadb step T5b`. **Record** whether the answer opens.
 **T6: Policies.** For each of `terms`, `privacy`, `guidelines`, `stylist-terms`:
-`qadb link "yasante:///policy/<type>"`, wait 3 s, `qadb step T6-<type>`. Expect the title
+`qadb link "yasante:///policy/<type>"`, wait 10 s, `qadb step T6-<type>`. Expect the title
 (`Terms of use`, `Privacy policy`, `Community guidelines`, `Stylist terms`) and a body,
-**or** `Not published yet`. **Record** which.
+**or** `Not published yet` **on the screen itself**. A dev-build `API Error` toast doesn't
+count; a grey placeholder with no text is F12: mark FAIL. `qadb key BACK` before the next type.
 **T7: Report a problem.** `qadb link "yasante:///settings/report"`, `qadb step T7`.
 Expect `Report a problem` with `Subject`, `What happened` and `Write email`.
 **Do not tap `Write email`.** Go back.
@@ -82,8 +83,7 @@ Expect `Report a problem` with `Subject`, `What happened` and `Write email`.
 **R1: Nothing yet.** `qadb link "yasante:///settings/reports"`, `qadb step R1`. Expect
 `Reports and appeals` and `Nothing reported`.
 **R2: Report a look.** `qadb link "yasante:///looks/d46e7f35-f68a-52a2-abd5-22136862b09c"` (Zainab's silk press), wait 3 s,
-`qadb tapon "Options for"`, `qadb tapon reason-hate`, type `QA settings report` in
-`What happened?`, `qadb tapon look-report-send`, wait 3 s, `qadb step R2`. Expect
+`qadb tapon "Options for"`, `qadb tapon reason-hate` (this reason has no text box), `qadb tapon look-report-send`, wait 3 s, `qadb step R2`. Expect
 `Thanks for telling us`. Server check.
 **R3: Report a review.** `qadb link "yasante:///stylist/braidsbyama"`, wait 4 s,
 `qadb swipe up` until a review shows, `qadb step R3`. Open the review's report option
@@ -102,10 +102,10 @@ the review.
 ## O: Sign out (F1 again)
 
 **O1.** Count first: `grep -cE 'POST /api/auth/logout' qa/runs/<RUN>/server.log`.
-`qadb link "yasante:///settings"`, `qadb swipe up`, `qadb tapon "Sign out"`, wait 2 s,
+`qadb link "yasante:///settings"`, `qadb swipe up`, `qadb tapon "Sign out"`, wait 3 s,
 `qadb step O1`. Expect `Sign out?` / `Your collections and bookings stay safe in your
-account.` Confirm (`dialog-confirm`), wait 4 s, `qadb step O1b`. Expect the welcome
-screen. **Server check:** the same `grep -c` again. **If it hasn't gone up, F1 is still
+account.` Confirm (`dialog-confirm`), wait 4 s, `qadb step O1b`. Expect Home as a guest
+(`Hey there`, no name). **Server check:** the same `grep -c` again. **If it hasn't gone up, F1 is still
 there**: mark FAIL and say so.
 
 ---
@@ -119,7 +119,8 @@ there**: mark FAIL and say so.
 profile, hair profile, looks, comments, collections and shelf.` and `Keep my account`.
 `qadb tapon "Keep my account"`, `qadb step D2b`: nothing deleted (`dbcheck` again).
 **D3.** `Delete account` again, and this time confirm the delete, wait 5 s,
-`qadb step D3`. Expect the welcome screen. Server check.
+`qadb step D3`. Expect to leave the settings screens, signed out (Home as a guest or the
+welcome screen); staying on `Privacy and data` is F11. Server check.
 `qa/bin/dbcheck adwoa.diallo@yasante.dev`: **record** the output (gone, or
 `active=False`).
 **D4.** Try to sign in as Adwoa again, `qadb step D4`. **Record** the message. It must

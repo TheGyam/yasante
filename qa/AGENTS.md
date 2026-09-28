@@ -61,7 +61,8 @@ Nothing else: no editing app or backend code, no `manage.py` commands of your ow
 database edits (other than a plan's `timewarp`), no git commands, no raw `adb` or
 `emulator` commands. No scripts of your own either (`python3 -c`, `node`): never work out
 an ID or a tap point by computation. Use the IDs the plan gives. If one doesn't work, mark
-the step BLOCKED and quote the error.
+the step BLOCKED and quote the error. Don't read the app's source either (`app/`, `src/`, `backend/`):
+report what the app does on screen, not what the code says it should do.
 
 ## 4. Evidence: no capture, no verdict
 

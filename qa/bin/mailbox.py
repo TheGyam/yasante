@@ -14,9 +14,17 @@ QA = Path(__file__).resolve().parent.parent
 
 
 def emails(log):
-    # Each console email starts with a MIME header block; split on it.
-    for chunk in re.split(r"\n(?=Content-Type: multipart/alternative)", log)[1:]:
+    # The console backend ends each email with a line of 79 dashes. Split on it, then start
+    # at the first Content-Type (plain-text-only emails, like the data export, have no
+    # multipart header).
+    for chunk in re.split(r"\n-{79}\n", log):
+        start = re.search(r"^Content-Type: ", chunk, re.M)
+        if not start:
+            continue
+        chunk = chunk[start.start():]
         head = chunk[:2000]
+        if not re.search(r"^Subject: ", head, re.M):
+            continue
         subject = re.search(r"^Subject: (.*)$", head, re.M)
         to = re.search(r"^To: (.*)$", head, re.M)
         date = re.search(r"^Date: (.*)$", head, re.M)
