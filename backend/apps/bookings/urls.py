@@ -2,10 +2,11 @@
 
 from django.urls import path
 
-from . import views
+from . import ics, views
 
 urlpatterns = [
     path("", views.BookingListCreateView.as_view(), name="booking-list"),
+    path("calendar/<str:token>.ics", ics.calendar_file, name="booking-calendar"),
     path("<uuid:pk>/", views.BookingDetailView.as_view(), name="booking-detail"),
     path("<uuid:pk>/accept/", views.BookingAcceptView.as_view(), name="booking-accept"),
     path(

@@ -10,9 +10,7 @@ const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 
 /** Google needs its client ids in the build; Apple needs an iPhone. */
-// Not on iPhone for now: its native Google sign-in is left out of iOS builds
-// (package.json expo.autolinking.ios.exclude) while an iOS start-up failure is traced.
-export const googleReady = Platform.OS === 'android' && !!GOOGLE_WEB_CLIENT_ID;
+export const googleReady = Platform.OS !== 'web' && !!GOOGLE_WEB_CLIENT_ID;
 export const appleReady = Platform.OS === 'ios';
 
 /** Someone closed the sign-in sheet: not an error, nothing to say. */

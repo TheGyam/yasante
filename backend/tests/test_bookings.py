@@ -442,3 +442,15 @@ def test_a_move_lands_on_a_working_day_and_never_on_another_booking(api, setup, 
     assert late.status_code == 400 and "outside" in late.json()["message"]
     # The stylist may move her own appointment to a Sunday.
     assert api(profile.account).post(f"{url}/move/", {"scheduledFor": _iso(sunday)}).status_code == 200
+
+
+def test_a_confirmed_booking_has_a_calendar_file(api, setup, book):
+    profile, client = setup
+    booking_id = _confirmed(api, profile, client, book)
+    url = api(client).get(f"/api/bookings/{booking_id}/").json()["calendarUrl"]
+    path = url.split("://", 1)[1].split("/", 1)[1]
+    response = api().client.get("/" + path)  # no sign-in: the phone's calendar opens it
+    body = response.content.decode()
+    assert response.status_code == 200 and response["Content-Type"].startswith("text/calendar")
+    assert "BEGIN:VEVENT" in body and "DTSTART:" in body and profile.display_name in body
+    assert api().client.get("/api/bookings/calendar/forged.ics").status_code == 404

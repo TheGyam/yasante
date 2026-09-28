@@ -91,7 +91,7 @@
     "autolinking": {
       "ios": {
         "exclude": [
-          "@react-native-google-signin/google-signin"
+          "expo-calendar"
         ]
       }
     }
