@@ -109,7 +109,9 @@ submitting when the plan asks.
 Each capture lists the screen's **testIDs**. They are the steadiest targets
 (`qadb tapon email-input`), so use them whenever the plan names one.
 
-To type into a field: `qadb tapon <testID or label>`, then `qadb type "…"`.
+To type into a field: `qadb tapon <testID or label>`, then `qadb type "…"`. When the
+keyboard covers the element you name, `tapon` closes the keyboard first and says
+`closed the keyboard first`; that's expected.
 `qadb type` doesn't clear the field; `qadb clearfield` empties the focused one.
 `qadb type` reads the field back afterwards:
 - **`TYPE_MISMATCH`**: what landed isn't what you typed. **Never submit it.**

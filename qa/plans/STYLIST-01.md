@@ -65,18 +65,24 @@ mode: he isn't a stylist yet.
 `Your name and page` and a `Continue` button (`setup-next`).
 
 **A2: Name and page.** Tap `Name clients know you by`, type `QA Braids Kojo`, wait 2 s,
-`S: step A2`. **Record** the handle it suggests under `Your page address`. **F8:** it has
-been freezing at the first letter (`q`, with `At least 3 characters`). If it shows `q`
-(or anything under 3 characters), mark A2 **FAIL** and quote it, then carry on with the
-workaround: `S: tapon "Your page address"`, `S: clearfield`, `S: type "qabraidskojo"`,
+`S: step A2`. **Record** the handle it suggests under `Your page address`. **F8** (fixed
+upstream 28-09-2026): it should follow the whole name (`qabraidskojo`). If it shows `q`
+(or anything under 3 characters), mark A2 **FAIL** and quote it. Either way, carry on
+with: `S: tapon "Your page address"`, `S: clearfield`, `S: type "qabraidskojo"`,
 wait 3 s, `S: step A2b`. Expect `qabraidskojo is free`. Use **`qabraidskojo`** as the
 handle from here on. Tap `A line about your work`, type `QA test page. Braids only.`,
 `S: key BACK`, `S: step A2c`. `S: tapon setup-next`, wait 2 s. If it still doesn't move
 to `Where you work`, stop the run: BLOCKED.
 
 **A3: Where you work.** `S: step A3`. Expect `Where you work` with `At a salon`,
-`From home` and `I travel`. `S: tapon "From home"`. Tap `Your area`, type `Peckham`,
-`S: key BACK`. `S: step A3b`. `S: tapon setup-next`.
+`From home` and `I travel`. `S: tapon "From home"`, wait 2 s. `S: tapon setup-postcode`,
+type `SE15 4QJ`, wait 5 s, `S: step A3b`. Expect `What clients see — pick what they’d call
+it` with area names (**record** them; expect `Peckham`, `Rye Lane`, `Southwark`) and
+`Something else`. `S: tapon "Peckham" --exact`. `S: tapon setup-street`, type
+`12 QA Road`, `S: key BACK`, `S: step A3c`. **Record** the hint under the street (expect
+`Private. Only clients whose booking you’ve confirmed get it.`). `S: tapon setup-next`.
+(The area names come from postcodes.io. If the postcode shows `We couldn’t find that
+postcode`, tap `Something else`, type `Peckham` into `Your area`, and say so.)
 
 **A4: Your rules.** `S: step A4`. Expect `Cancelling is free up to` (`24 hours`, `2 days`,
 `3 days`, `A week`) and `Deposit to hold a slot` (`None`, `A set amount`, `A share`).
@@ -150,23 +156,27 @@ deposit. **Record** anything missing or different from what Kojo entered.
 
 ---
 
-## F: F4, the request screen across time zones
+## F: A page on New York time (F4 and upstream's time zones)
 
-The stylist emulator is on New York time and the client on London time.
+Kojo's emulator is on New York time and Naomi's on London time. Since upstream's
+`276b76f`, a stylist's page takes the time zone of the phone that set it up, so **Kojo's
+page runs on New York time**: his hours are New York hours, and Naomi sees his times
+marked `New York time`.
 
 **F1: Naomi asks.** `C: tapon stylist-page-book` (`Request a booking`), wait 3 s.
-`C: tapon "QA Knotless" --exact`, wait 2 s, `C: swipe up`. Pick the **first time on the
-first day** shown, and call it **T** (the label, e.g. `Tuesday 29 September, 10:00`).
+`C: tapon "QA Knotless" --exact`, wait 2 s, `C: swipe up`. **Record** the day headings and times, word for word: expect them marked
+`New York time`. Pick the **first time on the first day** shown, and call it **T** (the
+label, e.g. `Tuesday 29 September, 10:00 New York time`).
 Tick the terms, `C: tapon booking-send`, wait 4 s, `C: step F1`. Server: `POST
 /api/bookings/` **201**. Get the ID with `qa/bin/bookings naomi.grant@yasante.dev` → **B1**.
 
 **F2: Kojo reads it.** `S: link "yasante:///requests/<B1>"`, wait 3 s, `S: step F2`,
-`S: swipe up`, `S: step F2b`. **Record, word for word:** the `She asked for …` line and the
+`S: swipe up`, `S: step F2b`. **Record, word for word:** the `She asked for …` (or `They asked for …`) line and the
 `Start at` value. **Views:** paste `qa/bin/bookings naomi.grant@yasante.dev <B1>`
 (`requested_times`, in UTC).
-- If `She asked for` shows T in **London time** but `Start at` shows it 5 hours earlier
-  (**New York** time), **F4 is confirmed**: mark FAIL and quote both.
-- If both agree, mark PASS and say which time zone they're in.
+- **Expect** the asked-for time and `Start at` to be the **same** clock time as T, with no
+  `New York time` mark (it's Kojo's own zone). PASS if so.
+- If they differ from each other, or from T, mark FAIL and quote all three.
 Do **not** accept the request.
 
 ---

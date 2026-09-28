@@ -366,9 +366,35 @@ def cmd_tapon(needle, *flags):
         listing = "\n".join(f"  [{i}] {h['text'] or h['desc'] or h['id']} @ {h['center']}" for i, h in enumerate(hits))
         raise Refused(f"{len(hits)} elements match '{needle}'; pick one with --nth=N:\n{listing}")
     h = hits[nth or 0]
-    adb("shell", "input", "tap", *map(str, h["center"]))
-    journal({"cmd": "tapon", "needle": needle, "hit": h["text"] or h["desc"] or h["id"], "at": h["center"], "foreground": fg})
-    print(f"tapped '{h['text'] or h['desc'] or h['id']}' at {h['center']}")
+    # The UI tree still lists a button the keyboard covers, so the tap would land on a
+    # key and type a stray letter into the field (28-09-2026, sign-in). A person would
+    # close the keyboard first; do that, then find the element again where it now is.
+    top = keyboard_top()
+    if top is not None and h["center"][1] >= top:
+        adb("shell", "input", "keyevent", str(KEYS["BACK"]))
+        time.sleep(0.8)
+        journal({"cmd": "tapon", "keyboard_closed": True, "needle": needle})
+        print("closed the keyboard first: the target was under it")
+        hits = match(ui_tree(), needle, exact)
+        if len(hits) <= (nth or 0):
+            raise Refused(f"'{needle}' is gone after closing the keyboard. Capture a step and look.")
+        h = hits[nth or 0]
+    hold = "--hold" in flags
+    if hold:  # press and hold: a swipe that doesn't move
+        adb("shell", "input", "swipe", *map(str, h["center"] * 2), "900")
+    else:
+        adb("shell", "input", "tap", *map(str, h["center"]))
+    journal({"cmd": "tapon", "needle": needle, "hit": h["text"] or h["desc"] or h["id"], "at": h["center"], "hold": hold, "foreground": fg})
+    print(f"{'held' if hold else 'tapped'} '{h['text'] or h['desc'] or h['id']}' at {h['center']}")
+
+
+def keyboard_top():
+    """The y where the on-screen keyboard starts, or None when it isn't showing."""
+    out = adb("shell", "dumpsys", "window", "InputMethod", check=False)
+    if "isVisible=true" not in out:
+        return None
+    m = re.search(r"touchable region=SkRegion\(\((\d+),(\d+),(\d+),(\d+)\)", out)
+    return int(m.group(2)) if m else None
 
 
 def focused_field():
@@ -587,7 +613,7 @@ COMMANDS = {
     "clear": (cmd_clear, "clear                     wipe Yasante's own data (fresh install state)"),
     "link": (cmd_link, "link <url>                open a yasante.com / yasante:// link in the app"),
     "tap": (cmd_tap, "tap <x> <y>               tap a point (app or its permission prompt only)"),
-    "tapon": (cmd_tapon, "tapon <text> [--exact] [--nth=N]  tap the element with that text/label/testID"),
+    "tapon": (cmd_tapon, "tapon <text> [--exact] [--nth=N] [--hold]  tap (or press and hold) the element with that text/label/testID"),
     "type": (cmd_type, "type <text>               type into the focused field (ASCII)"),
     "clearfield": (cmd_clearfield, "clearfield                empty the focused field"),
     "key": (cmd_key, "key BACK|ENTER|TAB|DEL|ESCAPE"),

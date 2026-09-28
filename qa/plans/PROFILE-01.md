@@ -137,6 +137,9 @@ If the screen instead says `Not on your shelf`, or `app.log` has
 
 ## L: Learn
 
+**L0: Tip of the day.** `qadb link "yasante:///"`, wait 4 s, `qadb step L0`. **Record** the
+`TIP OF THE DAY` text. Tips now come from the server (upstream `0d7720e`):
+`grep -E 'GET /api/tips/' qa/runs/<RUN>/server.log | tail -1` shows `200`.
 **L1.** `qadb link "yasante:///learn"`, wait 3 s, `qadb step L1`. **Record** the sections.
 **L2.** Open the first article, wait 3 s, `qadb step L2`. `qadb swipe up` ×2,
 `qadb step L2b`. **Record** whether it reads to the end and what's suggested next. Tap

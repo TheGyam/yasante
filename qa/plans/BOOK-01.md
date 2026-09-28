@@ -71,8 +71,9 @@ three times. If any is false, stop: BLOCKED.
 **S3: Sign in all three (this is also the routing gate).** For each device:
 `X: link "yasante:///auth/login"`, `X: tapon email-input`, `X: type "<email>"`,
 `X: tapon password-input`, `X: type "password123"`, `X: tapon login-button`, wait 5 s.
-Seeded accounts need the email code: `qa/bin/mailbox <RUN> --to <email> --last`, then
-`X: type "<code>"`, wait 5 s, `X: step S3`.
+Seeded accounts go straight in (F2 fixed 28-09-2026), `X: step S3`. If `Check your email`
+shows instead, F2 is back: say so, get the code with
+`qa/bin/mailbox <RUN> --to <email> --last`, `X: type "<code>"`, wait 5 s, capture again.
 **Server check:** `grep -cE '"POST /api/auth/login/ HTTP/1.1" 200' qa/runs/<RUN>/server.log`
 gives **3**. If it's less, stop: the routing gate failed.
 

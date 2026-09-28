@@ -54,7 +54,7 @@ dev-client APK can't load it (`Cannot find native module …`). Build a new one 
 than waiting for an EAS build:
 
 ```
-npx expo prebuild --platform android --no-install        # android/ is gitignored
+npx expo prebuild --platform android --no-install --clean   # android/ is gitignored, regenerated
 cd android && echo "sdk.dir=$HOME/Android/Sdk" > local.properties
 JAVA_HOME=~/Apps/jdk-17 ANDROID_HOME=~/Android/Sdk JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true \
   ./gradlew :app:assembleDebug -PreactNativeArchitectures=x86_64,arm64-v8a \

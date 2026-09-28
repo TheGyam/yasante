@@ -112,7 +112,7 @@ there**: mark FAIL and say so.
 
 ## D: Delete an account (Adwoa)
 
-**D1.** Sign in as Adwoa (BOOK-01 S3's steps, with the email code). Server: login `200`.
+**D1.** Sign in as Adwoa (BOOK-01 S3's steps). Server: login `200`.
 `qa/bin/dbcheck adwoa.diallo@yasante.dev`, paste it (`active=True`).
 **D2.** `qadb link "yasante:///settings/privacy"`, `qadb tapon "Delete account"`, wait 2 s,
 `qadb step D2`. Expect `Delete your account?` with the text starting `This removes your
