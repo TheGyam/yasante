@@ -563,7 +563,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * @description GET /api/client-errors/ — the latest start-up checkpoints, to see how far a phone
+         *     nobody here can plug in gets. Checkpoints only: nothing from crashes, nothing
+         *     about who.
+         */
+        get: operations["client_errors_retrieve"];
         put?: never;
         post: operations["client_errors_create"];
         delete?: never;
@@ -2064,9 +2069,10 @@ export interface components {
         /**
          * @description * `crash` - crash
          *     * `stall` - stall
+         *     * `boot` - boot
          * @enum {string}
          */
-        ClientErrorKindEnum: "crash" | "stall";
+        ClientErrorKindEnum: "crash" | "stall" | "boot";
         ClientErrorRequest: {
             /** @default crash */
             kind: components["schemas"]["ClientErrorKindEnum"];
@@ -4241,6 +4247,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CarePlanSessionResponse"];
                 };
+            };
+        };
+    };
+    client_errors_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

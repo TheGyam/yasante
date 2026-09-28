@@ -25,6 +25,7 @@ import { useConsentSync } from '@/shared/config/consentSync';
 import { startAnalytics, track } from '@/shared/lib/analytics';
 import { reportError, startCrashReports } from '@/shared/lib/crashReport';
 import { syncTimeZone } from '@/shared/lib/timeZone';
+import { checkpoint } from '@/boot';
 import { darkTheme, ThemeProvider, useTheme, useThemePreference } from '@/shared/theme';
 import { DialogHost } from '@/shared/ui/DialogHost';
 import { useStackPresets } from '@/shared/ui/stackOptions';
@@ -38,6 +39,7 @@ if (process.env.EXPO_PUBLIC_API_MOCKS === 'true') {
   require('@/mocks');
 }
 
+checkpoint('layout loaded');
 SplashScreen.preventAutoHideAsync();
 startCrashReports();
 startAnalytics();
@@ -45,7 +47,12 @@ startAnalytics();
 // However start-up goes, nobody is left looking at the splash: after this long it
 // lifts, and whatever's underneath (the app, or the error page) shows.
 const SPLASH_AT_MOST_MS = 6000;
-setTimeout(() => SplashScreen.hideAsync().catch(() => {}), SPLASH_AT_MOST_MS);
+setTimeout(() => {
+  checkpoint('splash timer fired');
+  SplashScreen.hideAsync()
+    .then(() => checkpoint('splash hidden by timer'))
+    .catch(e => checkpoint(`splash hide failed: ${String(e?.message ?? e).slice(0, 120)}`));
+}, SPLASH_AT_MOST_MS);
 // Waiting for what's saved on the phone is normally instant; past this, carry on
 // without it and say which part was slow.
 const START_AT_MOST_MS = 3000;
@@ -118,6 +125,7 @@ function RootNavigator() {
   // phone's dark (or the reverse) between the splash and the first screen.
   const themeHydrated = useHydrated(useThemePreference);
   const settled = userHydrated && modeHydrated && themeHydrated && !isLoading;
+  useEffect(() => checkpoint('navigator mounted'), []);
   // Past the limit, go on without whatever hasn't answered, and report which it was.
   const [waitedEnough, setWaitedEnough] = useState(false);
   useEffect(() => {
@@ -127,6 +135,9 @@ function RootNavigator() {
   }, [settled]);
   useEffect(() => {
     if (waitedEnough && !settled) {
+      checkpoint(
+        `stalled: user=${userHydrated} mode=${modeHydrated} theme=${themeHydrated} authLoading=${isLoading}`
+      );
       reportError(new Error('Start-up stalled'), {
         kind: 'stall',
         context: { userHydrated, modeHydrated, themeHydrated, authLoading: isLoading },
@@ -179,7 +190,11 @@ function RootNavigator() {
   );
 
   useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
+    if (!ready) return;
+    checkpoint('ready');
+    SplashScreen.hideAsync()
+      .then(() => checkpoint('splash hidden'))
+      .catch(e => checkpoint(`splash hide failed: ${String(e?.message ?? e).slice(0, 120)}`));
   }, [ready]);
 
   // Signing up continues into email verification, so the auth flow stays open until
@@ -322,7 +337,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontError) reportError(fontError, { context: { where: 'fonts' } });
-  }, [fontError]);
+    if (fontsLoaded || fontError) checkpoint(fontError ? 'fonts failed' : 'fonts loaded');
+  }, [fontsLoaded, fontError]);
   // A font that fails to load isn't a reason to stay on the splash: the system's stands in.
   if (!fontsLoaded && !fontError) return null;
 
