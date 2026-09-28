@@ -11,8 +11,15 @@ const started = Date.now();
 const launch = Math.random().toString(36).slice(2, 8);
 const base = (process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.yasante.com').replace(/\/$/, '');
 
+// Only trouble is sent: a launch that goes well says nothing. (Set to true to trace
+// every step of a launch again.)
+const TRACE_ALL = false;
+const TROUBLE =
+  /^(FATAL|error|entry threw|stalled|no expo runtime|splash hide failed|expo modules unreadable)/;
+
 export function checkpoint(name: string) {
   if (__DEV__ || process.env.EXPO_PUBLIC_API_MOCKS === 'true') return;
+  if (!TRACE_ALL && !TROUBLE.test(name)) return;
   const ms = Date.now() - started;
   if (ms > 20_000) return;
   try {
@@ -39,8 +46,7 @@ checkpoint('js started');
 // code can't load without them.
 try {
   const expo = (globalThis as unknown as { expo?: { modules?: Record<string, unknown> } }).expo;
-  const names = expo?.modules ? Object.keys(expo.modules) : [];
-  checkpoint(expo ? `expo modules (${names.length}): ${names.join(',')}`.slice(0, 480) : 'no expo runtime');
+  if (!expo) checkpoint('no expo runtime');
 } catch (e) {
   checkpoint(`expo modules unreadable: ${String(e)}`.slice(0, 200));
 }
