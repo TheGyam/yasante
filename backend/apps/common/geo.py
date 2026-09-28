@@ -42,7 +42,7 @@ def locate(text):
     text = (text or "").strip()
     if not text:
         return None
-    key = "geo:" + hashlib.sha1(text.lower().encode()).hexdigest()
+    key = "geo2:" + hashlib.sha1(text.lower().encode()).hexdigest()
     found = cache.get(key)
     if found is None:
         postcode = postcode_in(text)
@@ -50,8 +50,11 @@ def locate(text):
             result = _fetch(f"/postcodes/{urllib.parse.quote(postcode.replace(' ', ''))}") or {}
             found = [result.get("latitude"), result.get("longitude")]
         else:
-            places = _fetch(f"/places?{urllib.parse.urlencode({'q': text, 'limit': 1})}") or []
-            found = [places[0].get("latitude"), places[0].get("longitude")] if places else [None, None]
+            # Many places share a name (Stratford is in London and the Midlands); Yasante
+            # is in London, so a London one wins. Asked for one, postcodes.io picks badly.
+            places = _fetch(f"/places?{urllib.parse.urlencode({'q': text, 'limit': 10})}") or []
+            place = next((p for p in places if p.get("region") == "London"), places[0] if places else None)
+            found = [place.get("latitude"), place.get("longitude")] if place else [None, None]
         cache.set(key, found, MONTH)
     return tuple(found) if found and found[0] is not None else None
 

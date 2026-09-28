@@ -337,3 +337,13 @@ def test_who_does_a_style_near_me(api, make_stylist, make_user, monkeypatch):
     assert found[0]["handle"] == near.handle and 1 < found[0]["miles"] < 3
     everyone = api(client).get("/api/stylists/?style=knotless&near=me&within=any").json()
     assert far.handle in [s["handle"] for s in everyone]
+
+
+def test_a_place_name_prefers_london(monkeypatch):
+    from apps.common import geo
+
+    monkeypatch.setattr(geo, "_fetch", lambda path: [
+        {"region": "West Midlands", "latitude": 52.0, "longitude": -2.1},
+        {"region": "London", "latitude": 51.54, "longitude": -0.003},
+    ])
+    assert geo.locate("Stratford") == (51.54, -0.003)
