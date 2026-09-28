@@ -3119,6 +3119,16 @@ export interface components {
             displayName: string;
             avatarUri?: string;
             baseArea: string;
+            serviceId?: string;
+            /** Format: double */
+            fromPrice?: number;
+            /** Format: double */
+            rating?: number;
+            ratingCount?: number;
+            verificationTier?: number;
+            photoUri?: string;
+            lookId?: string;
+            photoOfStyle?: boolean;
         };
         StylistSummary: {
             pendingRequests: number;

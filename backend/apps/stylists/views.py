@@ -163,17 +163,35 @@ def _for_style(profiles, slug, name, viewer):
         visibility="public",
     ).order_by("-like_count", "-created_at").only("stylist_id", "thumb_uri", "photo_uri", "id"):
         photos.setdefault(look.stylist_id, look)
+    # No look posted in it: their portfolio — a photo tagged with this service first,
+    # then their latest work of any kind.
+    work = {}
+    for photo in PortfolioPhoto.objects.filter(stylist_id__in=ids).order_by("-created_at").only(
+        "stylist_id", "service_id", "thumb_uri", "uri"
+    ):
+        service = services.get(photo.stylist_id)
+        tagged = service is not None and photo.service_id == service.pk
+        if tagged and not work.get(photo.stylist_id, (None, False))[1]:
+            work[photo.stylist_id] = (photo, True)
+        work.setdefault(photo.stylist_id, (photo, False))
     out = {}
     for p in profiles:
         service, look = services.get(p.pk), photos.get(str(p.account_id))
+        fallback, of_it = work.get(p.pk, (None, False))
         out[p.pk] = {
             "service_id": str(service.pk) if service else None,
             "from_price": float(service.price) if service else None,
             "rating": float(p.rating_average) if p.rating_average is not None else None,
             "rating_count": p.rating_count,
             "verification_tier": p.verification_tier,
-            "photo_uri": (look.thumb_uri or look.photo_uri) if look else None,
+            "photo_uri": (
+                (look.thumb_uri or look.photo_uri)
+                if look
+                else (fallback.thumb_uri or fallback.uri) if fallback else None
+            ),
             "look_id": str(look.pk) if look else None,
+            # Whether the photo shows this style, or is just their work.
+            "photo_of_style": bool(look) or of_it,
         }
     return out
 

@@ -255,6 +255,7 @@ class StylistSearchResultSerializer(serializers.Serializer):
     verification_tier = optional(serializers.IntegerField())
     photo_uri = optional(serializers.CharField())
     look_id = optional(serializers.CharField())
+    photo_of_style = optional(serializers.BooleanField())
 
 
 class HandleCheckResponseSerializer(serializers.Serializer):

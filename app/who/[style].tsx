@@ -84,11 +84,13 @@ export default function WhoDoesThisStyle() {
             </Text>
           </View>
         )}
-        {!s.photoUri && (
-          <Text variant="caption" tone="tertiary">
-            On their menu, no photos of it yet
-          </Text>
-        )}
+        <Text variant="caption" tone="tertiary">
+          {s.photoOfStyle
+            ? 'Their work in this style'
+            : s.photoUri
+              ? 'Their recent work'
+              : 'On their menu'}
+        </Text>
       </View>
       {!!s.serviceId && (
         <Button
