@@ -132,7 +132,13 @@ export default function InsightsScreen() {
                     <Text variant="body">About every {i.washEveryDays} days between washes.</Text>
                   )}
                   {i.daysSinceTrim != null && (
-                    <Text variant="body">Last trim {i.daysSinceTrim} days ago.</Text>
+                    <Text variant="body">
+                      {i.daysSinceTrim === 0
+                        ? 'Trimmed today.'
+                        : i.daysSinceTrim === 1
+                          ? 'Trimmed yesterday.'
+                          : `Last trim ${i.daysSinceTrim} days ago.`}
+                    </Text>
                   )}
                 </View>
               </Card>

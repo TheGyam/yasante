@@ -286,6 +286,9 @@ class StylistCreateView(APIView):
         blocked = blocked_account_ids(viewer) if viewer else set()
         if blocked:
             qs = qs.exclude(account_id__in=blocked)
+        if viewer is not None and style:
+            # Asking who does a style: not themselves.
+            qs = qs.exclude(account=viewer)
         # Near someone: where they asked about, or where their hair profile says.
         origin = _origin(params, viewer)
         qs = list(qs.order_by("-verification_tier", "-rating_count", "display_name")[: 200 if origin else 20])
