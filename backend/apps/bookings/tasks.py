@@ -6,10 +6,9 @@ be generous: a job that runs late or twice still sends each message once.
 """
 
 from datetime import timedelta
-from zoneinfo import ZoneInfo
+from apps.common import zones
 
 from celery import shared_task
-from django.conf import settings
 from django.db.models import Count, Q
 from django.utils import timezone
 
@@ -42,8 +41,9 @@ def auto_complete_bookings():
     sweep()
 
 
-def _local(dt):
-    return dt.astimezone(ZoneInfo(settings.STYLIST_TIME_ZONE))
+def _local(dt, booking=None):
+    """On the stylist's clock, where the appointment is."""
+    return dt.astimezone(zones.of(getattr(booking, "stylist_profile", None)))
 
 
 @shared_task
@@ -53,14 +53,13 @@ def send_reminders(now=None):
     upcoming = Booking.objects.filter(
         status="confirmed", scheduled_for__gt=now, scheduled_for__lte=now + timedelta(hours=72)
     )
-    today = _local(now).date()
     for b in upcoming:
         until = b.scheduled_for - now
         if until > timedelta(hours=48):
             to_client(
                 b,
                 "prep",
-                f"{_when(b.scheduled_for)} with {b.stylist_name}",
+                f"{_when(b.scheduled_for, b, b.client)} with {b.stylist_name}",
                 "Three days to go. Check what to do with your hair before you arrive.",
                 category="reminders",
             )
@@ -69,7 +68,7 @@ def send_reminders(now=None):
                 b,
                 "attendance",
                 "Still coming tomorrow?",
-                f"{b.service_name} with {b.stylist_name}, {_when(b.scheduled_for)}.",
+                f"{b.service_name} with {b.stylist_name}, {_when(b.scheduled_for, b, b.client)}.",
                 category="reminders",
                 action_category="attendance",
             )
@@ -79,15 +78,17 @@ def send_reminders(now=None):
                 b,
                 "unconfirmed",
                 f"{first} hasn’t confirmed",
-                f"{_when(b.scheduled_for)}. You might message them to check.",
+                f"{_when(b.scheduled_for, b)}. You might message them to check.",
                 category="reminders",
             )
-        local = _local(b.scheduled_for)
-        if local.date() == today and _local(now).hour >= 7:
+        local, here = _local(b.scheduled_for, b), _local(now, b)
+        if local.date() == here.date() and here.hour >= 7:
+            zone = zones.of(b.stylist_profile)
+            away = b.client is not None and zones.of(b.client).key != zone.key
             to_client(
                 b,
                 "today",
-                f"Today at {local:%H:%M}",
+                f"Today at {local:%H:%M}" + (f" {zones.label(zone)}" if away else ""),
                 f"{b.service_name} with {b.stylist_name}. The address is in your booking.",
                 category="reminders",
             )

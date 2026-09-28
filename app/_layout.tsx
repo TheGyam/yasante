@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { SplashScreen, Stack, type ErrorBoundaryProps } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
@@ -23,6 +23,9 @@ import { useNotifications } from '@/shared/hooks/useNotifications';
 import { registerPush } from '@/shared/lib/push';
 import { useConsentSync } from '@/shared/config/consentSync';
 import { startAnalytics, track } from '@/shared/lib/analytics';
+import { reportError, startCrashReports } from '@/shared/lib/crashReport';
+import { syncTimeZone } from '@/shared/lib/timeZone';
+import { checkpoint } from '@/boot';
 import { darkTheme, ThemeProvider, useTheme, useThemePreference } from '@/shared/theme';
 import { DialogHost } from '@/shared/ui/DialogHost';
 import { useStackPresets } from '@/shared/ui/stackOptions';
@@ -36,8 +39,23 @@ if (process.env.EXPO_PUBLIC_API_MOCKS === 'true') {
   require('@/mocks');
 }
 
+checkpoint('layout loaded');
 SplashScreen.preventAutoHideAsync();
+startCrashReports();
 startAnalytics();
+
+// However start-up goes, nobody is left looking at the splash: after this long it
+// lifts, and whatever's underneath (the app, or the error page) shows.
+const SPLASH_AT_MOST_MS = 6000;
+setTimeout(() => {
+  checkpoint('splash timer fired');
+  SplashScreen.hideAsync()
+    .then(() => checkpoint('splash hidden by timer'))
+    .catch(e => checkpoint(`splash hide failed: ${String(e?.message ?? e).slice(0, 120)}`));
+}, SPLASH_AT_MOST_MS);
+// Waiting for what's saved on the phone is normally instant; past this, carry on
+// without it and say which part was slow.
+const START_AT_MOST_MS = 3000;
 
 export const unstable_settings = { anchor: '(client)' };
 
@@ -46,8 +64,14 @@ export const unstable_settings = { anchor: '(client)' };
  * which is written for developers. Drawn without the app's providers (they're what
  * this replaces), so plain components and the dark palette.
  */
-export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   const c = darkTheme.colors;
+  const [details, setDetails] = useState(false);
+  useEffect(() => {
+    // Drawn under the splash if it happened at start-up: lift it, or this is never seen.
+    SplashScreen.hideAsync().catch(() => {});
+    reportError(error, { context: { where: 'error boundary' } });
+  }, [error]);
   return (
     <View style={[crash.page, { backgroundColor: c.bg }]}>
       <Text style={[crash.title, { color: c.text.primary }]}>Something went wrong</Text>
@@ -61,6 +85,17 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
       >
         <Text style={[crash.label, { color: c.text.onAccent }]}>Try again</Text>
       </Pressable>
+      {/* For whoever's helping fix it: the error itself, only when asked for. */}
+      <Pressable onPress={() => setDetails(d => !d)} accessibilityRole="button" hitSlop={12}>
+        <Text style={[crash.body, { color: c.text.tertiary, fontSize: 13 }]}>
+          {details ? 'Hide details' : 'Show details'}
+        </Text>
+      </Pressable>
+      {details && (
+        <Text selectable style={[crash.body, { color: c.text.tertiary, fontSize: 12 }]}>
+          {error.message}
+        </Text>
+      )}
     </View>
   );
 }
@@ -89,7 +124,29 @@ function RootNavigator() {
   // The chosen Appearance too: until it's read back, a Light choice would flash the
   // phone's dark (or the reverse) between the splash and the first screen.
   const themeHydrated = useHydrated(useThemePreference);
-  const ready = userHydrated && modeHydrated && themeHydrated && !isLoading;
+  const settled = userHydrated && modeHydrated && themeHydrated && !isLoading;
+  useEffect(() => checkpoint('navigator mounted'), []);
+  // Past the limit, go on without whatever hasn't answered, and report which it was.
+  const [waitedEnough, setWaitedEnough] = useState(false);
+  useEffect(() => {
+    if (settled) return;
+    const timer = setTimeout(() => setWaitedEnough(true), START_AT_MOST_MS);
+    return () => clearTimeout(timer);
+  }, [settled]);
+  useEffect(() => {
+    if (waitedEnough && !settled) {
+      checkpoint(
+        `stalled: user=${userHydrated} mode=${modeHydrated} theme=${themeHydrated} authLoading=${isLoading}`
+      );
+      reportError(new Error('Start-up stalled'), {
+        kind: 'stall',
+        context: { userHydrated, modeHydrated, themeHydrated, authLoading: isLoading },
+      });
+    }
+    // Once, when the wait runs out.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waitedEnough]);
+  const ready = settled || waitedEnough;
 
   // Answers given before signing up reach the account once there is one; so do
   // consent choices, which are recorded on the device first.
@@ -99,6 +156,8 @@ function RootNavigator() {
   // Where the server sends her notifications: this phone, once she's signed in.
   useEffect(() => {
     if (isAuthenticated && !isLoading) registerPush();
+    // How notifications word times: this phone's clock.
+    if (isAuthenticated && !isLoading && user?.id) syncTimeZone(user.id);
   }, [isAuthenticated, isLoading, user?.id]);
 
   // A notification means something changed on the server: what shows it is out of date.
@@ -131,7 +190,11 @@ function RootNavigator() {
   );
 
   useEffect(() => {
-    if (ready) SplashScreen.hideAsync();
+    if (!ready) return;
+    checkpoint('ready');
+    SplashScreen.hideAsync()
+      .then(() => checkpoint('splash hidden'))
+      .catch(e => checkpoint(`splash hide failed: ${String(e?.message ?? e).slice(0, 120)}`));
   }, [ready]);
 
   // Signing up continues into email verification, so the auth flow stays open until
@@ -203,6 +266,11 @@ function RootNavigator() {
         <Stack.Screen name="looks/area" options={modal} />
         <Stack.Screen name="looks/[id]" options={overlay} />
         <Stack.Screen name="stylist/[handle]" />
+        <Stack.Screen name="who/[style]" options={modal} />
+        <Stack.Screen
+          name="work/[handle]"
+          options={{ presentation: 'fullScreenModal', animation: 'fade', animationDuration: 200 }}
+        />
 
         {/* Doing anything needs an account; a guest's tap is sent to sign up instead
             (see the account gate in AuthContext). */}
@@ -243,6 +311,7 @@ function RootNavigator() {
           <Stack.Screen name="care-plans/[id]" />
           <Stack.Screen name="care-plans/edit" options={modal} />
           <Stack.Screen name="edit-profile" options={modal} />
+          <Stack.Screen name="insights" />
           <Stack.Screen name="username" options={modal} />
         </Stack.Protected>
 
@@ -259,14 +328,19 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     InstrumentSans_400Regular,
     InstrumentSans_500Medium,
     InstrumentSans_600SemiBold,
     InstrumentSans_700Bold,
   });
 
-  if (!fontsLoaded) return null;
+  useEffect(() => {
+    if (fontError) reportError(fontError, { context: { where: 'fonts' } });
+    if (fontsLoaded || fontError) checkpoint(fontError ? 'fonts failed' : 'fonts loaded');
+  }, [fontsLoaded, fontError]);
+  // A font that fails to load isn't a reason to stay on the splash: the system's stands in.
+  if (!fontsLoaded && !fontError) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

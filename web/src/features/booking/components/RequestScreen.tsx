@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Banknote, CalendarClock, Clock, Scissors, UserRound } from 'lucide-react';
+import { Banknote, CalendarClock, Clock, MapPin, Scissors, UserRound } from 'lucide-react';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
 import { formatMoney, formatPrice } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
@@ -105,7 +105,7 @@ function Request({
           <Text variant="subhead" tone="secondary">
             {STATUS_LABELS[status]}
             {booking.scheduledFor && status !== 'requested'
-              ? ` · ${whenLabel(booking.scheduledFor)}`
+              ? ` · ${whenLabel(booking.scheduledFor, booking.timeZone)}`
               : ''}
           </Text>
         </div>
@@ -144,6 +144,18 @@ function Request({
             }
             value={formatPrice(booking.price, booking.fromPrice)}
           />
+          {booking.atClient && (
+            <ListRow
+              icon={MapPin}
+              iconTone={booking.address ? 'success' : 'neutral'}
+              title={booking.address ?? `At their place · ${booking.area}`}
+              subtitle={
+                booking.address
+                  ? 'You’re going to them'
+                  : 'You go to them. Their street arrives once you confirm'
+              }
+            />
+          )}
         </Section>
 
         {booking.notes && (
@@ -155,7 +167,7 @@ function Request({
         {status === 'requested' && booking.proposal && (
           <InlineAlert
             tone="info"
-            message={`You suggested ${inSentence(whenLabel(booking.proposal.scheduledFor))}. Waiting for ${first} to say yes.`}
+            message={`You suggested ${inSentence(whenLabel(booking.proposal.scheduledFor, booking.timeZone))}. Waiting for ${first} to say yes.`}
           />
         )}
         {status === 'requested' && !booking.proposal && (
@@ -189,7 +201,7 @@ function Answer({
   const asked = booking.requestedTimes;
   const [picked, setPicked] = useState<string | 'other'>(asked[0] ?? 'other');
   const [other, setOther] = useState(() =>
-    toSalonInput(asked[0] ?? new Date(Date.now() + 86_400_000))
+    toSalonInput(asked[0] ?? new Date(Date.now() + 86_400_000), booking.timeZone)
   );
   const [deposit, setDeposit] = useState(() => {
     const amount = suggestedDeposit(booking);
@@ -207,7 +219,7 @@ function Answer({
   const busy = accept.isPending || propose.isPending || decline.isPending;
 
   const send = () => {
-    const at = onAsked ? picked : fromSalonInput(other);
+    const at = onAsked ? picked : fromSalonInput(other, booking.timeZone);
     const done = { onSuccess: () => navigate('/requests') };
     if (onAsked) accept.mutate({ id: booking.id, at, deposit: depositArgs }, done);
     else propose.mutate({ id: booking.id, at, deposit: depositArgs }, done);
@@ -228,7 +240,7 @@ function Answer({
         {asked.map(time => (
           <Chip
             key={time}
-            label={whenLabel(time)}
+            label={whenLabel(time, booking.timeZone)}
             selected={picked === time}
             onClick={() => setPicked(time)}
           />
@@ -306,10 +318,11 @@ function AwaitingDeposit({ booking }: { booking: Booking }) {
   return (
     <Glass padded radius="xl" className={styles.card}>
       <Text variant="body">
-        Accepted for {inSentence(whenLabel(booking.scheduledFor ?? ''))}. They’ve been asked for{' '}
+        Accepted for {inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))}. They’ve been asked for{' '}
         {formatMoney(booking.deposit?.amount ?? 0)}
         {booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}.
-        Marking it received confirms the booking and shares your address.
+        Marking it received confirms the booking and{' '}
+        {booking.atClient ? 'sends you their address' : 'shares your address'}.
       </Text>
       {received.isError && (
         <InlineAlert message={errorMessage(received.error, 'Couldn’t mark it.')} />
@@ -333,7 +346,7 @@ function Confirmed({ booking }: { booking: Booking }) {
       <Section>
         <ListRow
           icon={CalendarClock}
-          title={whenLabel(booking.scheduledFor ?? '')}
+          title={whenLabel(booking.scheduledFor ?? '', booking.timeZone)}
           subtitle={booking.moves ? 'Moved once' : undefined}
         />
         <ListRow

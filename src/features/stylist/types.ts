@@ -52,6 +52,10 @@ export interface StylistProfile {
   serviceModels: ServiceModel[];
   /** District only. The full address is shared once a booking is confirmed. */
   baseArea: string;
+  /** Her own page only: where clients go, shared with a booking once it's confirmed. */
+  address?: string;
+  /** Where her working hours are (IANA), from her phone. */
+  timeZone?: string;
   travelRadiusMiles?: number;
   instagramHandle?: string;
   policies: StylistPolicies;
@@ -75,6 +79,8 @@ export type StylistProfileDraft = Pick<
   | 'bio'
   | 'serviceModels'
   | 'baseArea'
+  | 'address'
+  | 'timeZone'
   | 'travelRadiusMiles'
   | 'instagramHandle'
   | 'policies'
@@ -192,6 +198,18 @@ export interface StylistSearchResult {
   displayName: string;
   avatarUri?: string;
   baseArea: string;
+  /** Searching by style: their service for it, what it starts at, and their work in it. */
+  serviceId?: string;
+  fromPrice?: number;
+  rating?: number;
+  ratingCount?: number;
+  verificationTier?: number;
+  photoUri?: string;
+  lookId?: string;
+  /** The photo shows this style, rather than just their recent work. */
+  photoOfStyle?: boolean;
+  /** How far, when searching near someone. */
+  miles?: number;
 }
 
 export interface StylistSummary {

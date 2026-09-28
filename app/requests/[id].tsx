@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { setHours, startOfHour } from 'date-fns';
 import {
@@ -9,6 +9,8 @@ import {
   Check,
   ClipboardCheck,
   Hourglass,
+  MapPin,
+  Navigation,
   Plus,
   Scissors,
   Send,
@@ -21,6 +23,9 @@ import {
   BookingProgress,
   FromLookCard,
   STATUS_LABELS,
+  balanceLine,
+  directionsLink,
+  isLive,
   serviceLine,
   recordLabel,
   timingText,
@@ -44,6 +49,7 @@ import {
 } from '@/features/stylist';
 import { formatMoney, parseMoney } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
+import { zoneMark } from '@/shared/lib/timeZone';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
@@ -211,6 +217,11 @@ export default function RequestScreen() {
               ? ` · ${STATUS_LABELS[status]}`
               : ''}
           </Text>
+          {isLive(booking) && !!balanceLine(booking) && (
+            <Text variant="footnote" tone="tertiary" testID="request-balance">
+              {balanceLine(booking)}
+            </Text>
+          )}
         </View>
 
         <BookingProgress booking={booking} />
@@ -232,6 +243,25 @@ export default function RequestScreen() {
             value={booking.bringingOwnHair ? 'Own hair' : undefined}
             icon={Scissors}
           />
+          {booking.atClient && (
+            <ListRow
+              title={booking.address ?? `At their place · ${booking.area}`}
+              subtitle={
+                booking.address
+                  ? 'You’re going to them. Tap for directions'
+                  : 'You go to them. Their street arrives once you confirm'
+              }
+              icon={booking.address ? Navigation : MapPin}
+              iconTone={booking.address ? 'success' : 'neutral'}
+              onPress={
+                booking.address
+                  ? () =>
+                      Linking.openURL(directionsLink(booking.address!, Platform.OS)).catch(() => {})
+                  : undefined
+              }
+              testID="request-where"
+            />
+          )}
         </Section>
 
         {!!booking.notes && (
@@ -243,7 +273,7 @@ export default function RequestScreen() {
         {status === 'requested' && booking.proposal && (
           <InlineAlert
             tone="info"
-            message={`You suggested ${inSentence(whenLabel(booking.proposal.scheduledFor))}. Waiting for ${first} to say yes${booking.expiresAt ? ` — it lapses ${inSentence(whenLabel(booking.expiresAt))}` : ''}.`}
+            message={`You suggested ${inSentence(whenLabel(booking.proposal.scheduledFor, booking.timeZone))}. Waiting for ${first} to say yes${booking.expiresAt ? ` — it lapses ${inSentence(whenLabel(booking.expiresAt))}` : ''}.`}
           />
         )}
 
@@ -259,10 +289,23 @@ export default function RequestScreen() {
             )}
             <View style={styles.group}>
               <Text variant="footnote" tone="secondary" style={styles.label}>
-                She asked for {booking.requestedTimes.map(whenLabel).join(', or ')}
+                She asked for{' '}
+                {booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(', or ')}
               </Text>
-              <DateTimeField title="Day" mode="date" value={when} onChange={setWhen} />
-              <DateTimeField title="Start at" mode="time" value={when} onChange={setWhen} />
+              <DateTimeField
+                title="Day"
+                timeZone={booking.timeZone}
+                mode="date"
+                value={when}
+                onChange={setWhen}
+              />
+              <DateTimeField
+                title={`Start at${zoneMark(booking.timeZone)}`}
+                timeZone={booking.timeZone}
+                mode="time"
+                value={when}
+                onChange={setWhen}
+              />
               {!onAskedDay && (
                 <Text variant="caption" tone="accent" style={styles.label}>
                   That’s not the time they picked, so they’ll be asked if it works.
@@ -354,7 +397,7 @@ export default function RequestScreen() {
           <>
             <InlineAlert
               tone="info"
-              message={`Accepted for ${inSentence(whenLabel(booking.scheduledFor ?? ''))}. She's been asked for ${formatMoney(booking.deposit?.amount ?? 0)}${booking.expiresAt ? `, and has until ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Marking it received confirms the booking and shares your address.`}
+              message={`Accepted for ${inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))}. They’ve been asked for ${formatMoney(booking.deposit?.amount ?? 0)}${booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Marking it received confirms the booking and ${booking.atClient ? 'sends you their address' : 'shares your address'}.`}
             />
             <View style={styles.footer}>
               <Button
@@ -373,7 +416,7 @@ export default function RequestScreen() {
           <>
             <Section>
               <ListRow
-                title={whenLabel(booking.scheduledFor ?? '')}
+                title={whenLabel(booking.scheduledFor ?? '', booking.timeZone)}
                 subtitle={booking.moves ? 'Moved once' : undefined}
                 icon={CalendarClock}
                 iconTone="success"
@@ -394,7 +437,7 @@ export default function RequestScreen() {
               <View style={styles.group}>
                 <InlineAlert
                   tone="info"
-                  message={`${first} asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}. Her deposit and history carry over.`}
+                  message={`${first} asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor, booking.timeZone))}. Their deposit and history carry over.`}
                 />
                 <Button
                   label="Move it"
@@ -426,7 +469,7 @@ export default function RequestScreen() {
             {booking.moveRequest?.by === 'stylist' && (
               <InlineAlert
                 tone="info"
-                message={`You asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}. Waiting for ${first}.`}
+                message={`You asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor, booking.timeZone))}. Waiting for ${first}.`}
               />
             )}
 

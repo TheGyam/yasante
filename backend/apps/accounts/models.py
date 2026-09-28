@@ -45,19 +45,28 @@ class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, db_index=True)
     # Proved by a code sent to it; a new address has to be proved again.
-    email_verified = models.BooleanField(default=False)
+    email_verified = models.BooleanField("email confirmed", default=False)
     name = models.CharField(max_length=150)
     # What her posts and comments show (a stylist's show her brand name instead).
     # Shares one namespace with stylist handles, so nobody can post as a stylist.
     username = models.CharField(max_length=30, unique=True, null=True, blank=True)
     phone = models.CharField(max_length=20, blank=True, default="")
-    phone_verified = models.BooleanField(default=False)
+    # Stylists only: staff checked the number by call or video (see the stylist badge).
+    phone_verified = models.BooleanField("phone checked by us", default=False)
     roles = ArrayField(
         models.CharField(max_length=20),
         default=list,
         help_text='Account roles: "client", "stylist", "admin".',
     )
     avatar_uri = models.URLField(max_length=500, blank=True, default="")
+    # Who Apple and Google say this is ("sub"): signing in with them finds the account
+    # by these even when the email changes or Apple hides it.
+    apple_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    google_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    # Lets us revoke Sign in with Apple when the account is deleted, as Apple requires.
+    apple_refresh_token = models.CharField(max_length=500, blank=True, default="")
+    # How times are worded to them in notifications: their phone's zone, kept in step.
+    time_zone = models.CharField(max_length=64, blank=True, default="")
     age_confirmed = models.BooleanField(default=False)
     policy_version = models.CharField(max_length=50, blank=True, default="")
 

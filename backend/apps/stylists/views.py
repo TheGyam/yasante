@@ -5,10 +5,10 @@ Stylist views: her page, menu, portfolio, free times, numbers and summary.
 import logging
 import uuid
 from datetime import timedelta
-from zoneinfo import ZoneInfo
 
 from apps.accounts.models import User
 from apps.bookings.models import Booking, Review
+from apps.common import zones
 from apps.common.blocks import blocked_account_ids, is_blocked
 from apps.common.models import log_search
 from django.conf import settings
@@ -143,6 +143,95 @@ def _checks_on_setup(user, profile):
         record_check(user.pk, "proof_photo", "pending", profile.proof_photo_uri)
 
 
+def _number(value, default):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _origin(params, viewer):
+    """(latitude, longitude) to measure from: ?postcode=, or ?near=me and their hair profile."""
+    from apps.common.geo import locate
+
+    if params.get("postcode"):
+        return locate(params["postcode"])
+    if params.get("near") == "me" and viewer is not None:
+        hair = getattr(viewer, "hair_profile", None)
+        if hair is None:
+            return None
+        if hair.latitude is not None:
+            return (hair.latitude, hair.longitude)
+        return locate(hair.postcode) or locate(hair.area)
+    return None
+
+
+def _place(profile):
+    """Put a stylist on the map: their address's postcode, or else their area."""
+    from apps.common.geo import locate, postcode_in
+
+    point = locate(postcode_in(profile.address)) or locate(profile.base_area)
+    profile.latitude, profile.longitude = point or (None, None)
+    StylistProfile.objects.filter(pk=profile.pk).update(latitude=profile.latitude, longitude=profile.longitude)
+
+
+# How far clients will usually go for a style, in miles; they can widen it.
+NEAR_MILES = 10
+
+
+def _for_style(profiles, slug, name, viewer):
+    """
+    For a list of who does one style: each stylist's service for it and what it starts
+    at, their rating and checks, and a photo of their work in it. Fetched for all of
+    them at once.
+    """
+    from apps.looks.models import Look
+
+    ids = [p.pk for p in profiles]
+    services = {}
+    for item in MenuItem.objects.filter(stylist_id__in=ids).filter(
+        Q(styles__contains=[slug]) | Q(name__icontains=name)
+    ).order_by("price"):
+        services.setdefault(item.stylist_id, item)
+    photos = {}
+    for look in Look.objects.filter(
+        stylist_id__in=[str(p.account_id) for p in profiles], styles__slug=slug, status="live",
+        visibility="public",
+    ).order_by("-like_count", "-created_at").only("stylist_id", "thumb_uri", "photo_uri", "id"):
+        photos.setdefault(look.stylist_id, look)
+    # No look posted in it: their portfolio — a photo tagged with this service first,
+    # then their latest work of any kind.
+    work = {}
+    for photo in PortfolioPhoto.objects.filter(stylist_id__in=ids).order_by("-created_at").only(
+        "stylist_id", "service_id", "thumb_uri", "uri"
+    ):
+        service = services.get(photo.stylist_id)
+        tagged = service is not None and photo.service_id == service.pk
+        if tagged and not work.get(photo.stylist_id, (None, False))[1]:
+            work[photo.stylist_id] = (photo, True)
+        work.setdefault(photo.stylist_id, (photo, False))
+    out = {}
+    for p in profiles:
+        service, look = services.get(p.pk), photos.get(str(p.account_id))
+        fallback, of_it = work.get(p.pk, (None, False))
+        out[p.pk] = {
+            "service_id": str(service.pk) if service else None,
+            "from_price": float(service.price) if service else None,
+            "rating": float(p.rating_average) if p.rating_average is not None else None,
+            "rating_count": p.rating_count,
+            "verification_tier": p.verification_tier,
+            "photo_uri": (
+                (look.thumb_uri or look.photo_uri)
+                if look
+                else (fallback.thumb_uri or fallback.uri) if fallback else None
+            ),
+            "look_id": str(look.pk) if look else None,
+            # Whether the photo shows this style, or is just their work.
+            "photo_of_style": bool(look) or of_it,
+        }
+    return out
+
+
 @extend_schema_view(get=extend_schema(responses=StylistSearchResultSerializer(many=True)), post=extend_schema(request=StylistProfileDraftSerializer, responses={201: StylistProfileSerializer}))
 class StylistCreateView(APIView):
     """
@@ -177,7 +266,9 @@ class StylistCreateView(APIView):
                 "stylist_id", flat=True
             )
             qs = qs.filter(
-                Q(account_id__in=[t for t in tagged if t]) | Q(menu_items__name__icontains=name)
+                Q(account_id__in=[t for t in tagged if t])
+                | Q(menu_items__name__icontains=name)
+                | Q(menu_items__styles__contains=[style])
             ).distinct()
         if service_model in ("salon", "home", "mobile"):
             qs = qs.filter(service_models__contains=[service_model])
@@ -195,7 +286,44 @@ class StylistCreateView(APIView):
         blocked = blocked_account_ids(viewer) if viewer else set()
         if blocked:
             qs = qs.exclude(account_id__in=blocked)
-        qs = list(qs.order_by("-verification_tier", "-rating_count", "display_name")[:20])
+        if viewer is not None and style:
+            # Asking who does a style: not themselves.
+            qs = qs.exclude(account=viewer)
+        # Near someone: where they asked about, or where their hair profile says.
+        origin = _origin(params, viewer)
+        qs = list(qs.order_by("-verification_tier", "-rating_count", "display_name")[: 200 if origin else 20])
+        away = {}
+        if origin:
+            from apps.common.geo import miles
+
+            # Pages from before the map: placed now, a few at a time (each is cached).
+            for p in [p for p in qs if p.latitude is None][:10]:
+                _place(p)
+            within = params.get("within", "")
+            radius = None if within == "any" else _number(within, NEAR_MILES)
+            kept = []
+            for p in qs:
+                if p.latitude is None:
+                    continue
+                gap = miles(origin, (p.latitude, p.longitude))
+                # A stylist who travels reaches them if they're inside the stylist's radius.
+                reach = max(radius or 0, p.travel_radius_miles or 0) if "mobile" in (p.service_models or []) else radius
+                if radius is None or gap <= reach:
+                    away[p.pk] = gap
+                    kept.append(p)
+            qs = kept
+        extra = _for_style(qs, style, name, viewer) if style else {}
+        for pk, gap in away.items():
+            extra.setdefault(pk, {})["miles"] = round(gap, 1)
+        if style or origin:
+            # Their work in this style first, then the nearest, then checked and well rated.
+            qs.sort(key=lambda p: (
+                not extra.get(p.pk, {}).get("photo_of_style"),
+                round(away.get(p.pk, 0)),
+                -p.verification_tier,
+                -(p.rating_count or 0),
+            ))
+        qs = qs[:20]
         log_search(
             request,
             "stylists",
@@ -211,6 +339,7 @@ class StylistCreateView(APIView):
                     "display_name": p.display_name,
                     "avatar_uri": p.avatar_uri,
                     "base_area": p.base_area,
+                    **extra.get(p.pk, {}),
                 }
                 for p in qs
             ]
@@ -239,6 +368,8 @@ class StylistCreateView(APIView):
                     bio=data.get("bio", ""),
                     service_models=data["service_models"],
                     base_area=data["base_area"],
+                    address=data.get("address", ""),
+                    time_zone=data.get("time_zone", ""),
                     travel_radius_miles=data.get("travel_radius_miles"),
                     instagram_handle=data.get("instagram_handle", ""),
                     notice_hours=policies.get("notice_hours", 24),
@@ -259,6 +390,7 @@ class StylistCreateView(APIView):
         except IntegrityError:
             return Response({"message": "That handle has just been taken"}, status=409)
 
+        _place(profile)
         return Response(StylistProfileSerializer(profile).data, status=201)
 
 
@@ -293,6 +425,12 @@ class StylistMeView(APIView):
             if field in data:
                 setattr(profile, field, str(data[field] or "").strip())
                 update_fields.append(field)
+        if "time_zone" in data:
+            from apps.common.zones import is_zone
+
+            if is_zone(data["time_zone"]):
+                profile.time_zone = data["time_zone"]
+                update_fields.append("time_zone")
         if "proof_photo_uri" in data and profile.proof_photo_uri:
             # A new proof photo goes back into the queue.
             record_check(profile.account_id, "proof_photo", "pending", profile.proof_photo_uri)
@@ -348,6 +486,8 @@ class StylistMeView(APIView):
                     PaymentMethod.objects.create(stylist=profile, **m)
             if update_fields:
                 profile.save(update_fields=update_fields + ["updated_at"])
+        if {"base_area", "address"} & set(update_fields):
+            _place(profile)
 
         profile.refresh_from_db()
         return Response(StylistProfileSerializer(profile).data)
@@ -709,8 +849,7 @@ class StylistSummaryView(APIView):
         profile = _my_profile(request)
         if profile is None:
             return Response({"pending_requests": 0, "appointments_today": 0})
-        zone = ZoneInfo(settings.STYLIST_TIME_ZONE)
-        today = timezone.now().astimezone(zone).replace(hour=0, minute=0, second=0, microsecond=0)
+        today = timezone.now().astimezone(zones.of(profile)).replace(hour=0, minute=0, second=0, microsecond=0)
         mine = Booking.objects.filter(stylist_profile=profile)
         return Response(
             {

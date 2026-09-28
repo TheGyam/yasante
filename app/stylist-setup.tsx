@@ -6,6 +6,7 @@ import { errorMessage, useAuth, useAuthStore } from '@/features/auth';
 import {
   HandleField,
   PolicyFields,
+  LocationField,
   ServiceModelField,
   pageUrl,
   toHandle,
@@ -20,6 +21,7 @@ import {
 } from '@/features/stylist';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
+import { deviceZone } from '@/shared/lib/timeZone';
 import { EASE_OUT, makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { notify } from '@/shared/ui/dialog';
@@ -109,7 +111,8 @@ export default function StylistSetupScreen() {
     const { step: _step, ...profile } = draft;
     try {
       if (existing) {
-        await updateProfile.mutateAsync(profile);
+        // Editing her page from her own phone: her hours follow its clock.
+        await updateProfile.mutateAsync({ ...profile, timeZone: deviceZone() });
       } else {
         await createProfile.mutateAsync(profile);
         // Setting up a page is what makes the account a stylist.
@@ -172,8 +175,12 @@ export default function StylistSetupScreen() {
                 onChangeText={displayName =>
                   set({
                     displayName,
-                    // Suggest a handle from the name until she edits one herself.
-                    handle: draft.handle || toHandle(displayName),
+                    // Suggest a handle from the name until she edits one herself: while
+                    // it's still the suggestion for the name so far, it follows the name.
+                    handle:
+                      !draft.handle || draft.handle === toHandle(draft.displayName)
+                        ? toHandle(displayName)
+                        : draft.handle,
                   })
                 }
                 placeholder="Braids by Ama"
@@ -201,14 +208,11 @@ export default function StylistSetupScreen() {
                 value={draft.serviceModels}
                 onChange={serviceModels => set({ serviceModels })}
               />
-              <Input
-                label="Your area"
-                icon={MapPin}
-                value={draft.baseArea}
-                onChangeText={baseArea => set({ baseArea })}
-                placeholder="Peckham"
-                autoCapitalize="words"
-                hint="District only — never your address"
+              <LocationField
+                baseArea={draft.baseArea}
+                address={draft.address}
+                needsStreet={draft.serviceModels.some(m => m !== 'mobile')}
+                onChange={set}
               />
               {draft.serviceModels.includes('mobile') && (
                 <Input

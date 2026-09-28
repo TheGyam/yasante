@@ -3,6 +3,8 @@ import { Lightbulb } from 'lucide-react-native';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Card } from '@/shared/ui/Card';
 import { Text } from '@/shared/ui/Text';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/shared/lib/api/client';
 import { tipOfTheDay } from '../content';
 
 const useStyles = makeStyles(t => ({
@@ -17,9 +19,20 @@ const useStyles = makeStyles(t => ({
   },
 }));
 
+/** The tips, edited on the server; kept on the phone so the card never waits. */
+function useTips() {
+  return useQuery({
+    queryKey: ['content', 'tips'],
+    queryFn: async () =>
+      (await apiClient.get<{ id: number; text: string }[]>('/api/tips/')).data.map(t => t.text),
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+}
+
 export function TipOfTheDay() {
   const styles = useStyles();
   const theme = useTheme();
+  const { data: tips } = useTips();
 
   return (
     <Card>
@@ -31,7 +44,7 @@ export function TipOfTheDay() {
           Tip of the day
         </Text>
       </View>
-      <Text variant="body">{tipOfTheDay()}</Text>
+      <Text variant="body">{tipOfTheDay(new Date(), tips)}</Text>
     </Card>
   );
 }

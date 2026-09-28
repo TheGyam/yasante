@@ -34,6 +34,7 @@ from .serializers import (
     UserDetailSerializer,
     UserUpdateSerializer,
 )
+from .serializers import InsightsSerializer
 from .tasks import generate_data_export
 
 logger = logging.getLogger(__name__)
@@ -84,6 +85,11 @@ class UserDetailView(APIView):
         for field, value in changes.items():
             setattr(user, field, value)
         user.save(update_fields=list(changes.keys()) + ["updated_at"])
+        # One photo: a stylist's page wears the same one as their account.
+        if "avatar_uri" in changes:
+            from apps.stylists.models import StylistProfile
+
+            StylistProfile.objects.filter(account=user).update(avatar_uri=changes["avatar_uri"])
 
         return Response(UserDetailSerializer(user).data)
 
@@ -95,6 +101,9 @@ class UserDetailView(APIView):
             )
 
         user = request.user
+        from apps.accounts.social import revoke_apple
+
+        revoke_apple(user)
 
         with transaction.atomic():
             # Anonymise bookings (keep for stylist records)
@@ -106,6 +115,9 @@ class UserDetailView(APIView):
             user.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+NOT_SNAPSHOTTED = {"id", "user", "updated_at", "completed_at", "postcode", "latitude", "longitude"}
 
 
 @extend_schema_view(patch=extend_schema(request=HairProfileRequestSerializer, responses=HairProfileResponseSerializer))
@@ -130,13 +142,20 @@ class HairProfileUpdateView(APIView):
             serializer = HairProfileSerializer(profile, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            # Where they are, for stylists near them: the postcode, or else the area.
+            if {"postcode", "area"} & set(request.data):
+                from apps.common.geo import locate
 
-            # Create append-only snapshot for growth tracking
+                point = locate(profile.postcode) or locate(profile.area)
+                profile.latitude, profile.longitude = point or (None, None)
+                profile.save(update_fields=["latitude", "longitude"])
+
+            # Create append-only snapshot for growth tracking. Where they live isn't
+            # history worth keeping.
             snapshot_data = {
                 f.name: getattr(profile, f.name)
                 for f in HairProfile._meta.get_fields()
-                if f.name not in ("id", "user", "updated_at", "completed_at")
-                and hasattr(f, "column")
+                if f.name not in NOT_SNAPSHOTTED and hasattr(f, "column")
             }
             HairProfileSnapshot.objects.create(user=request.user, **snapshot_data)
 
@@ -342,3 +361,16 @@ class UsernameCheckView(APIView):
         value = normalise(request.query_params.get("username"))
         problem = username_problem(value, request.user)
         return Response({"username": value, "available": problem is None, "reason": problem})
+
+
+@extend_schema_view(get=extend_schema(responses=InsightsSerializer))
+class InsightsView(APIView):
+    """GET /api/insights/?period=month|all — your hair in numbers, from what's already recorded."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .insights import insights
+
+        period = "all" if request.query_params.get("period") == "all" else "month"
+        return Response(insights(request.user, period))

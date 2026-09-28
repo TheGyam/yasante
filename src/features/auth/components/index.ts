@@ -3,3 +3,4 @@ export * from './AuthPromptModal';
 export * from './AuthLayout';
 export * from './PasswordStrength';
 export * from './RoleCard';
+export * from './SocialSignIn';

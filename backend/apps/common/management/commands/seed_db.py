@@ -118,6 +118,8 @@ class Command(BaseCommand):
                     avatar_uri=acc.get("avatarUri", ""),
                     age_confirmed=True,
                     policy_version="seed",
+                    # Seeded people are signed-in test accounts, not sign-ups mid-way.
+                    email_verified=True,
                 )
                 users[acc["id"]] = user
                 hp = acc.get("hairProfile")

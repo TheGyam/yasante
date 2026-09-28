@@ -18,13 +18,11 @@ BUCKET_MINUTES = {
 }
 
 
-def monday_of(at):
+def monday_of(at, profile=None):
     """Monday 00:00 of the week `at` falls in, where she works."""
-    from zoneinfo import ZoneInfo
+    from apps.common import zones
 
-    from django.conf import settings
-
-    local = at.astimezone(ZoneInfo(settings.STYLIST_TIME_ZONE))
+    local = at.astimezone(zones.of(profile))
     start = local.replace(hour=0, minute=0, second=0, microsecond=0)
     return start - timedelta(days=start.weekday())
 
@@ -65,7 +63,7 @@ def count_week(profile, start, end):
 
 def numbers_for(profile: StylistProfile, now=None):
     now = now or timezone.now()
-    monday = monday_of(now)
+    monday = monday_of(now, profile)
     week = timedelta(days=7)
     return {
         "weekOf": monday.astimezone(dt_timezone.utc).isoformat().replace("+00:00", "Z"),

@@ -4,6 +4,7 @@ decides it. Every transition not allowed by the state machine is refused (409).
 """
 
 import logging
+import re
 import uuid
 from datetime import timedelta
 
@@ -101,10 +102,10 @@ def _parse_time(value):
         return None
 
 
-def _local_day(at):
-    from zoneinfo import ZoneInfo
+def _local_day(at, profile):
+    from apps.common import zones
 
-    return at.astimezone(ZoneInfo(settings.STYLIST_TIME_ZONE)).date()
+    return at.astimezone(zones.of(profile)).date()
 
 
 def _take(booking, scheduled_for, deposit):
@@ -129,7 +130,19 @@ def _take(booking, scheduled_for, deposit):
     booking.save()
 
 
+# A UK postcode at the end of an address ("12 Bellenden Road, SE15 4QJ").
+_POSTCODE = re.compile(r"([A-Z]{1,2}\d[A-Z\d]?)\s*(\d[A-Z]{2})\s*$", re.IGNORECASE)
+
+
+def _outcode(address):
+    """"SE15" from an address ending in a postcode, or "" if it doesn't."""
+    match = _POSTCODE.search(address or "")
+    return match.group(1).upper() if match else ""
+
+
 @extend_schema_view(get=extend_schema(responses=BookingSerializer(many=True)), post=extend_schema(request=BookingCreateRequestSerializer, responses={201: BookingSerializer}))
+
+
 class BookingListCreateView(APIView):
     """GET /api/bookings/?role=&status= · POST /api/bookings/"""
 
@@ -194,6 +207,18 @@ class BookingListCreateView(APIView):
         if not data.get("policy_version"):
             return _err("The stylist’s terms have to be accepted", 400)
 
+        # Where: at the stylist's, or at the client's when the stylist travels. A stylist
+        # who only travels always comes to the client.
+        models_offered = set(profile.service_models or [])
+        at_client = bool(data.get("at_client")) or models_offered == {"mobile"}
+        client_address = str(data.get("client_address") or "").strip()[:500]
+        if at_client:
+            if "mobile" not in models_offered:
+                return _err("This stylist doesn’t travel to clients. Book at their place instead", 400)
+            outcode = _outcode(client_address)
+            if not outcode:
+                return _err("Add your street and postcode so the stylist can get to you", 400)
+
         with transaction.atomic():
             # One request at a time per stylist, so two clients can't take one slot.
             StylistProfile.objects.select_for_update().get(pk=profile.pk)
@@ -221,9 +246,12 @@ class BookingListCreateView(APIView):
                 notes=str(data.get("notes") or "").strip()[:1000],
                 requested_times=starts,
                 expires_at=timezone.now() + settings.BOOKING_REQUEST_LAPSE_HOURS * HOUR,
-                area=profile.base_area,
+                # The client's postcode district when the stylist travels, so they can
+                # judge the journey before saying yes; the street waits for confirming.
+                area=outcode if at_client else profile.base_area,
                 # Held, not sent until it's confirmed.
-                address=profile.address,
+                address=client_address if at_client else profile.address,
+                at_client=at_client,
                 policy=profile.policies,
                 policy_version=str(data["policy_version"])[:50],
             )
@@ -429,6 +457,27 @@ class BookingAttendingView(_BookingAction):
         return _ok(booking, request)
 
 
+
+def _move_problem(booking, when, by):
+    """
+    Why an appointment can't move to `when`, or None. It must never land on another
+    appointment. A client asks within the stylist's working days and hours, as when
+    booking; a stylist may move her own appointment outside them.
+    """
+    profile = booking.stylist_profile
+    if profile is None:
+        return None
+    minutes = booking.duration_minutes or 120
+    if by == "client":
+        if not is_open_on(profile, when):
+            return "The stylist doesn’t work that day. Pick another"
+        if profile.availability and not start_fits(profile, when, minutes):
+            return "That’s outside the stylist’s hours. Pick another time"
+    if clash_exists(profile, when, minutes, exclude_id=booking.pk):
+        return "That time is already booked. Pick another"
+    return None
+
+
 @extend_schema_view(post=extend_schema(request=MoveRequestBodySerializer, responses=BookingSerializer))
 class BookingMoveView(_BookingAction):
     def act(self, request, booking):
@@ -444,8 +493,12 @@ class BookingMoveView(_BookingAction):
         when = _parse_time(request.data.get("scheduled_for"))
         if when is None or when < timezone.now():
             return _err("Pick a time that hasn’t passed", 400)
+        by = "stylist" if request.user.pk == booking.stylist_id else "client"
+        problem = _move_problem(booking, when, by)
+        if problem:
+            return _err(problem, 409 if "already booked" in problem else 400)
         booking.move_request = {
-            "by": "stylist" if request.user.pk == booking.stylist_id else "client",
+            "by": by,
             "scheduled_for": when.isoformat().replace("+00:00", "Z"),
         }
         booking.save(update_fields=["move_request", "updated_at"])
@@ -464,7 +517,11 @@ class BookingMoveAnswerView(_BookingAction):
         if asked.get("by") == side:
             return _err("The other side answers a move", 403)
         if request.data.get("accept"):
-            booking.scheduled_for = parse_iso(asked["scheduled_for"])
+            # Still free? Another booking may have taken it since it was asked for.
+            when = parse_iso(asked["scheduled_for"])
+            if _move_problem(booking, when, "stylist"):
+                return _err("That time has been booked since. Ask for another", 409)
+            booking.scheduled_for = when
             booking.moves += 1
             # A new day needs a new "yes, I'm coming".
             booking.attendance_confirmed_at = None
@@ -628,8 +685,8 @@ class SlotInterestListCreateView(APIView):
             stylist_id=profile.account_id,
             stylist_name=profile.display_name,
             stylist_handle=profile.handle,
-            from_date=_local_day(start),
-            to_date=_local_day(end),
+            from_date=_local_day(start, profile),
+            to_date=_local_day(end, profile),
         )
         return Response(present_slot_interest(interest), status=201)
 

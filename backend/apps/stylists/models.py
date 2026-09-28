@@ -58,8 +58,13 @@ NOT_HANDLES = {
     "robots.txt",
     "sitemap.xml",
     "waitlist",
+    "delete-account",
     # App screens opened by path (src/shared/lib/links.ts reserves the same words).
     "planner",
+    "saved",
+    "insights",
+    "who",
+    "work",
     "requests",
     "numbers",
     "shelf",
@@ -126,6 +131,13 @@ class StylistProfile(TimeStampedModel):
     # Private: copied onto a booking and shown to her client only once confirmed.
     address = models.CharField(max_length=500, blank=True, default="")
     travel_radius_miles = models.FloatField(null=True, blank=True)
+    # Where they are on the map, from the address's postcode or else the area: for
+    # "stylists near you". Never shown.
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    # Where her working hours are (IANA, e.g. Europe/London), from her phone when she
+    # sets up or edits her page. Empty: the default (apps.common.zones).
+    time_zone = models.CharField(max_length=64, blank=True, default="")
     instagram_handle = models.CharField(max_length=50, blank=True, default="")
 
     # Policies

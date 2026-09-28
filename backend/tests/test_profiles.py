@@ -116,3 +116,21 @@ def test_usernames_are_what_posts_show_and_share_a_namespace_with_handles(api, m
     # A stylist still posts as her brand.
     stylist_look = make_look(stylist.account, stylist=stylist)
     assert api().get(f"/api/looks/{stylist_look.pk}/").json()["authorName"] == stylist.display_name
+
+
+def test_a_postcode_puts_them_on_the_map_privately(api, make_user, monkeypatch):
+    from apps.common import geo
+    from apps.profiles.models import HairProfile, HairProfileSnapshot
+
+    monkeypatch.setattr(geo, "locate", lambda text: (51.47, -0.07) if text == "SE15 4QJ" else None)
+    user = make_user()
+    body = api(user).patch(f"/api/users/{user.pk}/hair-profile/", {"postcode": "SE15 4QJ", "area": "Peckham"}).json()
+    assert body["postcode"] == "SE15 4QJ" and "latitude" not in body
+    hair = HairProfile.objects.get(user=user)
+    assert (hair.latitude, hair.longitude) == (51.47, -0.07)
+    assert HairProfileSnapshot.objects.filter(user=user).exists()  # history still kept, without the location
+
+
+def test_tips_come_from_the_server(api):
+    tips = api().get("/api/tips/").json()
+    assert len(tips) >= 20 and all(t["text"] for t in tips)

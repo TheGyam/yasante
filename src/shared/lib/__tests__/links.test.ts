@@ -1,4 +1,4 @@
-import { routeForLink } from '../links';
+import { NOT_HANDLES, routeForLink } from '../links';
 
 describe('incoming links', () => {
   it('opens her page from the link in her bio', () => {
@@ -43,5 +43,32 @@ describe('app screens are never read as handles', () => {
 describe('policy pages open their screen', () => {
   it.each(['terms', 'privacy'])('%s', page => {
     expect(routeForLink(`https://yasante.com/${page}`)).toBe(`/policy/${page}`);
+  });
+});
+
+describe('every screen is reserved', () => {
+  // A screen opened by path that isn't on the list reads as a stylist's handle:
+  // yasante://saved once opened a stylist called "saved".
+  it('lists each top-level screen in NOT_HANDLES', () => {
+    const fs = require('fs') as typeof import('fs');
+    const path = require('path') as typeof import('path');
+    const root = path.join(__dirname, '../../../../app');
+    const names = new Set<string>();
+    const add = (dir: string) =>
+      fs.readdirSync(dir).forEach(entry => {
+        const name = entry.replace(/\.tsx$/, '');
+        if (/^\(.*\)$/.test(name)) return add(path.join(dir, entry));
+        if (
+          name.startsWith('_') ||
+          name.startsWith('+') ||
+          name === 'index' ||
+          name.startsWith('[')
+        )
+          return;
+        names.add(name);
+      });
+    add(root);
+    const missing = [...names].filter(n => !NOT_HANDLES.has(n));
+    expect(missing).toEqual([]);
   });
 });

@@ -17,7 +17,7 @@ from django.utils.safestring import mark_safe
 from apps.common.renderers import CamelCaseJSONRenderer
 
 BUILD = Path(__file__).resolve().parent / "static" / "site"
-DESCRIPTION = "Find a braider whose work you’ve seen on hair like yours, and book them."
+DESCRIPTION = "Discover styles on real textured hair, get to know your own, keep track of what works, and book stylists by their work."
 
 
 def _read_assets():
@@ -88,7 +88,7 @@ def page(
         request,
         "web/site.html",
         {
-            "title": f"{title} · Yasante" if title else "Yasante — book braiders by their work",
+            "title": f"{title} · Yasante" if title else "Yasante — everything for your hair, in one place",
             "og_title": title or "Yasante",
             "og_type": og_type,
             "description": (description or DESCRIPTION).strip(),

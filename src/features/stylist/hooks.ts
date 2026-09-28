@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
-import { stylistApi } from './api';
+import { stylistApi, type Within } from './api';
 import { handleProblem } from './handle';
 import type {
   MenuItemDraft,
@@ -28,6 +28,20 @@ export function useMyStylistProfile() {
     staleTime: 10 * 60 * 1000,
     // A missing profile is an answer, not a failure worth retrying.
     retry: (count, error) => !isNotFound(error) && count < 2,
+  });
+}
+
+/** Who does a style, with their price for it and a photo of their work in it. */
+export function useStylistsForStyle(
+  style?: string,
+  { enabled = true, within }: { enabled?: boolean; within?: Within } = {}
+) {
+  return useQuery({
+    queryKey: [KEY, 'style', style, within],
+    queryFn: () => stylistApi.byStyle(style!, within),
+    placeholderData: previous => previous,
+    enabled: enabled && !!style,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

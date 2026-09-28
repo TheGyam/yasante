@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Media, SearchLog
+from .models import ClientError, Media, SearchLog
 
 
 @admin.register(Media)
@@ -33,3 +33,11 @@ class SearchLogAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+@admin.register(ClientError)
+class ClientErrorAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "kind", "platform", "os_version", "app_version", "message")
+    list_filter = ("kind", "platform", "app_version")
+    search_fields = ("message", "stack")
+    readonly_fields = [f.name for f in ClientError._meta.fields]

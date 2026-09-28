@@ -94,7 +94,8 @@ def present_booking(booking, viewer):
         "bringing_own_hair": booking.bringing_own_hair,
         "hair_included": booking.hair_included,
         "notes": booking.notes,
-        "calendar_url": booking.calendar_url if confirmed else None,
+        # A signed .ics link for this person: the phone's own "Add to calendar".
+        "calendar_url": calendar_url(booking, viewer) if confirmed and viewer is not None and booking.scheduled_for else None,
         "requested_times": booking.requested_times,
         "scheduled_for": booking.scheduled_for,
         "expires_at": booking.expires_at,
@@ -112,8 +113,12 @@ def present_booking(booking, viewer):
             else None
         ),
         "area": booking.area,
-        # Never sent before it's confirmed.
-        "address": booking.address if confirmed else None,
+        "at_client": booking.at_client,
+        # Her clock, where it happens: times read in it, marked when that isn't yours.
+        "time_zone": zones.of(booking.stylist_profile).key,
+        # Never sent to the stylist before it's confirmed. A client always sees their
+        # own address when the stylist is coming to them.
+        "address": booking.address if confirmed or (booking.at_client and not as_stylist) else None,
         "policy": booking.policy,
         "policy_version": booking.policy_version,
         "reason": booking.reason,
@@ -172,6 +177,8 @@ def present_review(review):
 
 
 # ── Shapes for the schema the app's types are generated from ─────────────────────
+from apps.common import zones
+from .ics import calendar_url
 from rest_framework import serializers  # noqa: E402
 
 from apps.common.schema import optional  # noqa: E402
@@ -271,6 +278,8 @@ class BookingSerializer(serializers.Serializer):
     move_request = optional(MoveRequestSerializer())
     deposit = optional(DepositSerializer())
     area = serializers.CharField()
+    at_client = serializers.BooleanField(help_text="The stylist travels to the client")
+    time_zone = serializers.CharField(help_text="The stylist's zone (IANA); times read in it")
     address = optional(serializers.CharField())
     policy = BookingPolicySerializer()
     policy_version = serializers.CharField()
@@ -325,6 +334,8 @@ class BookingCreateRequestSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False)
     policy_version = serializers.CharField()
     look_id = serializers.CharField(required=False, help_text="The look the booking is from")
+    at_client = serializers.BooleanField(required=False, help_text="The stylist comes to the client")
+    client_address = serializers.CharField(required=False, help_text="Street and postcode, when at_client")
 
 
 class AcceptRequestSerializer(serializers.Serializer):

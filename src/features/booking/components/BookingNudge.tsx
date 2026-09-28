@@ -47,7 +47,7 @@ function pickNudge(bookings: Booking[], waiting: SlotInterest[]): Nudge | undefi
   if (coming) {
     return {
       icon: CalendarCheck,
-      title: `Still coming to ${coming.stylistName} ${dayLabel(coming.scheduledFor!).toLowerCase()}?`,
+      title: `Still coming to ${coming.stylistName} ${dayLabel(coming.scheduledFor!, coming.timeZone).toLowerCase()}?`,
       subtitle: 'One tap lets them plan',
       href: `/bookings/${coming.id}`,
     };
@@ -56,7 +56,7 @@ function pickNudge(bookings: Booking[], waiting: SlotInterest[]): Nudge | undefi
   if (suggested) {
     return {
       icon: CalendarClock,
-      title: `${suggested.stylistName} suggested ${inSentence(whenLabel(suggested.proposal!.scheduledFor))}`,
+      title: `${suggested.stylistName} suggested ${inSentence(whenLabel(suggested.proposal!.scheduledFor, suggested.timeZone))}`,
       subtitle: 'Does it work for you?',
       href: `/bookings/${suggested.id}`,
     };

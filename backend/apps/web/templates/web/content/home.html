@@ -1,4 +1,4 @@
-<header><h1>Yasante — book braiders by their work</h1><p>{{ c.about }}</p></header>
+<header><h1>Yasante — everything for your hair, in one place</h1><p>{{ c.about }}</p></header>
 <nav aria-label="Get started"><p><a href="/looks">Browse looks</a> · <a href="/auth/signup?role=stylist">Set up a free stylist page</a></p></nav>
 {% if c.styles %}<section><h2>Styles</h2><ul>{% for s in c.styles %}<li><a href="{{ s.path }}">{{ s.name }}</a></li>{% endfor %}</ul></section>{% endif %}
 {% if c.stylists %}<section><h2>Braiders on Yasante</h2><ul>{% for s in c.stylists %}<li><a href="{{ s.path }}">{{ s.name }}</a>{% if s.area %} — {{ s.area }}{% endif %}{% if s.bio %}. {{ s.bio }}{% endif %}</li>{% endfor %}</ul></section>{% endif %}

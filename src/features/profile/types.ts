@@ -40,6 +40,8 @@ export interface HairProfile {
   chemicals?: ChemicalTreatment[];
   /** The district she'd like stylists near. */
   area?: string;
+  /** Optional: measures how far stylists are. Never shown to anyone. */
+  postcode?: string;
   budget?: StyleBudget;
   photoUri?: string;
   completedAt?: string;

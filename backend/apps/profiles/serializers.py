@@ -11,7 +11,8 @@ from .models import HairProfile
 class HairProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = HairProfile
-        exclude = ["id", "user"]
+        # The map point is worked out here, never sent or set from outside.
+        exclude = ["id", "user", "latitude", "longitude"]
 
 
 class UserDetailSerializer(UserSerializer):
@@ -30,6 +31,14 @@ class UserUpdateSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     avatar_uri = serializers.URLField(max_length=500, required=False, allow_blank=True)
     username = serializers.CharField(max_length=31, required=False)
+    time_zone = serializers.CharField(max_length=64, required=False)
+
+    def validate_time_zone(self, value):
+        from apps.common.zones import is_zone
+
+        if not is_zone(value):
+            raise serializers.ValidationError("That isn’t a time zone.")
+        return value
 
     def validate_email(self, value):
         from apps.accounts.models import User
@@ -128,6 +137,7 @@ class HairProfileRequestSerializer(serializers.Serializer):
     scalp = serializers.ListField(child=serializers.CharField(), required=False)
     chemicals = serializers.ListField(child=serializers.CharField(), required=False)
     area = serializers.CharField(required=False, allow_blank=True)
+    postcode = serializers.CharField(required=False, allow_blank=True)
     budget = serializers.CharField(required=False, allow_blank=True)
     photo_uri = serializers.CharField(required=False, allow_blank=True)
     length_measured_at = serializers.DateTimeField(required=False, allow_null=True)
@@ -147,3 +157,38 @@ class HairLogRequestSerializer(serializers.Serializer):
     at = serializers.DateTimeField(required=False, help_text="When it happened; now if left out")
     local_at = serializers.CharField(required=False, help_text="The phone's own clock, ISO without offset")
     booking_id = serializers.UUIDField(required=False)
+
+
+class CurrentStyleSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    since = serializers.DateTimeField()
+    days = serializers.IntegerField()
+    booking_id = serializers.CharField()
+
+
+class LengthInsightSerializer(serializers.Serializer):
+    now = serializers.CharField()
+    now_cm = optional(serializers.FloatField())
+    measured_at = optional(serializers.DateTimeField())
+    grew_cm = optional(serializers.FloatField())
+    grew_steps = optional(serializers.IntegerField())
+
+
+class InsightsSerializer(serializers.Serializer):
+    """GET /api/insights/ — a client's hair in numbers."""
+
+    period = serializers.ChoiceField(choices=["month", "all"])
+    since = optional(serializers.DateTimeField())
+    appointments = serializers.IntegerField()
+    spent = serializers.FloatField()
+    styles = serializers.ListField(child=serializers.CharField())
+    stylists = serializers.IntegerField()
+    current_style = optional(CurrentStyleSerializer())
+    style_lasts_days = optional(serializers.IntegerField())
+    washes = serializers.IntegerField()
+    usual_wash_day = optional(serializers.CharField())
+    wash_every_days = optional(serializers.IntegerField())
+    days_since_trim = optional(serializers.IntegerField())
+    length = optional(LengthInsightSerializer())
+    looks_saved = serializers.IntegerField()
+    products_added = serializers.IntegerField()

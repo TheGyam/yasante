@@ -10,8 +10,13 @@ export interface CodeSent {
 
 export const emailVerificationApi = {
   /** POST /api/auth/email/start/ — emails a six-digit code, to a corrected address if given. */
-  start: async (email?: string) =>
-    (await apiClient.post<CodeSent>('/api/auth/email/start/', email ? { email } : {})).data,
+  start: async ({ email, resend }: { email?: string; resend?: boolean } = {}) =>
+    (
+      await apiClient.post<CodeSent>('/api/auth/email/start/', {
+        ...(email && { email }),
+        ...(resend && { resend: true }),
+      })
+    ).data,
 
   /** POST /api/auth/email/verify/ — returns the account with the email confirmed. */
   verify: async (code: string) =>

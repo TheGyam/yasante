@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from . import social
 from .emails import send_email_code, send_password_reset
 from .models import DeviceToken, EmailChallenge, Invite, User
 from .serializers import (
@@ -41,6 +42,8 @@ from .serializers import (
     RefreshTokenSerializer,
     ResetPasswordSerializer,
     SignupSerializer,
+    SocialAuthResponseSerializer,
+    SocialLoginSerializer,
     TokenPairSerializer,
     UserResponseSerializer,
     UserSerializer,
@@ -76,6 +79,92 @@ class LoginView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         return Response(build_auth_response(user))
+
+
+@extend_schema_view(post=extend_schema(request=SocialLoginSerializer, responses=SocialAuthResponseSerializer))
+class SocialLoginView(APIView):
+    """
+    POST /api/auth/social/ — Sign in with Apple or Google, which also signs up.
+
+    Finds the account by the provider's id, then by a verified email (linking the
+    two), and otherwise makes a new one. Apple and Google have already proved the
+    email, so it starts confirmed and never needs a password.
+    """
+
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = [LoginThrottle]
+
+    def post(self, request):
+        serializer = SocialLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        provider = data["provider"]
+        label = "Apple" if provider == "apple" else "Google"
+        try:
+            who = social.verify(provider, data["id_token"])
+        except social.NotVerified:
+            logger.info("%s sign-in refused", provider, exc_info=True)
+            return Response(
+                {"message": f"We couldn’t sign you in with {label}. Please try again."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        field = f"{provider}_id"
+        user = User.objects.filter(**{field: who["sub"]}).first()
+        if user is None and who["email"] and who["email_verified"]:
+            user = User.objects.filter(email__iexact=who["email"]).first()
+            if user is not None and not getattr(user, field):
+                setattr(user, field, who["sub"])
+                user.email_verified = True
+                user.save(update_fields=[field, "email_verified", "updated_at"])
+            elif user is not None:
+                # Already linked to a different Apple or Google account.
+                return Response(
+                    {"message": f"That email is already linked to another {label} account. Sign in with your email and password instead."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        created = False
+        if user is None:
+            if not who["email"]:
+                return Response(
+                    {"message": f"{label} didn’t share an email address, so we can’t make your account. Please sign up with your email instead."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if not data["age_confirmed"] or not data.get("policy_version"):
+                return Response(
+                    {"message": "Please confirm you’re 18 or over and agree to the terms first."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            name = (data.get("name") or who["name"] or who["email"].split("@")[0]).strip()[:150]
+            user = User.objects.create_user(
+                email=who["email"],
+                name=name,
+                roles=[data["role"]],
+                email_verified=True,
+                age_confirmed=True,
+                policy_version=data["policy_version"],
+                **{field: who["sub"]},
+            )
+            user.set_unusable_password()
+            user.save(update_fields=["password"])
+            created = True
+
+        if provider == "apple" and not user.apple_refresh_token:
+            token = social.apple_refresh_token(data.get("authorization_code"), who["aud"])
+            if token:
+                user.apple_refresh_token = token
+                user.save(update_fields=["apple_refresh_token"])
+
+        if not user.is_active:
+            return Response(
+                {"message": "This account has been closed. Contact admin@yasante.com if you think that’s a mistake."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return Response(
+            {**build_auth_response(user), "created": created},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
 
 
 @extend_schema_view(post=extend_schema(request=RefreshTokenSerializer, responses=TokenPairSerializer))
@@ -257,6 +346,7 @@ class EmailStartView(APIView):
         serializer.is_valid(raise_exception=True)
         user = request.user
         email = (serializer.validated_data.get("email") or user.email).strip().lower()
+        changed = email != user.email.lower()
 
         if email != user.email.lower():
             if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
@@ -272,6 +362,23 @@ class EmailStartView(APIView):
                 {"message": "Your email is already confirmed."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Opening the screen again (not asking for a new code): the code already sent
+        # still works, so say how long it has left instead of emailing another.
+        if not serializer.validated_data["resend"] and not changed:
+            live = (
+                EmailChallenge.objects.filter(user=user, email=email, expires_at__gt=timezone.now())
+                .order_by("-created_at")
+                .first()
+            )
+            if live and not live.is_locked:
+                age = (timezone.now() - live.created_at).total_seconds()
+                return Response(
+                    {
+                        "resend_in_seconds": max(0, int(settings.VERIFICATION_CODE_RESEND_SECONDS - age)),
+                        "expires_in_seconds": int((live.expires_at - timezone.now()).total_seconds()),
+                    }
+                )
 
         recent = EmailChallenge.objects.filter(
             user=user,

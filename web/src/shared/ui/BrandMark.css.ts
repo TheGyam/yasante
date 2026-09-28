@@ -1,21 +1,9 @@
 import { style } from '@vanilla-extract/css';
-import { radius, weight } from '@/shared/theme/tokens';
-import { vars } from '@/shared/theme/vars.css';
+import { weight } from '@/shared/theme/tokens';
 
 export const mark = style({ display: 'inline-flex', alignItems: 'center', gap: 10 });
 
-export const tile = style({
-  display: 'grid',
-  placeItems: 'center',
-  width: 34,
-  height: 34,
-  borderRadius: radius.sm,
-  background: vars.color.accent,
-  color: vars.color.text.onAccent,
-  fontSize: 19,
-  fontWeight: weight.bold,
-  lineHeight: 1,
-});
+export const tile = style({ display: 'block', width: 34, height: 34, flexShrink: 0 });
 
 export const word = style({
   fontSize: 20,

@@ -193,6 +193,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
           description: ''
+  /api/auth/social/:
+    post:
+      operationId: auth_social_create
+      description: |-
+        POST /api/auth/social/ — Sign in with Apple or Google, which also signs up.
+
+        Finds the account by the provider's id, then by a verified email (linking the
+        two), and otherwise makes a new one. Apple and Google have already proved the
+        email, so it starts confirmed and never needs a password.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SocialLoginRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SocialAuthResponse'
+          description: ''
   /api/blocks/:
     get:
       operationId: blocks_list
@@ -831,6 +858,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/CarePlanSessionResponse'
           description: ''
+  /api/client-errors/:
+    get:
+      operationId: client_errors_retrieve
+      description: |-
+        GET /api/client-errors/ — the latest start-up checkpoints, to see how far a phone
+        nobody here can plug in gets. Checkpoints only: nothing from crashes, nothing
+        about who.
+      tags:
+      - client-errors
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: client_errors_create
+      tags:
+      - client-errors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientErrorRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/collections/:
     get:
       operationId: collections_list
@@ -1371,6 +1429,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HairLog'
+          description: ''
+  /api/insights/:
+    get:
+      operationId: insights_retrieve
+      description: GET /api/insights/?period=month|all — your hair in numbers, from
+        what's already recorded.
+      tags:
+      - insights
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Insights'
           description: ''
   /api/invites/{code}/:
     get:
@@ -2443,6 +2517,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/StylistSummary'
           description: ''
+  /api/tips/:
+    get:
+      operationId: tips_list
+      description: GET /api/tips/ — the tips the home screen rotates through, one
+        a day. Public.
+      tags:
+      - tips
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tip'
+          description: ''
   /api/uploads/:
     post:
       operationId: uploads_create
@@ -2873,6 +2965,12 @@ components:
           - $ref: '#/components/schemas/Deposit'
         area:
           type: string
+        atClient:
+          type: boolean
+          description: The stylist travels to the client
+        timeZone:
+          type: string
+          description: The stylist's zone (IANA); times read in it
         address:
           type: string
         policy:
@@ -2908,6 +3006,7 @@ components:
           format: date-time
       required:
       - area
+      - atClient
       - bringingOwnHair
       - clientName
       - createdAt
@@ -2923,6 +3022,7 @@ components:
       - status
       - styles
       - stylistName
+      - timeZone
       - updatedAt
     BookingCreateRequestRequest:
       type: object
@@ -2956,6 +3056,13 @@ components:
           type: string
           minLength: 1
           description: The look the booking is from
+        atClient:
+          type: boolean
+          description: The stylist comes to the client
+        clientAddress:
+          type: string
+          minLength: 1
+          description: Street and postcode, when at_client
       required:
       - bringingOwnHair
       - policyVersion
@@ -3204,6 +3311,44 @@ components:
         * `colour` - Colour
         * `bleach` - Bleach
         * `keratin` - Keratin
+    ClientErrorKindEnum:
+      enum:
+      - crash
+      - stall
+      - boot
+      type: string
+      description: |-
+        * `crash` - crash
+        * `stall` - stall
+        * `boot` - boot
+    ClientErrorRequest:
+      type: object
+      properties:
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/ClientErrorKindEnum'
+          default: crash
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        stack:
+          type: string
+          maxLength: 20000
+        platform:
+          type: string
+          maxLength: 20
+        osVersion:
+          type: string
+          maxLength: 40
+        appVersion:
+          type: string
+          maxLength: 40
+        context:
+          type: object
+          additionalProperties: {}
+      required:
+      - message
     ClientRecord:
       type: object
       properties:
@@ -3492,6 +3637,23 @@ components:
           type: boolean
         timing:
           type: boolean
+    CurrentStyle:
+      type: object
+      properties:
+        name:
+          type: string
+        since:
+          type: string
+          format: date-time
+        days:
+          type: integer
+        bookingId:
+          type: string
+      required:
+      - bookingId
+      - days
+      - name
+      - since
     DataExportResponse:
       type: object
       properties:
@@ -3586,6 +3748,9 @@ components:
           type: string
           format: email
           minLength: 1
+        resend:
+          type: boolean
+          default: false
     EmailVerifyRequest:
       type: object
       description: POST /api/auth/email/verify/
@@ -3704,9 +3869,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FreeDay'
+        timeZone:
+          type: string
+          description: 'The stylist''s zone (IANA): whose clock the times are on'
       required:
       - days
       - minutes
+      - timeZone
     FrequencyEnum:
       enum:
       - daily
@@ -3841,6 +4010,9 @@ components:
         area:
           type: string
           maxLength: 100
+        postcode:
+          type: string
+          maxLength: 10
         budget:
           oneOf:
           - $ref: '#/components/schemas/BudgetEnum'
@@ -3923,6 +4095,55 @@ components:
         * `fresh` - fresh
         * `okay` - okay
         * `tired` - tired
+    Insights:
+      type: object
+      description: GET /api/insights/ — a client's hair in numbers.
+      properties:
+        period:
+          $ref: '#/components/schemas/PeriodEnum'
+        since:
+          type: string
+          format: date-time
+        appointments:
+          type: integer
+        spent:
+          type: number
+          format: double
+        styles:
+          type: array
+          items:
+            type: string
+        stylists:
+          type: integer
+        currentStyle:
+          allOf:
+          - $ref: '#/components/schemas/CurrentStyle'
+        styleLastsDays:
+          type: integer
+        washes:
+          type: integer
+        usualWashDay:
+          type: string
+        washEveryDays:
+          type: integer
+        daysSinceTrim:
+          type: integer
+        length:
+          allOf:
+          - $ref: '#/components/schemas/LengthInsight'
+        looksSaved:
+          type: integer
+        productsAdded:
+          type: integer
+      required:
+      - appointments
+      - looksSaved
+      - period
+      - productsAdded
+      - spent
+      - styles
+      - stylists
+      - washes
     InviteResponse:
       type: object
       description: |-
@@ -3984,6 +4205,24 @@ components:
         * `waist` - Waist
         * `hip` - Hip
         * `tailbone` - Tailbone
+    LengthInsight:
+      type: object
+      properties:
+        now:
+          type: string
+        nowCm:
+          type: number
+          format: double
+        measuredAt:
+          type: string
+          format: date-time
+        grewCm:
+          type: number
+          format: double
+        grewSteps:
+          type: integer
+      required:
+      - now
     LoginRequest:
       type: object
       description: POST /api/auth/login/
@@ -4527,6 +4766,8 @@ components:
             minLength: 1
         area:
           type: string
+        postcode:
+          type: string
         budget:
           type: string
         photoUri:
@@ -4618,6 +4859,14 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        address:
+          type: string
+          default: ''
+          maxLength: 500
+        timeZone:
+          type: string
+          default: ''
+          maxLength: 64
         travelRadiusMiles:
           type: number
           format: double
@@ -4666,6 +4915,10 @@ components:
           type: string
           minLength: 1
           maxLength: 31
+        timeZone:
+          type: string
+          minLength: 1
+          maxLength: 64
     PaymentMethod:
       type: object
       description: |-
@@ -4703,6 +4956,14 @@ components:
       required:
       - details
       - label
+    PeriodEnum:
+      enum:
+      - month
+      - all
+      type: string
+      description: |-
+        * `month` - month
+        * `all` - all
     Policies:
       type: object
       properties:
@@ -4886,6 +5147,14 @@ components:
           - $ref: '#/components/schemas/MoneyMethod'
       required:
       - scheduledFor
+    ProviderEnum:
+      enum:
+      - apple
+      - google
+      type: string
+      description: |-
+        * `apple` - apple
+        * `google` - google
     PublicProfile:
       type: object
       description: 'Her page''s profile: no proof photo, payment details or address,
@@ -4925,6 +5194,9 @@ components:
         travelRadiusMiles:
           type: number
           format: double
+        timeZone:
+          type: string
+          maxLength: 64
         instagramHandle:
           type: string
           maxLength: 50
@@ -5331,6 +5603,54 @@ components:
       - from
       - stylistId
       - to
+    SocialAuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresAt:
+          type: integer
+          description: Milliseconds since the epoch
+        created:
+          type: boolean
+          description: A new account was made just now
+      required:
+      - accessToken
+      - created
+      - expiresAt
+      - refreshToken
+      - user
+    SocialLoginRequest:
+      type: object
+      description: POST /api/auth/social/
+      properties:
+        provider:
+          $ref: '#/components/schemas/ProviderEnum'
+        idToken:
+          type: string
+          minLength: 1
+        authorizationCode:
+          type: string
+        name:
+          type: string
+          maxLength: 150
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          default: client
+        ageConfirmed:
+          type: boolean
+          default: false
+        policyVersion:
+          type: string
+          maxLength: 50
+      required:
+      - idToken
+      - provider
     SourceEnum:
       enum:
       - catalogue
@@ -5431,6 +5751,9 @@ components:
         travelRadiusMiles:
           type: number
           format: double
+        timeZone:
+          type: string
+          maxLength: 64
         instagramHandle:
           type: string
           maxLength: 50
@@ -5500,6 +5823,14 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        address:
+          type: string
+          default: ''
+          maxLength: 500
+        timeZone:
+          type: string
+          default: ''
+          maxLength: 64
         travelRadiusMiles:
           type: number
           format: double
@@ -5543,6 +5874,27 @@ components:
           type: string
         baseArea:
           type: string
+        serviceId:
+          type: string
+        fromPrice:
+          type: number
+          format: double
+        rating:
+          type: number
+          format: double
+        ratingCount:
+          type: integer
+        verificationTier:
+          type: integer
+        photoUri:
+          type: string
+        lookId:
+          type: string
+        photoOfStyle:
+          type: boolean
+        miles:
+          type: number
+          format: double
       required:
       - accountId
       - baseArea
@@ -5676,6 +6028,16 @@ components:
           - $ref: '#/components/schemas/NullEnum'
       required:
       - outcome
+    Tip:
+      type: object
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+      required:
+      - id
+      - text
     TokenPair:
       type: object
       properties:
@@ -5778,6 +6140,7 @@ components:
         emailVerified:
           type: boolean
           readOnly: true
+          title: Email confirmed
         phone:
           type: string
           readOnly: true
@@ -5831,6 +6194,7 @@ components:
         emailVerified:
           type: boolean
           readOnly: true
+          title: Email confirmed
         phone:
           type: string
           readOnly: true

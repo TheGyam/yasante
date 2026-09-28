@@ -149,3 +149,28 @@ class NotificationLog(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+
+class ClientError(models.Model):
+    """
+    Something that went wrong inside the app on someone's phone: a crash, or a start-up
+    that stalled. Read in the admin, so a problem on a phone nobody here can plug in is
+    still seen.
+    """
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    kind = models.CharField(max_length=20, default="crash")  # crash, stall
+    message = models.CharField(max_length=500)
+    stack = models.TextField(blank=True, default="")
+    platform = models.CharField(max_length=20, blank=True, default="")
+    os_version = models.CharField(max_length=40, blank=True, default="")
+    app_version = models.CharField(max_length=40, blank=True, default="")
+    context = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = "common_client_error"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.platform} {self.kind}: {self.message[:60]}"

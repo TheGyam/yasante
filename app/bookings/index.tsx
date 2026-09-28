@@ -42,8 +42,8 @@ export default function BookingsScreen() {
       title={`${booking.serviceName} · ${booking.stylistName}`}
       subtitle={
         booking.scheduledFor
-          ? whenLabel(booking.scheduledFor)
-          : booking.requestedTimes.map(whenLabel).join(' · ')
+          ? whenLabel(booking.scheduledFor, booking.timeZone)
+          : booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(' · ')
       }
       value={STATUS_LABELS[booking.status]}
       icon={CalendarClock}

@@ -50,6 +50,8 @@ export interface Booking {
 
   serviceId: string;
   serviceName: string;
+  /** Style ids from the taxonomy, from the service. */
+  styles?: string[];
   /** The length and size she chose, as the stylist named them. */
   optionLabels?: string[];
   price: number;
@@ -81,7 +83,11 @@ export interface Booking {
 
   /** The district. The full address arrives only once the booking is confirmed. */
   area: string;
+  /** The stylist travels to the client; `area` is then the client's postcode district. */
+  atClient?: boolean;
   address?: string;
+  /** The stylist's zone (IANA): appointment times read on her clock. */
+  timeZone?: string;
 
   policy: StylistPolicies;
   /** The version of her terms the client ticked, stored so it can't be rewritten. */
@@ -128,10 +134,15 @@ export interface BookingDraft {
   policyVersion: string;
   /** The look she's booking from, so the stylist sees the picture. */
   lookId?: string;
+  /** The stylist comes to the client, at this street and postcode. */
+  atClient?: boolean;
+  clientAddress?: string;
 }
 
 /** A stylist's free start times for one service, day by day. Only days with room. */
 export interface FreeSlots {
+  /** The stylist's zone (IANA): whose clock the times are on. */
+  timeZone?: string;
   /** How long the job runs, which is what decides the times. */
   minutes: number;
   days: { date: string; times: string[] }[];

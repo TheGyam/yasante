@@ -31,8 +31,9 @@ export function useImagePicker() {
       }
       return result.uri;
     } catch (err: any) {
+      // Said out loud by the caller: "no access" silently doing nothing reads as broken.
       setError(pickerMessage(err));
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -68,8 +69,9 @@ export function useImagePicker() {
       }
       return result.uri;
     } catch (err: any) {
+      // Said out loud by the caller: "no access" silently doing nothing reads as broken.
       setError(pickerMessage(err));
-      return null;
+      throw err;
     } finally {
       setLoading(false);
     }

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import type { TextInput } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { Lock, Mail } from 'lucide-react-native';
-import { AuthLayout, AuthSwitch, errorMessage, useLogin } from '@/features/auth';
+import { AuthLayout, AuthSwitch, errorMessage, SocialSignIn, useLogin } from '@/features/auth';
 import { haptics } from '@/shared/lib/haptics';
 import { Button } from '@/shared/ui/Button';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
@@ -68,6 +68,9 @@ export default function LoginScreen() {
       }
     >
       {formError ? <InlineAlert message={formError} /> : null}
+
+      {/* Apple and Google accounts are already confirmed: the flow closes on its own. */}
+      <SocialSignIn onError={setFormError} />
 
       <Input
         label="Email"

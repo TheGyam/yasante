@@ -15,7 +15,9 @@
         "gradleCommand": ":app:assembleDebug"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.yasante.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.yasante.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "961915522127-7p2qoh7kl2ftlhbf7c6fol9knteu0go9.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "961915522127-unbtbgps806s9l5rm04kbfce9bfob3gv.apps.googleusercontent.com"
       }
     },
     "preview": {
@@ -27,7 +29,9 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.yasante.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.yasante.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "961915522127-7p2qoh7kl2ftlhbf7c6fol9knteu0go9.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "961915522127-unbtbgps806s9l5rm04kbfce9bfob3gv.apps.googleusercontent.com"
       }
     },
     "production": {
@@ -36,10 +40,12 @@
         "simulator": false
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.yasante.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.yasante.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "961915522127-7p2qoh7kl2ftlhbf7c6fol9knteu0go9.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "961915522127-unbtbgps806s9l5rm04kbfce9bfob3gv.apps.googleusercontent.com"
       },
       "autoIncrement": true
     }
@@ -49,7 +55,7 @@
       "ios": {
         "appleId": "your-apple-id@example.com",
         "ascAppId": "your-app-store-connect-app-id",
-        "appleTeamId": "your-apple-team-id"
+        "appleTeamId": "BLJM94S6TR"
       },
       "android": {
         "serviceAccountKeyPath": "./path/to/api-key.json",

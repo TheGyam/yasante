@@ -265,6 +265,37 @@ defineMocks({
   },
 
   'GET /api/stylists/': request => {
+    const style = request.query.get('style');
+    if (style) {
+      // Who does a style: anyone with it on their menu, with that service's price.
+      return [...db.stylists.values()]
+        .filter(p => p.published)
+        .map(p => ({
+          p,
+          item: menuOf(p.accountId).find(m =>
+            m.name.toLowerCase().includes(style.replace(/-/g, ' '))
+          ),
+        }))
+        .filter(({ item }) => item)
+        .map(({ p, item }) => ({
+          accountId: p.accountId,
+          handle: p.handle,
+          displayName: p.displayName,
+          avatarUri: p.avatarUri,
+          baseArea: p.baseArea,
+          serviceId: item!.id,
+          fromPrice: item!.price,
+          rating: reviewsFor(p.accountId).rating?.average,
+          ratingCount: reviewsFor(p.accountId).rating?.count,
+          verificationTier: p.verificationTier,
+          ...(() => {
+            const work = portfolioOf(p.accountId);
+            const ofIt = work.find(ph => ph.serviceId === item!.id);
+            const photo = ofIt ?? work[0];
+            return { photoUri: photo?.thumbUri ?? photo?.uri, photoOfStyle: !!ofIt };
+          })(),
+        }));
+    }
     const words = (request.query.get('q') ?? '').toLowerCase().split(/\s+/).filter(Boolean);
     if (!words.length) return [];
     return [...db.stylists.values()]

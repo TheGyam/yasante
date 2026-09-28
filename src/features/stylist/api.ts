@@ -1,5 +1,6 @@
 import { apiClient } from '@/shared/lib/api/client';
 import { uploadImage } from '@/shared/lib/imageService';
+import { deviceZone } from '@/shared/lib/timeZone';
 import type {
   StylistSearchResult,
   MenuItem,
@@ -20,10 +21,21 @@ export interface HandleCheck {
   suggestions?: string[];
 }
 
+/** How far to look, in miles, or anywhere. */
+export type Within = number | 'any';
+
 export const stylistApi = {
   /** GET /api/stylists/?q= — live pages matching a name, handle or area. */
   search: async (q: string) =>
     (await apiClient.get<StylistSearchResult[]>('/api/stylists/', { params: { q } })).data,
+
+  /** GET /api/stylists/?style= — who does a style: their price for it and their work in it. */
+  byStyle: async (style: string, within?: Within) =>
+    (
+      await apiClient.get<StylistSearchResult[]>('/api/stylists/', {
+        params: { style, ...(within !== undefined && { near: 'me', within }) },
+      })
+    ).data,
 
   /** GET /api/stylists/me/ — 404 when the account has no stylist profile yet. */
   getMine: async () => (await apiClient.get<StylistProfile>('/api/stylists/me/')).data,
@@ -54,8 +66,14 @@ export const stylistApi = {
     const proofPhotoUri = draft.proofPhotoUri
       ? (await uploadImage(draft.proofPhotoUri, 'proof')).uri
       : undefined;
-    return (await apiClient.post<StylistProfile>('/api/stylists/', { ...draft, proofPhotoUri }))
-      .data;
+    // Her working hours are on this phone's clock.
+    return (
+      await apiClient.post<StylistProfile>('/api/stylists/', {
+        ...draft,
+        proofPhotoUri,
+        timeZone: deviceZone(),
+      })
+    ).data;
   },
 
   /** PATCH /api/stylists/me/ */
@@ -116,7 +134,13 @@ export const stylistApi = {
 
   /** PATCH /api/stylists/me/portfolio/:id/ — re-tag a photo. */
   updatePhoto: async (id: string, changes: Partial<PortfolioPhotoDraft>) =>
-    (await apiClient.patch<PortfolioPhoto>(`/api/stylists/me/portfolio/${id}/`, changes)).data,
+    (
+      await apiClient.patch<PortfolioPhoto>(`/api/stylists/me/portfolio/${id}/`, {
+        ...changes,
+        // "No service" is undefined here, and undefined never reaches the server; null clears it.
+        ...('serviceId' in changes && { serviceId: changes.serviceId ?? null }),
+      })
+    ).data,
 
   /** DELETE /api/stylists/me/portfolio/:id/ */
   removePhoto: async (id: string) => {

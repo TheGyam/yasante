@@ -77,7 +77,9 @@ export function usePhotoTaps(
   look: Look,
   onOpen: ((look: Look) => void) | undefined,
   onLike: (look: Look, liked: boolean) => void,
-  heartSize = 96
+  heartSize = 96,
+  /** Press and hold: who does this style. */
+  onHold?: (look: Look) => void
 ) {
   // Which burst is playing; a new number restarts it on a quick second double tap.
   // Reset when a recycled tile shows another look, so a heart never jumps across.
@@ -102,12 +104,27 @@ export function usePhotoTaps(
   // detector re-attach on every like.
   const tap = useRef(onTap);
   tap.current = onTap;
+  const hold = useRef(onHold);
+  hold.current = onHold;
+  const holds = !!onHold;
   const gesture = useMemo(() => {
     const fire = () => tap.current();
-    return Gesture.Tap().onEnd((_e, success) => {
+    const tapGesture = Gesture.Tap().onEnd((_e, success) => {
       if (success) scheduleOnRN(fire);
     });
-  }, []);
+    if (!holds) return tapGesture;
+    const fireHold = () => {
+      haptics.light();
+      hold.current?.(look);
+    };
+    // A hold wins over a tap; lifting early is a tap, with no wait.
+    const holdGesture = Gesture.LongPress()
+      .minDuration(420)
+      .onStart(() => scheduleOnRN(fireHold));
+    return Gesture.Exclusive(holdGesture, tapGesture);
+    // `look` is read fresh through the tile's recycling key below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holds, look.id]);
 
   const heart = burst ? (
     <HeartBurst key={burst} size={heartSize} onDone={() => setBurst(0)} />

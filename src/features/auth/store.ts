@@ -33,19 +33,22 @@ export const loadStoredTokens = () =>
       if (__DEV__) console.warn('Could not read tokens from secure storage:', error);
       return null;
     }),
-  ]).then(([, stored]) => {
-    const state = useAuthStore.getState();
-    // A sign-in that finished while this was reading is newer; keep it.
-    if (state.tokens) return state.setLoading(false);
-    if (stored) {
-      useAuthStore.setState({ tokens: JSON.parse(stored), isLoading: false });
-    } else if (state.isAuthenticated) {
-      // Remembered who, but no tokens (the web keeps none, or the keystore was wiped).
-      state.logout();
-    } else {
-      state.setLoading(false);
-    }
-  }));
+  ])
+    .then(([, stored]) => {
+      const state = useAuthStore.getState();
+      // A sign-in that finished while this was reading is newer; keep it.
+      if (state.tokens) return state.setLoading(false);
+      if (stored) {
+        useAuthStore.setState({ tokens: JSON.parse(stored), isLoading: false });
+      } else if (state.isAuthenticated) {
+        // Remembered who, but no tokens (the web keeps none, or the keystore was wiped).
+        state.logout();
+      } else {
+        state.setLoading(false);
+      }
+    })
+    // Unreadable tokens (a corrupt keystore entry) mean signed out, not stuck loading.
+    .catch(() => useAuthStore.getState().setLoading(false)));
 
 export interface AuthTokens {
   accessToken: string;

@@ -12,6 +12,14 @@ export interface SetupDraft extends StylistProfileDraft {
   step: number;
 }
 
+function browserZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return '';
+  }
+}
+
 /** The app's starting point (src/features/stylist/setupDraft.ts). */
 export const EMPTY_DRAFT: SetupDraft = {
   step: 0,
@@ -20,6 +28,9 @@ export const EMPTY_DRAFT: SetupDraft = {
   bio: '',
   serviceModels: [],
   baseArea: '',
+  address: '',
+  // Her working hours are on this computer's clock.
+  timeZone: browserZone(),
   travelRadiusMiles: 5,
   instagramHandle: '',
   policies: { noticeHours: 48, depositType: 'fixed', depositAmount: 20, rescheduleFreeOnce: true },
@@ -37,6 +48,8 @@ export function draftFromProfile(profile: StylistProfile): SetupDraft {
     bio: profile.bio ?? '',
     serviceModels: profile.serviceModels,
     baseArea: profile.baseArea,
+    address: profile.address ?? '',
+    timeZone: browserZone(),
     travelRadiusMiles: profile.travelRadiusMiles ?? EMPTY_DRAFT.travelRadiusMiles,
     instagramHandle: profile.instagramHandle ?? '',
     policies: {

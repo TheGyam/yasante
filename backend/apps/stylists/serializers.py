@@ -147,6 +147,7 @@ class StylistProfileSerializer(BlankIsOptional, serializers.ModelSerializer):
             "base_area",
             "address",
             "travel_radius_miles",
+            "time_zone",
             "instagram_handle",
             "policies",
             "availability",
@@ -171,6 +172,15 @@ class StylistProfileDraftSerializer(serializers.Serializer):
         child=serializers.ChoiceField(choices=["salon", "home", "mobile"])
     )
     base_area = serializers.CharField(max_length=100)
+    # Private: shared with a booking once it's confirmed.
+    address = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
+    # Where her working hours are: her phone's zone (IANA).
+    time_zone = serializers.CharField(max_length=64, required=False, allow_blank=True, default="")
+
+    def validate_time_zone(self, value):
+        from apps.common.zones import is_zone
+
+        return value if is_zone(value) else ""
     travel_radius_miles = serializers.FloatField(required=False, allow_null=True)
     instagram_handle = serializers.CharField(
         max_length=50, required=False, allow_blank=True, default=""
@@ -245,6 +255,17 @@ class StylistSearchResultSerializer(serializers.Serializer):
     display_name = serializers.CharField()
     avatar_uri = optional(serializers.CharField())
     base_area = serializers.CharField()
+    # With ?style=: their service for it and its price, a photo of their work in it.
+    service_id = optional(serializers.CharField())
+    from_price = optional(serializers.FloatField())
+    rating = optional(serializers.FloatField())
+    rating_count = optional(serializers.IntegerField())
+    verification_tier = optional(serializers.IntegerField())
+    photo_uri = optional(serializers.CharField())
+    look_id = optional(serializers.CharField())
+    photo_of_style = optional(serializers.BooleanField())
+    # With ?near=me or ?postcode=: how far, as the crow flies.
+    miles = optional(serializers.FloatField())
 
 
 class HandleCheckResponseSerializer(serializers.Serializer):
@@ -309,6 +330,7 @@ class FreeDaySerializer(serializers.Serializer):
 class FreeSlotsSerializer(serializers.Serializer):
     minutes = serializers.IntegerField()
     days = FreeDaySerializer(many=True)
+    time_zone = serializers.CharField(help_text="The stylist's zone (IANA): whose clock the times are on")
 
 
 class WeekCountsSerializer(serializers.Serializer):

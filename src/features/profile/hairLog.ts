@@ -20,9 +20,18 @@ export function useHairLog(enabled = true) {
 export function useLogHair() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (kind: HairLogKind) =>
-      (await apiClient.post<HairLogEntry>('/api/hair-log/', { kind, localAt: localTimestamp() }))
-        .data,
+    mutationFn: async (
+      entry: HairLogKind | { kind: HairLogKind; at?: string; bookingId?: string }
+    ) => {
+      const { kind, ...rest } = typeof entry === 'string' ? { kind: entry } : entry;
+      return (
+        await apiClient.post<HairLogEntry>('/api/hair-log/', {
+          kind,
+          localAt: localTimestamp(),
+          ...rest,
+        })
+      ).data;
+    },
     onSuccess: entry =>
       queryClient.setQueryData<HairLogEntry[]>(KEY, list => [entry, ...(list ?? [])]),
   });

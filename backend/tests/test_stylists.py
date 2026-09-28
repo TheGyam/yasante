@@ -152,6 +152,9 @@ def test_portfolio_posts_tagged_photos_to_looks(api, make_stylist, styles):
     photo_id = second["id"]
     retag = me.patch(f"/api/stylists/me/portfolio/{photo_id}/", {"serviceId": str(knotless.pk)})
     assert retag.json()["serviceId"] == str(knotless.pk)
+    # "No service" arrives as null and clears it.
+    cleared = me.patch(f"/api/stylists/me/portfolio/{photo_id}/", {"serviceId": None})
+    assert "serviceId" not in cleared.json()
     assert me.delete(f"/api/stylists/me/portfolio/{photo_id}/").status_code == 204
     assert len(me.get("/api/stylists/me/portfolio/").json()) == 2
 
@@ -279,3 +282,74 @@ def test_a_photo_she_posted_as_a_look_joins_her_page_linked_to_it(api, make_styl
         {"photos": [{"uri": "https://x.com/b.jpg", "lookId": theirs["id"]}]},
     )
     assert refused.status_code == 400
+
+
+def test_who_does_a_style_comes_with_a_price_and_their_work(api, make_stylist, make_user, styles):
+    from apps.looks.models import Look
+
+    with_work, menu_only = make_stylist(), make_stylist()
+    look = Look.objects.create(
+        author=with_work.account, photo_uri="https://yasante.com/media/k.jpg",
+        thumb_uri="https://yasante.com/media/k_w400.jpg", stylist_id=str(with_work.account_id),
+    )
+    look.styles.add(styles["knotless"])
+    found = api(make_user()).get("/api/stylists/?style=knotless").json()
+    assert [s["handle"] for s in found] == [with_work.handle, menu_only.handle]  # work first
+    first = found[0]
+    knotless = with_work.menu_items.get(name="Knotless braids")
+    assert first["serviceId"] == str(knotless.pk) and first["fromPrice"] == float(knotless.price)
+    assert first["photoUri"].endswith("k_w400.jpg") and first["lookId"] == str(look.pk)
+    assert first["photoOfStyle"] is True
+    assert "photoUri" not in found[1] and found[1]["fromPrice"]
+
+    # No look posted in it, but a portfolio photo tagged with the service: that's shown.
+    from apps.stylists.models import PortfolioPhoto
+
+    PortfolioPhoto.objects.create(
+        stylist=menu_only, uri="https://yasante.com/media/p.jpg",
+        thumb_uri="https://yasante.com/media/p_w400.jpg",
+        service=menu_only.menu_items.get(name="Knotless braids"),
+    )
+    second = api(make_user()).get("/api/stylists/?style=knotless").json()[1]
+    assert second["photoUri"].endswith("p_w400.jpg") and second["photoOfStyle"] is True
+
+
+def test_who_does_a_style_near_me(api, make_stylist, make_user, monkeypatch):
+    """Only stylists within reach: 10 miles unless they widen it, further for those who travel."""
+    from apps.common import geo
+    from apps.profiles.models import HairProfile
+
+    places = {"peckham": (51.4700, -0.0690), "brixton": (51.4613, -0.1156), "watford": (51.6565, -0.3903)}
+    monkeypatch.setattr(geo, "locate", lambda text: places.get((text or "").lower()))
+    near, far, travels = make_stylist(), make_stylist(), make_stylist()
+    for profile, area in ((near, "Brixton"), (far, "Watford"), (travels, "Watford")):
+        profile.base_area, profile.address = area, ""
+        profile.save()
+    travels.service_models, travels.travel_radius_miles = ["mobile"], 25
+    travels.save()
+    client = make_user()
+    HairProfile.objects.create(user=client, area="Peckham")
+
+    found = api(client).get("/api/stylists/?style=knotless&near=me").json()
+    handles = [s["handle"] for s in found]
+    assert near.handle in handles and far.handle not in handles
+    assert travels.handle in handles  # Watford is ~17 miles, inside their 25
+    assert found[0]["handle"] == near.handle and 1 < found[0]["miles"] < 3
+    everyone = api(client).get("/api/stylists/?style=knotless&near=me&within=any").json()
+    assert far.handle in [s["handle"] for s in everyone]
+
+
+def test_a_place_name_prefers_london(monkeypatch):
+    from apps.common import geo
+
+    monkeypatch.setattr(geo, "_fetch", lambda path: [
+        {"region": "West Midlands", "latitude": 52.0, "longitude": -2.1},
+        {"region": "London", "latitude": 51.54, "longitude": -0.003},
+    ])
+    assert geo.locate("Stratford") == (51.54, -0.003)
+
+
+def test_who_does_a_style_leaves_out_the_one_asking(api, make_stylist):
+    me = make_stylist()
+    found = api(me.account).get("/api/stylists/?style=knotless").json()
+    assert me.handle not in [s["handle"] for s in found]

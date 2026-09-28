@@ -170,6 +170,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/social/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/auth/social/ — Sign in with Apple or Google, which also signs up.
+         *
+         *     Finds the account by the provider's id, then by a verified email (linking the
+         *     two), and otherwise makes a new one. Apple and Google have already proved the
+         *     email, so it starts confirmed and never needs a password.
+         */
+        post: operations["auth_social_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/blocks/": {
         parameters: {
             query?: never;
@@ -533,6 +556,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/client-errors/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /api/client-errors/ — the latest start-up checkpoints, to see how far a phone
+         *     nobody here can plug in gets. Checkpoints only: nothing from crashes, nothing
+         *     about who.
+         */
+        get: operations["client_errors_retrieve"];
+        put?: never;
+        post: operations["client_errors_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/collections/": {
         parameters: {
             query?: never;
@@ -877,6 +921,23 @@ export interface paths {
         put?: never;
         /** @description GET / POST /api/hair-log/ — trims, wash days, styles taken out. Appended only. */
         post: operations["hair_log_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/insights/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/insights/?period=month|all — your hair in numbers, from what's already recorded. */
+        get: operations["insights_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1564,6 +1625,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tips/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/tips/ — the tips the home screen rotates through, one a day. Public. */
+        get: operations["tips_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/uploads/": {
         parameters: {
             query?: never;
@@ -1826,6 +1904,10 @@ export interface components {
             moveRequest?: components["schemas"]["MoveRequest"];
             deposit?: components["schemas"]["Deposit"];
             area: string;
+            /** @description The stylist travels to the client */
+            atClient: boolean;
+            /** @description The stylist's zone (IANA); times read in it */
+            timeZone: string;
             address?: string;
             policy: components["schemas"]["BookingPolicy"];
             policyVersion: string;
@@ -1857,6 +1939,10 @@ export interface components {
             policyVersion: string;
             /** @description The look the booking is from */
             lookId?: string;
+            /** @description The stylist comes to the client */
+            atClient?: boolean;
+            /** @description Street and postcode, when at_client */
+            clientAddress?: string;
         };
         /** @description Her policies as they were when the request was made. */
         BookingPolicy: {
@@ -1980,6 +2066,25 @@ export interface components {
          * @enum {string}
          */
         ChemicalsEnum: "relaxer" | "texturiser" | "colour" | "bleach" | "keratin";
+        /**
+         * @description * `crash` - crash
+         *     * `stall` - stall
+         *     * `boot` - boot
+         * @enum {string}
+         */
+        ClientErrorKindEnum: "crash" | "stall" | "boot";
+        ClientErrorRequest: {
+            /** @default crash */
+            kind: components["schemas"]["ClientErrorKindEnum"];
+            message: string;
+            stack?: string;
+            platform?: string;
+            osVersion?: string;
+            appVersion?: string;
+            context?: {
+                [key: string]: unknown;
+            };
+        };
         ClientRecord: {
             attended: number;
             noShows: number;
@@ -2104,6 +2209,13 @@ export interface components {
             noShow?: boolean;
             timing?: boolean;
         };
+        CurrentStyle: {
+            name: string;
+            /** Format: date-time */
+            since: string;
+            days: number;
+            bookingId: string;
+        };
         DataExportResponse: {
             /** Format: date-time */
             requestedAt: string;
@@ -2153,6 +2265,8 @@ export interface components {
         EmailStartRequest: {
             /** Format: email */
             email?: string;
+            /** @default false */
+            resend: boolean;
         };
         /** @description POST /api/auth/email/verify/ */
         EmailVerifyRequest: {
@@ -2204,6 +2318,8 @@ export interface components {
         FreeSlots: {
             minutes: number;
             days: components["schemas"]["FreeDay"][];
+            /** @description The stylist's zone (IANA): whose clock the times are on */
+            timeZone: string;
         };
         /**
          * @description * `daily` - daily
@@ -2273,6 +2389,7 @@ export interface components {
             scalp: components["schemas"]["HairProfileResponseScalpEnum"][];
             chemicals: components["schemas"]["ChemicalsEnum"][];
             area?: string;
+            postcode?: string;
             budget?: components["schemas"]["BudgetEnum"] | components["schemas"]["BlankEnum"];
             photoUri?: string;
             /** Format: date-time */
@@ -2314,6 +2431,26 @@ export interface components {
          * @enum {string}
          */
         HoldingEnum: "fresh" | "okay" | "tired";
+        /** @description GET /api/insights/ — a client's hair in numbers. */
+        Insights: {
+            period: components["schemas"]["PeriodEnum"];
+            /** Format: date-time */
+            since?: string;
+            appointments: number;
+            /** Format: double */
+            spent: number;
+            styles: string[];
+            stylists: number;
+            currentStyle?: components["schemas"]["CurrentStyle"];
+            styleLastsDays?: number;
+            washes: number;
+            usualWashDay?: string;
+            washEveryDays?: number;
+            daysSinceTrim?: number;
+            length?: components["schemas"]["LengthInsight"];
+            looksSaved: number;
+            productsAdded: number;
+        };
         /**
          * @description For output-only model serializers: a model field that may be blank or null can be
          *     left out of the JSON (the renderer drops empty values), so say so in the schema.
@@ -2348,6 +2485,16 @@ export interface components {
          * @enum {string}
          */
         LengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
+        LengthInsight: {
+            now: string;
+            /** Format: double */
+            nowCm?: number;
+            /** Format: date-time */
+            measuredAt?: string;
+            /** Format: double */
+            grewCm?: number;
+            grewSteps?: number;
+        };
         /** @description POST /api/auth/login/ */
         LoginRequest: {
             /** Format: email */
@@ -2568,6 +2715,7 @@ export interface components {
             scalp?: string[];
             chemicals?: string[];
             area?: string;
+            postcode?: string;
             budget?: string;
             photoUri?: string;
             /** Format: date-time */
@@ -2607,6 +2755,10 @@ export interface components {
             bio: string;
             serviceModels?: components["schemas"]["ServiceModelEnum"][];
             baseArea?: string;
+            /** @default  */
+            address: string;
+            /** @default  */
+            timeZone: string;
             /** Format: double */
             travelRadiusMiles?: number | null;
             /** @default  */
@@ -2625,6 +2777,7 @@ export interface components {
             email?: string;
             avatarUri?: string;
             username?: string;
+            timeZone?: string;
         };
         /**
          * @description For output-only model serializers: a model field that may be blank or null can be
@@ -2644,6 +2797,12 @@ export interface components {
             label: string;
             details: string;
         };
+        /**
+         * @description * `month` - month
+         *     * `all` - all
+         * @enum {string}
+         */
+        PeriodEnum: "month" | "all";
         Policies: {
             noticeHours: number;
             depositType: components["schemas"]["DepositTypeEnum"];
@@ -2727,6 +2886,12 @@ export interface components {
             scheduledFor: string;
             deposit?: components["schemas"]["MoneyMethod"];
         };
+        /**
+         * @description * `apple` - apple
+         *     * `google` - google
+         * @enum {string}
+         */
+        ProviderEnum: "apple" | "google";
         /** @description Her page's profile: no proof photo, payment details or address, plus the checks held. */
         PublicProfile: {
             /** Format: uuid */
@@ -2741,6 +2906,7 @@ export interface components {
             baseArea: string;
             /** Format: double */
             travelRadiusMiles?: number;
+            timeZone?: string;
             instagramHandle?: string;
             readonly policies: components["schemas"]["Policies"];
             readonly availability?: components["schemas"]["Availability"];
@@ -2925,6 +3091,27 @@ export interface components {
             /** Format: date */
             to: string;
         };
+        SocialAuthResponse: {
+            user: components["schemas"]["UserResponse"];
+            accessToken: string;
+            refreshToken: string;
+            /** @description Milliseconds since the epoch */
+            expiresAt: number;
+            /** @description A new account was made just now */
+            created: boolean;
+        };
+        /** @description POST /api/auth/social/ */
+        SocialLoginRequest: {
+            provider: components["schemas"]["ProviderEnum"];
+            idToken: string;
+            authorizationCode?: string;
+            name?: string;
+            /** @default client */
+            role: components["schemas"]["RoleEnum"];
+            /** @default false */
+            ageConfirmed: boolean;
+            policyVersion?: string;
+        };
         /**
          * @description * `catalogue` - catalogue
          *     * `open_beauty_facts` - open_beauty_facts
@@ -2964,6 +3151,7 @@ export interface components {
             address?: string;
             /** Format: double */
             travelRadiusMiles?: number;
+            timeZone?: string;
             instagramHandle?: string;
             readonly policies: components["schemas"]["Policies"];
             readonly availability?: components["schemas"]["Availability"];
@@ -2982,6 +3170,10 @@ export interface components {
             bio: string;
             serviceModels: components["schemas"]["ServiceModelEnum"][];
             baseArea: string;
+            /** @default  */
+            address: string;
+            /** @default  */
+            timeZone: string;
             /** Format: double */
             travelRadiusMiles?: number | null;
             /** @default  */
@@ -2999,6 +3191,18 @@ export interface components {
             displayName: string;
             avatarUri?: string;
             baseArea: string;
+            serviceId?: string;
+            /** Format: double */
+            fromPrice?: number;
+            /** Format: double */
+            rating?: number;
+            ratingCount?: number;
+            verificationTier?: number;
+            photoUri?: string;
+            lookId?: string;
+            photoOfStyle?: boolean;
+            /** Format: double */
+            miles?: number;
         };
         StylistSummary: {
             pendingRequests: number;
@@ -3064,6 +3268,10 @@ export interface components {
             bucket?: (components["schemas"]["BucketEnum"] | components["schemas"]["NullEnum"]) | null;
             reason?: (components["schemas"]["TimingReasonEnum"] | components["schemas"]["NullEnum"]) | null;
         };
+        Tip: {
+            id: number;
+            text: string;
+        };
         TokenPair: {
             accessToken: string;
             refreshToken: string;
@@ -3114,6 +3322,7 @@ export interface components {
             readonly username?: string;
             /** Format: email */
             readonly email: string;
+            /** Email confirmed */
             readonly emailVerified: boolean;
             readonly phone?: string;
             readonly roles: components["schemas"]["RolesEnum"][];
@@ -3133,6 +3342,7 @@ export interface components {
             readonly username?: string;
             /** Format: email */
             readonly email: string;
+            /** Email confirmed */
             readonly emailVerified: boolean;
             readonly phone?: string;
             readonly roles: components["schemas"]["RolesEnum"][];
@@ -3396,6 +3606,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuthResponse"];
+                };
+            };
+        };
+    };
+    auth_social_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialLoginRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SocialAuthResponse"];
                 };
             };
         };
@@ -4019,6 +4252,46 @@ export interface operations {
             };
         };
     };
+    client_errors_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    client_errors_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClientErrorRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     collections_list: {
         parameters: {
             query?: never;
@@ -4582,6 +4855,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HairLog"];
+                };
+            };
+        };
+    };
+    insights_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Insights"];
                 };
             };
         };
@@ -5699,6 +5991,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StylistSummary"];
+                };
+            };
+        };
+    };
+    tips_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tip"][];
                 };
             };
         };
