@@ -3322,6 +3322,7 @@ export interface components {
             readonly username?: string;
             /** Format: email */
             readonly email: string;
+            /** Email confirmed */
             readonly emailVerified: boolean;
             readonly phone?: string;
             readonly roles: components["schemas"]["RolesEnum"][];
@@ -3341,6 +3342,7 @@ export interface components {
             readonly username?: string;
             /** Format: email */
             readonly email: string;
+            /** Email confirmed */
             readonly emailVerified: boolean;
             readonly phone?: string;
             readonly roles: components["schemas"]["RolesEnum"][];
