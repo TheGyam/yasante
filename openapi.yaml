@@ -858,6 +858,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/CarePlanSessionResponse'
           description: ''
+  /api/client-errors/:
+    post:
+      operationId: client_errors_create
+      tags:
+      - client-errors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientErrorRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/collections/:
     get:
       operationId: collections_list
@@ -3276,6 +3293,42 @@ components:
         * `colour` - Colour
         * `bleach` - Bleach
         * `keratin` - Keratin
+    ClientErrorKindEnum:
+      enum:
+      - crash
+      - stall
+      type: string
+      description: |-
+        * `crash` - crash
+        * `stall` - stall
+    ClientErrorRequest:
+      type: object
+      properties:
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/ClientErrorKindEnum'
+          default: crash
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        stack:
+          type: string
+          maxLength: 20000
+        platform:
+          type: string
+          maxLength: 20
+        osVersion:
+          type: string
+          maxLength: 40
+        appVersion:
+          type: string
+          maxLength: 40
+        context:
+          type: object
+          additionalProperties: {}
+      required:
+      - message
     ClientRecord:
       type: object
       properties:
