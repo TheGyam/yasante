@@ -38,6 +38,7 @@ import {
   useProposeTime,
   inSentence,
   whenLabel,
+  SALON_TIME_ZONE,
 } from '@/features/booking';
 import {
   PaymentMethodForm,
@@ -290,8 +291,20 @@ export default function RequestScreen() {
               <Text variant="footnote" tone="secondary" style={styles.label}>
                 She asked for {booking.requestedTimes.map(whenLabel).join(', or ')}
               </Text>
-              <DateTimeField title="Day" mode="date" value={when} onChange={setWhen} />
-              <DateTimeField title="Start at" mode="time" value={when} onChange={setWhen} />
+              <DateTimeField
+                title="Day"
+                mode="date"
+                value={when}
+                onChange={setWhen}
+                timeZone={SALON_TIME_ZONE}
+              />
+              <DateTimeField
+                title="Start at"
+                mode="time"
+                value={when}
+                onChange={setWhen}
+                timeZone={SALON_TIME_ZONE}
+              />
               {!onAskedDay && (
                 <Text variant="caption" tone="accent" style={styles.label}>
                   That’s not the time they picked, so they’ll be asked if it works.

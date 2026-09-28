@@ -178,6 +178,9 @@ class EmailStartSerializer(serializers.Serializer):
     """POST /api/auth/email/start/ — optionally to a corrected address."""
 
     email = serializers.EmailField(required=False)
+    # Asked for a new code. Without it, a code that still works is kept, so opening
+    # the screen again doesn't send another email.
+    resend = serializers.BooleanField(required=False, default=False)
 
 
 class EmailVerifySerializer(serializers.Serializer):

@@ -56,10 +56,11 @@ export default function VerifyEmailScreen() {
     return () => clearTimeout(tick);
   }, [resendIn]);
 
-  const send = async (to?: string) => {
+  // Opening the screen keeps a code that still works; `resend` asks for a new one.
+  const send = async (to?: string, resend = false) => {
     setCodeError(undefined);
     try {
-      const challenge = await start.mutateAsync(to);
+      const challenge = await start.mutateAsync({ email: to, resend });
       setResendIn(challenge.resendInSeconds);
       if (to) setEmail(to);
       return true;
@@ -184,7 +185,12 @@ export default function VerifyEmailScreen() {
                 Resend code in 0:{String(resendIn).padStart(2, '0')}
               </Text>
             ) : (
-              <Text variant="subhead" tone="accent" onPress={() => send()} suppressHighlighting>
+              <Text
+                variant="subhead"
+                tone="accent"
+                onPress={() => send(undefined, true)}
+                suppressHighlighting
+              >
                 {start.isPending ? 'Sending…' : 'Resend code'}
               </Text>
             )}

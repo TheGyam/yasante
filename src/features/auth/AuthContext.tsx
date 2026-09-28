@@ -162,6 +162,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    // Tell the server first, while still signed in: stop this phone's notifications
+    // and end the session, so a copied refresh token stops working too. Capped, so
+    // signing out offline still signs out.
+    const refresh = useAuthStore.getState().tokens?.refreshToken;
+    await Promise.race([
+      Promise.allSettled([
+        unregisterPush(),
+        refresh ? apiClient.post('/api/auth/logout/', { refreshToken: refresh }) : null,
+      ]),
+      new Promise(resolve => setTimeout(resolve, 3000)),
+    ]);
     try {
       // Clear React Query cache to remove all user-specific data
       await queryClient.clear();

@@ -45,6 +45,12 @@ export const NOT_HANDLES = new Set([
   'stylist-setup',
   'username',
   'policy',
+  'search',
+  'saved',
+  'insights',
+  'who',
+  'work',
+  'delete-account',
   // Tabs.
   'home',
   'planner',

@@ -457,6 +457,27 @@ class BookingAttendingView(_BookingAction):
         return _ok(booking, request)
 
 
+
+def _move_problem(booking, when, by):
+    """
+    Why an appointment can't move to `when`, or None. It must never land on another
+    appointment. A client asks within the stylist's working days and hours, as when
+    booking; a stylist may move her own appointment outside them.
+    """
+    profile = booking.stylist_profile
+    if profile is None:
+        return None
+    minutes = booking.duration_minutes or 120
+    if by == "client":
+        if not is_open_on(profile, when):
+            return "The stylist doesn’t work that day. Pick another"
+        if profile.availability and not start_fits(profile, when, minutes):
+            return "That’s outside the stylist’s hours. Pick another time"
+    if clash_exists(profile, when, minutes, exclude_id=booking.pk):
+        return "That time is already booked. Pick another"
+    return None
+
+
 @extend_schema_view(post=extend_schema(request=MoveRequestBodySerializer, responses=BookingSerializer))
 class BookingMoveView(_BookingAction):
     def act(self, request, booking):
@@ -472,8 +493,12 @@ class BookingMoveView(_BookingAction):
         when = _parse_time(request.data.get("scheduled_for"))
         if when is None or when < timezone.now():
             return _err("Pick a time that hasn’t passed", 400)
+        by = "stylist" if request.user.pk == booking.stylist_id else "client"
+        problem = _move_problem(booking, when, by)
+        if problem:
+            return _err(problem, 409 if "already booked" in problem else 400)
         booking.move_request = {
-            "by": "stylist" if request.user.pk == booking.stylist_id else "client",
+            "by": by,
             "scheduled_for": when.isoformat().replace("+00:00", "Z"),
         }
         booking.save(update_fields=["move_request", "updated_at"])
@@ -492,7 +517,11 @@ class BookingMoveAnswerView(_BookingAction):
         if asked.get("by") == side:
             return _err("The other side answers a move", 403)
         if request.data.get("accept"):
-            booking.scheduled_for = parse_iso(asked["scheduled_for"])
+            # Still free? Another booking may have taken it since it was asked for.
+            when = parse_iso(asked["scheduled_for"])
+            if _move_problem(booking, when, "stylist"):
+                return _err("That time has been booked since. Ask for another", 409)
+            booking.scheduled_for = when
             booking.moves += 1
             # A new day needs a new "yes, I'm coming".
             booking.attendance_confirmed_at = None

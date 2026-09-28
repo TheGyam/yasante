@@ -5,7 +5,9 @@ export const authApi = {
   signup: (body: SignupRequest) => api.post<AuthResponse>('/auth/signup/', body),
   login: (body: LoginRequest) => api.post<AuthResponse>('/auth/login/', body),
   /** Emails a six-digit code to her address. */
-  startEmail: () => api.post<CodeSent>('/auth/email/start/'),
+  // Arriving keeps a code that still works; `resend` asks for a new one.
+  startEmail: (resend?: boolean) =>
+    api.post<CodeSent>('/auth/email/start/', resend ? { resend: true } : {}),
   /** The account, with the email confirmed. */
   verifyEmail: (code: string) => api.post<User>('/auth/email/verify/', { code }),
   /** Emails a reset link if the address has an account. The same answer either way. */

@@ -95,16 +95,23 @@ export function useMyLooks() {
 }
 
 /** One look. Opens instantly from the feed's copy while the fresh one loads. */
+const gone = (error: unknown) =>
+  (error as { response?: { status?: number } } | null)?.response?.status === 404;
+
 export function useLook(id: string) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  return useQuery({
+  const query = useQuery({
     queryKey: [KEY, 'one', user?.id, id],
     queryFn: () => looksApi.get(id),
     placeholderData: () => findLook(queryClient, id),
     enabled: !!id,
     staleTime: 30 * 1000,
+    // Gone is an answer: asking again won't bring it back.
+    retry: (count, error) => !gone(error) && count < 2,
   });
+  // Taken down or removed: it's gone for everyone, whatever copy this phone kept.
+  return gone(query.error) ? { ...query, data: undefined } : query;
 }
 
 /**

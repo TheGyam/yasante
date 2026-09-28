@@ -4,6 +4,7 @@ import re
 
 import pytest
 from django.core import mail
+from django.utils import timezone
 
 pytestmark = pytest.mark.django_db
 
@@ -22,8 +23,9 @@ def test_a_new_account_confirms_its_email_with_a_code(api, make_user):
     assert mail.outbox[0].to == [user.email]
     code = code_in(mail.outbox[0])
 
-    # Asking again at once is refused rather than sending a second code.
-    assert me.post("/api/auth/email/start/", {}).status_code == 429
+    # Opening the screen again keeps that code; asking for a new one at once is refused.
+    assert me.post("/api/auth/email/start/", {}).status_code == 200 and len(mail.outbox) == 1
+    assert me.post("/api/auth/email/start/", {"resend": True}).status_code == 429
 
     wrong = me.post("/api/auth/email/verify/", {"code": "000000" if code != "000000" else "111111"})
     assert wrong.status_code == 400 and "tries left" in wrong.json()["message"]
@@ -83,3 +85,26 @@ def test_a_reset_email_carries_a_link_the_app_and_the_site_can_use(api, make_use
     assert page.status_code == 200 and "Choose a new password" in page.content.decode()
     assert '<meta name="robots" content="noindex">' in page.content.decode()
     assert api().client.get("/auth/forgot-password").status_code == 200
+
+
+def test_opening_the_screen_again_keeps_the_code_already_sent(api, make_user):
+    """Reopening the app mid sign-up doesn't email another code; asking for one does."""
+    from datetime import timedelta
+
+    from apps.accounts.models import EmailChallenge
+
+    user = make_user(email_verified=False)
+    client = api(user).client
+    assert client.post("/api/auth/email/start/", {}, format="json").status_code == 200
+    assert len(mail.outbox) == 1
+    # Well past the resend wait: an ordinary reopen still keeps the first code.
+    EmailChallenge.objects.update(created_at=timezone.now() - timedelta(minutes=5))
+    again = client.post("/api/auth/email/start/", {}, format="json")
+    assert again.status_code == 200 and again.json()["resendInSeconds"] == 0
+    assert len(mail.outbox) == 1
+    # Tapping Resend (a minute on, past the per-minute limit) sends a new one.
+    from django.core.cache import cache
+
+    cache.clear()
+    assert client.post("/api/auth/email/start/", {"resend": True}, format="json").status_code == 200
+    assert len(mail.outbox) == 2

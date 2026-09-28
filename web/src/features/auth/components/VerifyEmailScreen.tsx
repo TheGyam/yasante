@@ -23,8 +23,8 @@ export function VerifyEmailScreen() {
   const [resendIn, setResendIn] = useState(0);
   const sent = useRef(false);
 
-  const send = () =>
-    start.mutate(undefined, {
+  const send = (resend = false) =>
+    start.mutate(resend, {
       onSuccess: challenge => setResendIn(challenge.resendInSeconds),
     });
 
@@ -97,7 +97,7 @@ export function VerifyEmailScreen() {
           <button
             type="button"
             className={styles.linkButton}
-            onClick={send}
+            onClick={() => send(true)}
             disabled={resendIn > 0 || start.isPending}
           >
             {resendIn > 0 ? `send another in ${resendIn}s` : 'send another code'}
