@@ -2257,6 +2257,8 @@ export interface components {
         EmailStartRequest: {
             /** Format: email */
             email?: string;
+            /** @default false */
+            resend: boolean;
         };
         /** @description POST /api/auth/email/verify/ */
         EmailVerifyRequest: {

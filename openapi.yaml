@@ -3728,6 +3728,9 @@ components:
           type: string
           format: email
           minLength: 1
+        resend:
+          type: boolean
+          default: false
     EmailVerifyRequest:
       type: object
       description: POST /api/auth/email/verify/

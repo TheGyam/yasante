@@ -58,8 +58,13 @@ NOT_HANDLES = {
     "robots.txt",
     "sitemap.xml",
     "waitlist",
+    "delete-account",
     # App screens opened by path (src/shared/lib/links.ts reserves the same words).
     "planner",
+    "saved",
+    "insights",
+    "who",
+    "work",
     "requests",
     "numbers",
     "shelf",

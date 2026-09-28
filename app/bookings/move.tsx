@@ -4,7 +4,13 @@ import { useLocalSearchParams } from 'expo-router';
 import { addDays, setHours, startOfHour } from 'date-fns';
 import { CalendarSync } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
-import { inSentence, useBooking, useRequestMove, whenLabel } from '@/features/booking';
+import {
+  inSentence,
+  SALON_TIME_ZONE,
+  useBooking,
+  useRequestMove,
+  whenLabel,
+} from '@/features/booking';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
@@ -78,8 +84,15 @@ export default function MoveBookingScreen() {
             value={when}
             onChange={setWhen}
             minimumDate={new Date()}
+            timeZone={SALON_TIME_ZONE}
           />
-          <DateTimeField title="Start at" mode="time" value={when} onChange={setWhen} />
+          <DateTimeField
+            title="Start at"
+            mode="time"
+            value={when}
+            onChange={setWhen}
+            timeZone={SALON_TIME_ZONE}
+          />
         </View>
         <InlineAlert
           tone="info"

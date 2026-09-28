@@ -173,8 +173,12 @@ export default function StylistSetupScreen() {
                 onChangeText={displayName =>
                   set({
                     displayName,
-                    // Suggest a handle from the name until she edits one herself.
-                    handle: draft.handle || toHandle(displayName),
+                    // Suggest a handle from the name until she edits one herself: while
+                    // it's still the suggestion for the name so far, it follows the name.
+                    handle:
+                      !draft.handle || draft.handle === toHandle(draft.displayName)
+                        ? toHandle(displayName)
+                        : draft.handle,
                   })
                 }
                 placeholder="Braids by Ama"

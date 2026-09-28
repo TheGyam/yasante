@@ -282,6 +282,17 @@ def test_close_out_rules(api, setup, book):
     assert page["confirmedStyles"] == 1
 
 
+def _open_at(days, hour=10):
+    """A working time (Monday to Saturday, 10:00 London) about `days` from now."""
+    from zoneinfo import ZoneInfo
+
+    london = ZoneInfo("Europe/London")
+    day = (timezone.now().astimezone(london) + timedelta(days=days)).replace(hour=hour, minute=0, second=0, microsecond=0)
+    while day.isoweekday() == 7:  # the fixture's Sunday is closed
+        day += timedelta(days=1)
+    return day
+
+
 def test_attendance_and_moves(api, setup, book, make_user):
     profile, client = setup
     booking_id = _confirmed(api, profile, client, book)
@@ -289,14 +300,14 @@ def test_attendance_and_moves(api, setup, book, make_user):
     assert api(client).post(f"{url}/attending/").json()["attendanceConfirmedAt"]
     past = api(client).post(f"{url}/move/", {"scheduledFor": _iso(timezone.now() - timedelta(days=1))})
     assert past.status_code == 400
-    moved = api(client).post(f"{url}/move/", {"scheduledFor": _iso(timezone.now() + timedelta(days=12))}).json()
+    moved = api(client).post(f"{url}/move/", {"scheduledFor": _iso(_open_at(12))}).json()
     assert moved["moveRequest"]["by"] == "client"
-    assert api(client).post(f"{url}/move/", {"scheduledFor": _iso(timezone.now() + timedelta(days=13))}).status_code == 409
+    assert api(client).post(f"{url}/move/", {"scheduledFor": _iso(_open_at(13))}).status_code == 409
     assert api(client).post(f"{url}/move/answer/", {"accept": True}).status_code == 403
     answered = api(profile.account).post(f"{url}/move/answer/", {"accept": True}).json()
     assert answered["moves"] == 1 and "moveRequest" not in answered
     assert "attendanceConfirmedAt" not in answered  # a new day needs a new yes
-    second = api(client).post(f"{url}/move/", {"scheduledFor": _iso(timezone.now() + timedelta(days=14))})
+    second = api(client).post(f"{url}/move/", {"scheduledFor": _iso(_open_at(14))})
     assert second.status_code == 409 and "moved once" in second.json()["message"]
 
 
@@ -416,3 +427,18 @@ def test_coming_to_the_client_needs_a_postcode_and_a_stylist_who_travels(api, ma
     profile.save()
     body["clientAddress"] = "4 Choumert Grove"
     assert "postcode" in as_client.post("/api/bookings/", body).json()["message"]
+
+
+def test_a_move_lands_on_a_working_day_and_never_on_another_booking(api, setup, book, make_user):
+    profile, client = setup
+    booking_id = _confirmed(api, profile, client, book)
+    url = f"/api/bookings/{booking_id}"
+    sunday = _open_at(8)
+    while sunday.isoweekday() != 7:
+        sunday += timedelta(days=1)
+    closed = api(client).post(f"{url}/move/", {"scheduledFor": _iso(sunday)})
+    assert closed.status_code == 400 and "doesn’t work that day" in closed.json()["message"]
+    late = api(client).post(f"{url}/move/", {"scheduledFor": _iso(_open_at(9, hour=21))})
+    assert late.status_code == 400 and "outside" in late.json()["message"]
+    # The stylist may move her own appointment to a Sunday.
+    assert api(profile.account).post(f"{url}/move/", {"scheduledFor": _iso(sunday)}).status_code == 200

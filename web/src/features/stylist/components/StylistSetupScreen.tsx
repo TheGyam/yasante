@@ -183,8 +183,12 @@ function Setup({
                   onChange={event =>
                     set({
                       displayName: event.target.value,
-                      // Suggest a handle from the name until she edits one herself.
-                      handle: draft.handle || toHandle(event.target.value),
+                      // Suggest a handle from the name until she edits one herself: while
+                      // it's still the suggestion for the name so far, it follows the name.
+                      handle:
+                        !draft.handle || draft.handle === toHandle(draft.displayName)
+                          ? toHandle(event.target.value)
+                          : draft.handle,
                     })
                   }
                 />

@@ -346,6 +346,7 @@ class EmailStartView(APIView):
         serializer.is_valid(raise_exception=True)
         user = request.user
         email = (serializer.validated_data.get("email") or user.email).strip().lower()
+        changed = email != user.email.lower()
 
         if email != user.email.lower():
             if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
@@ -361,6 +362,23 @@ class EmailStartView(APIView):
                 {"message": "Your email is already confirmed."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # Opening the screen again (not asking for a new code): the code already sent
+        # still works, so say how long it has left instead of emailing another.
+        if not serializer.validated_data["resend"] and not changed:
+            live = (
+                EmailChallenge.objects.filter(user=user, email=email, expires_at__gt=timezone.now())
+                .order_by("-created_at")
+                .first()
+            )
+            if live and not live.is_locked:
+                age = (timezone.now() - live.created_at).total_seconds()
+                return Response(
+                    {
+                        "resend_in_seconds": max(0, int(settings.VERIFICATION_CODE_RESEND_SECONDS - age)),
+                        "expires_in_seconds": int((live.expires_at - timezone.now()).total_seconds()),
+                    }
+                )
 
         recent = EmailChallenge.objects.filter(
             user=user,
