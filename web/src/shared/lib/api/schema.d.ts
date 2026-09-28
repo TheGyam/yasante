@@ -1604,6 +1604,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tips/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/tips/ — the tips the home screen rotates through, one a day. Public. */
+        get: operations["tips_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/uploads/": {
         parameters: {
             query?: never;
@@ -2326,6 +2343,7 @@ export interface components {
             scalp: components["schemas"]["HairProfileResponseScalpEnum"][];
             chemicals: components["schemas"]["ChemicalsEnum"][];
             area?: string;
+            postcode?: string;
             budget?: components["schemas"]["BudgetEnum"] | components["schemas"]["BlankEnum"];
             photoUri?: string;
             /** Format: date-time */
@@ -2651,6 +2669,7 @@ export interface components {
             scalp?: string[];
             chemicals?: string[];
             area?: string;
+            postcode?: string;
             budget?: string;
             photoUri?: string;
             /** Format: date-time */
@@ -3129,6 +3148,8 @@ export interface components {
             photoUri?: string;
             lookId?: string;
             photoOfStyle?: boolean;
+            /** Format: double */
+            miles?: number;
         };
         StylistSummary: {
             pendingRequests: number;
@@ -3193,6 +3214,10 @@ export interface components {
             outcome: components["schemas"]["TimingOutcomeEnum"];
             bucket?: (components["schemas"]["BucketEnum"] | components["schemas"]["NullEnum"]) | null;
             reason?: (components["schemas"]["TimingReasonEnum"] | components["schemas"]["NullEnum"]) | null;
+        };
+        Tip: {
+            id: number;
+            text: string;
         };
         TokenPair: {
             accessToken: string;
@@ -5871,6 +5896,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StylistSummary"];
+                };
+            };
+        };
+    };
+    tips_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tip"][];
                 };
             };
         };

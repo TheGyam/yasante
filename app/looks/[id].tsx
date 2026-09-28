@@ -42,7 +42,7 @@ import {
   useToggleCommentLike,
   type LookComment,
 } from '@/features/looks';
-import { useNeedsUsername } from '@/features/profile';
+import { useNeedsUsername, useUser } from '@/features/profile';
 import { usePrefetchStylistPage, useStylistsForStyle } from '@/features/stylist';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
@@ -791,7 +791,11 @@ function Composer({
 function WhoDoesThis({ style, name }: { style: string; name?: string }) {
   const router = useRouter();
   const theme = useTheme();
-  const { data: stylists = [] } = useStylistsForStyle(style);
+  const { user } = useAuth();
+  const { data: account } = useUser(user?.id);
+  const near = !!(account?.hairProfile?.area || account?.hairProfile?.postcode);
+  // The same question the list asks first, so opening it is instant.
+  const { data: stylists = [] } = useStylistsForStyle(style, { within: near ? 10 : undefined });
   if (!stylists.length || !name) return null;
   const prices = stylists.map(s => s.fromPrice).filter((p): p is number => !!p);
   return (
@@ -823,6 +827,7 @@ function WhoDoesThis({ style, name }: { style: string; name?: string }) {
           <Text variant="callout">Who does {name.toLowerCase()}?</Text>
           <Text variant="footnote" tone="secondary">
             {stylists.length} {stylists.length === 1 ? 'stylist' : 'stylists'}
+            {near ? ' near you' : ''}
             {prices.length ? ` · from ${formatMoney(Math.min(...prices))}` : ''}
           </Text>
         </View>

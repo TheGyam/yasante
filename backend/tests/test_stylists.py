@@ -312,3 +312,28 @@ def test_who_does_a_style_comes_with_a_price_and_their_work(api, make_stylist, m
     )
     second = api(make_user()).get("/api/stylists/?style=knotless").json()[1]
     assert second["photoUri"].endswith("p_w400.jpg") and second["photoOfStyle"] is True
+
+
+def test_who_does_a_style_near_me(api, make_stylist, make_user, monkeypatch):
+    """Only stylists within reach: 10 miles unless they widen it, further for those who travel."""
+    from apps.common import geo
+    from apps.profiles.models import HairProfile
+
+    places = {"peckham": (51.4700, -0.0690), "brixton": (51.4613, -0.1156), "watford": (51.6565, -0.3903)}
+    monkeypatch.setattr(geo, "locate", lambda text: places.get((text or "").lower()))
+    near, far, travels = make_stylist(), make_stylist(), make_stylist()
+    for profile, area in ((near, "Brixton"), (far, "Watford"), (travels, "Watford")):
+        profile.base_area, profile.address = area, ""
+        profile.save()
+    travels.service_models, travels.travel_radius_miles = ["mobile"], 25
+    travels.save()
+    client = make_user()
+    HairProfile.objects.create(user=client, area="Peckham")
+
+    found = api(client).get("/api/stylists/?style=knotless&near=me").json()
+    handles = [s["handle"] for s in found]
+    assert near.handle in handles and far.handle not in handles
+    assert travels.handle in handles  # Watford is ~17 miles, inside their 25
+    assert found[0]["handle"] == near.handle and 1 < found[0]["miles"] < 3
+    everyone = api(client).get("/api/stylists/?style=knotless&near=me&within=any").json()
+    assert far.handle in [s["handle"] for s in everyone]

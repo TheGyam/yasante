@@ -117,6 +117,9 @@ class UserDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+NOT_SNAPSHOTTED = {"id", "user", "updated_at", "completed_at", "postcode", "latitude", "longitude"}
+
+
 @extend_schema_view(patch=extend_schema(request=HairProfileRequestSerializer, responses=HairProfileResponseSerializer))
 class HairProfileUpdateView(APIView):
     """
@@ -139,13 +142,20 @@ class HairProfileUpdateView(APIView):
             serializer = HairProfileSerializer(profile, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
+            # Where they are, for stylists near them: the postcode, or else the area.
+            if {"postcode", "area"} & set(request.data):
+                from apps.common.geo import locate
 
-            # Create append-only snapshot for growth tracking
+                point = locate(profile.postcode) or locate(profile.area)
+                profile.latitude, profile.longitude = point or (None, None)
+                profile.save(update_fields=["latitude", "longitude"])
+
+            # Create append-only snapshot for growth tracking. Where they live isn't
+            # history worth keeping.
             snapshot_data = {
                 f.name: getattr(profile, f.name)
                 for f in HairProfile._meta.get_fields()
-                if f.name not in ("id", "user", "updated_at", "completed_at")
-                and hasattr(f, "column")
+                if f.name not in NOT_SNAPSHOTTED and hasattr(f, "column")
             }
             HairProfileSnapshot.objects.create(user=request.user, **snapshot_data)
 

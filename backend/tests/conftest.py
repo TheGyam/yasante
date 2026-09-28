@@ -23,6 +23,14 @@ def _no_open_beauty_facts(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_postcodes_io(monkeypatch):
+    """Tests never reach postcodes.io; a test that needs places sets them."""
+    from apps.common import geo
+
+    monkeypatch.setattr(geo, "_fetch", lambda path: None)
+
+
+@pytest.fixture(autouse=True)
 def _clean_cache():
     # Rate-limit counters and idempotency keys live in the cache.
     cache.clear()

@@ -68,3 +68,20 @@ class Favorite(models.Model):
         db_table = "content_favorite"
         unique_together = [("user", "content")]
         ordering = ["-created_at"]
+
+
+class Tip(models.Model):
+    """One line of hair advice for the home screen, a different one each day. Edited in the admin."""
+
+    text = models.CharField(max_length=300)
+    active = models.BooleanField(default=True)
+    # Lower first; the day's tip walks through them in this order.
+    sort_order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "content_tip"
+        ordering = ["sort_order", "id"]
+
+    def __str__(self):
+        return self.text[:60]

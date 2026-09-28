@@ -111,6 +111,10 @@ class HairProfile(models.Model):
         blank=True,
     )
     area = models.CharField(max_length=100, blank=True, default="")
+    # Optional, for "stylists near you"; the map point is worked out from it (or the area).
+    postcode = models.CharField(max_length=10, blank=True, default="")
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     budget = models.CharField(
         max_length=20, choices=BUDGET_CHOICES, blank=True, default=""
     )

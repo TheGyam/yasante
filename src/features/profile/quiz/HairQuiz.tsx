@@ -205,7 +205,14 @@ export function HairQuiz({ mode, section }: HairQuizProps) {
           {key === 'chemicals' && (
             <ChemicalStep value={answers.chemicals} onChange={v => set('chemicals', v)} />
           )}
-          {key === 'area' && <AreaStep value={answers.area} onChange={v => set('area', v)} />}
+          {key === 'area' && (
+            <AreaStep
+              value={answers.area}
+              postcode={answers.postcode}
+              onChange={v => set('area', v)}
+              onPostcode={v => set('postcode', v)}
+            />
+          )}
           {key === 'budget' && (
             <BudgetStep value={answers.budget} onChange={v => set('budget', v)} />
           )}

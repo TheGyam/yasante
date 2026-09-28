@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import {
   Ban,
   Droplet,
@@ -18,6 +20,7 @@ import { makeStyles, space, useTheme } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
 import { Input } from '@/shared/ui/Input';
 import { Text } from '@/shared/ui/Text';
+import { areasFor, POSTCODE, tidyPostcode } from '@/shared/utils/postcode';
 import type { ChemicalTreatment, ScalpType, StyleBudget } from '../types';
 import { ChoiceCard } from './ChoiceCard';
 
@@ -169,16 +172,51 @@ const AREAS = ['Peckham', 'Brixton', 'Dalston', 'Hackney', 'Lewisham', 'Croydon'
 
 export function AreaStep({
   value,
+  postcode,
   onChange,
+  onPostcode,
 }: {
   value?: string;
+  postcode?: string;
   onChange: (value: string) => void;
+  onPostcode: (value: string) => void;
 }) {
   const styles = useStyles();
+  const [typed, setTyped] = useState(postcode ?? '');
+  const valid = POSTCODE.test(typed.trim());
+  // The names that postcode goes by, so their area is one tap.
+  const { data: named = [] } = useQuery({
+    queryKey: ['postcode', tidyPostcode(typed)],
+    queryFn: () => areasFor(typed),
+    enabled: valid,
+    staleTime: Infinity,
+  });
+  useEffect(() => {
+    if (named.length && !(value && named.includes(value))) onChange(named[0]);
+    // When a postcode's names arrive.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [named]);
+  const choices = named.length ? named : AREAS;
+
   return (
     <View style={styles.body}>
+      <Input
+        label="Your postcode"
+        value={typed}
+        onChangeText={text => {
+          setTyped(text);
+          onPostcode(POSTCODE.test(text.trim()) ? tidyPostcode(text) : '');
+        }}
+        placeholder="SE15 4QJ"
+        autoCapitalize="characters"
+        autoCorrect={false}
+        autoComplete="postal-code"
+        textContentType="postalCode"
+        maxLength={8}
+        hint="So we can show stylists near you. It’s never shown to anyone."
+      />
       <View style={styles.chips}>
-        {AREAS.map(area => (
+        {choices.map(area => (
           <Chip key={area} label={area} selected={value === area} onPress={() => onChange(area)} />
         ))}
       </View>
@@ -190,9 +228,6 @@ export function AreaStep({
         autoCapitalize="words"
         maxLength={40}
       />
-      <Text variant="caption" tone="tertiary">
-        A district, never your address.
-      </Text>
     </View>
   );
 }

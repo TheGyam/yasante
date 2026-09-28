@@ -20,14 +20,21 @@ export interface HandleCheck {
   suggestions?: string[];
 }
 
+/** How far to look, in miles, or anywhere. */
+export type Within = number | 'any';
+
 export const stylistApi = {
   /** GET /api/stylists/?q= — live pages matching a name, handle or area. */
   search: async (q: string) =>
     (await apiClient.get<StylistSearchResult[]>('/api/stylists/', { params: { q } })).data,
 
   /** GET /api/stylists/?style= — who does a style: their price for it and their work in it. */
-  byStyle: async (style: string) =>
-    (await apiClient.get<StylistSearchResult[]>('/api/stylists/', { params: { style } })).data,
+  byStyle: async (style: string, within?: Within) =>
+    (
+      await apiClient.get<StylistSearchResult[]>('/api/stylists/', {
+        params: { style, ...(within !== undefined && { near: 'me', within }) },
+      })
+    ).data,
 
   /** GET /api/stylists/me/ — 404 when the account has no stylist profile yet. */
   getMine: async () => (await apiClient.get<StylistProfile>('/api/stylists/me/')).data,
