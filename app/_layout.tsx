@@ -24,6 +24,7 @@ import { registerPush } from '@/shared/lib/push';
 import { useConsentSync } from '@/shared/config/consentSync';
 import { startAnalytics, track } from '@/shared/lib/analytics';
 import { reportError, startCrashReports } from '@/shared/lib/crashReport';
+import { syncTimeZone } from '@/shared/lib/timeZone';
 import { darkTheme, ThemeProvider, useTheme, useThemePreference } from '@/shared/theme';
 import { DialogHost } from '@/shared/ui/DialogHost';
 import { useStackPresets } from '@/shared/ui/stackOptions';
@@ -144,6 +145,8 @@ function RootNavigator() {
   // Where the server sends her notifications: this phone, once she's signed in.
   useEffect(() => {
     if (isAuthenticated && !isLoading) registerPush();
+    // How notifications word times: this phone's clock.
+    if (isAuthenticated && !isLoading && user?.id) syncTimeZone(user.id);
   }, [isAuthenticated, isLoading, user?.id]);
 
   // A notification means something changed on the server: what shows it is out of date.

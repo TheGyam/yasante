@@ -1,5 +1,6 @@
 import { apiClient } from '@/shared/lib/api/client';
 import { uploadImage } from '@/shared/lib/imageService';
+import { deviceZone } from '@/shared/lib/timeZone';
 import type {
   StylistSearchResult,
   MenuItem,
@@ -65,8 +66,14 @@ export const stylistApi = {
     const proofPhotoUri = draft.proofPhotoUri
       ? (await uploadImage(draft.proofPhotoUri, 'proof')).uri
       : undefined;
-    return (await apiClient.post<StylistProfile>('/api/stylists/', { ...draft, proofPhotoUri }))
-      .data;
+    // Her working hours are on this phone's clock.
+    return (
+      await apiClient.post<StylistProfile>('/api/stylists/', {
+        ...draft,
+        proofPhotoUri,
+        timeZone: deviceZone(),
+      })
+    ).data;
   },
 
   /** PATCH /api/stylists/me/ */

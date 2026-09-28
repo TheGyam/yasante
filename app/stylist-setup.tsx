@@ -21,6 +21,7 @@ import {
 } from '@/features/stylist';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
+import { deviceZone } from '@/shared/lib/timeZone';
 import { EASE_OUT, makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { notify } from '@/shared/ui/dialog';
@@ -110,7 +111,8 @@ export default function StylistSetupScreen() {
     const { step: _step, ...profile } = draft;
     try {
       if (existing) {
-        await updateProfile.mutateAsync(profile);
+        // Editing her page from her own phone: her hours follow its clock.
+        await updateProfile.mutateAsync({ ...profile, timeZone: deviceZone() });
       } else {
         await createProfile.mutateAsync(profile);
         // Setting up a page is what makes the account a stylist.

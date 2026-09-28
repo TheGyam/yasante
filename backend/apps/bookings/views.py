@@ -102,10 +102,10 @@ def _parse_time(value):
         return None
 
 
-def _local_day(at):
-    from zoneinfo import ZoneInfo
+def _local_day(at, profile):
+    from apps.common import zones
 
-    return at.astimezone(ZoneInfo(settings.STYLIST_TIME_ZONE)).date()
+    return at.astimezone(zones.of(profile)).date()
 
 
 def _take(booking, scheduled_for, deposit):
@@ -685,8 +685,8 @@ class SlotInterestListCreateView(APIView):
             stylist_id=profile.account_id,
             stylist_name=profile.display_name,
             stylist_handle=profile.handle,
-            from_date=_local_day(start),
-            to_date=_local_day(end),
+            from_date=_local_day(start, profile),
+            to_date=_local_day(end, profile),
         )
         return Response(present_slot_interest(interest), status=201)
 

@@ -64,6 +64,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     google_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
     # Lets us revoke Sign in with Apple when the account is deleted, as Apple requires.
     apple_refresh_token = models.CharField(max_length=500, blank=True, default="")
+    # How times are worded to them in notifications: their phone's zone, kept in step.
+    time_zone = models.CharField(max_length=64, blank=True, default="")
     age_confirmed = models.BooleanField(default=False)
     policy_version = models.CharField(max_length=50, blank=True, default="")
 

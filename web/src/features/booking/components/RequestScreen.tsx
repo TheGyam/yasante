@@ -105,7 +105,7 @@ function Request({
           <Text variant="subhead" tone="secondary">
             {STATUS_LABELS[status]}
             {booking.scheduledFor && status !== 'requested'
-              ? ` · ${whenLabel(booking.scheduledFor)}`
+              ? ` · ${whenLabel(booking.scheduledFor, booking.timeZone)}`
               : ''}
           </Text>
         </div>
@@ -167,7 +167,7 @@ function Request({
         {status === 'requested' && booking.proposal && (
           <InlineAlert
             tone="info"
-            message={`You suggested ${inSentence(whenLabel(booking.proposal.scheduledFor))}. Waiting for ${first} to say yes.`}
+            message={`You suggested ${inSentence(whenLabel(booking.proposal.scheduledFor, booking.timeZone))}. Waiting for ${first} to say yes.`}
           />
         )}
         {status === 'requested' && !booking.proposal && (
@@ -201,7 +201,7 @@ function Answer({
   const asked = booking.requestedTimes;
   const [picked, setPicked] = useState<string | 'other'>(asked[0] ?? 'other');
   const [other, setOther] = useState(() =>
-    toSalonInput(asked[0] ?? new Date(Date.now() + 86_400_000))
+    toSalonInput(asked[0] ?? new Date(Date.now() + 86_400_000), booking.timeZone)
   );
   const [deposit, setDeposit] = useState(() => {
     const amount = suggestedDeposit(booking);
@@ -219,7 +219,7 @@ function Answer({
   const busy = accept.isPending || propose.isPending || decline.isPending;
 
   const send = () => {
-    const at = onAsked ? picked : fromSalonInput(other);
+    const at = onAsked ? picked : fromSalonInput(other, booking.timeZone);
     const done = { onSuccess: () => navigate('/requests') };
     if (onAsked) accept.mutate({ id: booking.id, at, deposit: depositArgs }, done);
     else propose.mutate({ id: booking.id, at, deposit: depositArgs }, done);
@@ -240,7 +240,7 @@ function Answer({
         {asked.map(time => (
           <Chip
             key={time}
-            label={whenLabel(time)}
+            label={whenLabel(time, booking.timeZone)}
             selected={picked === time}
             onClick={() => setPicked(time)}
           />
@@ -318,7 +318,7 @@ function AwaitingDeposit({ booking }: { booking: Booking }) {
   return (
     <Glass padded radius="xl" className={styles.card}>
       <Text variant="body">
-        Accepted for {inSentence(whenLabel(booking.scheduledFor ?? ''))}. They’ve been asked for{' '}
+        Accepted for {inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))}. They’ve been asked for{' '}
         {formatMoney(booking.deposit?.amount ?? 0)}
         {booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}.
         Marking it received confirms the booking and{' '}
@@ -346,7 +346,7 @@ function Confirmed({ booking }: { booking: Booking }) {
       <Section>
         <ListRow
           icon={CalendarClock}
-          title={whenLabel(booking.scheduledFor ?? '')}
+          title={whenLabel(booking.scheduledFor ?? '', booking.timeZone)}
           subtitle={booking.moves ? 'Moved once' : undefined}
         />
         <ListRow

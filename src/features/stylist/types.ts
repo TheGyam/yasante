@@ -54,6 +54,8 @@ export interface StylistProfile {
   baseArea: string;
   /** Her own page only: where clients go, shared with a booking once it's confirmed. */
   address?: string;
+  /** Where her working hours are (IANA), from her phone. */
+  timeZone?: string;
   travelRadiusMiles?: number;
   instagramHandle?: string;
   policies: StylistPolicies;
@@ -78,6 +80,7 @@ export type StylistProfileDraft = Pick<
   | 'serviceModels'
   | 'baseArea'
   | 'address'
+  | 'timeZone'
   | 'travelRadiusMiles'
   | 'instagramHandle'
   | 'policies'

@@ -147,6 +147,7 @@ class StylistProfileSerializer(BlankIsOptional, serializers.ModelSerializer):
             "base_area",
             "address",
             "travel_radius_miles",
+            "time_zone",
             "instagram_handle",
             "policies",
             "availability",
@@ -173,6 +174,13 @@ class StylistProfileDraftSerializer(serializers.Serializer):
     base_area = serializers.CharField(max_length=100)
     # Private: shared with a booking once it's confirmed.
     address = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
+    # Where her working hours are: her phone's zone (IANA).
+    time_zone = serializers.CharField(max_length=64, required=False, allow_blank=True, default="")
+
+    def validate_time_zone(self, value):
+        from apps.common.zones import is_zone
+
+        return value if is_zone(value) else ""
     travel_radius_miles = serializers.FloatField(required=False, allow_null=True)
     instagram_handle = serializers.CharField(
         max_length=50, required=False, allow_blank=True, default=""
@@ -322,6 +330,7 @@ class FreeDaySerializer(serializers.Serializer):
 class FreeSlotsSerializer(serializers.Serializer):
     minutes = serializers.IntegerField()
     days = FreeDaySerializer(many=True)
+    time_zone = serializers.CharField(help_text="The stylist's zone (IANA): whose clock the times are on")
 
 
 class WeekCountsSerializer(serializers.Serializer):

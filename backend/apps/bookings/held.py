@@ -71,11 +71,9 @@ def release(booking):
     start = booking.scheduled_for or (booking.requested_times or [None])[0]
     if not start or not booking.stylist_id:
         return
-    from zoneinfo import ZoneInfo
+    from apps.common import zones
 
-    from django.conf import settings
-
-    day = start.astimezone(ZoneInfo(settings.STYLIST_TIME_ZONE)).date()
+    day = start.astimezone(zones.of(booking.stylist_profile)).date()
     for interest in SlotInterest.objects.filter(
         stylist_id=booking.stylist_id,
         from_date__lte=day,

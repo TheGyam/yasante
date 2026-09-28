@@ -2,10 +2,10 @@
 
 from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
-from zoneinfo import ZoneInfo
 
 from apps.bookings.held import clashes, held_ranges
 from django.conf import settings
+from apps.common import zones
 from django.utils import timezone
 
 DEFAULT_HOURS = {"start": "09:00", "end": "18:00"}
@@ -24,7 +24,7 @@ def compute_free_slots(profile, service, option_ids: list[str]) -> dict:
     hours_set = isinstance(week_hours, list) and len(week_hours) == 7
 
     # Her hours are wall-clock times where she works; slots go out in UTC.
-    zone = ZoneInfo(settings.STYLIST_TIME_ZONE)
+    zone = zones.of(profile)
     now = timezone.now()
     min_start = now + timedelta(hours=settings.BOOKING_SLOT_MIN_LEAD_HOURS)
     today = now.astimezone(zone).date()
@@ -68,7 +68,7 @@ def compute_free_slots(profile, service, option_ids: list[str]) -> dict:
             days.append({"date": date_str, "times": times})
         current += timedelta(days=1)
 
-    return {"minutes": minutes, "days": days}
+    return {"minutes": minutes, "days": days, "time_zone": zone.key}
 
 
 def _parse_time(time_str: str):
@@ -81,7 +81,7 @@ def _iso(dt):
 
 def start_fits(profile, start, minutes) -> bool:
     """Whether a job of `minutes` can start at `start`: a day she works, in her hours."""
-    zone = ZoneInfo(settings.STYLIST_TIME_ZONE)
+    zone = zones.of(profile)
     local = start.astimezone(zone)
     availability = profile.availability or {}
     if local.strftime("%Y-%m-%d") in set(availability.get("blocked") or []):
@@ -103,7 +103,7 @@ def start_fits(profile, start, minutes) -> bool:
 
 def is_open_on(profile, start) -> bool:
     """Whether she works at all on the (local) day `start` falls on."""
-    zone = ZoneInfo(settings.STYLIST_TIME_ZONE)
+    zone = zones.of(profile)
     local = start.astimezone(zone)
     availability = profile.availability or {}
     if local.strftime("%Y-%m-%d") in set(availability.get("blocked") or []):

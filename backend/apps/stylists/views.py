@@ -5,10 +5,10 @@ Stylist views: her page, menu, portfolio, free times, numbers and summary.
 import logging
 import uuid
 from datetime import timedelta
-from zoneinfo import ZoneInfo
 
 from apps.accounts.models import User
 from apps.bookings.models import Booking, Review
+from apps.common import zones
 from apps.common.blocks import blocked_account_ids, is_blocked
 from apps.common.models import log_search
 from django.conf import settings
@@ -369,6 +369,7 @@ class StylistCreateView(APIView):
                     service_models=data["service_models"],
                     base_area=data["base_area"],
                     address=data.get("address", ""),
+                    time_zone=data.get("time_zone", ""),
                     travel_radius_miles=data.get("travel_radius_miles"),
                     instagram_handle=data.get("instagram_handle", ""),
                     notice_hours=policies.get("notice_hours", 24),
@@ -424,6 +425,12 @@ class StylistMeView(APIView):
             if field in data:
                 setattr(profile, field, str(data[field] or "").strip())
                 update_fields.append(field)
+        if "time_zone" in data:
+            from apps.common.zones import is_zone
+
+            if is_zone(data["time_zone"]):
+                profile.time_zone = data["time_zone"]
+                update_fields.append("time_zone")
         if "proof_photo_uri" in data and profile.proof_photo_uri:
             # A new proof photo goes back into the queue.
             record_check(profile.account_id, "proof_photo", "pending", profile.proof_photo_uri)
@@ -842,8 +849,7 @@ class StylistSummaryView(APIView):
         profile = _my_profile(request)
         if profile is None:
             return Response({"pending_requests": 0, "appointments_today": 0})
-        zone = ZoneInfo(settings.STYLIST_TIME_ZONE)
-        today = timezone.now().astimezone(zone).replace(hour=0, minute=0, second=0, microsecond=0)
+        today = timezone.now().astimezone(zones.of(profile)).replace(hour=0, minute=0, second=0, microsecond=0)
         mine = Booking.objects.filter(stylist_profile=profile)
         return Response(
             {

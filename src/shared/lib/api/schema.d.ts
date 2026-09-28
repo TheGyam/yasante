@@ -1901,6 +1901,8 @@ export interface components {
             area: string;
             /** @description The stylist travels to the client */
             atClient: boolean;
+            /** @description The stylist's zone (IANA); times read in it */
+            timeZone: string;
             address?: string;
             policy: components["schemas"]["BookingPolicy"];
             policyVersion: string;
@@ -2310,6 +2312,8 @@ export interface components {
         FreeSlots: {
             minutes: number;
             days: components["schemas"]["FreeDay"][];
+            /** @description The stylist's zone (IANA): whose clock the times are on */
+            timeZone: string;
         };
         /**
          * @description * `daily` - daily
@@ -2747,6 +2751,8 @@ export interface components {
             baseArea?: string;
             /** @default  */
             address: string;
+            /** @default  */
+            timeZone: string;
             /** Format: double */
             travelRadiusMiles?: number | null;
             /** @default  */
@@ -2765,6 +2771,7 @@ export interface components {
             email?: string;
             avatarUri?: string;
             username?: string;
+            timeZone?: string;
         };
         /**
          * @description For output-only model serializers: a model field that may be blank or null can be
@@ -2893,6 +2900,7 @@ export interface components {
             baseArea: string;
             /** Format: double */
             travelRadiusMiles?: number;
+            timeZone?: string;
             instagramHandle?: string;
             readonly policies: components["schemas"]["Policies"];
             readonly availability?: components["schemas"]["Availability"];
@@ -3137,6 +3145,7 @@ export interface components {
             address?: string;
             /** Format: double */
             travelRadiusMiles?: number;
+            timeZone?: string;
             instagramHandle?: string;
             readonly policies: components["schemas"]["Policies"];
             readonly availability?: components["schemas"]["Availability"];
@@ -3157,6 +3166,8 @@ export interface components {
             baseArea: string;
             /** @default  */
             address: string;
+            /** @default  */
+            timeZone: string;
             /** Format: double */
             travelRadiusMiles?: number | null;
             /** @default  */
