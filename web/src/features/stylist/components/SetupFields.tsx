@@ -79,10 +79,15 @@ const MODELS: readonly { value: ServiceModel; label: string; hint: string; icon:
   {
     value: 'home',
     label: 'From home',
-    hint: 'Clients come to you. Only the district is shown',
+    hint: 'Clients come to you. Only your area is shown until you confirm a booking',
     icon: House,
   },
-  { value: 'mobile', label: 'I travel', hint: 'You go to the client', icon: Car },
+  {
+    value: 'mobile',
+    label: 'I travel',
+    hint: 'You go to the client. Clients can pick “Come to me” when they book',
+    icon: Car,
+  },
 ];
 
 /** How and where she works. More than one is normal. */

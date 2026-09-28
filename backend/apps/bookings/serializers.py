@@ -112,8 +112,10 @@ def present_booking(booking, viewer):
             else None
         ),
         "area": booking.area,
-        # Never sent before it's confirmed.
-        "address": booking.address if confirmed else None,
+        "at_client": booking.at_client,
+        # Never sent to the stylist before it's confirmed. A client always sees their
+        # own address when the stylist is coming to them.
+        "address": booking.address if confirmed or (booking.at_client and not as_stylist) else None,
         "policy": booking.policy,
         "policy_version": booking.policy_version,
         "reason": booking.reason,
@@ -271,6 +273,7 @@ class BookingSerializer(serializers.Serializer):
     move_request = optional(MoveRequestSerializer())
     deposit = optional(DepositSerializer())
     area = serializers.CharField()
+    at_client = serializers.BooleanField(help_text="The stylist travels to the client")
     address = optional(serializers.CharField())
     policy = BookingPolicySerializer()
     policy_version = serializers.CharField()
@@ -325,6 +328,8 @@ class BookingCreateRequestSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False)
     policy_version = serializers.CharField()
     look_id = serializers.CharField(required=False, help_text="The look the booking is from")
+    at_client = serializers.BooleanField(required=False, help_text="The stylist comes to the client")
+    client_address = serializers.CharField(required=False, help_text="Street and postcode, when at_client")
 
 
 class AcceptRequestSerializer(serializers.Serializer):

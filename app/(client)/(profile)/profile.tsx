@@ -3,6 +3,7 @@ import { useRouter } from '@/shared/lib/navigation';
 import {
   Bookmark,
   CalendarClock,
+  Sparkles,
   Droplets,
   Images,
   LayoutGrid,
@@ -13,7 +14,15 @@ import {
 import { useAuth } from '@/features/auth';
 import { isLive, useBookings } from '@/features/booking';
 import { useCollections } from '@/features/planner';
-import { hairTraits, lengthIsStale, progressOf, useUser, useUserStore } from '@/features/profile';
+import {
+  hairTraits,
+  insightsHeadline,
+  lengthIsStale,
+  progressOf,
+  useInsights,
+  useUser,
+  useUserStore,
+} from '@/features/profile';
 import { shelfSummary, useShelf } from '@/features/shelf';
 import { ModeSwitchRow, useIsStylist } from '@/features/stylist';
 import { AtSign, Scissors } from 'lucide-react-native';
@@ -83,6 +92,7 @@ function Profile() {
   const { data: bookings = [] } = useBookings('client');
   const shelf = useShelf();
   const live = bookings.filter(isLive);
+  const { data: insights } = useInsights('month');
   const name = user?.name ?? authUser?.name;
 
   return (
@@ -180,6 +190,13 @@ function Profile() {
           iconTone={live.length ? 'success' : 'accent'}
           onPress={() => router.push('/bookings')}
           testID="profile-bookings"
+        />
+        <ListRow
+          title="Your hair this month"
+          subtitle={insightsHeadline(insights)}
+          icon={Sparkles}
+          onPress={() => router.push('/insights')}
+          testID="profile-insights"
         />
         <ListRow
           title="Your collections"

@@ -355,7 +355,11 @@ export default function BookingScreen() {
           <ListRow
             title={booking.address ?? booking.area}
             subtitle={
-              booking.address ? 'The full address' : 'The address arrives once they confirm'
+              booking.atClient
+                ? `${booking.stylistName} is coming to you`
+                : booking.address
+                  ? 'The full address'
+                  : 'The address arrives once they confirm'
             }
             icon={MapPin}
             iconTone={booking.address ? 'success' : 'neutral'}
@@ -404,7 +408,7 @@ export default function BookingScreen() {
                   testID="booking-calendar"
                 />
               )}
-              {!!booking.address && (
+              {!!booking.address && !booking.atClient && (
                 <ListRow
                   title="Directions"
                   subtitle={booking.address}

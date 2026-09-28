@@ -906,6 +906,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/insights/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/insights/?period=month|all — your hair in numbers, from what's already recorded. */
+        get: operations["insights_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/invites/{code}/": {
         parameters: {
             query?: never;
@@ -1849,6 +1866,8 @@ export interface components {
             moveRequest?: components["schemas"]["MoveRequest"];
             deposit?: components["schemas"]["Deposit"];
             area: string;
+            /** @description The stylist travels to the client */
+            atClient: boolean;
             address?: string;
             policy: components["schemas"]["BookingPolicy"];
             policyVersion: string;
@@ -1880,6 +1899,10 @@ export interface components {
             policyVersion: string;
             /** @description The look the booking is from */
             lookId?: string;
+            /** @description The stylist comes to the client */
+            atClient?: boolean;
+            /** @description Street and postcode, when at_client */
+            clientAddress?: string;
         };
         /** @description Her policies as they were when the request was made. */
         BookingPolicy: {
@@ -2127,6 +2150,13 @@ export interface components {
             noShow?: boolean;
             timing?: boolean;
         };
+        CurrentStyle: {
+            name: string;
+            /** Format: date-time */
+            since: string;
+            days: number;
+            bookingId: string;
+        };
         DataExportResponse: {
             /** Format: date-time */
             requestedAt: string;
@@ -2337,6 +2367,26 @@ export interface components {
          * @enum {string}
          */
         HoldingEnum: "fresh" | "okay" | "tired";
+        /** @description GET /api/insights/ — a client's hair in numbers. */
+        Insights: {
+            period: components["schemas"]["PeriodEnum"];
+            /** Format: date-time */
+            since?: string;
+            appointments: number;
+            /** Format: double */
+            spent: number;
+            styles: string[];
+            stylists: number;
+            currentStyle?: components["schemas"]["CurrentStyle"];
+            styleLastsDays?: number;
+            washes: number;
+            usualWashDay?: string;
+            washEveryDays?: number;
+            daysSinceTrim?: number;
+            length?: components["schemas"]["LengthInsight"];
+            looksSaved: number;
+            productsAdded: number;
+        };
         /**
          * @description For output-only model serializers: a model field that may be blank or null can be
          *     left out of the JSON (the renderer drops empty values), so say so in the schema.
@@ -2371,6 +2421,16 @@ export interface components {
          * @enum {string}
          */
         LengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
+        LengthInsight: {
+            now: string;
+            /** Format: double */
+            nowCm?: number;
+            /** Format: date-time */
+            measuredAt?: string;
+            /** Format: double */
+            grewCm?: number;
+            grewSteps?: number;
+        };
         /** @description POST /api/auth/login/ */
         LoginRequest: {
             /** Format: email */
@@ -2669,6 +2729,12 @@ export interface components {
             label: string;
             details: string;
         };
+        /**
+         * @description * `month` - month
+         *     * `all` - all
+         * @enum {string}
+         */
+        PeriodEnum: "month" | "all";
         Policies: {
             noticeHours: number;
             depositType: components["schemas"]["DepositTypeEnum"];
@@ -4659,6 +4725,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HairLog"];
+                };
+            };
+        };
+    };
+    insights_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Insights"];
                 };
             };
         };

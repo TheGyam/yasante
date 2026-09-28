@@ -377,3 +377,42 @@ def test_an_unclosed_appointment_completes_itself(api, setup, book):
     booking_id = _confirmed(api, profile, client, book)
     Booking.objects.filter(pk=booking_id).update(scheduled_for=timezone.now() - timedelta(days=3))
     assert api(client).get(f"/api/bookings/{booking_id}/").json()["status"] == "completed"
+
+
+def test_a_travelling_stylist_gets_the_clients_address_once_confirmed(api, make_user, make_stylist, slot):
+    profile = make_stylist()
+    profile.service_models = ["home", "mobile"]
+    profile.save()
+    client = make_user()
+    service = profile.menu_items.get(name="Knotless braids")
+    as_client = api(client)
+    body = {
+        "stylistId": str(profile.account_id), "serviceId": str(service.pk), "bringingOwnHair": False,
+        "requestedTimes": [slot(as_client, profile, service)], "policyVersion": "2026-09",
+        "atClient": True, "clientAddress": "4 Choumert Grove, se15 4rb",
+    }
+    booking = as_client.post("/api/bookings/", body).json()
+    assert booking["atClient"] and booking["area"] == "SE15"
+    assert booking["address"] == "4 Choumert Grove, se15 4rb"  # the client sees their own
+    as_stylist = api(profile.account)
+    seen = as_stylist.get(f"/api/bookings/{booking['id']}/").json()
+    assert seen["area"] == "SE15" and "address" not in seen  # not before confirming
+    as_stylist.post(f"/api/bookings/{booking['id']}/accept/", {"scheduledFor": booking["requestedTimes"][0]})
+    assert as_stylist.get(f"/api/bookings/{booking['id']}/").json()["address"] == "4 Choumert Grove, se15 4rb"
+
+
+def test_coming_to_the_client_needs_a_postcode_and_a_stylist_who_travels(api, make_user, make_stylist, slot):
+    profile = make_stylist()
+    client = make_user()
+    service = profile.menu_items.get(name="Knotless braids")
+    as_client = api(client)
+    body = {
+        "stylistId": str(profile.account_id), "serviceId": str(service.pk), "bringingOwnHair": False,
+        "requestedTimes": [slot(as_client, profile, service)], "policyVersion": "2026-09", "atClient": True,
+        "clientAddress": "4 Choumert Grove, SE15 4RB",
+    }
+    assert "doesn’t travel" in as_client.post("/api/bookings/", body).json()["message"]
+    profile.service_models = ["mobile"]
+    profile.save()
+    body["clientAddress"] = "4 Choumert Grove"
+    assert "postcode" in as_client.post("/api/bookings/", body).json()["message"]

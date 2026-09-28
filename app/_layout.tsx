@@ -203,6 +203,10 @@ function RootNavigator() {
         <Stack.Screen name="looks/area" options={modal} />
         <Stack.Screen name="looks/[id]" options={overlay} />
         <Stack.Screen name="stylist/[handle]" />
+        <Stack.Screen
+          name="work/[handle]"
+          options={{ presentation: 'fullScreenModal', animation: 'fade', animationDuration: 200 }}
+        />
 
         {/* Doing anything needs an account; a guest's tap is sent to sign up instead
             (see the account gate in AuthContext). */}
@@ -243,6 +247,7 @@ function RootNavigator() {
           <Stack.Screen name="care-plans/[id]" />
           <Stack.Screen name="care-plans/edit" options={modal} />
           <Stack.Screen name="edit-profile" options={modal} />
+          <Stack.Screen name="insights" />
           <Stack.Screen name="username" options={modal} />
         </Stack.Protected>
 

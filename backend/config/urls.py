@@ -83,6 +83,7 @@ urlpatterns = API_DOCS + [
     ),
     path("api/policies/", profile_views.PolicyListView.as_view(), name="policies"),
     path("api/hair-log/", profile_views.HairLogView.as_view(), name="hair-log"),
+    path("api/insights/", profile_views.InsightsView.as_view(), name="insights"),
     path("api/policies/<str:type>/", profile_views.PolicyDetailView.as_view(), name="policy"),
     path("api/media/<uuid:pk>/", PrivateMediaView.as_view(), name="private-media"),
     # The education library and favourites, on the paths the app calls.

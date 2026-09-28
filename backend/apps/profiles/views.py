@@ -34,6 +34,7 @@ from .serializers import (
     UserDetailSerializer,
     UserUpdateSerializer,
 )
+from .serializers import InsightsSerializer
 from .tasks import generate_data_export
 
 logger = logging.getLogger(__name__)
@@ -350,3 +351,16 @@ class UsernameCheckView(APIView):
         value = normalise(request.query_params.get("username"))
         problem = username_problem(value, request.user)
         return Response({"username": value, "available": problem is None, "reason": problem})
+
+
+@extend_schema_view(get=extend_schema(responses=InsightsSerializer))
+class InsightsView(APIView):
+    """GET /api/insights/?period=month|all — your hair in numbers, from what's already recorded."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from .insights import insights
+
+        period = "all" if request.query_params.get("period") == "all" else "month"
+        return Response(insights(request.user, period))

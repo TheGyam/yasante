@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Banknote, CalendarClock, Clock, Scissors, UserRound } from 'lucide-react';
+import { Banknote, CalendarClock, Clock, MapPin, Scissors, UserRound } from 'lucide-react';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
 import { formatMoney, formatPrice } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
@@ -144,6 +144,18 @@ function Request({
             }
             value={formatPrice(booking.price, booking.fromPrice)}
           />
+          {booking.atClient && (
+            <ListRow
+              icon={MapPin}
+              iconTone={booking.address ? 'success' : 'neutral'}
+              title={booking.address ?? `At their place · ${booking.area}`}
+              subtitle={
+                booking.address
+                  ? 'You’re going to them'
+                  : 'You go to them. Their street arrives once you confirm'
+              }
+            />
+          )}
         </Section>
 
         {booking.notes && (
@@ -309,7 +321,8 @@ function AwaitingDeposit({ booking }: { booking: Booking }) {
         Accepted for {inSentence(whenLabel(booking.scheduledFor ?? ''))}. They’ve been asked for{' '}
         {formatMoney(booking.deposit?.amount ?? 0)}
         {booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}.
-        Marking it received confirms the booking and shares your address.
+        Marking it received confirms the booking and{' '}
+        {booking.atClient ? 'sends you their address' : 'shares your address'}.
       </Text>
       {received.isError && (
         <InlineAlert message={errorMessage(received.error, 'Couldn’t mark it.')} />
