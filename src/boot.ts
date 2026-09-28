@@ -34,3 +34,21 @@ export function checkpoint(name: string) {
 }
 
 checkpoint('js started');
+
+// An error while the app's code loads happens before any other reporter exists, and
+// in a release build it stops the app silently on the splash. Say what it was.
+type Handler = (error: unknown, isFatal?: boolean) => void;
+const errorUtils = (
+  globalThis as unknown as {
+    ErrorUtils?: { getGlobalHandler: () => Handler; setGlobalHandler: (h: Handler) => void };
+  }
+).ErrorUtils;
+if (errorUtils) {
+  const previous = errorUtils.getGlobalHandler();
+  errorUtils.setGlobalHandler((error, isFatal) => {
+    const e = error instanceof Error ? error : new Error(String(error));
+    const where = (e.stack ?? '').split(String.fromCharCode(10)).slice(0, 6).join(' | ');
+    checkpoint(`${isFatal ? 'FATAL' : 'error'}: ${e.message} @ ${where}`.slice(0, 480));
+    previous(error, isFatal);
+  });
+}
