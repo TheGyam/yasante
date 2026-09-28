@@ -94,7 +94,8 @@ def present_booking(booking, viewer):
         "bringing_own_hair": booking.bringing_own_hair,
         "hair_included": booking.hair_included,
         "notes": booking.notes,
-        "calendar_url": booking.calendar_url if confirmed else None,
+        # A signed .ics link for this person: the phone's own "Add to calendar".
+        "calendar_url": calendar_url(booking, viewer) if confirmed and viewer is not None and booking.scheduled_for else None,
         "requested_times": booking.requested_times,
         "scheduled_for": booking.scheduled_for,
         "expires_at": booking.expires_at,
@@ -177,6 +178,7 @@ def present_review(review):
 
 # ── Shapes for the schema the app's types are generated from ─────────────────────
 from apps.common import zones
+from .ics import calendar_url
 from rest_framework import serializers  # noqa: E402
 
 from apps.common.schema import optional  # noqa: E402
