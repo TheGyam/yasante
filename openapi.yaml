@@ -5769,6 +5769,8 @@ components:
           type: string
         lookId:
           type: string
+        photoOfStyle:
+          type: boolean
       required:
       - accountId
       - baseArea

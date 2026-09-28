@@ -203,6 +203,8 @@ export interface StylistSearchResult {
   verificationTier?: number;
   photoUri?: string;
   lookId?: string;
+  /** The photo shows this style, rather than just their recent work. */
+  photoOfStyle?: boolean;
 }
 
 export interface StylistSummary {

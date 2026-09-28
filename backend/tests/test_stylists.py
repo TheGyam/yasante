@@ -299,4 +299,16 @@ def test_who_does_a_style_comes_with_a_price_and_their_work(api, make_stylist, m
     knotless = with_work.menu_items.get(name="Knotless braids")
     assert first["serviceId"] == str(knotless.pk) and first["fromPrice"] == float(knotless.price)
     assert first["photoUri"].endswith("k_w400.jpg") and first["lookId"] == str(look.pk)
+    assert first["photoOfStyle"] is True
     assert "photoUri" not in found[1] and found[1]["fromPrice"]
+
+    # No look posted in it, but a portfolio photo tagged with the service: that's shown.
+    from apps.stylists.models import PortfolioPhoto
+
+    PortfolioPhoto.objects.create(
+        stylist=menu_only, uri="https://yasante.com/media/p.jpg",
+        thumb_uri="https://yasante.com/media/p_w400.jpg",
+        service=menu_only.menu_items.get(name="Knotless braids"),
+    )
+    second = api(make_user()).get("/api/stylists/?style=knotless").json()[1]
+    assert second["photoUri"].endswith("p_w400.jpg") and second["photoOfStyle"] is True
