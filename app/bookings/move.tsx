@@ -4,14 +4,9 @@ import { useLocalSearchParams } from 'expo-router';
 import { addDays, setHours, startOfHour } from 'date-fns';
 import { CalendarSync } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
-import {
-  inSentence,
-  SALON_TIME_ZONE,
-  useBooking,
-  useRequestMove,
-  whenLabel,
-} from '@/features/booking';
+import { inSentence, useBooking, useRequestMove, whenLabel } from '@/features/booking';
 import { haptics } from '@/shared/lib/haptics';
+import { zoneMark } from '@/shared/lib/timeZone';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
@@ -59,7 +54,7 @@ export default function MoveBookingScreen() {
       router.back();
       await notify({
         title: 'Sent',
-        message: `${other} has been asked. Until they agree, it stays at ${inSentence(whenLabel(booking.scheduledFor ?? ''))}.`,
+        message: `${other} has been asked. Until they agree, it stays at ${inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))}.`,
       });
     } catch (error) {
       haptics.error();
@@ -74,24 +69,24 @@ export default function MoveBookingScreen() {
     <Screen title="Move it" modal testID="move-booking">
       <View style={styles.body}>
         <Text variant="body" tone="secondary">
-          It’s at {inSentence(whenLabel(booking.scheduledFor ?? ''))} now. Pick the new time and{' '}
-          {other} will be asked to agree.
+          It’s at {inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))} now. Pick
+          the new time and {other} will be asked to agree.
         </Text>
         <View style={styles.group}>
           <DateTimeField
             title="Day"
+            timeZone={booking.timeZone}
             mode="date"
             value={when}
             onChange={setWhen}
             minimumDate={new Date()}
-            timeZone={SALON_TIME_ZONE}
           />
           <DateTimeField
-            title="Start at"
+            title={`Start at${zoneMark(booking.timeZone)}`}
+            timeZone={booking.timeZone}
             mode="time"
             value={when}
             onChange={setWhen}
-            timeZone={SALON_TIME_ZONE}
           />
         </View>
         <InlineAlert

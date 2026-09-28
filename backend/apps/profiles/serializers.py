@@ -31,6 +31,14 @@ class UserUpdateSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
     avatar_uri = serializers.URLField(max_length=500, required=False, allow_blank=True)
     username = serializers.CharField(max_length=31, required=False)
+    time_zone = serializers.CharField(max_length=64, required=False)
+
+    def validate_time_zone(self, value):
+        from apps.common.zones import is_zone
+
+        if not is_zone(value):
+            raise serializers.ValidationError("That isn’t a time zone.")
+        return value
 
     def validate_email(self, value):
         from apps.accounts.models import User

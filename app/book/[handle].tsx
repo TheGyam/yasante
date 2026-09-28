@@ -523,7 +523,7 @@ export default function RequestBookingScreen() {
             testID="booking-send"
           />
           <Text variant="caption" tone="tertiary" align="center">
-            {missing ?? `${whenLabel(time!)}. They have 48 hours to reply.`}
+            {missing ?? `${whenLabel(time!, slots.data?.timeZone)}. They have 48 hours to reply.`}
           </Text>
         </View>
       </View>

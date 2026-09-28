@@ -7,9 +7,8 @@ Every message says which mode it opens in and where, and has a unique event key,
 so nothing is sent twice.
 """
 
-from zoneinfo import ZoneInfo
+from apps.common import zones
 
-from django.conf import settings
 from django.db.models.signals import post_init, post_save
 from django.dispatch import receiver
 
@@ -20,12 +19,17 @@ from .models import Booking
 TRACKED = ("status", "proposal", "move_request")
 
 
-def _when(dt):
-    """Sat 26 Sep, 13:00, in London time, where the stylists work."""
+def _when(dt, booking=None, reader=None):
+    """
+    Sat 26 Sep, 13:00 on the stylist's clock, since that's where it happens, marked
+    "(UK time)" when the reader's phone is somewhere else.
+    """
     if not dt:
         return "the time you asked for"
-    local = dt.astimezone(ZoneInfo(settings.STYLIST_TIME_ZONE))
-    return f"{local:%a} {local.day} {local:%b}, {local:%H:%M}"
+    zone = zones.of(getattr(booking, "stylist_profile", None))
+    local = dt.astimezone(zone)
+    mark = f" ({zones.label(zone)})" if reader is not None and zones.of(reader).key != zone.key else ""
+    return f"{local:%a} {local.day} {local:%b}, {local:%H:%M}{mark}"
 
 
 def _start(booking):
@@ -75,21 +79,21 @@ def on_status(booking, before):
             booking,
             "requested",
             f"New request from {first}",
-            f"{booking.service_name} · {_when(start)}. Accept, suggest a time, or decline.",
+            f"{booking.service_name} · {_when(start, booking)}. Accept, suggest a time, or decline.",
         )
     elif status == "awaiting_deposit":
         to_client(
             booking,
             "accepted",
             f"{booking.stylist_name} accepted",
-            f"Send {_money(booking.deposit_amount)} to confirm {_when(start)}. The details are inside.",
+            f"Send {_money(booking.deposit_amount)} to confirm {_when(start, booking, booking.client)}. The details are inside.",
         )
     elif status == "confirmed" and before in ("requested", "awaiting_deposit"):
         to_client(
             booking,
             "confirmed",
             f"Confirmed with {booking.stylist_name}",
-            f"{_when(start)}. "
+            f"{_when(start, booking, booking.client)}. "
             + ("They’re coming to you. " if booking.at_client else "The address and ")
             + ("What to bring is in your booking." if booking.at_client else "what to bring are in your booking."),
         )
@@ -115,13 +119,13 @@ def on_status(booking, before):
             f"The deposit for {booking.stylist_name} didn’t arrive in time.",
         )
     elif status in ("cancelled_in_time", "cancelled_late"):
-        to_stylist(booking, "cancelled", f"{first} cancelled", f"{booking.service_name} · {_when(start)}.")
+        to_stylist(booking, "cancelled", f"{first} cancelled", f"{booking.service_name} · {_when(start, booking)}.")
     elif status == "cancelled_by_stylist":
         to_client(
             booking,
             "cancelled",
             f"{booking.stylist_name} cancelled",
-            f"Your {_when(start)} appointment is off. Any deposit comes back to you.",
+            f"Your {_when(start, booking, booking.client)} appointment is off. Any deposit comes back to you.",
         )
     elif status == "no_show":
         to_client(

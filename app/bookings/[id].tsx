@@ -191,8 +191,8 @@ export default function BookingScreen() {
   }
 
   const when = booking.scheduledFor
-    ? whenLabel(booking.scheduledFor)
-    : booking.requestedTimes.map(whenLabel).join(' · ');
+    ? whenLabel(booking.scheduledFor, booking.timeZone)
+    : booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(' · ');
 
   return (
     <Screen title={booking.stylistName} back testID="booking-screen">
@@ -222,7 +222,7 @@ export default function BookingScreen() {
 
         {booking.status === 'requested' && booking.proposal && (
           <Ask
-            title={`${booking.stylistName} suggested ${inSentence(whenLabel(booking.proposal.scheduledFor))}`}
+            title={`${booking.stylistName} suggested ${inSentence(whenLabel(booking.proposal.scheduledFor, booking.timeZone))}`}
             message={
               booking.proposal.deposit
                 ? `None of your days worked. Say yes and they'll ask for a ${formatMoney(booking.proposal.deposit.amount)} deposit.`
@@ -260,7 +260,7 @@ export default function BookingScreen() {
 
         {needsAttendance(booking) && (
           <Ask
-            title={`Still coming ${dayLabel(booking.scheduledFor!).toLowerCase()}?`}
+            title={`Still coming ${dayLabel(booking.scheduledFor!, booking.timeZone).toLowerCase()}?`}
             message={`${booking.stylistName} is keeping the time for you. A quick yes lets them plan.`}
           >
             <Button
@@ -284,7 +284,7 @@ export default function BookingScreen() {
 
         {booking.moveRequest?.by === 'stylist' && (
           <Ask
-            title={`${booking.stylistName} asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}`}
+            title={`${booking.stylistName} asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor, booking.timeZone))}`}
             message="Your deposit and history carry over."
           >
             <Button
@@ -311,7 +311,7 @@ export default function BookingScreen() {
         {booking.moveRequest?.by === 'client' && (
           <InlineAlert
             tone="info"
-            message={`You asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}. Until they agree, it stays where it is.`}
+            message={`You asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor, booking.timeZone))}. Until they agree, it stays where it is.`}
           />
         )}
 

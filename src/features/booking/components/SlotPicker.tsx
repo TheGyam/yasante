@@ -12,6 +12,7 @@ import { Chip } from '@/shared/ui/Chip';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { zoneLabel, zoneMark } from '@/shared/lib/timeZone';
 import { salonTime } from '../format';
 import type { FreeSlots } from '../types';
 
@@ -59,7 +60,7 @@ const PARTS = [
   { name: 'Evening', until: 24 },
 ];
 
-const dayOf = (iso: string) => format(salonTime(iso), 'yyyy-MM-dd');
+const dayOf = (iso: string, zone?: string) => format(salonTime(iso, zone), 'yyyy-MM-dd');
 
 export interface SlotPickerProps {
   slots?: FreeSlots;
@@ -92,6 +93,8 @@ export function SlotPicker({
   const styles = useStyles();
   const theme = useTheme();
   const days = useMemo(() => slots?.days ?? [], [slots]);
+  // The stylist's clock: her times read as she'll keep them, marked if that isn't yours.
+  const zone = slots?.timeZone;
   const [picked, setPicked] = useState<string>();
   // The highlight slides from day to day on the UI thread; a tap renders React once.
   const pillX = useSharedValue(-1);
@@ -111,7 +114,7 @@ export function SlotPicker({
   useEffect(() => {
     if (!days.length) return;
     setPicked(current => {
-      const wanted = current ?? (value ? dayOf(value) : initialDay);
+      const wanted = current ?? (value ? dayOf(value, zone) : initialDay);
       return days.some(d => d.date === wanted) ? wanted : days[0].date;
     });
   }, [days, value, initialDay]);
@@ -188,7 +191,7 @@ export function SlotPicker({
         {PARTS.map((part, index) => {
           const from = index ? PARTS[index - 1].until : 0;
           const times = day.times.filter(t => {
-            const hour = salonTime(t).getHours();
+            const hour = salonTime(t, zone).getHours();
             return hour >= from && hour < part.until;
           });
           if (!times.length) return null;
@@ -201,16 +204,21 @@ export function SlotPicker({
                 {times.map(time => (
                   <Chip
                     key={time}
-                    label={format(salonTime(time), 'HH:mm')}
+                    label={format(salonTime(time, zone), 'HH:mm')}
                     selected={value === time}
                     onPress={() => onChange(time)}
-                    accessibilityLabel={format(salonTime(time), 'EEEE d MMMM, HH:mm')}
+                    accessibilityLabel={`${format(salonTime(time, zone), 'EEEE d MMMM, HH:mm')}${zoneMark(zone)}`}
                   />
                 ))}
               </View>
             </View>
           );
         })}
+        {!!zoneMark(zone) && (
+          <Text variant="footnote" tone="tertiary">
+            Times are in {zoneLabel(zone!)}, where the appointment is.
+          </Text>
+        )}
       </Animated.View>
     </View>
   );

@@ -113,6 +113,8 @@ def present_booking(booking, viewer):
         ),
         "area": booking.area,
         "at_client": booking.at_client,
+        # Her clock, where it happens: times read in it, marked when that isn't yours.
+        "time_zone": zones.of(booking.stylist_profile).key,
         # Never sent to the stylist before it's confirmed. A client always sees their
         # own address when the stylist is coming to them.
         "address": booking.address if confirmed or (booking.at_client and not as_stylist) else None,
@@ -174,6 +176,7 @@ def present_review(review):
 
 
 # ── Shapes for the schema the app's types are generated from ─────────────────────
+from apps.common import zones
 from rest_framework import serializers  # noqa: E402
 
 from apps.common.schema import optional  # noqa: E402
@@ -274,6 +277,7 @@ class BookingSerializer(serializers.Serializer):
     deposit = optional(DepositSerializer())
     area = serializers.CharField()
     at_client = serializers.BooleanField(help_text="The stylist travels to the client")
+    time_zone = serializers.CharField(help_text="The stylist's zone (IANA); times read in it")
     address = optional(serializers.CharField())
     policy = BookingPolicySerializer()
     policy_version = serializers.CharField()

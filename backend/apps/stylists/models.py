@@ -135,6 +135,9 @@ class StylistProfile(TimeStampedModel):
     # "stylists near you". Never shown.
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+    # Where her working hours are (IANA, e.g. Europe/London), from her phone when she
+    # sets up or edits her page. Empty: the default (apps.common.zones).
+    time_zone = models.CharField(max_length=64, blank=True, default="")
     instagram_handle = models.CharField(max_length=50, blank=True, default="")
 
     # Policies

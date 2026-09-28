@@ -38,7 +38,6 @@ import {
   useProposeTime,
   inSentence,
   whenLabel,
-  SALON_TIME_ZONE,
 } from '@/features/booking';
 import {
   PaymentMethodForm,
@@ -50,6 +49,7 @@ import {
 } from '@/features/stylist';
 import { formatMoney, parseMoney } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
+import { zoneMark } from '@/shared/lib/timeZone';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
@@ -273,7 +273,7 @@ export default function RequestScreen() {
         {status === 'requested' && booking.proposal && (
           <InlineAlert
             tone="info"
-            message={`You suggested ${inSentence(whenLabel(booking.proposal.scheduledFor))}. Waiting for ${first} to say yes${booking.expiresAt ? ` — it lapses ${inSentence(whenLabel(booking.expiresAt))}` : ''}.`}
+            message={`You suggested ${inSentence(whenLabel(booking.proposal.scheduledFor, booking.timeZone))}. Waiting for ${first} to say yes${booking.expiresAt ? ` — it lapses ${inSentence(whenLabel(booking.expiresAt))}` : ''}.`}
           />
         )}
 
@@ -289,21 +289,22 @@ export default function RequestScreen() {
             )}
             <View style={styles.group}>
               <Text variant="footnote" tone="secondary" style={styles.label}>
-                She asked for {booking.requestedTimes.map(whenLabel).join(', or ')}
+                She asked for{' '}
+                {booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(', or ')}
               </Text>
               <DateTimeField
                 title="Day"
+                timeZone={booking.timeZone}
                 mode="date"
                 value={when}
                 onChange={setWhen}
-                timeZone={SALON_TIME_ZONE}
               />
               <DateTimeField
-                title="Start at"
+                title={`Start at${zoneMark(booking.timeZone)}`}
+                timeZone={booking.timeZone}
                 mode="time"
                 value={when}
                 onChange={setWhen}
-                timeZone={SALON_TIME_ZONE}
               />
               {!onAskedDay && (
                 <Text variant="caption" tone="accent" style={styles.label}>
@@ -396,7 +397,7 @@ export default function RequestScreen() {
           <>
             <InlineAlert
               tone="info"
-              message={`Accepted for ${inSentence(whenLabel(booking.scheduledFor ?? ''))}. They’ve been asked for ${formatMoney(booking.deposit?.amount ?? 0)}${booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Marking it received confirms the booking and ${booking.atClient ? 'sends you their address' : 'shares your address'}.`}
+              message={`Accepted for ${inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))}. They’ve been asked for ${formatMoney(booking.deposit?.amount ?? 0)}${booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Marking it received confirms the booking and ${booking.atClient ? 'sends you their address' : 'shares your address'}.`}
             />
             <View style={styles.footer}>
               <Button
@@ -415,7 +416,7 @@ export default function RequestScreen() {
           <>
             <Section>
               <ListRow
-                title={whenLabel(booking.scheduledFor ?? '')}
+                title={whenLabel(booking.scheduledFor ?? '', booking.timeZone)}
                 subtitle={booking.moves ? 'Moved once' : undefined}
                 icon={CalendarClock}
                 iconTone="success"
@@ -436,7 +437,7 @@ export default function RequestScreen() {
               <View style={styles.group}>
                 <InlineAlert
                   tone="info"
-                  message={`${first} asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}. Their deposit and history carry over.`}
+                  message={`${first} asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor, booking.timeZone))}. Their deposit and history carry over.`}
                 />
                 <Button
                   label="Move it"
@@ -468,7 +469,7 @@ export default function RequestScreen() {
             {booking.moveRequest?.by === 'stylist' && (
               <InlineAlert
                 tone="info"
-                message={`You asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor))}. Waiting for ${first}.`}
+                message={`You asked to move it to ${inSentence(whenLabel(booking.moveRequest.scheduledFor, booking.timeZone))}. Waiting for ${first}.`}
               />
             )}
 

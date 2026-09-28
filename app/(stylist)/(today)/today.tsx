@@ -105,7 +105,7 @@ export default function TodayScreen() {
                   <ListRow
                     key={booking.id}
                     title={`${booking.clientName} · ${booking.serviceName}`}
-                    subtitle={`${whenLabel(booking.scheduledFor!)} · ${state.text}`}
+                    subtitle={`${whenLabel(booking.scheduledFor!, booking.timeZone)} · ${state.text}`}
                     icon={state.icon}
                     iconTone={state.tone}
                     onPress={() => router.push(`/requests/${booking.id}`)}
@@ -129,7 +129,7 @@ export default function TodayScreen() {
               <ListRow
                 key={booking.id}
                 title={`${booking.clientName} · ${booking.serviceName}`}
-                subtitle={`${whenLabel(booking.scheduledFor!)} · ${attendance(booking).text}`}
+                subtitle={`${whenLabel(booking.scheduledFor!, booking.timeZone)} · ${attendance(booking).text}`}
                 icon={CalendarClock}
                 onPress={() => router.push(`/requests/${booking.id}`)}
               />

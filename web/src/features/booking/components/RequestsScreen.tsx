@@ -94,7 +94,7 @@ export function RequestsScreen() {
                 row(
                   b,
                   b.proposal
-                    ? `You suggested ${inSentence(whenLabel(b.proposal.scheduledFor))}`
+                    ? `You suggested ${inSentence(whenLabel(b.proposal.scheduledFor, b.timeZone))}`
                     : b.expiresAt
                       ? `Answer by ${inSentence(whenLabel(b.expiresAt))}`
                       : 'New request',
@@ -106,18 +106,18 @@ export function RequestsScreen() {
           {deposits.length > 0 && (
             <Section title="Waiting for a deposit">
               {deposits.map(b =>
-                row(b, `${whenLabel(b.scheduledFor ?? '')} · mark it when it arrives`, Wallet)
+                row(b, `${whenLabel(b.scheduledFor ?? '', b.timeZone)} · mark it when it arrives`, Wallet)
               )}
             </Section>
           )}
           {booked.length > 0 && (
             <Section title="Booked">
-              {booked.map(b => row(b, whenLabel(b.scheduledFor ?? '')))}
+              {booked.map(b => row(b, whenLabel(b.scheduledFor ?? '', b.timeZone)))}
             </Section>
           )}
           {done.length > 0 && (
             <Section title="Past">
-              {done.map(b => row(b, b.scheduledFor ? whenLabel(b.scheduledFor) : 'Not booked'))}
+              {done.map(b => row(b, b.scheduledFor ? whenLabel(b.scheduledFor, b.timeZone) : 'Not booked'))}
             </Section>
           )}
         </>

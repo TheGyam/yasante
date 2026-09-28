@@ -86,6 +86,8 @@ export interface Booking {
   /** The stylist travels to the client; `area` is then the client's postcode district. */
   atClient?: boolean;
   address?: string;
+  /** The stylist's zone (IANA): appointment times read on her clock. */
+  timeZone?: string;
 
   policy: StylistPolicies;
   /** The version of her terms the client ticked, stored so it can't be rewritten. */
@@ -139,6 +141,8 @@ export interface BookingDraft {
 
 /** A stylist's free start times for one service, day by day. Only days with room. */
 export interface FreeSlots {
+  /** The stylist's zone (IANA): whose clock the times are on. */
+  timeZone?: string;
   /** How long the job runs, which is what decides the times. */
   minutes: number;
   days: { date: string; times: string[] }[];

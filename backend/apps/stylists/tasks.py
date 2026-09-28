@@ -1,10 +1,9 @@
 """Nightly public stats and the monthly recap each stylist gets."""
 
 from datetime import timedelta
-from zoneinfo import ZoneInfo
+from apps.common import zones
 
 from celery import shared_task
-from django.conf import settings
 from django.utils import timezone
 
 from apps.common.notifications import notify
@@ -28,11 +27,12 @@ def _count(n, noun):
 @shared_task
 def monthly_recap(now=None):
     """On the 1st: last month's views, bookings and earnings, for anyone who had some."""
-    local = (now or timezone.now()).astimezone(ZoneInfo(settings.STYLIST_TIME_ZONE))
-    end = local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    start = (end - timedelta(days=1)).replace(day=1)
-    month = start.strftime("%B")
     for profile in StylistProfile.objects.filter(published=True):
+        # Last month as her calendar has it.
+        local = (now or timezone.now()).astimezone(zones.of(profile))
+        end = local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start = (end - timedelta(days=1)).replace(day=1)
+        month = start.strftime("%B")
         n = count_week(profile, start, end)
         if not (n["views"] or n["requests"] or n["completed"]):
             continue

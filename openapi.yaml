@@ -2954,6 +2954,9 @@ components:
         atClient:
           type: boolean
           description: The stylist travels to the client
+        timeZone:
+          type: string
+          description: The stylist's zone (IANA); times read in it
         address:
           type: string
         policy:
@@ -3005,6 +3008,7 @@ components:
       - status
       - styles
       - stylistName
+      - timeZone
       - updatedAt
     BookingCreateRequestRequest:
       type: object
@@ -3849,9 +3853,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FreeDay'
+        timeZone:
+          type: string
+          description: 'The stylist''s zone (IANA): whose clock the times are on'
       required:
       - days
       - minutes
+      - timeZone
     FrequencyEnum:
       enum:
       - daily
@@ -4839,6 +4847,10 @@ components:
           type: string
           default: ''
           maxLength: 500
+        timeZone:
+          type: string
+          default: ''
+          maxLength: 64
         travelRadiusMiles:
           type: number
           format: double
@@ -4887,6 +4899,10 @@ components:
           type: string
           minLength: 1
           maxLength: 31
+        timeZone:
+          type: string
+          minLength: 1
+          maxLength: 64
     PaymentMethod:
       type: object
       description: |-
@@ -5162,6 +5178,9 @@ components:
         travelRadiusMiles:
           type: number
           format: double
+        timeZone:
+          type: string
+          maxLength: 64
         instagramHandle:
           type: string
           maxLength: 50
@@ -5716,6 +5735,9 @@ components:
         travelRadiusMiles:
           type: number
           format: double
+        timeZone:
+          type: string
+          maxLength: 64
         instagramHandle:
           type: string
           maxLength: 50
@@ -5789,6 +5811,10 @@ components:
           type: string
           default: ''
           maxLength: 500
+        timeZone:
+          type: string
+          default: ''
+          maxLength: 64
         travelRadiusMiles:
           type: number
           format: double

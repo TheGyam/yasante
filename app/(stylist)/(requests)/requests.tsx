@@ -36,8 +36,8 @@ export default function RequestsScreen() {
       title={`${booking.clientName} · ${booking.serviceName}`}
       subtitle={
         booking.status === 'awaiting_deposit'
-          ? `${whenLabel(booking.scheduledFor ?? '')} · ${recordLabel(booking.clientRecord) ?? ''}`
-          : `${booking.requestedTimes.map(whenLabel).join(' · ')}`
+          ? `${whenLabel(booking.scheduledFor ?? '', booking.timeZone)} · ${recordLabel(booking.clientRecord) ?? ''}`
+          : `${booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(' · ')}`
       }
       value={
         booking.status === 'awaiting_deposit' && booking.deposit
