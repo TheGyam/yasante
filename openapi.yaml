@@ -6140,6 +6140,7 @@ components:
         emailVerified:
           type: boolean
           readOnly: true
+          title: Email confirmed
         phone:
           type: string
           readOnly: true
@@ -6193,6 +6194,7 @@ components:
         emailVerified:
           type: boolean
           readOnly: true
+          title: Email confirmed
         phone:
           type: string
           readOnly: true
