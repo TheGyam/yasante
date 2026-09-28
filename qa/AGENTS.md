@@ -59,7 +59,9 @@ whole run. Do not "try anyway". A test account made on the live server is real d
 
 Nothing else: no editing app or backend code, no `manage.py` commands of your own, no
 database edits (other than a plan's `timewarp`), no git commands, no raw `adb` or
-`emulator` commands.
+`emulator` commands. No scripts of your own either (`python3 -c`, `node`): never work out
+an ID or a tap point by computation. Use the IDs the plan gives. If one doesn't work, mark
+the step BLOCKED and quote the error.
 
 ## 4. Evidence: no capture, no verdict
 

@@ -144,7 +144,7 @@ If the screen instead says `Not on your shelf`, or `app.log` has
 `qadb step L2b`. **Record** whether it reads to the end and what's suggested next. Tap
 the first suggestion, `qadb step L2c`.
 **L3: Save an article.** On an article, tap its bookmark (`Save`) if there is one, and
-pick `Knotless inspo`, `qadb step L3`. `qadb link "yasante:///saved"`, `qadb step L3b`:
+pick `Knotless inspo`, `qadb step L3`. `qadb tapon Profile --exact`, then the `Saved` row (`find Saved`), wait 3 s, `qadb step L3b`:
 **record** whether the article is listed. Server check.
 
 ---

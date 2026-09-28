@@ -79,7 +79,7 @@ Expect `Report a problem` with `Subject`, `What happened` and `Write email`.
 
 **R1: Nothing yet.** `qadb link "yasante:///settings/reports"`, `qadb step R1`. Expect
 `Reports and appeals` and `Nothing reported`.
-**R2: Report a look.** `qadb link "yasante:///looks/look_seed_2"`, wait 3 s,
+**R2: Report a look.** `qadb link "yasante:///looks/d46e7f35-f68a-52a2-abd5-22136862b09c"` (Zainab's silk press), wait 3 s,
 `qadb tapon "Options for"`, `qadb tapon reason-hate`, type `QA settings report` in
 `What happened?`, `qadb tapon look-report-send`, wait 3 s, `qadb step R2`. Expect
 `Thanks for telling us`. Server check.
@@ -88,7 +88,7 @@ Expect `Report a problem` with `Subject`, `What happened` and `Write email`.
 (`find Report`; **record** how it's reached), pick `reason-other`, type
 `QA review report`, `qadb tapon review-report-send`, wait 3 s, `qadb step R3b`. Server
 check. If you can't find the report control on the page, open the screen directly with
-`qadb link "yasante:///review/report?id=rev_seed_zainab&author=Zainab"` and say so.
+`qadb link "yasante:///review/report?id=f1ed297b-d4b6-578e-bd01-3e40ed0fac43&author=Zainab"` and say so.
 **R4: Listed.** `qadb link "yasante:///settings/reports"`, `qadb step R4`. Expect
 `What you reported` listing the look (`A look: Hateful or abusive`) and, if R3 worked,
 the review.
