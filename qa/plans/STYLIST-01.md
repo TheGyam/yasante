@@ -26,7 +26,9 @@ to read. If a step seems to need one, write `NEEDS: …` in its section and move
 
 **Server check, every step that saves something:** after it, run
 `grep -E '" (4|5)[0-9]{2} ' qa/runs/<RUN>/server.log | tail -3` and paste it. Any new
-`5xx` is a **FAIL**. A `4xx` is only OK where the step expects a refusal.
+`5xx` is a **FAIL**. A `4xx` is only OK where the step expects a refusal, with one exception: a `401` followed at once by
+`POST /api/auth/refresh-token/ 200` and the same request succeeding is the app renewing its
+15-minute sign-in, not a failure. Paste it and say so.
 
 **Photos.** On emulators, `qadb` may now tap Android's photo picker and camera. The
 gallery holds two test photos, shown as `Photo taken on …`. To pick one:

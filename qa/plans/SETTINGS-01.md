@@ -24,7 +24,9 @@ One device, so `qadb` needs no `-d`.
 
 **Server check, every step that saves something:** after it, run
 `grep -E '" (4|5)[0-9]{2} ' qa/runs/<RUN>/server.log | tail -3` and paste it. Any new
-`5xx` is a **FAIL**. A `4xx` is only OK where the step expects a refusal.
+`5xx` is a **FAIL**. A `4xx` is only OK where the step expects a refusal, with one exception: a `401` followed at once by
+`POST /api/auth/refresh-token/ 200` and the same request succeeding is the app renewing its
+15-minute sign-in, not a failure. Paste it and say so.
 
 **Never tap `Write email`** (Report a problem). It opens a mail app outside Yasante.
 
@@ -122,6 +124,20 @@ profile, hair profile, looks, comments, collections and shelf.` and `Keep my acc
 `active=False`).
 **D4.** Try to sign in as Adwoa again, `qadb step D4`. **Record** the message. It must
 **not** sign her in.
+
+---
+
+## Q: The hair quiz, signed out
+
+After D4 the app is signed out. `qadb key BACK` until the welcome screen shows
+(`Your hair, planned beautifully.`); if it doesn't, `qadb launch`.
+**Q1.** On the welcome screen, `qadb tapon get-started` (`Get started`), wait 3 s, `qadb step Q1`. For each screen: **record** the title, pick the **first** option,
+`qadb tapon quiz-next`, and capture (`Q1b`, `Q1c`, …). If a screen offers
+`I'm not sure — skip`, use it **once** (on the second screen) and record that it moved on.
+On the last screen (`Here's your hair` / `Start exploring`) capture it, tap
+`Start exploring`, `qadb step Q1z`. **Record** where it lands and the number of screens. Server check (signed out, so
+expect no saving request, or record the one you see).
+
 
 ---
 

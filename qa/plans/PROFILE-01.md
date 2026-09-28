@@ -21,7 +21,9 @@ She has a care plan `Wash day` (weekly, reminders on), a shelf with
 
 **Server check, every step that saves something:** after it, run
 `grep -E '" (4|5)[0-9]{2} ' qa/runs/<RUN>/server.log | tail -3` and paste it. Any new
-`5xx` is a **FAIL**. A `4xx` is only OK where the step expects a refusal.
+`5xx` is a **FAIL**. A `4xx` is only OK where the step expects a refusal, with one exception: a `401` followed at once by
+`POST /api/auth/refresh-token/ 200` and the same request succeeding is the app renewing its
+15-minute sign-in, not a failure. Paste it and say so.
 
 ---
 
@@ -74,13 +76,8 @@ the question and options. Pick the first option, `qadb tapon quiz-next` (`Save`)
 3 s, `qadb step H2b`. Server check. Back on the hub, **record** the porosity answer.
 **H3: Log a wash day.** `qadb tapon log-wash`, wait 2 s, `qadb step H3`. Expect
 `Last: …` under `Wash day done` to change to today. Server check.
-**H4: The full quiz.** `qadb link "yasante:///onboarding/quiz"`, wait 3 s,
-`qadb step H4`. For each screen: **record** the title, pick the **first** option,
-`qadb tapon quiz-next`, and capture (`H4b`, `H4c`, …). If a screen offers
-`I'm not sure — skip`, use it **once** (on the second screen) and record that it moved on.
-On the last screen (`Here's your hair` / `Start exploring`) capture it, tap
-`Start exploring`, `qadb step H4z`. Server check. **Record** the number of screens.
-
+**H4: The full quiz** is in SETTINGS-01 (part Q): the app only opens it signed out, from the
+welcome screen.
 ---
 
 ## C: Planner and care plans
@@ -115,7 +112,8 @@ barcode, or add it yourself.`
 so). `qadb step B3b`. Then `qadb tapon shelf-finish` (`I've finished it`),
 `qadb step B3c`, and `qadb tapon shelf-repurchase` (`I bought it again`),
 `qadb step B3d`. **Record** `Bought N times` after each. Server check.
-**B4: Add your own product.** From `Add to your shelf`, `qadb tapon shelf-add-own`, wait 2 s,
+**B4: Add your own product.** From `Add to your shelf`, type `QA Brand` in `shelf-search` (the
+`shelf-add-own` button only shows once there's a search), `qadb tapon shelf-add-own`, wait 2 s,
 `qadb step B4`. Expect `Add a product`. `qadb tapon product-brand`, type `QA Brand`;
 `qadb tapon product-name`, type `QA Test Curl Cream`; pick the first product kind shown
 (**record** the kinds). `qadb tapon product-save`, wait 3 s, `qadb step B4b`. Expect it on
