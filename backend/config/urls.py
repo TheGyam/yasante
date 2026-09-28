@@ -11,6 +11,7 @@ from apps.common.uploads import PrivateMediaView, UploadView
 from apps.accounts import views as account_views
 from apps.looks import views as looks_views
 from apps.profiles import views as profile_views
+from apps.common.client_errors import ClientErrorView
 from apps.content import compat as content
 from apps.looks.views import StylistReportView
 from apps.web.api import WaitlistView
@@ -89,6 +90,7 @@ urlpatterns = API_DOCS + [
     # The education library and favourites, on the paths the app calls.
     path("api/content/content/", content.ContentListView.as_view(), name="content-list-compat"),
     path("api/tips/", content.TipListView.as_view(), name="tips"),
+    path("api/client-errors/", ClientErrorView.as_view(), name="client-errors"),
     path(
         "api/content/content/search/",
         content.ContentSearchView.as_view(),

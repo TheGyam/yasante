@@ -556,6 +556,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/client-errors/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["client_errors_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/collections/": {
         parameters: {
             query?: never;
@@ -2043,6 +2059,24 @@ export interface components {
          * @enum {string}
          */
         ChemicalsEnum: "relaxer" | "texturiser" | "colour" | "bleach" | "keratin";
+        /**
+         * @description * `crash` - crash
+         *     * `stall` - stall
+         * @enum {string}
+         */
+        ClientErrorKindEnum: "crash" | "stall";
+        ClientErrorRequest: {
+            /** @default crash */
+            kind: components["schemas"]["ClientErrorKindEnum"];
+            message: string;
+            stack?: string;
+            platform?: string;
+            osVersion?: string;
+            appVersion?: string;
+            context?: {
+                [key: string]: unknown;
+            };
+        };
         ClientRecord: {
             attended: number;
             noShows: number;
@@ -4194,6 +4228,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CarePlanSessionResponse"];
                 };
+            };
+        };
+    };
+    client_errors_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClientErrorRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

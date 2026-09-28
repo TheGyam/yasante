@@ -63,3 +63,10 @@ class BookingRequestThrottle(UserRateThrottle):
 class ReportThrottle(UserRateThrottle):
     scope = "reporting"
     rate = "10/hour"
+
+
+class ClientErrorThrottle(AnonRateThrottle):
+    """A phone in a crash loop shouldn't fill the table."""
+
+    scope = "client_error"
+    rate = "30/hour"

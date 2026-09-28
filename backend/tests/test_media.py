@@ -103,3 +103,16 @@ def test_a_stylists_page_wears_the_same_photo(api, make_stylist, settings):
     api(user).client.patch(f"/api/users/{user.pk}/", {"avatarUri": uri}, format="json")
     stylist.refresh_from_db()
     assert stylist.avatar_uri == uri
+
+
+def test_the_app_can_report_a_crash(api):
+    from apps.common.models import ClientError
+
+    response = api().client.post(
+        "/api/client-errors/",
+        {"kind": "stall", "message": "Start-up stalled", "platform": "ios", "context": {"auth": False}},
+        format="json",
+    )
+    assert response.status_code == 204
+    error = ClientError.objects.get()
+    assert error.kind == "stall" and error.platform == "ios" and error.context == {"auth": False}

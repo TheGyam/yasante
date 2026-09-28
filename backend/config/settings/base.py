@@ -209,6 +209,7 @@ REST_FRAMEWORK = {
         "booking": "20/day",
         "reporting": "10/hour",
         "waitlist": "10/hour",
+        "client_error": "30/hour",
         "default": "100/min",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.custom_exception_handler",
