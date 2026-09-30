@@ -565,14 +565,17 @@ class NotificationPreferencesView(APIView):
         return Response(self._present(muted_categories(request.user.pk)))
 
     def put(self, request):
-        from apps.common.models import NOTIFICATION_CATEGORIES, NotificationPreference
+        from apps.common.models import NOTIFICATION_CATEGORIES, OPT_IN_CATEGORIES, NotificationPreference
+        from apps.common.notifications import muted_categories
 
         known = {key for key, _ in NOTIFICATION_CATEGORIES}
         # { categories: [{id, on}] } or { muted: [ids] }; "account" can't be muted.
         if "categories" in request.data:
-            muted = [c.get("id") for c in request.data["categories"] if not c.get("on", True)]
+            off = {c.get("id") for c in request.data["categories"] if not c.get("on", True)}
+            on = {c.get("id") for c in request.data["categories"] if c.get("on", True)}
         else:
-            muted = list(request.data.get("muted") or [])
-        muted = sorted({m for m in muted if m in known and m != "account"})
-        NotificationPreference.objects.update_or_create(user=request.user, defaults={"muted": muted})
-        return Response(self._present(set(muted)))
+            off, on = set(request.data.get("muted") or []), set()
+        muted = sorted({m for m in off if m in known and m != "account" and m not in OPT_IN_CATEGORIES})
+        opted_in = sorted(OPT_IN_CATEGORIES & on)
+        NotificationPreference.objects.update_or_create(user=request.user, defaults={"muted": muted, "opted_in": opted_in})
+        return Response(self._present(muted_categories(request.user.pk)))

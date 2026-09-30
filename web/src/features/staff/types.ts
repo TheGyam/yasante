@@ -325,3 +325,44 @@ export interface FieldCommon {
   disabled?: boolean;
   required?: boolean;
 }
+
+export type BroadcastKind = 'update' | 'news';
+
+export interface Audience {
+  who: 'everyone' | 'clients' | 'stylists' | 'people';
+  area: string;
+  platform: 'any' | 'ios' | 'android';
+  joined: 'any' | '7' | '30' | '90';
+  people: string[];
+}
+
+export interface Reach {
+  matched: number;
+  reachable: number;
+  noDevice: number;
+  notOptedIn: number;
+  summary: string;
+}
+
+export interface BroadcastRecord {
+  id: number;
+  kind: BroadcastKind;
+  title: string;
+  body: string;
+  url: string;
+  audience: string;
+  recipients: number;
+  sentBy: string;
+  at: string;
+  finished: boolean;
+  sent: number;
+  failed: number;
+  waiting: number;
+  noDevice: number;
+}
+
+export interface Broadcasts {
+  items: BroadcastRecord[];
+  canSend: boolean;
+  newsTooSoon: boolean;
+}

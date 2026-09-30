@@ -24,3 +24,9 @@ export const ErrorDetail = lazy(() =>
 export const BusinessMetrics = lazy(() =>
   import('./components/BusinessMetrics').then(m => ({ default: m.BusinessMetrics }))
 );
+export const Broadcasts = lazy(() =>
+  import('./components/notifications/Broadcasts').then(m => ({ default: m.Broadcasts }))
+);
+export const Composer = lazy(() =>
+  import('./components/notifications/Composer').then(m => ({ default: m.Composer }))
+);

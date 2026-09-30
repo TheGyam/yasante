@@ -20,7 +20,9 @@ export interface NavSection {
 }
 
 /** Sections by job, in the order the team works: what needs me, then who, then what. */
-const ORDER = ['People', 'Bookings', 'Content', 'Insights', 'System'];
+const ORDER = ['People', 'Messages', 'Bookings', 'Content', 'Insights', 'System'];
+// Tools with a page of their own rather than a list of records.
+const PAGES: Record<string, string> = { 'staff.broadcast': '/notifications' };
 
 export function navigation(data: Overview): NavSection[] {
   const today: NavSection = {
@@ -57,7 +59,7 @@ export function navigation(data: Overview): NavSection[] {
       .map(model => ({
         key: model.key,
         name: model.name,
-        url: model.url,
+        url: PAGES[model.key] ?? model.url,
         icon: iconFor(model.icon),
         description: model.description,
       })),
