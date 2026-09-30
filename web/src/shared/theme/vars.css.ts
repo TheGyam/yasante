@@ -26,6 +26,15 @@ globalStyle(':root', {
     [media.dark]: { colorScheme: 'dark', vars: assignVars(color, colorShape(darkTheme)) },
   },
 });
+// A page can pin a theme regardless of the device: <html data-theme="light|dark">.
+globalStyle(':root[data-theme="light"]', {
+  colorScheme: 'light',
+  vars: assignVars(color, colorShape(lightTheme)),
+});
+globalStyle(':root[data-theme="dark"]', {
+  colorScheme: 'dark',
+  vars: assignVars(color, colorShape(darkTheme)),
+});
 
 /** Durations as variables, so asking for reduced motion stops everything at once. */
 export const time = createGlobalThemeContract(

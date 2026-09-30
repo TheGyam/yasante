@@ -45,7 +45,7 @@ def test_staff_permissions_scope_every_surface(make_user, make_stylist):
     assert response.status_code == 200
     data = response.json()
     assert [item["key"] for item in data["models"]] == ["stylists.stylistprofile"]
-    assert [item["label"] for item in data["metrics"]] == ["Stylists"]
+    assert data["metrics"] == []  # the headline numbers are people, bookings and looks
     assert data["queues"] == []
     assert data["trend"]["series"] == []
     assert data["models"][0]["addUrl"] is None

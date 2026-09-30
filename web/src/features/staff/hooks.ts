@@ -1,8 +1,18 @@
 import { ApiError } from '@/shared/lib/api/client';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRef } from 'react';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import { useBeforeUnload, useBlocker } from 'react-router';
 import { readStaff, writeStaff } from './api';
+import type {
+  ErrorDetail,
+  FormSchema,
+  ErrorIssues,
+  Insight,
+  Overview,
+  Related,
+  ReviewQueue,
+  SearchResults,
+} from './types';
 
 export const keys = {
   session: ['staff', 'session'] as const,
@@ -20,8 +30,11 @@ export function useStaffRead<T>(
     retry?: false;
     refetchOnWindowFocus?: false;
     refetchInterval?: number;
+    /** Keep showing the last answer while the next loads (paging, filtering). */
+    keepPrevious?: boolean;
   } = {}
 ) {
+  const { keepPrevious, ...rest } = options;
   const cache = useQueryClient();
   return useQuery({
     queryKey: keys.read(path),
@@ -38,7 +51,8 @@ export function useStaffRead<T>(
         throw error;
       }
     },
-    ...options,
+    placeholderData: keepPrevious ? keepPreviousData : undefined,
+    ...rest,
   });
 }
 
@@ -66,6 +80,18 @@ export function useStaffMutation() {
           ('deleted' in data && data.deleted) ||
           ('done' in data && data.done))
       ) {
+        if (['review', 'undo', 'errors'].includes(category)) {
+          // A decision moves a record between lists and changes every count.
+          await Promise.all(
+            [
+              keys.overview,
+              keys.family('review'),
+              keys.family('errors'),
+              keys.family('records'),
+            ].map(queryKey => cache.invalidateQueries({ queryKey }))
+          );
+          return;
+        }
         const [, app, model] = path.split('/');
         const affected: (readonly string[])[] = [
           keys.overview,
@@ -122,5 +148,87 @@ export const staffMessage = (error: unknown) =>
     : 'The request did not finish. Reload before repeating it to check whether it was saved.';
 
 export function useOverviewRefresh() {
-  return useStaffRead<import('./types').Overview>('overview/');
+  return useStaffRead<Overview>('overview/');
+}
+
+/** A record's form, shared by the panel, the full page and their headers. */
+export function useRecordForm(app: string, model: string, id: string | undefined, search = '') {
+  const path = `forms/${app}/${model}/${id ? `${encodeURIComponent(id)}/` : ''}${search}`;
+  return { path, query: useStaffRead<FormSchema>(path, { refetchOnWindowFocus: false }) };
+}
+
+export const useSearch = (term: string) =>
+  useStaffRead<SearchResults>(`search/?q=${encodeURIComponent(term)}`, {
+    enabled: term.trim().length > 1,
+  });
+
+export const useReviewQueue = (queue: string) => useStaffRead<ReviewQueue>(`review/${queue}/`);
+
+export const useRelated = (app: string, model: string, id: string) =>
+  useStaffRead<Related>(`related/${app}/${model}/${encodeURIComponent(id)}/`);
+
+export const useInsight = (name: string, range: string) =>
+  useStaffRead<Insight>(`insights/${name}/?${range}`, { refetchOnWindowFocus: false });
+
+export const useErrorIssues = (query: string) => useStaffRead<ErrorIssues>(`errors/?${query}`);
+
+export const useErrorIssue = (id: string) => useStaffRead<ErrorDetail>(`errors/${id}/`);
+
+/**
+ * Single-key and "g then x" shortcuts, ignored while someone types in a field. Handlers
+ * are read from a ref, so the listener is added once.
+ */
+export function useShortcuts(bindings: Record<string, () => void>, enabled = true) {
+  const latest = useRef(bindings);
+  useEffect(() => {
+    latest.current = bindings;
+  });
+  useEffect(() => {
+    if (!enabled) return;
+    let prefix = '';
+    let timer = 0;
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        target?.closest('input, textarea, select, [contenteditable="true"]') ||
+        document.querySelector('dialog[open]:not([data-shortcuts])')
+      )
+        return;
+      const key = prefix ? `${prefix} ${event.key}` : event.key;
+      if (latest.current[key]) {
+        event.preventDefault();
+        prefix = '';
+        latest.current[key]();
+      } else if (event.key === 'g') {
+        prefix = 'g';
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => (prefix = ''), 900);
+      } else prefix = '';
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [enabled]);
+}
+
+/** A value kept in localStorage for this browser: a collapsed section, the theme. */
+export function useLocalSetting<T extends string>(key: string, fallback: T) {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      return (localStorage.getItem(`staff.${key}`) as T | null) ?? fallback;
+    } catch {
+      return fallback;
+    }
+  });
+  const save = (next: T) => {
+    setValue(next);
+    try {
+      localStorage.setItem(`staff.${key}`, next);
+    } catch {
+      // Private windows can refuse storage; the setting just won't persist.
+    }
+  };
+  return [value, save] as const;
 }

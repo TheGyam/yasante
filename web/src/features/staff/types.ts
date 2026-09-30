@@ -1,35 +1,86 @@
 export interface Resource {
   key: string;
   name: string;
+  singular: string;
   group: string;
+  icon: string;
+  description: string;
+  order: number;
+  /** Shown under another tool rather than on its own (schedules under scheduled jobs). */
+  parent?: string;
   url: string;
   addUrl: string | null;
   canView: boolean;
 }
 
+export interface Metric {
+  label: string;
+  hint: string;
+  value: number;
+  previous: number;
+  /** Percent change against the week before; null when last week was zero. */
+  change: number | null;
+  values: number[];
+  url: string;
+}
+
+export interface Queue {
+  key: string;
+  model: string;
+  label: string;
+  hint: string;
+  count: number;
+  url: string;
+}
+
+export interface NeedsItem {
+  id: string;
+  title: string;
+  facts: string[];
+  at: string;
+  queue: string;
+  url: string;
+}
+
+export interface AuditEntry {
+  id: number;
+  object: string;
+  actor: string;
+  action: string;
+  at: string;
+  url: string | null;
+}
+
 export interface Overview {
-  user: { name: string; superuser: boolean };
+  user: { name: string; superuser: boolean; avatar?: string };
   csrfToken: string;
   models: Resource[];
-  metrics: { label: string; hint: string; value: number; url: string }[];
-  queues: { label: string; hint: string; count: number; url: string }[];
-  audit: {
-    id: number;
-    object: string;
-    actor: string;
-    action: string;
-    at: string;
-    url: string | null;
-  }[];
-  trend: { dates: string[]; series: { label: string; values: number[] }[] };
+  metrics: Metric[];
+  queues: Queue[];
+  status: Record<string, number>;
+  totalOpen: number;
+  needs: NeedsItem[];
+  errors: { open: number; new: number };
+  audit: AuditEntry[];
+  trend: { dates: string[]; series: { label: string; values: number[]; url: string }[] };
   generatedAt: string;
 }
+
+export type CellKind = 'text' | 'bool' | 'status' | 'datetime' | 'number';
 
 export interface Records {
   quickEditable?: boolean;
   name: string;
+  description: string;
+  singular: string;
+  views: { name: string; query: string }[];
   columns: { key: string; label: string; sort: number | null; direction: 'asc' | 'desc' | null }[];
-  rows: { id: string; values: string[]; url: string }[];
+  rows: {
+    id: string;
+    values: string[];
+    cells: { kind: CellKind; value: string | number | boolean | null }[];
+    url: string;
+  }[];
   count: number;
   page: number;
   pages: number;
@@ -37,6 +88,113 @@ export interface Records {
   filters: { label: string; choices: { label: string; selected: boolean; query: string }[] }[];
   actions: { key: string; label: string }[];
   addUrl: string | null;
+}
+
+export interface ReviewContent {
+  title: string;
+  text?: string;
+  author?: string;
+  image?: string;
+  url?: string;
+}
+
+export interface ReviewItem {
+  id: string;
+  title: string;
+  at: string;
+  facts: string[];
+  text: string;
+  images: string[];
+  url: string;
+  content?: ReviewContent;
+  evidence?: string;
+}
+
+export interface ReviewQueue {
+  name: string;
+  key: string;
+  items: ReviewItem[];
+  next: string | null;
+  actions: { key: string; label: string; shortcut: string; reversible: boolean }[];
+}
+
+export interface Decision {
+  done: true;
+  label: string;
+  undo: string | null;
+}
+
+export interface InsightRow {
+  label: string;
+  values: number[];
+  url?: string;
+  x?: number;
+  y?: number;
+  rate?: number | null;
+  active?: number;
+  cohort?: number;
+}
+
+export interface Insight {
+  name: string;
+  title: string;
+  kind: 'line' | 'area' | 'bar' | 'stacked-bar' | 'heatmap' | 'table';
+  labels: string[];
+  rows: InsightRow[];
+  previous: InsightRow[] | null;
+  meta: Record<string, number | string | null>;
+  from: string;
+  to: string;
+}
+
+export interface ErrorIssue {
+  id: number;
+  title: string;
+  platform: string;
+  count: number;
+  users: number;
+  first: string;
+  last: string;
+  version: string;
+  status: 'open' | 'resolved' | 'ignored';
+  regressed: boolean;
+  note: string;
+  resolvedInVersion: string;
+  sparkline?: number[];
+}
+
+export interface ErrorIssues {
+  items: ErrorIssue[];
+  count: number;
+  page: number;
+  versions: string[];
+}
+
+export interface ErrorDetail extends ErrorIssue {
+  editable: boolean;
+  occurrences: {
+    id: number;
+    at: string;
+    stack: string;
+    device: string;
+    os: string;
+    version: string;
+    path: string;
+    user: string;
+    userUrl: string | null;
+  }[];
+  trend: { day: string; app_version: string; value: number }[];
+}
+
+export interface SearchResults {
+  groups: {
+    name: string;
+    items: { name: string; subtitle: string; url: string; icon: string }[];
+  }[];
+}
+
+export interface Related {
+  items: { name: string; relation: string; count: number; url: string }[];
 }
 
 export interface Field {
@@ -74,6 +232,7 @@ export interface InlineForm {
 export interface FormSchema {
   canResetTwoFactor?: boolean;
   name: string;
+  singular: string;
   title: string;
   object: string;
   id: string | null;

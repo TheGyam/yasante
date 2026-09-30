@@ -1,63 +1,102 @@
+import { useState } from 'react';
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/shared/ui/Button';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
-import { ArrowLeft } from 'lucide-react';
-import { useSearchParams } from 'react-router';
+import { formatAgo, formatDateTime } from '../format';
 import { staffMessage, useStaffRead } from '../hooks';
+import * as ui from './ui.css';
 import * as s from './RecordHistory.css';
-export function RecordHistory({ app, model, id }: { app: string; model: string; id: string }) {
-  const [params, setParams] = useSearchParams();
-  const query = useStaffRead<{
-    name: string;
-    page: number;
-    pages: number;
-    entries: { id: number; at: string; actor: string; message: string }[];
-  }>(`history/${app}/${model}/${id}/?${params}`, {});
+
+interface History {
+  name: string;
+  page: number;
+  pages: number;
+  entries: { id: number; at: string; actor: string; message: string }[];
+}
+
+/** Who changed this record and what they changed, newest first. */
+export function RecordHistory({
+  app,
+  model,
+  id,
+  standalone = false,
+}: {
+  app: string;
+  model: string;
+  id: string;
+  standalone?: boolean;
+}) {
+  const [page, setPage] = useState(1);
+  const query = useStaffRead<History>(
+    `history/${app}/${model}/${encodeURIComponent(id)}/?p=${page}`,
+    { keepPrevious: true }
+  );
   if (query.isError) return <InlineAlert message={staffMessage(query.error)} />;
-  if (!query.data) return <Skeleton className={s.loadingPanel} />;
+  if (!query.data) return <Skeleton className={s.loading} />;
   const data = query.data;
   return (
-    <>
-      <Button
-        to={`/records/${app}/${model}/${id}`}
-        label="Back to record"
-        icon={ArrowLeft}
-        variant="secondary"
-      />
-      <Text variant="title1">History · {data.name}</Text>
-      <section className={s.card}>
-        {data.entries.map(entry => (
-          <div className={s.queue} key={entry.id}>
-            <div className={s.grow}>
-              <Text variant="body">{entry.message}</Text>
-              <Text variant="caption" tone="secondary">
-                {entry.actor} · {new Date(entry.at).toLocaleString()}
-              </Text>
-            </div>
-          </div>
-        ))}
-        {!data.entries.length && <Text>No changes recorded yet.</Text>}
-      </section>
-      <div className={s.row}>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={data.page <= 1}
-          onClick={() => setParams({ p: String(data.page - 1) })}
-          label={<>Previous</>}
-        />
-        <span>
-          Page {data.page} of {data.pages}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={data.page >= data.pages}
-          onClick={() => setParams({ p: String(data.page + 1) })}
-          label={<>Next</>}
-        />
-      </div>
-    </>
+    <div className={ui.stack}>
+      {standalone && (
+        <>
+          <Button
+            to={`/records/${app}/${model}/${encodeURIComponent(id)}`}
+            label="Back to the record"
+            icon={ArrowLeft}
+            variant="quiet"
+            size="sm"
+          />
+          <Text variant="title1">History of {data.name}</Text>
+        </>
+      )}
+      {data.entries.length ? (
+        <ol className={s.timeline}>
+          {data.entries.map(entry => (
+            <li key={entry.id} className={s.entry}>
+              <span className={s.dot} aria-hidden />
+              <div className={ui.stack}>
+                <Text variant="subhead">{entry.message || 'Changed'}</Text>
+                <Text variant="caption" tone="tertiary">
+                  {entry.actor} ·{' '}
+                  <time dateTime={entry.at} title={formatDateTime(entry.at)}>
+                    {formatAgo(entry.at)}
+                  </time>
+                </Text>
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <Text variant="footnote" tone="secondary">
+          No changes have been recorded for this record.
+        </Text>
+      )}
+      {data.pages > 1 && (
+        <div className={ui.actions}>
+          <Button
+            label=""
+            aria-label="Newer changes"
+            icon={ChevronLeft}
+            variant="quiet"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => setPage(page - 1)}
+          />
+          <Text variant="caption" tone="tertiary">
+            Page {data.page} of {data.pages}
+          </Text>
+          <Button
+            label=""
+            aria-label="Older changes"
+            icon={ChevronRight}
+            variant="quiet"
+            size="sm"
+            disabled={page >= data.pages}
+            onClick={() => setPage(page + 1)}
+          />
+        </div>
+      )}
+    </div>
   );
 }

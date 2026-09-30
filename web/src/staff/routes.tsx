@@ -2,7 +2,9 @@ import type { RouteObject } from 'react-router';
 import { StaffShell } from '@/features/staff';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import OverviewRoute from './routes/overview';
-import ToolsRoute from './routes/tools';
+import ReviewRoute from './routes/review';
+import InsightsRoute from './routes/insights';
+import ErrorsRoute from './routes/errors';
 import MetricsRoute from './routes/metrics';
 import PasswordRoute from './routes/password';
 import RecordsRoute from './routes/records';
@@ -15,7 +17,12 @@ export const staffRoutes: RouteObject[] = [
     element: <StaffShell />,
     children: [
       { path: '/', element: <OverviewRoute /> },
-      { path: '/tools', element: <ToolsRoute /> },
+      { path: '/review', element: <ReviewRoute /> },
+      { path: '/insights', element: <InsightsRoute /> },
+      { path: '/errors', element: <ErrorsRoute /> },
+      { path: '/errors/:id', element: <ErrorsRoute /> },
+      { path: '/account', element: <PasswordRoute /> },
+      { path: '/review/:queue', element: <ReviewRoute /> },
       { path: '/metrics', element: <MetricsRoute /> },
       { path: '/password', element: <PasswordRoute /> },
       { path: '/records/:app/:model', element: <RecordsRoute /> },

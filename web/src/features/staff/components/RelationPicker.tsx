@@ -121,6 +121,7 @@ export function RelationPicker({
                 variant="ghost"
                 size="sm"
                 className={s.choice}
+                data-relation-choice
                 key={option.value}
                 type="button"
                 aria-pressed={picked.includes(option.value)}

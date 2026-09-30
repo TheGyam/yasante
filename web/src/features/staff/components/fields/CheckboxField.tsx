@@ -1,25 +1,20 @@
-import { Checkbox } from '@/shared/ui/Checkbox';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
-import { Text } from '@/shared/ui/Text';
-import type { FieldCommon } from '../../types';
+import { Switch } from '@/shared/ui/Switch';
+import type { Field, FieldCommon } from '../../types';
 import * as s from './CheckboxField.css';
 
-import type { Field } from '../../types';
+/** On or off, as a switch on its own row with its explanation beside it. */
 export function CheckboxField({ field, common }: { field: Field; common: FieldCommon }) {
   const error = field.errors.join(' ');
   return (
     <div className={s.field}>
-      <Checkbox
+      <Switch
         label={field.label}
+        hint={field.help}
         name={field.name}
         defaultChecked={!!field.value}
         disabled={common.disabled}
       />
-      {field.help && (
-        <Text variant="caption" tone="secondary">
-          {field.help}
-        </Text>
-      )}
       {error && <InlineAlert message={error} />}
     </div>
   );

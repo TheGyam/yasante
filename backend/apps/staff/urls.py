@@ -1,7 +1,19 @@
 from django.urls import path
 from .views import session, overview, records, forms, actions, quick_edit, metrics
+from .views import browser, review, errors, insights
 
 urlpatterns = [
+    path("insights/<slug:name>/", insights.insight),
+    path("errors/", errors.issues),
+    path("errors/<int:pk>/", errors.issue_detail),
+    path("errors/<int:pk>/action/", errors.issue_action),
+    path("search/", browser.search),
+    path("related/<str:app_label>/<str:model_name>/<str:object_id>/", browser.related),
+    path("export/<str:app_label>/<str:model_name>/", browser.export_csv),
+    path("review/<slug:queue>/", review.review_queue),
+    path("review/<slug:queue>/<str:object_id>/decide/", review.decide),
+    path("undo/", review.undo),
+    path("media/<uuid:pk>/", review.private_media),
     path("session/", session.session),
     path("two-factor/", session.two_factor),
     path("two-factor/reset/<uuid:user_id>/", session.reset_factor),
