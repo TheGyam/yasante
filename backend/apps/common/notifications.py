@@ -102,8 +102,9 @@ def send_push(self, log_id: str):
         if token.startswith(("ExponentPushToken", "ExpoPushToken"))
     ]
     if getattr(settings, "PUSH_DELIVERY", "log") != "expo":
+        # Not "sent": nothing left the server, and the workspace says so.
         logger.info("Push (log only) %s → %s: %s", log.event_key, log.user_id, log.title)
-        NotificationLog.objects.filter(pk=log.pk).update(status="sent", sent_at=timezone.now())
+        NotificationLog.objects.filter(pk=log.pk).update(status="logged", sent_at=timezone.now())
         return
     if not messages:
         NotificationLog.objects.filter(pk=log.pk).update(status="no_device", error="No Expo tokens")
@@ -118,12 +119,67 @@ def send_push(self, log_id: str):
     for message, ticket in zip(messages, tickets):
         if ticket.get("details", {}).get("error") == "DeviceNotRegistered":
             DeviceToken.objects.filter(token=message["to"]).delete()
-    errors = [t.get("message", "") for t in tickets if t.get("status") == "error"]
+    errors = [_problem(t) for t in tickets if t.get("status") == "error"]
     NotificationLog.objects.filter(pk=log.pk).update(
         status="failed" if errors and len(errors) == len(tickets) else "sent",
         error="; ".join(errors)[:300],
+        tickets=[[t["id"], m["to"]] for m, t in zip(messages, tickets) if t.get("status") == "ok" and t.get("id")],
         sent_at=timezone.now(),
     )
+
+
+def _problem(answer):
+    """Expo's error code first (InvalidCredentials, DeviceNotRegistered…), then its words."""
+    code = (answer.get("details") or {}).get("error", "")
+    return f"{code}: {answer.get('message', '')}" if code else answer.get("message", "")
+
+
+EXPO_RECEIPTS_URL = "https://exp.host/--/api/v2/push/getReceipts"
+RECEIPT_BATCH = 300
+
+
+@shared_task(ignore_result=True)
+def check_push_receipts():
+    """
+    Expo accepting a message isn't delivery: Apple or Google can still refuse it (bad
+    credentials, an uninstalled app). Their verdict comes back as a receipt some minutes
+    later; this reads them, so the workspace shows what really happened.
+    """
+    from datetime import timedelta
+
+    from apps.accounts.models import DeviceToken
+
+    from .models import NotificationLog
+
+    now = timezone.now()
+    waiting = list(
+        NotificationLog.objects.filter(status="sent", sent_at__lt=now - timedelta(minutes=5), sent_at__gt=now - timedelta(days=1))
+        .exclude(tickets=[])
+        .values("pk", "tickets")[:2000]
+    )
+    ids = [ticket for row in waiting for ticket, _ in row["tickets"]]
+    receipts = {}
+    for start in range(0, len(ids), RECEIPT_BATCH):
+        body = json.dumps({"ids": ids[start : start + RECEIPT_BATCH]}).encode()
+        req = urllib.request.Request(EXPO_RECEIPTS_URL, data=body, headers={"Content-Type": "application/json", "Accept": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=15) as response:
+                receipts.update(json.loads(response.read().decode()).get("data", {}))
+        except (urllib.error.URLError, TimeoutError, ValueError):
+            logger.warning("Couldn't read push receipts", exc_info=True)
+            return
+    for row in waiting:
+        answers = [(receipts[ticket], token) for ticket, token in row["tickets"] if ticket in receipts]
+        if len(answers) < len(row["tickets"]):
+            continue  # Not all in yet; look again next time.
+        problems = [_problem(answer) for answer, _ in answers if answer.get("status") == "error"]
+        # A phone that uninstalled the app: forget its token so we stop trying.
+        gone = [token for answer, token in answers if (answer.get("details") or {}).get("error") == "DeviceNotRegistered"]
+        DeviceToken.objects.filter(token__in=gone).delete()
+        NotificationLog.objects.filter(pk=row["pk"]).update(
+            status="failed" if problems and len(problems) == len(answers) else "delivered",
+            error="; ".join(problems)[:300],
+        )
 
 
 # Kept for any caller of the old name.

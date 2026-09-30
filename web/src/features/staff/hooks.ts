@@ -5,6 +5,7 @@ import { useBeforeUnload, useBlocker } from 'react-router';
 import { readStaff, writeStaff } from './api';
 import type {
   Broadcasts,
+  PushHealth,
   ErrorDetail,
   FormSchema,
   ErrorIssues,
@@ -175,6 +176,8 @@ export const useInsight = (name: string, range: string) =>
 export const useErrorIssues = (query: string) => useStaffRead<ErrorIssues>(`errors/?${query}`);
 
 export const useBroadcasts = () => useStaffRead<Broadcasts>('broadcasts/');
+
+export const usePushHealth = () => useStaffRead<PushHealth>('broadcasts/health/');
 
 export const useErrorIssue = (id: string) => useStaffRead<ErrorDetail>(`errors/${id}/`);
 

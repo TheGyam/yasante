@@ -34,3 +34,4 @@ export const stats = style({
 });
 export const stat = style({ fontSize: 13, color: c.text.secondary, whiteSpace: 'nowrap' });
 export const failed = style({ color: c.danger });
+export const problem = style({ maxWidth: 320, fontSize: 12, color: c.danger, textAlign: 'right' });

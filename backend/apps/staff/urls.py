@@ -17,6 +17,7 @@ urlpatterns = [
     path("reveal/<str:app_label>/<str:model_name>/<str:object_id>/<str:field>/", privacy.reveal),
     path("broadcasts/", broadcasts.history),
     path("broadcasts/audience/", broadcasts.audience),
+    path("broadcasts/health/", broadcasts.health),
     path("broadcasts/test/", broadcasts.test),
     path("broadcasts/send/", broadcasts.send),
     path("session/", session.session),

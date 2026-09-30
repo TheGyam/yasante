@@ -8,6 +8,7 @@ import { Text } from '@/shared/ui/Text';
 import { formatAgo, formatDateTime, formatNumber } from '../../format';
 import { staffMessage, useBroadcasts } from '../../hooks';
 import * as ui from '../ui.css';
+import { PushHealth } from './PushHealth';
 import * as s from './Broadcasts.css';
 
 /** Everything sent to people's phones from here, with how it was delivered. */
@@ -27,6 +28,7 @@ export function Broadcasts() {
           <Button label="New notification" icon={Plus} size="sm" to="/notifications/new" />
         )}
       </header>
+      {data?.canSend && <PushHealth />}
       {query.isError ? (
         <InlineAlert message={staffMessage(query.error)} />
       ) : !data ? (
@@ -65,17 +67,25 @@ export function Broadcasts() {
               </div>
               <div className={s.stats}>
                 <span className={s.stat}>
-                  <strong>{formatNumber(item.sent)}</strong> of {formatNumber(item.recipients)}{' '}
+                  <strong>{formatNumber(item.delivered)}</strong> of {formatNumber(item.recipients)}{' '}
                   delivered
                 </span>
-                {item.waiting > 0 && (
-                  <span className={s.stat}>{formatNumber(item.waiting)} on their way</span>
+                {item.accepted + item.waiting > 0 && (
+                  <span className={s.stat}>
+                    {formatNumber(item.accepted + item.waiting)} on their way
+                  </span>
+                )}
+                {item.logged > 0 && (
+                  <span className={`${s.stat} ${s.failed}`}>
+                    {formatNumber(item.logged)} only logged, not sent
+                  </span>
                 )}
                 {item.failed + item.noDevice > 0 && (
                   <span className={`${s.stat} ${s.failed}`}>
                     {formatNumber(item.failed + item.noDevice)} couldn’t be delivered
                   </span>
                 )}
+                {item.problem && <span className={s.problem}>{item.problem}</span>}
               </div>
             </li>
           ))}
