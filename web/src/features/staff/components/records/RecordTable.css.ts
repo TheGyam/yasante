@@ -75,10 +75,24 @@ export const row = style({
   },
 });
 
+// Desktop rows stay one line high so a page scans at a glance: long values end in an
+// ellipsis, with the whole value on hover and in the record panel. Phone cards have
+// the room, and no hover, so there the text wraps.
 globalStyle(`${row} td`, {
   padding: `0 ${space.md}px`,
-  maxWidth: 320,
-  '@media': { [phone]: { padding: 0, maxWidth: 'none', gridColumn: '1 / -1' } },
+  maxWidth: 280,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  '@media': {
+    [phone]: {
+      padding: 0,
+      maxWidth: 'none',
+      gridColumn: '1 / -1',
+      whiteSpace: 'normal',
+      overflowWrap: 'anywhere',
+    },
+  },
 });
 
 export const first = style({

@@ -195,8 +195,12 @@ export function ErrorDetail({ id, csrf }: { id: string; csrf: string }) {
                       row.user
                     )}
                   </td>
-                  <td className={s.mono}>{row.path || '—'}</td>
-                  <td>{[row.device, row.os].filter(Boolean).join(' · ') || '—'}</td>
+                  <td className={s.mono} title={row.path}>
+                    {row.path || '—'}
+                  </td>
+                  <td title={[row.device, row.os].filter(Boolean).join(' · ')}>
+                    {[row.device, row.os].filter(Boolean).join(' · ') || '—'}
+                  </td>
                   <td>{row.version || '—'}</td>
                 </tr>
               ))}

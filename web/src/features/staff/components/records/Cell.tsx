@@ -66,9 +66,5 @@ export function Cell({
       </time>
     );
   }
-  return (
-    <span className={ui.truncate} title={text.length > 40 ? text : undefined}>
-      {text}
-    </span>
-  );
+  return <>{text}</>;
 }

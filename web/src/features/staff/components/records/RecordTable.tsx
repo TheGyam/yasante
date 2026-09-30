@@ -101,6 +101,7 @@ export function RecordTable({
                   key={column.key}
                   className={i === 0 ? s.first : s.cell}
                   data-label={column.label}
+                  title={row.values[i]?.length > 24 ? row.values[i] : undefined}
                 >
                   {i === 0 ? (
                     <a
