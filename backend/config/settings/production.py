@@ -80,3 +80,5 @@ LOGGING = {
         },
     },
 }
+
+STAFF_HOST = config("STAFF_HOST", default="admin.yasante.com")

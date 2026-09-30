@@ -24,6 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent  # backend/
 SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
+STAFF_HOST = config("STAFF_HOST", default="admin.localhost")
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
 # The OpenAPI schema and docs pages: on with DEBUG, off in production unless asked for.
 SHOW_API_DOCS = config("SHOW_API_DOCS", default=DEBUG, cast=bool)
 
@@ -51,6 +53,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "apps.staff.apps.StaffConfig",
     "apps.common",
     "apps.accounts",
     "apps.profiles",
@@ -71,6 +74,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "apps.common.middleware.SecurityHeadersMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "apps.staff.middleware.StaffHostMiddleware",
     # JSON shrinks to a fraction gzipped: a feed page is ~17KB plain. Bearer tokens
     # travel in headers, not bodies next to reflected input, so BREACH doesn't apply.
     "django.middleware.gzip.GZipMiddleware",

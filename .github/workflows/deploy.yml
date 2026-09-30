@@ -38,7 +38,7 @@ jobs:
 
       # The website builds into backend/apps/web/static/site/, which isn't in git, so it
       # joins the backend's files in the package; collectstatic picks it up on the server.
-      - name: Build the website
+      - name: Build the website and staff workspace
         working-directory: web
         run: npm ci && npx vite build
 
@@ -72,6 +72,13 @@ jobs:
             sleep 3
           done
           echo "::error::https://yasante.com/api/styles/ answered $code"; exit 1
+
+      # Temporary until the admin.yasante.com DNS A record exists.
+      - name: Check the staff host from outside
+        continue-on-error: true
+        run: |
+          curl --fail --silent --show-error https://admin.yasante.com/data/session/ -o /tmp/staff-session.json
+          python -c "import json; data=json.load(open('/tmp/staff-session.json')); assert 'csrfToken' in data"
 
       - name: Forget the key
         if: always()

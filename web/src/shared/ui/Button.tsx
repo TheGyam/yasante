@@ -7,7 +7,7 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 export type ButtonSize = 'lg' | 'md' | 'sm';
 
 interface Common {
-  label: string;
+  label: ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize;
   icon?: LucideIcon;

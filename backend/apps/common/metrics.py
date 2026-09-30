@@ -1,5 +1,5 @@
 """
-The section 20 numbers, week by week, at /admin/metrics/ for staff.
+The section 20 numbers, week by week, for the staff metrics screen.
 Computed on each visit: at Phase 1 volumes that's a handful of cheap counts.
 Outreach numbers (stylists contacted, calls held) live in Akua's sheet, not here.
 """
@@ -7,9 +7,7 @@ Outreach numbers (stylists contacted, calls held) live in Akua's sheet, not here
 from datetime import timedelta
 from statistics import median
 
-from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count, Q
-from django.shortcuts import render
 from django.utils import timezone
 
 from apps.stylists.numbers import monday_of
@@ -50,33 +48,30 @@ def week_row(start, end):
     from apps.web.models import WaitlistEntry
 
     events = AnalyticsEvent.objects.filter(at__gte=start, at__lt=end)
-    active = events.exclude(user=None).values("user").distinct().count() + (
-        events.filter(user=None).exclude(anonymous_id="").values("anonymous_id").distinct().count()
-    )
+    activity = events.aggregate(people=Count("user", distinct=True), anonymous=Count("anonymous_id", filter=Q(user=None) & ~Q(anonymous_id=""), distinct=True))
+    active = activity["people"] + activity["anonymous"]
     looks = Look.objects.filter(created_at__gte=start, created_at__lt=end, author__is_staff=False)
     comments = LookComment.objects.filter(created_at__gte=start, created_at__lt=end).count()
     requests = Booking.objects.filter(created_at__gte=start, created_at__lt=end)
-    confirmed = requests.filter(
-        Q(scheduled_for__isnull=False) & ~Q(status__in=["requested", "declined", "expired"])
-    ).count()
-    with_deposit = requests.filter(deposit_amount__gt=0).count()
+    request_counts = requests.aggregate(total=Count("pk"), confirmed=Count("pk", filter=Q(scheduled_for__isnull=False) & ~Q(status__in=["requested", "declined", "expired"])), deposit=Count("pk", filter=Q(deposit_amount__gt=0)))
     held = Booking.objects.filter(scheduled_for__gte=start, scheduled_for__lt=end)
-    no_shows = held.filter(status="no_show").count()
-    attended = held.filter(status="completed").count()
+    held_counts = held.aggregate(no_shows=Count("pk", filter=Q(status="no_show")), attended=Count("pk", filter=Q(status="completed")))
+    no_shows, attended = held_counts["no_shows"], held_counts["attended"]
     reports = list(Report.objects.filter(created_at__gte=start, created_at__lt=end)) + list(
         ReviewReport.objects.filter(created_at__gte=start, created_at__lt=end)
     )
     resolve = [r.handled_at - r.created_at for r in reports if r.handled_at]
+    look_count = looks.count()
     return {
         "week": start.date(),
         "wau": active,
         "bio_clicks": PageView.objects.filter(source="web", viewed_at__gte=start, viewed_at__lt=end).count(),
         "waitlist": WaitlistEntry.objects.filter(created_at__gte=start, created_at__lt=end).count(),
-        "looks": looks.count(),
-        "comments_per_look": f"{comments / looks.count():.1f}" if looks.count() else "–",
-        "requests": requests.count(),
-        "confirm_rate": _rate(confirmed, requests.count()),
-        "deposit_rate": _rate(with_deposit, requests.count()),
+        "looks": look_count,
+        "comments_per_look": f"{comments / look_count:.1f}" if look_count else "–",
+        "requests": request_counts["total"],
+        "confirm_rate": _rate(request_counts["confirmed"], request_counts["total"]),
+        "deposit_rate": _rate(request_counts["deposit"], request_counts["total"]),
         "no_show_rate": _rate(no_shows, no_shows + attended),
         "reports": len(reports),
         "open_reports": sum(1 for r in reports if r.status == "open"),
@@ -87,10 +82,11 @@ def week_row(start, end):
 def profile_completion():
     from apps.profiles.models import HairProfile
 
-    rows = HairProfile.objects.values_list(*PROFILE_FIELDS)
-    total = len(rows)
-    complete = sum(1 for row in rows if all(row))
-    return _rate(complete, total)
+    complete = Q()
+    for field in PROFILE_FIELDS:
+        complete &= ~Q(**{field: ""}) & Q(**{f"{field}__isnull": False})
+    counts = HairProfile.objects.aggregate(total=Count("pk"), complete=Count("pk", filter=complete))
+    return _rate(counts["complete"], counts["total"])
 
 
 def response_median():
@@ -104,8 +100,7 @@ def response_median():
     return f"{median(hours):.1f}h" if hours else "–"
 
 
-@staff_member_required
-def metrics_view(request):
+def metrics_context():
     from apps.bookings.models import Booking
 
     now = timezone.now()
@@ -122,4 +117,4 @@ def metrics_view(request):
         "response": response_median(),
         "requests_30d": Booking.objects.filter(created_at__gte=month_start).count(),
     }
-    return render(request, "admin/metrics.html", context)
+    return context
