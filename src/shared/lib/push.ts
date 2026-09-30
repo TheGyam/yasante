@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@/shared/lib/api';
+import { reportError } from '@/shared/lib/crashReport';
 
 // expo-notifications needs a development build; in Expo Go it's absent.
 let Notifications: typeof import('expo-notifications') | null = null;
@@ -37,6 +38,15 @@ export async function registerPush(): Promise<void> {
     await AsyncStorage.setItem(DEVICE_KEY, data.id);
   } catch (error) {
     if (__DEV__) console.warn('Push registration skipped:', error);
+    // A phone that can't register never gets a notification, and nobody would know:
+    // tell the server, so it shows on the staff Errors page.
+    else
+      reportError(error, {
+        context: {
+          where: 'push registration',
+          projectId: !!Constants.expoConfig?.extra?.eas?.projectId,
+        },
+      });
   }
 }
 

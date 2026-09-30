@@ -22,6 +22,8 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     "prune-client-errors": {"task": "apps.common.tasks.prune_client_errors", "schedule": crontab(hour=3, minute=0)},
     "enforce-retention": {"task": "apps.common.tasks.enforce_retention", "schedule": crontab(hour=3, minute=15)},
+    # Apple and Google's verdict on each push, a few minutes after Expo accepts it.
+    "push-receipts": {"task": "apps.common.notifications.check_push_receipts", "schedule": crontab(minute="*/10")},
     # Lapse requests and unpaid deposits, complete old appointments.
     "sweep-bookings": {
         "task": "apps.bookings.tasks.sweep_bookings",

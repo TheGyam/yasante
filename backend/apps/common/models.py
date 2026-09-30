@@ -136,7 +136,9 @@ class NotificationLog(models.Model):
 
     STATUS_CHOICES = [
         ("queued", "Queued"),
-        ("sent", "Sent"),
+        ("logged", "Logged only (push delivery is off)"),
+        ("sent", "Accepted by Expo"),
+        ("delivered", "Delivered to Apple or Google"),
         ("muted", "Muted by preference"),
         ("no_device", "No device"),
         ("failed", "Failed"),
@@ -150,6 +152,8 @@ class NotificationLog(models.Model):
     data = models.JSONField(default=dict, blank=True)
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="queued", db_index=True)
     error = models.CharField(max_length=300, blank=True, default="")
+    # Expo's receipt ids: Apple and Google's verdict arrives later, under these.
+    tickets = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     sent_at = models.DateTimeField(null=True, blank=True)
 

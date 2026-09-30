@@ -355,10 +355,26 @@ export interface BroadcastRecord {
   sentBy: string;
   at: string;
   finished: boolean;
-  sent: number;
+  /** Apple or Google took it for the phone. */
+  delivered: number;
+  /** Expo took it; Apple or Google's answer isn't in yet. */
+  accepted: number;
+  /** The server only logged it: push delivery is switched off. */
+  logged: number;
   failed: number;
   waiting: number;
   noDevice: number;
+  /** The commonest failure, explained. */
+  problem: string;
+}
+
+export interface PushHealth {
+  sending: boolean;
+  phones: Record<string, number>;
+  people: number;
+  lastDay: Record<string, number>;
+  problems: { problem: string; count: number }[];
+  yours: number;
 }
 
 export interface Broadcasts {

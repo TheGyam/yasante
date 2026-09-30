@@ -58,7 +58,8 @@ def test_sending_delivers_once_to_each_person_and_is_recorded(make_user, django_
     logs = NotificationLog.objects.filter(event_key__startswith=broadcast.event_prefix)
     assert logs.count() == 3 and set(logs.values_list("category", flat=True)) == {"account"}
     history = client.get("/data/broadcasts/").json()["items"][0]
-    assert history["recipients"] == 3 and history["sent"] == 3
+    # Tests don't send for real: they're recorded as logged only, and said to be.
+    assert history["recipients"] == 3 and history["logged"] == 3 and history["delivered"] == 0
 
 
 def test_a_changed_audience_must_be_confirmed_again(make_user):
@@ -100,3 +101,47 @@ def test_news_is_off_until_switched_on_in_the_app(make_user, api):
     turned_on = client.put("/api/notifications/preferences/", {"categories": [{"id": "news", "on": True}]}, format="json").json()
     assert {c["id"]: c["on"] for c in turned_on["categories"]}["news"] is True
     assert NotificationPreference.objects.get(user=person).opted_in == ["news"]
+
+
+def test_health_says_when_the_server_isnt_sending_and_explains_failures(make_user):
+    client, admin = staff_client(make_user, superuser=True)
+    phone(admin)
+    NotificationLog.objects.create(user=admin, category="account", event_key="x1", title="t", body="b", status="failed", error="InvalidCredentials: Unable to retrieve the FCM server key")
+    health = client.get("/data/broadcasts/health/").json()
+    assert health["sending"] is False and health["yours"] == 1 and health["phones"] == {"ios": 1}
+    assert "FCM V1" in health["problems"][0]["problem"]
+
+
+def test_receipts_turn_accepted_into_delivered_or_failed(make_user, monkeypatch, settings):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.common import notifications
+
+    person = phone(make_user())
+    other = phone(make_user(), "android")
+    ok = NotificationLog.objects.create(user=person, category="account", event_key="r1", title="t", body="b", status="sent", tickets=[["t-ok", f"ExponentPushToken[{person.pk}]"]])
+    bad = NotificationLog.objects.create(user=other, category="account", event_key="r2", title="t", body="b", status="sent", tickets=[["t-gone", f"ExponentPushToken[{other.pk}]"]])
+    NotificationLog.objects.filter(pk__in=[ok.pk, bad.pk]).update(sent_at=timezone.now() - timedelta(minutes=20))
+
+    class Answer:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            return json.dumps({"data": {
+                "t-ok": {"status": "ok"},
+                "t-gone": {"status": "error", "message": "not registered", "details": {"error": "DeviceNotRegistered"}},
+            }}).encode()
+
+    monkeypatch.setattr(notifications.urllib.request, "urlopen", lambda *a, **k: Answer())
+    notifications.check_push_receipts()
+    ok.refresh_from_db()
+    bad.refresh_from_db()
+    assert ok.status == "delivered"
+    assert bad.status == "failed" and bad.error.startswith("DeviceNotRegistered")
+    assert not DeviceToken.objects.filter(user=other).exists()

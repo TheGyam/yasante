@@ -43,13 +43,60 @@ def message(request):
 
 
 def delivery(broadcast):
-    counts = NotificationLog.objects.filter(event_key__startswith=broadcast.event_prefix).aggregate(
-        sent=Count("pk", filter=Q(status="sent")),
+    logs = NotificationLog.objects.filter(event_key__startswith=broadcast.event_prefix)
+    counts = logs.aggregate(
+        delivered=Count("pk", filter=Q(status="delivered")),
+        accepted=Count("pk", filter=Q(status="sent")),
+        logged=Count("pk", filter=Q(status="logged")),
         failed=Count("pk", filter=Q(status="failed")),
         waiting=Count("pk", filter=Q(status="queued")),
         noDevice=Count("pk", filter=Q(status="no_device")),
     )
-    return counts
+    top = logs.filter(status="failed").exclude(error="").values("error").annotate(n=Count("pk")).order_by("-n").first()
+    return {**counts, "problem": explain(top["error"]) if top else ""}
+
+
+# What Expo's error codes mean for us, and what to do about each.
+PROBLEMS = {
+    "InvalidCredentials": "Apple or Google refused our push credentials. On expo.dev, open the project’s Credentials and upload the FCM V1 service account key (Android) or the APNs key (iPhone).",
+    "DeviceNotRegistered": "The app was uninstalled or its notifications were turned off on that phone. Those phones are dropped automatically.",
+    "MessageTooBig": "The message was too long for the phone. Shorten it.",
+    "MessageRateExceeded": "Too many messages to one phone too quickly. Wait before sending again.",
+    "MismatchSenderId": "The Android app was built with a different Firebase project than the key uploaded to Expo. Check google-services.json matches the FCM key.",
+}
+
+
+def explain(error):
+    code = error.split(":", 1)[0].strip()
+    return PROBLEMS.get(code, error[:200])
+
+
+@staff_data
+@require_http_methods(["GET"])
+def health(request):
+    """Whether pushes can reach phones at all, and what went wrong lately, in plain words."""
+    from datetime import timedelta
+
+    from django.conf import settings
+
+    from apps.accounts.models import DeviceToken
+
+    allowed(request)
+    day = timezone.now() - timedelta(days=1)
+    recent = NotificationLog.objects.filter(created_at__gte=day)
+    statuses = dict(recent.values_list("status").annotate(n=Count("pk")))
+    problems = [
+        {"problem": explain(row["error"]), "count": row["n"]}
+        for row in recent.filter(status="failed").exclude(error="").values("error").annotate(n=Count("pk")).order_by("-n")[:5]
+    ]
+    return {
+        "sending": getattr(settings, "PUSH_DELIVERY", "log") == "expo",
+        "phones": dict(DeviceToken.objects.values_list("platform").annotate(n=Count("pk"))),
+        "people": DeviceToken.objects.values("user").distinct().count(),
+        "lastDay": statuses,
+        "problems": problems,
+        "yours": request.user.devices.count(),
+    }
 
 
 @staff_data
