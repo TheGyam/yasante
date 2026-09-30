@@ -13,6 +13,10 @@ class StaffSecondFactor(models.Model):
     recovery_codes = models.JSONField(default=list)
     last_used_step = models.BigIntegerField(default=-1)
 
+    class Meta:
+        # Granted to a staff member or group in the workspace's Groups and permissions.
+        permissions = [("reveal_personal_data", "Can show hidden addresses, postcodes and phone numbers")]
+
     @staticmethod
     def cipher():
         # cryptography is already supplied by the existing PyJWT[crypto] dependency.

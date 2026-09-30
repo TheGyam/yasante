@@ -15,6 +15,20 @@ from ..presentation import Conflict, form_data, fingerprint
 from ..audit import security_event
 
 
+def keep_hidden_values(request, ma, object_id):
+    """A field left hidden isn't in the form that was sent; keep what's stored, don't blank it."""
+    from ..privacy import masked_fields
+
+    missing = [name for name in masked_fields(ma.model) if name not in request.POST]
+    if not missing:
+        return
+    stored = ma.get_queryset(request).filter(pk=object_id).values(*missing).first()
+    if stored:
+        request.POST = request.POST.copy()
+        for name in missing:
+            request.POST[name] = stored[name] or ""
+
+
 @staff_data
 @csrf_protect
 @sensitive_post_parameters()
@@ -24,6 +38,8 @@ def record_form(request, app_label, model_name, object_id=None):
     ma = model_admin(request, app_label, model_name)
     if any(key.startswith("_") for key in request.GET):
         raise PermissionDenied
+    if request.method == "POST" and object_id is not None:
+        keep_hidden_values(request, ma, object_id)
     try:
         response = ma.add_view(request) if object_id is None else ma.changeform_view(request, quote(object_id))
         return response

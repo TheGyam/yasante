@@ -21,6 +21,7 @@ app.autodiscover_tasks()
 # Times are UTC; London is UTC or UTC+1, so "morning" jobs run at 8 UTC.
 app.conf.beat_schedule = {
     "prune-client-errors": {"task": "apps.common.tasks.prune_client_errors", "schedule": crontab(hour=3, minute=0)},
+    "enforce-retention": {"task": "apps.common.tasks.enforce_retention", "schedule": crontab(hour=3, minute=15)},
     # Lapse requests and unpaid deposits, complete old appointments.
     "sweep-bookings": {
         "task": "apps.bookings.tasks.sweep_bookings",

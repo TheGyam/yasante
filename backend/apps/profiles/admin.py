@@ -2,6 +2,8 @@
 
 from django.contrib import admin
 
+from apps.common.admin_access import SuperusersOnly
+
 from .models import (
     AnalyticsEvent,
     ConsentRecord,
@@ -14,6 +16,8 @@ from .models import (
 @admin.register(HairProfile)
 class HairProfileAdmin(admin.ModelAdmin):
     list_display = ("user", "texture", "length", "density", "completed_at")
+    # Where someone lives, to the metre, is for matching stylists nearby, not for reading.
+    exclude = ("latitude", "longitude")
     search_fields = ("user__name", "user__email")
     list_filter = ("texture", "density")
 
@@ -33,7 +37,7 @@ class ConsentRecordAdmin(admin.ModelAdmin):
 
 
 @admin.register(AnalyticsEvent)
-class AnalyticsEventAdmin(admin.ModelAdmin):
+class AnalyticsEventAdmin(SuperusersOnly, admin.ModelAdmin):
     list_display = ("name", "user", "at", "anonymous_id")
     list_filter = ("name",)
     ordering = ("-at",)

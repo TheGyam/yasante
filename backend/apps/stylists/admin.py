@@ -2,6 +2,8 @@
 
 from django.contrib import admin
 
+from apps.common.admin_access import SuperusersOnly
+
 from django.utils import timezone
 
 from .models import (
@@ -103,7 +105,7 @@ class PortfolioPhotoAdmin(admin.ModelAdmin):
 
 
 @admin.register(PageView)
-class PageViewAdmin(admin.ModelAdmin):
+class PageViewAdmin(SuperusersOnly, admin.ModelAdmin):
     list_display = ("stylist", "viewer", "viewed_at")
     list_filter = ("viewed_at",)
 
