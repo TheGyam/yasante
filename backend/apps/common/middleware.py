@@ -20,6 +20,8 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
     """
 
     def process_response(self, request, response):
+        from apps.staff.middleware import secure_staff_response
+
         # Prevent MIME sniffing
         response["X-Content-Type-Options"] = "nosniff"
 
@@ -27,7 +29,7 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
         response["X-Frame-Options"] = "DENY"
 
         # Referrer policy
-        response["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
 
         # Restrict browser features
         response["Permissions-Policy"] = (
@@ -42,7 +44,8 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
                     "no-store, no-cache, must-revalidate, private"
                 )
 
-        return response
+        # SecurityMiddleware can return an HTTPS redirect before host routing runs.
+        return secure_staff_response(request, response)
 
 
 class RequestIDMiddleware(MiddlewareMixin):

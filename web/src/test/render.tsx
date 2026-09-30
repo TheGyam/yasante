@@ -9,6 +9,7 @@ interface Call {
   url: string;
   body?: unknown;
   auth?: string;
+  csrf?: string;
 }
 
 type Answer = unknown | { status: number; body?: unknown };
@@ -30,6 +31,7 @@ export function mockApi(table: Record<string, Handler>) {
       url,
       body: typeof raw === 'string' ? JSON.parse(raw) : raw,
       auth: (init?.headers as Record<string, string> | undefined)?.Authorization,
+      csrf: (init?.headers as Record<string, string> | undefined)?.['X-CSRFToken'],
     };
     calls.push(call);
     const path = url.split('?')[0];
@@ -47,7 +49,10 @@ export function mockApi(table: Record<string, Handler>) {
       typeof (answer as { status?: unknown }).status === 'number'
         ? (answer as { status: number; body?: unknown })
         : { body: answer };
-    return new Response(body === undefined ? '' : JSON.stringify(body), { status });
+    return new Response(body === undefined ? '' : JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
   });
   return calls;
 }

@@ -11,6 +11,7 @@ from django.db import models
 
 # Reserved handles — website paths that can't be taken
 NOT_HANDLES = {
+    "manage",
     "admin",
     "api",
     "auth",

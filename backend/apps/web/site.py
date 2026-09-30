@@ -29,9 +29,15 @@ def _read_assets():
     entry = manifest.get("index.html")
     if not entry:
         return None
+    css_files = []
+    def collect(item):
+        for key in item.get("imports", []):
+            collect(manifest[key])
+        css_files.extend(item.get("css", []))
+    collect(entry)
     return {
         "script": static(f"site/{entry['file']}"),
-        "styles": [static(f"site/{css}") for css in entry.get("css", [])],
+        "styles": [static(f"site/{css}") for css in dict.fromkeys(css_files)],
     }
 
 

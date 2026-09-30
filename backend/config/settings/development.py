@@ -12,6 +12,7 @@ DEBUG = True
 INSTALLED_APPS += ["debug_toolbar"]  # noqa: F405
 MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")  # noqa: F405
 INTERNAL_IPS = ["127.0.0.1"]
+DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": "apps.staff.middleware.show_debug_toolbar"}
 
 # Use eager Celery in dev so tasks run synchronously
 CELERY_TASK_ALWAYS_EAGER = True
@@ -64,3 +65,5 @@ CACHES = {
         "LOCATION": "unique-snowflake",
     }
 }
+
+ALLOWED_HOSTS = [*ALLOWED_HOSTS, "admin.localhost"]

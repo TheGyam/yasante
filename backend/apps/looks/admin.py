@@ -55,27 +55,38 @@ class LookCommentAdmin(LookAdmin):
     search_fields = ("body", "author__name")
 
 
+class ReportStatusFilter(admin.SimpleListFilter):
+    title = "status"
+    parameter_name = "queue_status"
+
+    def lookups(self, request, model_admin):
+        return [("all", "All statuses"), *Report.QUEUE_CHOICES]
+
+    def queryset(self, request, queryset):
+        if "status__exact" in request.GET:
+            return queryset
+        value = self.value() or "open"
+        return queryset if value == "all" else queryset.filter(status=value)
+
+    def choices(self, changelist):
+        selected = self.value() or changelist.params.get("status__exact", "open")
+        for value, label in self.lookup_choices:
+            yield {"selected": selected == value, "display": label,
+                   "query_string": changelist.get_query_string({self.parameter_name:value}, ["status__exact"])}
+
+
 @admin.register(Report)
 class ReportAdmin(admin.ModelAdmin):
     """The queue: open reports first; one click acts on the reported thing."""
 
     list_display = ("created_at", "reason", "content_type", "object_id", "status", "handled_by")
-    list_filter = ("status", "reason", "content_type")
+    list_filter = (ReportStatusFilter, "reason", "content_type")
     search_fields = ("note",)
     readonly_fields = ("handled_by", "handled_at")
     actions = ["hide_target", "remove_target", "dismiss"]
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("content_type", "handled_by")
-
-    def changelist_view(self, request, extra_context=None):
-        # Open by default: the queue is what needs a person today.
-        if "status__exact" not in request.GET and not request.GET.get("_changelist_filters"):
-            q = request.GET.copy()
-            q["status__exact"] = "open"
-            request.GET = q
-            request.META["QUERY_STRING"] = q.urlencode()
-        return super().changelist_view(request, extra_context)
 
     @admin.action(description="Hide what was reported")
     def hide_target(self, request, queryset):

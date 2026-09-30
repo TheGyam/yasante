@@ -38,7 +38,14 @@ export default tseslint.config(
           paths: [LINK],
           patterns: [
             {
-              group: ['@/features/*', '**/features/*', '@/routes/*', '**/routes/*'],
+              group: [
+                '@/features/*',
+                '**/features/*',
+                '@/routes/*',
+                '**/routes/*',
+                '@/staff/*',
+                '**/staff/*',
+              ],
               message:
                 'shared/ must not depend on a feature. If it needs to, it belongs in that feature.',
             },
@@ -48,7 +55,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/features/**', 'src/routes/**'],
+    files: ['src/features/**', 'src/routes/**', 'src/staff/**'],
     rules: {
       'no-restricted-imports': [
         'error',
