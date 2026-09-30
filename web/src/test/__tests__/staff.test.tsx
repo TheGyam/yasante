@@ -25,8 +25,12 @@ const overview = {
   models: [
     {
       key: 'accounts.user',
-      name: 'Users',
-      group: 'Accounts',
+      name: 'People',
+      singular: 'person',
+      group: 'People',
+      icon: 'Users',
+      description: 'Accounts in your community',
+      order: 0,
       url: '/records/accounts/user',
       addUrl: null,
       canView: true,
@@ -34,21 +38,38 @@ const overview = {
   ],
   metrics: [
     {
-      label: 'People',
+      label: 'New people',
       value: 27,
-      hint: 'Accounts in your community',
+      previous: 20,
+      change: 35,
+      values: [1, 2, 3],
+      hint: 'This week',
       url: '/records/accounts/user',
     },
   ],
   queues: [],
+  status: {},
+  totalOpen: 0,
+  needs: [],
+  errors: { open: 0, new: 0 },
   audit: [],
   trend: { dates: [], series: [] },
   generatedAt: '2026-09-30T10:00:00Z',
 };
 const records = {
-  name: 'Users',
+  name: 'People',
+  description: 'Accounts in your community',
+  singular: 'person',
+  views: [],
   columns: [{ key: 'name', label: 'Name', sort: 1, direction: null }],
-  rows: [{ id: 'person-1', values: ['Ama'], url: '/records/accounts/user/person-1' }],
+  rows: [
+    {
+      id: 'person-1',
+      values: ['Ama'],
+      cells: [{ kind: 'text', value: 'Ama' }],
+      url: '/records/accounts/user/person-1',
+    },
+  ],
   count: 27,
   page: 1,
   pages: 2,
@@ -58,7 +79,11 @@ const records = {
   addUrl: null,
 };
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  sessionStorage.clear();
+  localStorage.clear();
+});
 
 it('keeps unsaved edits until the staff member confirms discarding them', async () => {
   Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
@@ -78,8 +103,9 @@ it('keeps unsaved edits until the staff member confirms discarding them', async 
     '/data/overview/': overview,
     '/data/records/accounts/user/': records,
     '/data/forms/accounts/user/person-1/': {
-      name: 'user',
-      title: 'Change user',
+      name: 'People',
+      singular: 'person',
+      title: 'Ama',
       object: 'Ama',
       id: 'person-1',
       revision: 'one',
@@ -100,12 +126,14 @@ it('keeps unsaved edits until the staff member confirms discarding them', async 
     },
   });
   renderStaff('/records/accounts/user/person-1');
+  await user.click(await screen.findByRole('button', { name: /^Edit/ }));
   await user.type(await screen.findByRole('textbox', { name: 'Name' }), ' Draft');
-  await user.click(screen.getByRole('link', { name: 'Back to user records' }));
+  const back = () => screen.getAllByRole('link', { name: /People/ })[0];
+  await user.click(back());
   const dialog = await screen.findByRole('dialog', { name: 'Discard unsaved changes?' });
   await user.click(within(dialog).getByRole('button', { name: 'Keep editing' }));
   expect(screen.getByRole('textbox', { name: 'Name' })).toHaveValue('Ama Draft');
-  await user.click(screen.getByRole('link', { name: 'Back to user records' }));
+  await user.click(back());
   await user.click(
     within(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).getByRole(
       'button',
@@ -180,17 +208,18 @@ it('requires staff authentication and does not expose the workspace on failure',
   ).toBeInTheDocument();
   expect(screen.getByRole('textbox', { name: 'Email' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument();
-  expect(screen.queryByRole('navigation', { name: 'Staff workspace' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('navigation', { name: 'Workspace' })).not.toBeInTheDocument();
 });
 
 it('shows real counts and only the tools returned for the staff member', async () => {
   mockStaff({ '/data/overview/': overview });
   renderStaff('/');
   expect(await screen.findByText('27')).toBeInTheDocument();
-  const nav = screen.getByRole('navigation', { name: 'Staff workspace' });
+  const nav = screen.getAllByRole('navigation', { name: 'Workspace' })[0];
   expect(within(nav).getByRole('link', { name: 'People' })).toBeInTheDocument();
   expect(within(nav).queryByRole('link', { name: 'Bookings' })).not.toBeInTheDocument();
-  expect(screen.queryByRole('link', { name: 'Weekly business metrics' })).not.toBeInTheDocument();
+  expect(within(nav).queryByRole('link', { name: 'Business metrics' })).not.toBeInTheDocument();
+  expect(screen.getByText(/Nothing is waiting for you/)).toBeInTheDocument();
 });
 
 it('searches on the server, paginates, and clears selections when the query changes', async () => {
@@ -200,15 +229,13 @@ it('searches on the server, paginates, and clears selections when the query chan
     '/data/records/accounts/user/': records,
   });
   renderStaff('/records/accounts/user');
-  await screen.findByText('Ama');
-  await user.click(screen.getByRole('checkbox', { name: 'Select Ama' }));
-  expect(screen.getByText('1 selected on this page')).toBeInTheDocument();
-  await user.type(screen.getByRole('searchbox'), 'Ama');
-  await user.click(screen.getByRole('button', { name: 'Search' }));
+  await user.click(await screen.findByRole('checkbox', { name: 'Select Ama' }));
+  expect(screen.getByText('1 selected')).toBeInTheDocument();
+  await user.type(screen.getByRole('searchbox'), 'Ama{Enter}');
   await screen.findByText('Ama');
   expect(calls.some(call => call.url.includes('q=Ama'))).toBe(true);
-  expect(screen.queryByText('1 selected on this page')).not.toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Next' }));
+  expect(screen.queryByText('1 selected')).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Next page' }));
   await screen.findByText('Ama');
   expect(calls.some(call => call.url.includes('p=2'))).toBe(true);
 });
@@ -236,20 +263,16 @@ it('reviews bulk actions and submits the selected ids with CSRF without leaving 
         : { token: 'review-token', count: 1, label: 'Delete selected users', deletion: null },
   });
   renderStaff('/records/accounts/user');
-  await screen.findByText('Ama');
-  await user.click(screen.getByRole('checkbox', { name: 'Select Ama' }));
-  await user.selectOptions(
-    screen.getByRole('combobox', { name: 'Choose an action' }),
-    'delete_selected'
-  );
-  await user.click(screen.getByRole('button', { name: 'Review action' }));
+  await user.click(await screen.findByRole('checkbox', { name: 'Select Ama' }));
+  // jsdom doesn't open popovers from their buttons; the item is there, just not shown.
+  await user.click(screen.getByRole('menuitem', { name: 'Delete selected users', hidden: true }));
   const dialog = await screen.findByRole('dialog', { name: 'Review your action' });
   const preview = calls.find(call => call.method === 'POST')!;
   expect(preview.csrf).toBe('staff-csrf');
   expect((preview.body as FormData).getAll('ids')).toEqual(['person-1']);
   expect((preview.body as FormData).get('confirm')).toBeNull();
   await user.click(within(dialog).getByRole('button', { name: 'Apply action' }));
-  expect(await screen.findByText('Action completed for 1 records.')).toBeInTheDocument();
+  expect(await screen.findByText('Done for 1 records.')).toBeInTheDocument();
   expect(
     calls.some(call => call.method === 'POST' && (call.body as FormData).get('confirm') === 'yes')
   ).toBe(true);
@@ -258,8 +281,9 @@ it('reviews bulk actions and submits the selected ids with CSRF without leaving 
 it('edits and saves a record entirely inside the workspace', async () => {
   const user = userEvent.setup();
   const schema = {
-    name: 'user',
-    title: 'Change user',
+    name: 'People',
+    singular: 'person',
+    title: 'Ama',
     object: 'Ama',
     id: 'person-1',
     revision: 'version-1',
@@ -291,11 +315,12 @@ it('edits and saves a record entirely inside the workspace', async () => {
     },
   });
   renderStaff('/records/accounts/user/person-1');
+  await user.click(await screen.findByRole('button', { name: /^Edit/ }));
   const input = await screen.findByRole('textbox', { name: 'Name' });
   await user.clear(input);
   await user.type(input, 'Ama Updated');
-  await user.click(screen.getByRole('button', { name: 'Save changes' }));
-  await screen.findByText('Ama');
+  await user.click(screen.getByRole('button', { name: /^Save/ }));
+  expect(await screen.findByText('Saved')).toBeInTheDocument();
   const save = calls.find(call => call.method === 'POST')!;
   expect((save.body as FormData).get('name')).toBe('Ama Updated');
   expect((save.body as FormData).get('_revision')).toBe('version-1');
@@ -320,7 +345,7 @@ it('signs in and signs out inside React and clears private content', async () =>
   await user.type(screen.getByLabelText('Password'), 'secret-password');
   await user.click(screen.getByRole('button', { name: 'Sign in' }));
   expect(await screen.findByText('27')).toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Sign out' }));
+  await user.click(screen.getAllByRole('menuitem', { name: 'Sign out', hidden: true })[0]);
   expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument();
-  expect(screen.queryByRole('navigation', { name: 'Staff workspace' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('navigation', { name: 'Workspace' })).not.toBeInTheDocument();
 });

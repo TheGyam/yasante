@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import ClientError
+from .error_reporting import record_error
 from .throttling import ClientErrorThrottle
 
 
@@ -30,7 +31,7 @@ class ClientErrorView(APIView):
         if not body.is_valid():
             return Response(status=204)
         data = body.validated_data
-        ClientError.objects.create(
+        record_error(
             user=request.user if request.user.is_authenticated else None,
             kind=data["kind"],
             message=data["message"][:500],

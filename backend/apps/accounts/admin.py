@@ -2,14 +2,31 @@
 Account admin — user management, invite management.
 """
 
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.forms import UserChangeForm
 
 from .models import DeviceToken, EmailChallenge, Invite, User
 
 
+class UserForm(UserChangeForm):
+    """
+    Django's username field can't be left empty when the column allows null (it measures
+    None and crashes), and most people here have no username. A plain optional field
+    saves an empty one as null, which keeps the unique constraint happy.
+    """
+
+    username = forms.CharField(max_length=30, required=False, empty_value=None)
+
+    class Meta(UserChangeForm.Meta):
+        model = User
+        fields = "__all__"
+
+
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
+    form = UserForm
     list_display = (
         "email",
         "name",

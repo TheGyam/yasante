@@ -65,7 +65,7 @@ class ReportThrottle(UserRateThrottle):
     rate = "10/hour"
 
 
-class ClientErrorThrottle(AnonRateThrottle):
+class ClientErrorThrottle(UserRateThrottle):
     """A phone in a crash loop shouldn't fill the table."""
 
     scope = "client_error"

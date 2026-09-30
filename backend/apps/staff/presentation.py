@@ -8,6 +8,7 @@ from django.core.exceptions import BadRequest
 from django.utils import timezone
 from django.utils.html import strip_tags
 from .access import workspace_url, validate_parameters
+from .names import field_label, model_name
 
 
 class Conflict(Exception):
@@ -31,7 +32,7 @@ def field_data(bound):
     if isinstance(value, BaseExpression):
         value = timezone.now()
     data = {
-        "name": bound.html_name, "label": str(bound.label or bound.name),
+        "name": bound.html_name, "label": field_label(bound.label or bound.name),
         "help": text(bound.help_text), "errors": list(bound.errors),
         "required": field.required, "disabled": field.disabled,
         "kind": "text", "value": value if value is not None else "",
@@ -102,7 +103,7 @@ def form_data(form, admin_form=None):
             for admin_field in line:
                 if admin_field.is_readonly:
                     item = admin_field.field
-                    fields.append({"name": item["name"], "label": str(item["label"]), "help": text(item["help_text"]), "kind": "readonly", "value": "Protected credential" if item["name"] in ("password", "code_hash") else text(admin_field.contents()), "errors": []})
+                    fields.append({"name": item["name"], "label": field_label(item["label"]), "help": text(item["help_text"]), "kind": "readonly", "value": "Protected credential" if item["name"] in ("password", "code_hash") else text(admin_field.contents()), "errors": []})
                 else:
                     fields.append(field_data(admin_field.field))
         sections.append({"name": section.name or "Details", "description": text(section.description), "fields": fields})
@@ -181,7 +182,7 @@ class WorkspacePresentation:
                 "canAdd": inline.has_add_permission and paging["count"] < formset.max_num, "max": formset.max_num,
             })
         payload = {
-            "name": str(self.opts.verbose_name), "title": str(context["title"]), "object": str(obj) if obj else "New record",
+            "name": model_name(self.model)["name"], "singular": model_name(self.model)["singular"], "title": str(obj) if obj else f"New {self.opts.verbose_name}", "object": str(obj) if obj else f"New {self.opts.verbose_name}",
             "id": str(obj.pk) if obj else None, "revision": getattr(self, "workspace_revision", ""),
             **form_data(admin_form.form, admin_form), "inlines": inlines,
             "editable": editable, "canDelete": bool(obj and self.has_delete_permission(request, obj)),

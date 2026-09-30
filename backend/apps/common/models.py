@@ -159,6 +159,7 @@ class ClientError(models.Model):
     """
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    fingerprint = models.CharField(max_length=40, blank=True, default="", db_index=True)
     kind = models.CharField(max_length=20, default="crash")  # crash, stall
     message = models.CharField(max_length=500)
     stack = models.TextField(blank=True, default="")
@@ -174,3 +175,21 @@ class ClientError(models.Model):
 
     def __str__(self):
         return f"{self.platform} {self.kind}: {self.message[:60]}"
+
+
+class ErrorIssue(models.Model):
+    fingerprint = models.CharField(max_length=40, unique=True)
+    title = models.CharField(max_length=500)
+    platform = models.CharField(max_length=20)
+    first_seen = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now_add=True, db_index=True)
+    count = models.PositiveIntegerField(default=0)
+    users_affected = models.PositiveIntegerField(default=0)
+    app_version = models.CharField(max_length=40, blank=True)
+    status = models.CharField(max_length=10, default="open", choices=[("open", "Open"), ("resolved", "Resolved"), ("ignored", "Ignored")], db_index=True)
+    resolved_in_version = models.CharField(max_length=40, blank=True)
+    note = models.TextField(blank=True)
+    regressed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title
