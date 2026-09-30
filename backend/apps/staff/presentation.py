@@ -125,6 +125,24 @@ def fingerprint(obj):
 
 
 
+def mask_personal_fields(request, model, obj, payload):
+    """Addresses, postcodes and phone numbers arrive hidden; Show fetches them, logged."""
+    from .privacy import can_reveal, masked_fields
+
+    hidden = masked_fields(model)
+    for section in payload.get("sections", []):
+        for field in section["fields"]:
+            # A value just typed and sent back (a form with errors) stays as typed.
+            if field["name"] in hidden and not (request.method == "POST" and field["name"] in request.POST):
+                field.update(
+                    masked=True,
+                    hasValue=bool(field.get("value")),
+                    value="",
+                    canReveal=can_reveal(request.user),
+                    revealPath=f"reveal/{model._meta.app_label}/{model._meta.model_name}/{obj.pk}/{field['name']}/",
+                )
+
+
 class WorkspacePresentation:
     def get_formset_kwargs(self, request, obj, inline, prefix):
         kwargs = super().get_formset_kwargs(request, obj, inline, prefix)
@@ -192,6 +210,8 @@ class WorkspacePresentation:
         }
         # AdminForm stores bound field objects here; only send field names.
         payload["prepopulated"] = self.get_prepopulated_fields(request, obj) if editable else {}
+        if obj is not None:
+            mask_personal_fields(request, self.model, obj, payload)
         return JsonResponse(payload, status=422 if request.method == "POST" else 200)
 
     def response_add(self, request, obj, **kwargs):

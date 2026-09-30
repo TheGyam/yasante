@@ -8,6 +8,7 @@ from django.views.decorators.http import require_GET
 
 from ..access import staff_data, visible_admins, model_admin, workspace_url, validate_parameters
 from ..names import field_label, model_name as friendly
+from ..privacy import log_access
 
 SEARCH_MODELS = ("accounts.user", "stylists.stylistprofile", "bookings.booking", "looks.look", "accounts.invite", "shelf.product")
 
@@ -74,6 +75,7 @@ def export_csv(request, app_label, model_name):
     cl = ma.get_changelist_instance(request)
     if cl.queryset.count() > 5000:
         return JsonResponse({"message": "Exports are limited to 5,000 rows. Narrow your filters first."}, status=400)
+    log_access(request, ma.model, f"Exported {cl.queryset.count()} rows as CSV" + (f" ({request.GET.urlencode()})" if request.GET else ""))
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{model_name}.csv"'
     writer = csv.writer(response)

@@ -7,6 +7,9 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import UserChangeForm
 
+from rest_framework_simplejwt.token_blacklist.admin import OutstandingTokenAdmin
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+
 from .models import DeviceToken, EmailChallenge, Invite, User
 
 
@@ -124,4 +127,30 @@ class EmailChallengeAdmin(admin.ModelAdmin):
 @admin.register(DeviceToken)
 class DeviceTokenAdmin(admin.ModelAdmin):
     list_display = ("user", "platform", "created_at")
+    # The token lets anyone holding our push keys message that phone; nobody reads it.
+    exclude = ("token",)
     list_filter = ("platform",)
+
+
+# Sign-in sessions. The refresh token itself is a live credential: shown to nobody,
+# exported by nobody. Staff see whose session it is and when it ends, and can end it.
+admin.site.unregister(OutstandingToken)
+
+
+@admin.register(OutstandingToken)
+class SessionAdmin(OutstandingTokenAdmin):
+    exclude = ("token",)
+    actions = ["end_sessions"]
+
+    def get_readonly_fields(self, request, obj=None):
+        return [field.name for field in self.model._meta.fields if field.name != "token"]
+
+    def get_actions(self, request):
+        # The library turns actions off; this one is safe and is what staff need.
+        return admin.ModelAdmin.get_actions(self, request)
+
+    @admin.action(description="End these sessions (they sign in again)", permissions=["view"])
+    def end_sessions(self, request, queryset):
+        for token in queryset:
+            BlacklistedToken.objects.get_or_create(token=token)
+        self.message_user(request, f"Ended {queryset.count()} sessions.")

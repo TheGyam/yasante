@@ -1,5 +1,7 @@
 from django.contrib import admin
 
+from .admin_access import SuperusersOnly
+
 from .models import ClientError, ErrorIssue, Media, SearchLog
 from django.contrib.admin.models import LogEntry
 
@@ -46,7 +48,7 @@ class MediaAdmin(admin.ModelAdmin):
 
 
 @admin.register(SearchLog)
-class SearchLogAdmin(admin.ModelAdmin):
+class SearchLogAdmin(SuperusersOnly, admin.ModelAdmin):
     """What people search for: zero-result searches are the recruiting list."""
 
     list_display = ("created_at", "surface", "query", "filters", "result_count", "user")

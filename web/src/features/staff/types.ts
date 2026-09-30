@@ -198,6 +198,11 @@ export interface Related {
 }
 
 export interface Field {
+  /** Personal and hidden until someone allowed asks (see apps/staff/privacy.py). */
+  masked?: boolean;
+  hasValue?: boolean;
+  canReveal?: boolean;
+  revealPath?: string;
   delimiter?: string;
   name: string;
   label: string;

@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import session, overview, records, forms, actions, quick_edit, metrics
-from .views import browser, review, errors, insights
+from .views import browser, review, errors, insights, privacy
 
 urlpatterns = [
     path("insights/<slug:name>/", insights.insight),
@@ -14,6 +14,7 @@ urlpatterns = [
     path("review/<slug:queue>/<str:object_id>/decide/", review.decide),
     path("undo/", review.undo),
     path("media/<uuid:pk>/", review.private_media),
+    path("reveal/<str:app_label>/<str:model_name>/<str:object_id>/<str:field>/", privacy.reveal),
     path("session/", session.session),
     path("two-factor/", session.two_factor),
     path("two-factor/codes/", session.recovery_codes),

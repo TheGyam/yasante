@@ -66,7 +66,7 @@ def overview(request):
         ma = admins.get(f"{entry.content_type.app_label}.{entry.content_type.model}") if entry.content_type else None
         audit.append({"id": entry.pk, "object": entry.get_change_message() if entry.content_type is None else entry.object_repr,
                       "actor": "System" if entry.content_type is None and entry.change_message.startswith("System · ") else entry.user.name,
-                      "action": "Security" if entry.content_type is None else {1: "Added", 2: "Updated", 3: "Deleted"}.get(entry.action_flag, "Updated"),
+                      "action": "Security" if entry.content_type is None else next((word for word in ("Viewed", "Exported") if entry.change_message.startswith(word)), {1: "Added", 2: "Updated", 3: "Deleted"}.get(entry.action_flag, "Updated")),
                       "at": entry.action_time.isoformat(), "url": f"{workspace_url(ma.opts.label_lower)}/{entry.object_id}/history" if ma and entry.action_flag != 3 else None})
     errors = {"open": 0, "new": 0}
     if "common.errorissue" in admins:

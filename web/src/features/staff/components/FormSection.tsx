@@ -2,6 +2,7 @@ import { Text } from '@/shared/ui/Text';
 import type { Field, Section } from '../types';
 import { FieldControl } from './fields/FieldControl';
 import { FieldValue } from './fields/FieldValue';
+import { MaskedField } from './fields/MaskedField';
 import * as s from './FormSection.css';
 
 /** The admin's fieldsets as cards: read as text, or edited as a form. */
@@ -30,7 +31,15 @@ export function FormSection({
             )}
             <div className={section.name ? s.fields : undefined}>
               {section.fields.map(field =>
-                reading ? (
+                field.masked ? (
+                  <MaskedField
+                    key={field.name}
+                    field={field}
+                    reading={reading}
+                    source={source(field)}
+                    disabled={disabled}
+                  />
+                ) : reading ? (
                   field.kind === 'hidden' ? (
                     <FieldControl key={field.name} field={field} />
                   ) : (

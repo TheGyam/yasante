@@ -11,6 +11,7 @@ from django.views.decorators.http import require_GET, require_POST
 from apps.common.uploads import PrivateMediaView
 from ..access import staff_data
 from ..presentation import fingerprint
+from ..privacy import log_access
 from ..review import QUEUES, queue_admin, preview
 from .actions import action
 
@@ -106,4 +107,11 @@ def undo(request):
 @require_GET
 def private_media(request, pk):
     # Session and 2FA are verified first; PrivateMediaView retains owner/staff rules.
-    return PrivateMediaView.as_view()(request, pk=pk)
+    response = PrivateMediaView.as_view()(request, pk=pk)
+    if response.status_code == 200:
+        from apps.common.models import Media
+
+        media = Media.objects.filter(pk=pk).first()
+        if media:
+            log_access(request, Media, "Viewed a private photo", media)
+    return response
