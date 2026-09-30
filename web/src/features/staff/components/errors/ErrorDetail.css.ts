@@ -79,6 +79,9 @@ globalStyle(`${table} td`, {
   padding: `${space.sm}px`,
   borderBottom: `1px solid ${c.separator}`,
   color: c.text.secondary,
+  maxWidth: 260,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 });
 export const mono = style({ fontFamily: MONO, fontSize: 12 });
