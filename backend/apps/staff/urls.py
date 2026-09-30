@@ -16,6 +16,7 @@ urlpatterns = [
     path("media/<uuid:pk>/", review.private_media),
     path("session/", session.session),
     path("two-factor/", session.two_factor),
+    path("two-factor/codes/", session.recovery_codes),
     path("two-factor/reset/<uuid:user_id>/", session.reset_factor),
     path("metrics/", metrics.business_metrics),
     path("overview/", overview.overview),

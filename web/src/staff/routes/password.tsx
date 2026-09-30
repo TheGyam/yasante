@@ -1,5 +1,5 @@
-import { PasswordForm, useStaffContext } from '@/features/staff';
+import { AccountPage, useStaffContext } from '@/features/staff';
+
 export default function Route() {
-  const data = useStaffContext();
-  return <PasswordForm csrf={data.csrfToken} />;
+  return <AccountPage csrf={useStaffContext().csrfToken} />;
 }

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { ApiError } from '@/shared/lib/api/client';
+import { startErrorReports } from '@/shared/lib/errorReport';
 import { staffRoutes } from './routes';
 import '@fontsource/instrument-sans/400.css';
 import '@fontsource/instrument-sans/500.css';
@@ -21,6 +22,7 @@ const client = new QueryClient({
     },
   },
 });
+startErrorReports({ endpoint: '/data/client-errors/', platform: 'staff' });
 const router = createBrowserRouter(staffRoutes);
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

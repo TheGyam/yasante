@@ -138,3 +138,30 @@ def reset_factor(request, user_id):
     security_event(request, f"2FA reset for {target.email}", request.user)
     notify_factor_change(request, target, "2FA was reset by a superuser")
     return {"reset": True}
+
+
+@staff_data
+@csrf_protect
+@sensitive_post_parameters("code")
+@require_http_methods(["GET", "POST"])
+def recovery_codes(request):
+    """How many recovery codes are left; a current authenticator code makes a fresh set."""
+    factor = get_object_or_404(StaffSecondFactor, user=request.user, confirmed_at__isnull=False)
+    if request.method == "GET":
+        return {"remaining": len(factor.recovery_codes), "since": factor.confirmed_at.isoformat()}
+    if code_limited(request):
+        return JsonResponse({"message": "Too many codes. Try again in a minute."}, status=429)
+    with transaction.atomic():
+        factor = StaffSecondFactor.objects.select_for_update().get(pk=factor.pk)
+        submitted = request.POST.get("code", "").strip().replace(" ", "")[:6]
+        step = matching_step(factor.get_secret(), submitted, time.time(), factor.last_used_step)
+        if step is None:
+            security_event(request, "Recovery code refresh refused", request.user)
+            return JsonResponse({"message": "That code didn’t match. Use the current code from your authenticator."}, status=403)
+        codes = [secrets.token_hex(8) for _ in range(10)]
+        factor.recovery_codes = [hashlib.sha256(value.encode()).hexdigest() for value in codes]
+        factor.last_used_step = step
+        factor.save(update_fields=["recovery_codes", "last_used_step"])
+    security_event(request, "Recovery codes replaced", request.user)
+    notify_factor_change(request, request.user, "new recovery codes were made; the old ones no longer work")
+    return {"recoveryCodes": codes}

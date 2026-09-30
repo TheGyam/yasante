@@ -189,3 +189,25 @@ def test_a_person_without_a_username_can_be_edited(make_user):
     assert response.status_code == 200, response.content[:400]
     person.refresh_from_db()
     assert person.name == "Ama Mensah" and person.username is None
+
+
+def test_staff_app_reports_errors_on_its_own_host(make_user):
+    client, _ = staff_client(make_user, superuser=True)
+    response = client.post("/data/client-errors/", {"kind": "crash", "message": "staff broke", "platform": "staff"}, content_type="application/json")
+    assert response.status_code in (201, 204)
+    assert ErrorIssue.objects.get().platform == "staff"
+
+
+def test_recovery_codes_can_be_counted_and_replaced_with_a_current_code(make_user):
+    import time
+
+    from apps.staff.models import StaffSecondFactor
+    from apps.staff.totp import code
+
+    client, user = staff_client(make_user, superuser=True)
+    factor = StaffSecondFactor.objects.get(user=user)
+    assert client.get("/data/two-factor/codes/").json()["remaining"] == 0
+    assert client.post("/data/two-factor/codes/", {"code": "000000"}).status_code == 403
+    fresh = client.post("/data/two-factor/codes/", {"code": code(factor.get_secret(), int(time.time()) // 30)}).json()["recoveryCodes"]
+    assert len(fresh) == 10 and len(set(fresh)) == 10
+    assert client.get("/data/two-factor/codes/").json()["remaining"] == 10

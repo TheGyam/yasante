@@ -44,7 +44,8 @@ def calculate(name, sources, start, end):
     elif name == "funnel":
         counts = qs.aggregate(requested=Count("pk"), confirmed=Count("pk", filter=Q(scheduled_for__isnull=False) & ~Q(status__in=["requested", "declined", "expired"])), deposit=Count("pk", filter=Q(deposit_status="paid")), completed=Count("pk", filter=Q(status="completed")), no_show=Count("pk", filter=Q(status="no_show")), declined=Count("pk", filter=Q(status="declined")))
         meta = counts
-        steps = [("Requested", "requested", ""), ("Confirmed", "confirmed", "scheduled_for__isnull=False"), ("Deposit paid", "deposit", "deposit_status__exact=paid"), ("Completed", "completed", "status__exact=completed")]
+        # A deposit is optional, so it isn't a step everyone passes; it's reported beside.
+        steps = [("Requested", "requested", ""), ("Confirmed", "confirmed", "scheduled_for__isnull=False"), ("Completed", "completed", "status__exact=completed")]
         rows = [{"label": label, "values": [counts[key]], "url": f"/records/bookings/booking?created_at__gte={start.date()}&created_at__lt={end.date()}&{filters}"} for label, key, filters in steps]
         kind = "bar"
     elif name == "growth":
