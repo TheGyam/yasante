@@ -12,6 +12,8 @@ from ..names import model_name
 from ..review import QUEUES, preview
 
 UK = ZoneInfo("Europe/London")
+# Things made on a page of their own rather than a record form.
+ADD_PAGES = {"staff.broadcast": "/notifications/new"}
 
 
 @staff_data
@@ -24,7 +26,7 @@ def overview(request):
     monday = today - timedelta(days=today.weekday())
     week = datetime.combine(monday, time.min, UK)
     models = [{"key": key, **model_name(model),
-               "url": workspace_url(key), "addUrl": f"{workspace_url(key)}/new" if ma.has_add_permission(request) else None, "canView": key in admins}
+               "url": workspace_url(key), "addUrl": (ADD_PAGES.get(key, f"{workspace_url(key)}/new")) if ma.has_add_permission(request) else None, "canView": key in admins}
               for model, ma in available_admins(request) for key in [model._meta.label_lower]
               if ma.has_module_permission(request) and (key in admins or ma.has_add_permission(request))]
     metrics, series = [], []

@@ -266,7 +266,7 @@ export default function RequestScreen() {
 
         {!!booking.notes && (
           <Section title="What they said">
-            <ListRow title={booking.notes} />
+            <ListRow title={booking.notes} wrap />
           </Section>
         )}
 

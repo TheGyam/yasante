@@ -28,10 +28,12 @@ EXPO_BATCH = 100
 
 
 def muted_categories(user_id):
-    from .models import NotificationPreference
+    """Switched off by her, plus every opt-in category she hasn't switched on."""
+    from .models import OPT_IN_CATEGORIES, NotificationPreference
 
     pref = NotificationPreference.objects.filter(user_id=user_id).first()
-    return set(pref.muted if pref else [])
+    muted = set(pref.muted if pref else [])
+    return muted | (OPT_IN_CATEGORIES - set(pref.opted_in if pref else []))
 
 
 def notify(user_id, category, event_key, title, body, url=None, mode=None, action_category=None, **extra):

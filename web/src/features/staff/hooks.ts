@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useBeforeUnload, useBlocker } from 'react-router';
 import { readStaff, writeStaff } from './api';
 import type {
+  Broadcasts,
   ErrorDetail,
   FormSchema,
   ErrorIssues,
@@ -80,7 +81,7 @@ export function useStaffMutation() {
           ('deleted' in data && data.deleted) ||
           ('done' in data && data.done))
       ) {
-        if (['review', 'undo', 'errors'].includes(category)) {
+        if (['review', 'undo', 'errors', 'broadcasts'].includes(category)) {
           // A decision moves a record between lists and changes every count.
           await Promise.all(
             [
@@ -88,6 +89,7 @@ export function useStaffMutation() {
               keys.family('review'),
               keys.family('errors'),
               keys.family('records'),
+              keys.family('broadcasts'),
             ].map(queryKey => cache.invalidateQueries({ queryKey }))
           );
           return;
@@ -171,6 +173,8 @@ export const useInsight = (name: string, range: string) =>
   useStaffRead<Insight>(`insights/${name}/?${range}`, { refetchOnWindowFocus: false });
 
 export const useErrorIssues = (query: string) => useStaffRead<ErrorIssues>(`errors/?${query}`);
+
+export const useBroadcasts = () => useStaffRead<Broadcasts>('broadcasts/');
 
 export const useErrorIssue = (id: string) => useStaffRead<ErrorDetail>(`errors/${id}/`);
 

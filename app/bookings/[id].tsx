@@ -440,6 +440,7 @@ export default function BookingScreen() {
                   <ListRow
                     key={item.id}
                     title={item.text}
+                    wrap
                     icon={done ? Check : Circle}
                     iconTone={done ? 'success' : 'neutral'}
                     haptic="selection"
@@ -456,13 +457,13 @@ export default function BookingScreen() {
 
         {!!booking.notes && (
           <Section title="What you told them">
-            <ListRow title={booking.notes} />
+            <ListRow title={booking.notes} wrap />
           </Section>
         )}
 
         {!!booking.reason && (
           <Section title="What they said">
-            <ListRow title={booking.reason} icon={TriangleAlert} iconTone="neutral" />
+            <ListRow title={booking.reason} icon={TriangleAlert} iconTone="neutral" wrap />
           </Section>
         )}
 

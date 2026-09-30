@@ -29,3 +29,30 @@ class StaffSecondFactor(models.Model):
 
     def get_secret(self):
         return self.cipher().decrypt(self.secret.encode()).decode()
+
+
+class Broadcast(models.Model):
+    """A push notification sent from the workspace to many people at once."""
+
+    KINDS = [("update", "Important update"), ("news", "News or offer")]
+
+    kind = models.CharField(max_length=10, choices=KINDS)
+    title = models.CharField(max_length=65)
+    body = models.CharField(max_length=180)
+    url = models.CharField(max_length=200, blank=True, default="")
+    audience = models.JSONField(default=dict)
+    audience_summary = models.CharField(max_length=300)
+    recipients = models.PositiveIntegerField(default=0)
+    sent_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def event_prefix(self):
+        return f"broadcast:{self.pk}:"

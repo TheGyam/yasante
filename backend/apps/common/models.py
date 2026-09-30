@@ -108,8 +108,12 @@ NOTIFICATION_CATEGORIES = [
     ("after_appointment", "After an appointment"),
     ("check_ins", "Style check-ins"),
     ("weekly_digest", "Your weekly numbers"),
-    ("account", "Your account and badges"),
+    ("account", "Your account, badges and important updates"),
+    ("news", "News and offers from Yasante"),
 ]
+
+# Promotional messages need a yes first (App Store guideline 4.5.4): off until switched on.
+OPT_IN_CATEGORIES = {"news"}
 
 
 class NotificationPreference(models.Model):
@@ -119,6 +123,8 @@ class NotificationPreference(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notification_preference"
     )
     muted = models.JSONField(default=list, blank=True)
+    # Opt-in categories she's switched on (see OPT_IN_CATEGORIES).
+    opted_in = models.JSONField(default=list, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
 

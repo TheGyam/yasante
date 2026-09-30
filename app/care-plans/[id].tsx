@@ -443,6 +443,7 @@ export default function CarePlanScreen() {
                   <ListRow
                     title={format(new Date(session.completedAt), 'EEEE d MMMM')}
                     subtitle={session.notes}
+                    wrap
                     icon={CircleCheck}
                     iconTone="success"
                   />
