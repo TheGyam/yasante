@@ -37,7 +37,7 @@ export function Popover({
   const id = useId();
   const anchor = useRef<HTMLSpanElement>(null);
   const panel = useRef<HTMLDivElement>(null);
-  const close = () => document.getElementById(id)?.hidePopover();
+  const close = () => document.getElementById(id)?.hidePopover?.();
 
   const place = () => {
     const trigger = anchor.current?.getBoundingClientRect();
@@ -68,7 +68,7 @@ export function Popover({
         onKeyDown={event => {
           if (event.key !== 'ArrowDown' || role !== 'menu') return;
           event.preventDefault();
-          panel.current?.showPopover();
+          panel.current?.showPopover?.();
           panel.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
         }}
       />

@@ -63,6 +63,7 @@ export function CommandPalette({
       setTerm('');
       setActive(0);
       node.showModal();
+      node.querySelector('input')?.focus();
     }
     if (!open && node.open) node.close();
   }, [open]);
@@ -167,7 +168,6 @@ export function CommandPalette({
           <input
             className={s.input}
             value={term}
-            autoFocus
             placeholder="Search people, bookings, looks, or type a command…"
             aria-label="Search"
             role="combobox"

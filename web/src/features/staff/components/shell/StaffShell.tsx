@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate, useOutletContext } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Keyboard, LogOut, Moon, Sun, UserPlus } from 'lucide-react';
@@ -211,7 +211,9 @@ function Workspace({
           onSearch={() => setPalette(true)}
         />
         <main id="staff-main" className={s.content}>
-          <Outlet context={data} />
+          <Suspense fallback={<Skeleton className={s.loading} />}>
+            <Outlet context={data} />
+          </Suspense>
         </main>
       </div>
       <MobileNav

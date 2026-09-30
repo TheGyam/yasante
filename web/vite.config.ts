@@ -17,6 +17,8 @@ const api = process.env.YASANTE_API ?? 'http://localhost:8000';
 
 export default defineConfig(({ command }) => ({
   base: command === 'build' ? '/static/site/' : '/',
+  // Which build an error report came from: the commit in CI, 'dev' locally.
+  define: { __APP_VERSION__: JSON.stringify(process.env.GITHUB_SHA?.slice(0, 7) ?? 'dev') },
   // Styles are TypeScript (`.css.ts`, the web's makeStyles), compiled to plain CSS at build time.
   plugins: [
     {

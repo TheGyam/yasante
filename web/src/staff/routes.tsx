@@ -1,5 +1,6 @@
 import type { RouteObject } from 'react-router';
 import { StaffShell } from '@/features/staff';
+import { RouteError } from '@/shared/ui/RouteError';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import OverviewRoute from './routes/overview';
 import ReviewRoute from './routes/review';
@@ -15,6 +16,7 @@ import QuickEditRoute from './routes/quick-edit';
 export const staffRoutes: RouteObject[] = [
   {
     element: <StaffShell />,
+    errorElement: <RouteError />,
     children: [
       { path: '/', element: <OverviewRoute /> },
       { path: '/review', element: <ReviewRoute /> },

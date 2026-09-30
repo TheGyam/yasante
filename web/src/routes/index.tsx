@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router';
+import { RouteError } from '@/shared/ui/RouteError';
 import AreaRoute from './area';
 import DeleteAccountRoute from './delete-account';
 import HomeRoute from './home';
@@ -37,6 +38,7 @@ import StylistRoute from './stylist';
 export const routes = [
   {
     element: <Layout />,
+    errorElement: <RouteError />,
     children: [
       { path: '/', element: <HomeRoute /> },
       { path: '/looks', element: <LooksRoute /> },

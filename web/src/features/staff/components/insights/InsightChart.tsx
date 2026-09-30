@@ -83,7 +83,8 @@ export function InsightChart({ insight }: { insight: Insight }) {
             steps={rows.map(row => ({ label: row.label, value: row.values[0], url: row.url }))}
           />
           <p className={ui.muted}>
-            Also in this period: {formatNumber(Number(insight.meta.declined ?? 0))} declined,{' '}
+            Also in this period: {formatNumber(Number(insight.meta.deposit ?? 0))} paid a deposit,{' '}
+            {formatNumber(Number(insight.meta.declined ?? 0))} declined,{' '}
             {formatNumber(Number(insight.meta.no_show ?? 0))} no-shows.
           </p>
         </>
