@@ -18,6 +18,7 @@ urlpatterns = [
     path("broadcasts/", broadcasts.history),
     path("broadcasts/audience/", broadcasts.audience),
     path("broadcasts/health/", broadcasts.health),
+    path("broadcasts/receipts/", broadcasts.check_now),
     path("broadcasts/test/", broadcasts.test),
     path("broadcasts/send/", broadcasts.send),
     path("session/", session.session),

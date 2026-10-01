@@ -182,3 +182,31 @@ def test_a_send_that_never_ran_is_resumed_once_per_person(make_user, django_capt
     assert NotificationLog.objects.filter(event_key__startswith=broadcast.event_prefix).count() == 2
     broadcast.refresh_from_db()
     assert broadcast.finished_at is not None
+
+
+def test_check_now_reads_answers_straight_away_and_records_when(make_user, monkeypatch):
+    from apps.common import notifications
+
+    client, admin = staff_client(make_user, superuser=True)
+    phone(admin)
+    log = NotificationLog.objects.create(user=admin, category="account", event_key="now1", title="t", body="b", status="sent", tickets=[["t-now", f"ExponentPushToken[{admin.pk}]"]])
+    from django.utils import timezone
+
+    NotificationLog.objects.filter(pk=log.pk).update(sent_at=timezone.now())
+
+    class Answer:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self):
+            return json.dumps({"data": {"t-now": {"status": "ok"}}}).encode()
+
+    monkeypatch.setattr(notifications.urllib.request, "urlopen", lambda *a, **k: Answer())
+    assert client.get("/data/broadcasts/health/").json()["receiptsCheckedAt"] is None
+    assert client.post("/data/broadcasts/receipts/").json()["checked"] == 1
+    log.refresh_from_db()
+    assert log.status == "delivered"
+    assert client.get("/data/broadcasts/health/").json()["receiptsCheckedAt"]

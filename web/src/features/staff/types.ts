@@ -375,6 +375,8 @@ export interface PushHealth {
   lastDay: Record<string, number>;
   problems: { problem: string; count: number }[];
   yours: number;
+  /** When Apple and Google's answers were last read; null if never. */
+  receiptsCheckedAt: string | null;
 }
 
 export interface Broadcasts {

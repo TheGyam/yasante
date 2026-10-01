@@ -12,7 +12,7 @@ import { PushHealth } from './PushHealth';
 import * as s from './Broadcasts.css';
 
 /** Everything sent to people's phones from here, with how it was delivered. */
-export function Broadcasts() {
+export function Broadcasts({ csrf }: { csrf: string }) {
   const query = useBroadcasts();
   const data = query.data;
   return (
@@ -28,7 +28,7 @@ export function Broadcasts() {
           <Button label="New notification" icon={Plus} size="sm" to="/notifications/new" />
         )}
       </header>
-      {data?.canSend && <PushHealth />}
+      {data?.canSend && <PushHealth csrf={csrf} />}
       {query.isError ? (
         <InlineAlert message={staffMessage(query.error)} />
       ) : !data ? (
