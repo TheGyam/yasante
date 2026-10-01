@@ -145,3 +145,40 @@ def test_receipts_turn_accepted_into_delivered_or_failed(make_user, monkeypatch,
     assert ok.status == "delivered"
     assert bad.status == "failed" and bad.error.startswith("DeviceNotRegistered")
     assert not DeviceToken.objects.filter(user=other).exists()
+
+
+def test_the_worker_knows_every_job_the_workspace_hands_it():
+    """Celery only loads tasks.py; a job defined elsewhere is dropped as unknown."""
+    from config.celery import app
+
+    app.loader.import_default_modules()
+    for name in (
+        "apps.staff.broadcasts.send_broadcast",
+        "apps.staff.tasks.resume_broadcasts",
+        "apps.common.notifications.send_push",
+        "apps.common.notifications.check_push_receipts",
+    ):
+        assert name in app.tasks, name
+    # Every job on the schedule must be one the worker can run.
+    for entry in app.conf.beat_schedule.values():
+        assert entry["task"] in app.tasks, entry["task"]
+
+
+def test_a_send_that_never_ran_is_resumed_once_per_person(make_user, django_capture_on_commit_callbacks):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.staff.tasks import resume_broadcasts
+
+    people = [phone(make_user()) for _ in range(2)]
+    broadcast = Broadcast.objects.create(
+        kind="update", title="t", body="b", audience={"who": "people", "people": [str(p.pk) for p in people], "platform": "any", "joined": "any", "area": ""},
+        audience_summary="2 chosen people", recipients=2,
+    )
+    Broadcast.objects.filter(pk=broadcast.pk).update(created_at=timezone.now() - timedelta(minutes=10))
+    resume_broadcasts()
+    resume_broadcasts()  # running twice must not send twice
+    assert NotificationLog.objects.filter(event_key__startswith=broadcast.event_prefix).count() == 2
+    broadcast.refresh_from_db()
+    assert broadcast.finished_at is not None
