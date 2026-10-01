@@ -24,6 +24,8 @@ app.conf.beat_schedule = {
     "enforce-retention": {"task": "apps.common.tasks.enforce_retention", "schedule": crontab(hour=3, minute=15)},
     # Apple and Google's verdict on each push, a few minutes after Expo accepts it.
     "push-receipts": {"task": "apps.common.notifications.check_push_receipts", "schedule": crontab(minute="*/10")},
+    # A push to many people that didn't finish (a restart, a lost job) goes again.
+    "resume-broadcasts": {"task": "apps.staff.tasks.resume_broadcasts", "schedule": crontab(minute="*/5")},
     # Lapse requests and unpaid deposits, complete old appointments.
     "sweep-bookings": {
         "task": "apps.bookings.tasks.sweep_bookings",
