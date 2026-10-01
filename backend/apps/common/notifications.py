@@ -138,8 +138,11 @@ EXPO_RECEIPTS_URL = "https://exp.host/--/api/v2/push/getReceipts"
 RECEIPT_BATCH = 300
 
 
+RECEIPTS_CHECKED = "push:receipts:checked"
+
+
 @shared_task(ignore_result=True)
-def check_push_receipts():
+def check_push_receipts(min_age_minutes=5):
     """
     Expo accepting a message isn't delivery: Apple or Google can still refuse it (bad
     credentials, an uninstalled app). Their verdict comes back as a receipt some minutes
@@ -153,7 +156,7 @@ def check_push_receipts():
 
     now = timezone.now()
     waiting = list(
-        NotificationLog.objects.filter(status="sent", sent_at__lt=now - timedelta(minutes=5), sent_at__gt=now - timedelta(days=1))
+        NotificationLog.objects.filter(status="sent", sent_at__lte=now - timedelta(minutes=min_age_minutes), sent_at__gt=now - timedelta(days=1))
         .exclude(tickets=[])
         .values("pk", "tickets")[:2000]
     )
@@ -167,7 +170,7 @@ def check_push_receipts():
                 receipts.update(json.loads(response.read().decode()).get("data", {}))
         except (urllib.error.URLError, TimeoutError, ValueError):
             logger.warning("Couldn't read push receipts", exc_info=True)
-            return
+            return {"checked": 0, "error": "Expo didn't answer"}
     for row in waiting:
         answers = [(receipts[ticket], token) for ticket, token in row["tickets"] if ticket in receipts]
         if len(answers) < len(row["tickets"]):
@@ -180,6 +183,11 @@ def check_push_receipts():
             status="failed" if problems and len(problems) == len(answers) else "delivered",
             error="; ".join(problems)[:300],
         )
+    # The workspace shows when this last ran: "never" means the scheduler isn't running it.
+    from django.core.cache import cache
+
+    cache.set(RECEIPTS_CHECKED, now.isoformat(), None)
+    return {"checked": len(waiting)}
 
 
 # Kept for any caller of the old name.

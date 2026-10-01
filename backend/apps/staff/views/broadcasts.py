@@ -10,7 +10,9 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.common.models import NotificationLog
-from apps.common.notifications import notify
+from django.core.cache import cache
+
+from apps.common.notifications import RECEIPTS_CHECKED, check_push_receipts, notify
 
 from ..access import staff_data
 from ..broadcasts import CATEGORY, clean, news_too_soon, reach, reachable, send_broadcast, summary
@@ -96,7 +98,20 @@ def health(request):
         "lastDay": statuses,
         "problems": problems,
         "yours": request.user.devices.count(),
+        "receiptsCheckedAt": cache.get(RECEIPTS_CHECKED),
     }
+
+
+@staff_data
+@csrf_protect
+@require_POST
+def check_now(request):
+    """Read Apple and Google's answers now rather than at the next ten-minute check."""
+    allowed(request)
+    result = check_push_receipts(min_age_minutes=0)
+    if result.get("error"):
+        return JsonResponse({"message": "Expo didn’t answer. Try again in a minute."}, status=502)
+    return {"done": True, **result}
 
 
 @staff_data
