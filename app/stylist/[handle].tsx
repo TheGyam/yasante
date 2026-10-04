@@ -67,7 +67,8 @@ const useStyles = makeStyles(() => ({
 export default function StylistPageScreen() {
   const styles = useStyles();
   const router = useRouter();
-  const { handle } = useLocalSearchParams<{ handle: string }>();
+  // Arriving from a look she wants done here, the request carries that look.
+  const { handle, look } = useLocalSearchParams<{ handle: string; look?: string }>();
   const { data, isLoading, isError, error, refetch } = useStylistPage(handle);
   const { user } = useAuth();
   const [photosShown, setPhotosShown] = useState(PHOTOS_STEP);
@@ -157,7 +158,7 @@ export default function StylistPageScreen() {
         <Button
           label="Request a booking"
           icon={CalendarPlus}
-          onPress={() => router.push(`/book/${profile.handle}`)}
+          onPress={() => router.push(`/book/${profile.handle}${look ? `?look=${look}` : ''}`)}
           disabled={!menu.length}
           fullWidth
           testID="stylist-page-book"

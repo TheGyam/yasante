@@ -7,7 +7,7 @@ import { TabBar, type TabItem } from '@/shared/ui/TabBar';
 
 const TABS: readonly TabItem[] = [
   { name: '(today)', label: 'Today', icon: CalendarClock },
-  { name: '(requests)', label: 'Requests', icon: Inbox },
+  { name: '(requests)', label: 'Bookings', icon: Inbox },
   { name: '(portfolio)', label: 'Portfolio', icon: Images },
   { name: '(account)', label: 'Profile', icon: CircleUserRound },
 ];

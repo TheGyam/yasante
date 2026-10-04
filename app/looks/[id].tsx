@@ -582,7 +582,11 @@ function LookThread({
               details={stage >= 1}
             />
             {stage >= 2 && !!look.styles[0] && (
-              <WhoDoesThis style={look.styles[0]} name={actions.styleNames[look.styles[0]]} />
+              <WhoDoesThis
+                style={look.styles[0]}
+                name={actions.styleNames[look.styles[0]]}
+                lookId={look.id}
+              />
             )}
             {stage >= 1 && (
               <Animated.View entering={FadeIn.duration(180)}>
@@ -788,7 +792,7 @@ function Composer({
  * Under a look: who does its style, and what it starts at. Asked for only once the
  * look has settled, so the opening flight never waits on it.
  */
-function WhoDoesThis({ style, name }: { style: string; name?: string }) {
+function WhoDoesThis({ style, name, lookId }: { style: string; name?: string; lookId: string }) {
   const router = useRouter();
   const theme = useTheme();
   const { user } = useAuth();
@@ -801,7 +805,7 @@ function WhoDoesThis({ style, name }: { style: string; name?: string }) {
   return (
     <Animated.View entering={FadeIn.duration(200)} style={{ marginBottom: space.xl }}>
       <PressableScale
-        onPress={() => router.push(`/who/${style}`)}
+        onPress={() => router.push(`/who/${style}?look=${lookId}`)}
         accessibilityRole="button"
         accessibilityLabel={`Who does ${name}: ${stylists.length} stylists`}
         style={{
