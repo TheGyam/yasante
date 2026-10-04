@@ -148,6 +148,11 @@ step adds its own section. Fill in the header, the summary table and each sectio
 you go, and add a section by hand for every step you did not run (verdict NOT RUN). Finish with `qadb end` and
 `qa/bin/env-down`, and paste the output of `qadb end` at the bottom of the report.
 
+**The summary table**: fill each row when you fill that step's section, copying from the
+section, never at the end from memory. A row that says something its section doesn't is
+worse than an empty row. (In `STAFF-01-20261003-2308` the table written at the end named
+tools and pages that don't exist; the sections themselves were right.)
+
 Report each step. Don't add an overall verdict, certificate or "victory" summary: Claude
 audits the run and decides what it shows.
 

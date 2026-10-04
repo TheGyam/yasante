@@ -115,7 +115,8 @@ sign-in page, no list of people. Quote the `/data/…` requests and their status
 **A10: Sign in with a recovery code.** `W: fill Email staff.lead@yasante.dev`,
 `W: fill Password password123`, `W: click "Sign in"`, `W: step A10`. Expect
 `Verify your sign-in`, `Authenticator or recovery code`. `W: fill "Authenticator or recovery code" <R1>`,
-`W: click "Verify code"`, `W: step A10b`. Expect Today. `qa/bin/mailbox <RUN> --last`:
+`W: click "Verify code"`, `W: step A10b`. Expect to be back in the workspace, on the page
+you were opening (here `/records/accounts/user`). `qa/bin/mailbox <RUN> --last`:
 expect `Yasante staff security: a recovery code was used`.
 
 **A11: One fewer.** `W: open /account`, `W: step A11`. Expect `Two-factor sign-in` and
@@ -126,12 +127,12 @@ sign in with the password (A10's three commands, no capture), then
 `W: fill "Authenticator or recovery code" <R1>` (the one already used),
 `W: click "Verify code"`, `W: step A12`. Expect `That code is invalid or has already been
 used.` Then `qa/bin/totp staff.lead@yasante.dev`, fill that code, `W: click "Verify code"`,
-`W: step A12b`: Today. **Write down the code you used here: call it T1.**
+`W: step A12b`: back in the workspace (on the page you were on). **Write down the code you used here: call it T1.**
 
 **A13: A used authenticator code is refused.** Sign out, sign in with the password again,
 `W: fill "Authenticator or recovery code" <T1>` (the same six digits as A12b),
 `W: click "Verify code"`, `W: step A13`. Expect `That code is invalid or has already been
-used.` Then a fresh `qa/bin/totp` code, `Verify code`, `W: step A13b`: Today.
+used.` Then a fresh `qa/bin/totp` code, `Verify code`, `W: step A13b`: back in the workspace.
 (`totp` waits for a new code by itself; that's expected.)
 
 ---
@@ -140,7 +141,7 @@ used.` Then a fresh `qa/bin/totp` code, `Verify code`, `W: step A13b`: Today.
 
 **K1.** `W: open /account`, `W: step K1`. Expect `Password settings` (`Old password`,
 `New password`, `New password confirmation`, `Save password settings`) and
-`Two-factor sign-in`, `On since … 8 recovery codes left.`, `Make new recovery codes`.
+`Two-factor sign-in`, `On since … 9 recovery codes left.` (only R1 has been used), `Make new recovery codes`.
 **Record** the password help text **exactly**, including where sentences run together.
 
 **K2: Wrong old password.** `W: fill "Old password" wrongpass1`,
@@ -162,7 +163,7 @@ expect an email that says new recovery codes were made; paste it.
 **K4: The old codes are dead, the new ones work.** Sign out, sign in with the password,
 `W: fill "Authenticator or recovery code" <R2>` (an **old** code, never used),
 `W: click "Verify code"`, `W: step K4`. Expect `That code is invalid or has already been
-used.` Then `<N1>`, `Verify code`, `W: step K4b`: Today.
+used.` Then `<N1>`, `Verify code`, `W: step K4b`: back in the workspace.
 
 ---
 
@@ -325,9 +326,8 @@ to log, `0 people with a phone signed in · 0 iPhone, 0 Android`,
 
 **N2: Nothing written (F15).** `W: open /notifications/new`, `W: step N2`. **Record** the
 three numbered parts. `W: click "Important update" --role=radio`, leave `Title` and
-`Message` empty, `W: click "Send a test to me"`, `W: step N2b`. **Expect** a message
-asking for a title and a message (the server's is `Write a title and a message first.`).
-If it says `That search, filter, or page is not valid.` instead, mark **FAIL** (F15).
+`Message` empty, `W: find "Send a test to me"`, `W: step N2b`. **Expect** the button
+disabled until both are filled (`qaweb click` would time out on it; don't click).
 
 **N3: No phone of your own.** `W: fill Title "QA: planned maintenance" --exact`,
 `W: fill Message "Bookings pause for ten minutes at 22:00 tonight." --exact`,
@@ -462,11 +462,13 @@ Still seeing Today with data is a **FAIL**. `H: open /records/accounts/user`,
 
 **Z1: Six wrong passwords in a row.** Five times in a row:
 `V: open /`, `V: fill Email staff.helper@yasante.dev`, `V: fill Password wrongpass1`,
-`V: click "Sign in"` (no captures). Then once more and `V: step Z1`. **Expect**
+`V: click "Sign in"` (no captures, no report writing in between: the limit is 60 s
+from the first attempt). Then once more and `V: step Z1`. **Expect**
 `Too many attempts. Try again later.` and `429`. **Server check:**
 `grep -E "Staff sign-in (failed|throttled)" qa/runs/<RUN>/server.log | tail -7`.
 
-**Z2: The right password is refused too, for now.** At once:
+**Z2: The right password is refused too, for now.** At once, before filling in Z1's
+section (fill both after Z2):
 `V: fill Password password123`, `V: click "Sign in"`, `V: step Z2`. Expect the same
 `Too many attempts` message (the limit doesn't care which password).
 
