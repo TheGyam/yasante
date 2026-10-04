@@ -54,7 +54,7 @@ from .state_machine import VALID_TIMING_REASONS, can_transition, determine_cance
 logger = logging.getLogger(__name__)
 
 HOUR = timedelta(hours=1)
-REVIEW_REPORT_REASONS = ("not-real", "private", "hate", "other")
+REVIEW_REPORT_REASONS = tuple(value for value, _ in ReviewReport.REASON_CHOICES)
 
 
 def _bookable_look(look_id):
