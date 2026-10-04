@@ -187,6 +187,9 @@ there, but the rest does: one agent, only the tools in section 3, evidence for e
   report, as `qadb step` does. Its summary shows open dialogs, menus and messages first,
   then the main content; the sidebar is in `visible.txt`. Toasts fade after a few seconds,
   so capture straight after the action.
+- **Browser pop-ups** (`confirm()`: "Remove this from your menu?") get **Cancel** from
+  `qaweb`, and their text is logged. Add `--accept-dialog` to the click that opens one to
+  say **OK** instead, only where a plan step says so.
 - Downloads (CSV exports) land in `qa/runs/<RUN>/downloads/`; `qaweb` prints the file and
   its hash. `cat` it for the step's check; never edit it.
 - **Times:** `server.log` and `staffaudit` print UTC (server) or UK times; the journal uses

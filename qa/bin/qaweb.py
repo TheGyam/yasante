@@ -98,6 +98,7 @@ class Browser:
         self.pages = {}
         self.logs = {}  # window -> {"net": [...], "console": [...]}
         self.size = {}
+        self.accept_next = set()  # windows whose next browser pop-up a plan said to accept
 
     def page(self, window):
         if window not in WINDOWS:
@@ -131,9 +132,13 @@ class Browser:
         page.on("pageerror", lambda e: logs["console"].append(f"{now()} [pageerror] {str(e)[:500]}"))
 
         def on_dialog(dialog):
-            logs["console"].append(f"{now()} [dialog {dialog.type}] {dialog.message[:300]} (dismissed by qaweb)")
-            journal(self.d, {"cmd": "dialog", "window": window, "type": dialog.type, "message": dialog.message[:300]})
-            dialog.dismiss()
+            accept = window in self.accept_next
+            self.accept_next.discard(window)
+            how = "accepted (--accept-dialog)" if accept else "dismissed by qaweb"
+            logs["console"].append(f"{now()} [dialog {dialog.type}] {dialog.message[:300]} ({how})")
+            journal(self.d, {"cmd": "dialog", "window": window, "type": dialog.type,
+                             "message": dialog.message[:300], "accepted": accept})
+            dialog.accept() if accept else dialog.dismiss()
 
         page.on("dialog", on_dialog)
 
@@ -288,6 +293,8 @@ def handle(b, window, cmd, args):
         check_where(page)
         el = pick(page, words[0], flags, CLICK_ROLES)
         label = describe(el, 1).split("] ", 1)[1]
+        if "--accept-dialog" in flags:
+            b.accept_next.add(window)
         if cmd == "hold":
             el.hover()
             page.mouse.down()
@@ -296,6 +303,7 @@ def handle(b, window, cmd, args):
         else:
             el.click(timeout=5000)
         settle(page)
+        b.accept_next.discard(window)  # one click, one pop-up at most
         entry["hit"] = label
         out = f"clicked {label}; now at {page.url}"
     elif cmd == "fill":
@@ -555,7 +563,7 @@ def cmd_end():
 USAGE = {
     "start": "start <run-id> [--headed]    open the browser for this run (after qa/bin/web-up)",
     "open": "open <path> [--site]          open a staff page (/notifications) or, with --site, a public site page",
-    "click": "click <text> [--exact] [--nth=N] [--role=R]  click a button/link/tab… by its words or label",
+    "click": "click <text> [--exact] [--nth=N] [--role=R] [--accept-dialog]  click a button/link/tab… by its words or label;\n        --accept-dialog says OK to the browser pop-up it opens (only where a plan says so)",
     "hold": "hold <text> [...]              press and hold",
     "fill": 'fill "<field label>" "<text>"  empty a field and type into it, then read it back',
     "type": 'type "<text>"                 type into whatever has focus (code boxes, search)',
