@@ -22,7 +22,7 @@ import { errorMessage } from '@/features/auth';
 import {
   BookingProgress,
   FromLookCard,
-  STATUS_LABELS,
+  STYLIST_STATUS_LABELS,
   balanceLine,
   directionsLink,
   isLive,
@@ -214,7 +214,7 @@ export default function RequestScreen() {
           <Text variant="subhead" tone="secondary">
             {`${booking.fromPrice ? 'from ' : ''}${formatMoney(booking.price)}`}
             {status !== 'requested' && status !== 'awaiting_deposit' && status !== 'confirmed'
-              ? ` · ${STATUS_LABELS[status]}`
+              ? ` · ${STYLIST_STATUS_LABELS[status]}`
               : ''}
           </Text>
           {isLive(booking) && !!balanceLine(booking) && (

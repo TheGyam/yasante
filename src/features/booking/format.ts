@@ -28,6 +28,20 @@ export const STATUS_LABELS: Record<BookingStatus, string> = {
   no_show: 'Marked as a no-show',
 };
 
+/** The same outcomes, told to the stylist: "they" is her client, "you" is her. */
+export const STYLIST_STATUS_LABELS: Record<BookingStatus, string> = {
+  requested: 'Waiting for your reply',
+  awaiting_deposit: 'Waiting on the deposit',
+  confirmed: 'Confirmed',
+  completed: 'Done',
+  declined: 'You declined',
+  expired: 'Expired without a reply',
+  cancelled_in_time: 'They cancelled in time',
+  cancelled_late: 'They cancelled late',
+  cancelled_by_stylist: 'You cancelled',
+  no_show: 'No-show',
+};
+
 /** The states where something is still going to happen. */
 const LIVE: BookingStatus[] = ['requested', 'awaiting_deposit', 'confirmed'];
 export const isLive = (booking: Pick<Booking, 'status'>) => LIVE.includes(booking.status);
