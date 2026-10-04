@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# The current authenticator code for a test staff account (local database only).
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+exec "$QA/.venv/bin/python" "$QA/bin/staff.py" totp "$@" 2>&1 | grep -v "objects imported automatically"

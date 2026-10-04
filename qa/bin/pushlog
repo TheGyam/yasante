@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# The notifications the server made for one person, read-only: pushlog <email> [N]
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+exec "$QA/.venv/bin/python" "$QA/bin/staff.py" pushlog "$@" 2>&1 | grep -v "objects imported automatically"

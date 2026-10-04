@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Setup a plan step asks for: staff-fixtures phones <email>… | staff-fixtures clienterror "<message>"
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+case "${1:-}" in phones|clienterror) ;; *) echo "usage: staff-fixtures phones <email>… | clienterror \"<message>\""; exit 2;; esac
+exec "$QA/.venv/bin/python" "$QA/bin/staff.py" "$@" 2>&1 | grep -v "objects imported automatically"

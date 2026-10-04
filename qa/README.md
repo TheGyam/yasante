@@ -1,7 +1,7 @@
 # On-device QA
 
-Manual, evidence-backed test runs of the Android app on a real phone, against a local
-backend. Claude writes the plans, Antigravity executes them, and Claude audits each run
+Manual, evidence-backed test runs of the Android app on a real phone or emulators, and of
+the staff workspace in a browser, against a local backend. Claude writes the plans, Antigravity executes them, and Claude audits each run
 from the raw evidence rather than from the report.
 
 ```
@@ -10,7 +10,8 @@ qa/
   plans/<ID>.md      one plan per section or interaction of sections
   reports/<RUN>.md   the executor's report for one run
   runs/<RUN>/        raw evidence (gitignored): server.log, journal.jsonl, steps/, MANIFEST.json
-  bin/               env-up, metro, qadb, mailbox, dbcheck, env-down
+  bin/               env-up, metro, qadb, mailbox, dbcheck, env-down;
+                     web-up, qaweb, totp, staffaudit, pushlog, staff-fixtures (staff workspace)
 ```
 
 ## One run
@@ -46,6 +47,33 @@ qa/
 | LOOKS-01 | feed, area filter, search, a look (like, comment, reply), collections, saved, posting public/private, what others see, report, block, take down | written (2 emulators) |
 | PROFILE-01 | edit profile, username, hair profile and quiz, planner, care plans, shelf, learn | written (1 emulator) |
 | SETTINGS-01 | settings, notifications, privacy, data download, FAQs, policies, reports and appeals, sign-out (F1), delete account | written (1 emulator) |
+| FIXES-01, NEW-01, NEW-02 | rechecks of upstream's fixes; new booking and discovery features | written (emulators) |
+| STAFF-01 | staff workspace: sign-in, two-factor, recovery codes, Today, search, people records and hidden details, export, quick edit, errors, push notifications, a moderator's limits, sign-in limits | written (browser), dry-run by Claude |
+| STAFF-02 | app ↔ workspace: report → hide → appeal → overturn, product approval, a tip of the day, review report | written (2 emulators + browser), workspace side dry-run by Claude |
+
+## The staff workspace (browser runs)
+
+`qa/bin/web-up <RUN>` (after `env-up`) starts Vite on :5173, which serves the staff
+workspace at `http://admin.localhost:5173` and the public site at `http://localhost:5173`,
+and resets the two test staff accounts (`staff.lead@` superuser, `staff.helper@` in the
+`QA moderators` group; password `password123`, no two-factor, no phones). It refuses to
+run if `backend/.env` sets `PUSH_DELIVERY=expo`, so pushes are only ever logged.
+
+`qa/bin/qaweb` is to the browser what `qadb` is to the phone. `qaweb start <RUN>` runs a
+Playwright Chromium in a systemd user unit (`yasante-qa-browser`) holding one window per
+person (`lead`, `helper`, `visitor`); each `qaweb` command talks to it over a socket in
+the run folder. Every request to a host other than the two local ones is aborted and
+journalled (images from `images.unsplash.com`, where the seed's photos live, are the one
+exception). `qaweb step` writes `screen.png`, `aria.txt`, `visible.txt`, `network.txt`,
+`console.txt` and `url.txt`, hashes them into the journal and opens the report section,
+in the same report and journal as `qadb` when a plan uses both. `totp <email>` prints the
+current code for a test staff account (it reads the secret from the local database and
+waits rather than hand out a used or expiring code); `staffaudit`, `pushlog` are
+read-only views; `staff-fixtures` adds pretend phones or posts an app error, only where a
+plan says so.
+
+Needs Playwright in the QA venv once:
+`uv pip install --python qa/.venv/bin/python playwright && qa/.venv/bin/python -m playwright install chromium`.
 
 ## Building the dev client locally
 

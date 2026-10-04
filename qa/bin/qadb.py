@@ -555,7 +555,7 @@ def step_used(d, step_id):
     alias = device_alias() if len(run_devices()) > 1 else None
     for line in f.read_text().splitlines():
         e = json.loads(line)
-        if e.get("cmd") == "step" and e.get("step") == step_id and e.get("device") == alias:
+        if e.get("cmd") == "step" and e.get("tool") != "qaweb" and e.get("step") == step_id and e.get("device") == alias:
             return True
     return False
 

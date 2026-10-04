@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Starts the website dev server (Vite, :5173) next to the backend that env-up started,
+# and resets the test staff accounts. The staff workspace is http://admin.localhost:5173,
+# the public site http://localhost:5173. Usage: qa/bin/web-up <run-id>   (after env-up)
+set -euo pipefail
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+REPO="$(dirname "$QA")"
+RUN="${1:?usage: web-up <run-id>   (run env-up first)}"
+OUT="$QA/runs/$RUN"
+mkdir -p "$OUT"
+curl -s -o /dev/null http://127.0.0.1:8000/ || { echo "backend is not running: qa/bin/env-up $RUN first"; exit 1; }
+
+"$QA/.venv/bin/python" "$QA/bin/staff.py" setup 2>&1 | grep -v "objects imported automatically"
+
+cd "$REPO/web"
+[[ -d node_modules ]] || npm ci --no-audit --no-fund > "$OUT/npm-ci.log" 2>&1
+systemctl --user stop yasante-qa-vite 2>/dev/null || true
+systemctl --user reset-failed yasante-qa-vite 2>/dev/null || true
+: > "$OUT/vite.log"
+# A systemd user service, like Django and Metro: it outlives the shell that started it.
+systemd-run --user --quiet --unit=yasante-qa-vite --collect \
+  --working-directory="$REPO/web" --setenv=PATH="$PATH" --setenv=HOME="$HOME" \
+  -p StandardOutput="append:$OUT/vite.log" -p StandardError="append:$OUT/vite.log" \
+  npx vite --port 5173 --strictPort --host 127.0.0.1
+
+ok() { [[ "$(curl -s -o /dev/null -w '%{http_code}' --resolve "$1:5173:127.0.0.1" "http://$1:5173/")" == 200 ]]; }
+for _ in $(seq 40); do ok admin.localhost && break; sleep 1; done
+ok admin.localhost && ok localhost \
+  && echo "web: staff workspace http://admin.localhost:5173 , site http://localhost:5173 (log $OUT/vite.log)" \
+  || { echo "vite did not start; see $OUT/vite.log"; exit 1; }
+echo "next: qa/bin/qaweb start $RUN"

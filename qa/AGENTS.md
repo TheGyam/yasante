@@ -1,7 +1,8 @@
 # QA executor rules — read all of this before running any plan
 
 You are executing a manual test plan for the Yasante Android app, on **emulators** or on
-**the owner's personal phone**. Each plan says which at the top (`Device:`). The rules in
+**the owner's personal phone**, or for the **staff workspace** in a browser (section 8).
+Each plan says which at the top (`Device:`). The rules in
 section 1 hold on both. They matter most on the phone, and on the emulators they keep
 the evidence honest. Claude wrote the plan and will audit your run afterwards against the
 raw evidence on disk. Your job is to follow the plan exactly and report what actually
@@ -55,6 +56,12 @@ whole run. Do not "try anyway". A test account made on the live server is real d
 | `qa/bin/bookings <email> [<booking-id>]` | a person's bookings; with an ID, what each side's app is sent |
 | `qa/bin/timewarp <booking-id> <field> <hours>` | **only where a plan step says so**, with exactly its values |
 | `grep`/`tail` on `qa/runs/<RUN>/server.log` | the server's view of each request |
+| `qa/bin/web-up <RUN>` | start the website (staff workspace + public site) next to the backend; resets the test staff accounts |
+| `qa/bin/qaweb …` | every interaction with a browser (section 8); `qaweb help` lists the commands |
+| `qa/bin/totp <email>` | the current two-factor code for a **test** staff account |
+| `qa/bin/staffaudit [N] [--who <email>]` | the staff activity trail, read-only |
+| `qa/bin/pushlog <email> [N]` | the notifications the server made for someone, read-only |
+| `qa/bin/staff-fixtures phones …` / `clienterror "…"` | **only where a plan step says so**, with exactly its values |
 | `qa/bin/env-down` | stop everything at the end |
 
 Nothing else: no editing app or backend code, no `manage.py` commands of your own, no
@@ -146,3 +153,43 @@ audits the run and decides what it shows.
 
 Timing matters to Claude's audit: do not batch-capture steps at the end, and do not
 reorder them. The journal records when each capture happened.
+
+## 8. The staff workspace (browser plans)
+
+Plans marked **Device: browser** test the staff workspace, `http://admin.localhost:5173`,
+served from this laptop with the same local backend. Section 1's phone rules don't apply
+there, but the rest does: one agent, only the tools in section 3, evidence for every step.
+
+- **Use the browser only through `qa/bin/qaweb`.** Not your own browser tool, not `curl`,
+  not Playwright or a script. `qaweb`'s browser can't reach anything but this laptop; it
+  journals every request the page makes. Never try to open `admin.yasante.com`,
+  `yasante.com` or any other site, and never type a URL a plan didn't give you.
+- `qaweb` holds several **windows**, one per person, each with its own sign-in: `lead`
+  (the default) and `helper` (`qaweb -w helper …`), and `visitor` for a signed-out view.
+- **Two-factor codes come from `qa/bin/totp <email>`**, for the two test staff accounts
+  only. It waits for a fresh code when the last one was used or is about to expire, so it
+  can take up to 30 s. Use the code at once; never reuse one unless a step tells you to.
+  **Recovery codes** appear once, on screen, in a `qaweb step` capture. Copy them from that
+  capture into the step's section; a plan step may ask you to use one later.
+- The server limits staff sign-ins to **5 a minute** from this laptop (lead and helper
+  share the limit) and two-factor codes to 5 a minute per window. Where a plan says
+  "wait 60 s", wait: an extra `Too many attempts` spoils the steps that follow.
+- Find things by the words on the page. `qaweb find "<words>"` lists matches;
+  `qaweb click "<words>"`; add `--exact` when the words are part of a longer label
+  (`Name` also matches `Username`), `--role=button` (or `link`, `tab`, `menuitem`,
+  `checkbox`…) to say what kind of element, and `--nth=N` when several remain.
+  `qaweb fill "<label>" "<text>"` empties a field, types and reads it back; a
+  `TYPE_MISMATCH` means don't submit, fill again. Prefer `qaweb open <path>` with the
+  paths a plan gives over clicking through the sidebar.
+- `qaweb step <ID>` captures `screen.png` (the whole page), `aria.txt` (the page's
+  accessibility tree), `visible.txt`, `network.txt` (each request to the server since the
+  last step, with its status) and `console.txt`, and opens the step's section in the
+  report, as `qadb step` does. Its summary shows open dialogs, menus and messages first,
+  then the main content; the sidebar is in `visible.txt`. Toasts fade after a few seconds,
+  so capture straight after the action.
+- Downloads (CSV exports) land in `qa/runs/<RUN>/downloads/`; `qaweb` prints the file and
+  its hash. `cat` it for the step's check; never edit it.
+- **Times:** `server.log` and `staffaudit` print UTC (server) or UK times; the journal uses
+  the laptop's clock. Quote them as printed; don't convert.
+- Finish with `qaweb end`. For a browser-only run that closes the run and hashes every file;
+  in a run that also uses emulators, `qaweb end` first, then `qadb end`.

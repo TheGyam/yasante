@@ -91,7 +91,10 @@ street once they confirm.` Pick the **first time on the first day** (call it **T
 `C: swipe up`, tick the terms, `C: step A2b`. **Expect** the send button to stay off,
 with `Add your street and postcode so they can get to you.` under it. **Record** it.
 **A3: With the address.** `C: tapon booking-street`, type `4 Choumert Grove`,
-`C: tapon booking-postcode`, type `SE15 4RB`, `C: key BACK`, `C: step A3`. **Record**
+`C: tapon booking-postcode`, type `SE15 4RB`, then (new 04-10: long notes now show in
+full) `C: tapon "Anything they should know"`, type
+`QA long note: please bring the long-bristle brush and a spare pack of hair, ring the bell twice because the buzzer is broken, and park on the left side of the road.`,
+`C: key BACK`, `C: step A3`. **Record**
 the line under the button now. `C: tapon booking-send`, wait 4 s, `C: step A3b`. Server:
 `POST /api/bookings/` **201**. The newest ID in `qa/bin/bookings client@yasante.dev` is
 **B1**. **Views:** paste it. **Record** `at_client`, and the `address`/`area` each side
@@ -100,6 +103,9 @@ is sent. Ama's side **must not** contain `4 Choumert Grove` yet: if it does, **F
 **A4: Ama reads it.** `S: link "yasante:///requests/<B1>"`, wait 4 s, `S: step A4`.
 Expect a row `At their place · <area>` with `You go to them. Their street arrives once
 you confirm`. **Record** the area exactly. The street on screen is a **FAIL**.
+`S: swipe up` until `What they said` shows, `S: step A4b`. **Expect** the whole note,
+over several lines, ending `…park on the left side of the road.` Cut off with `…` after
+one line is a **FAIL** (upstream `ba4bb34` makes notes wrap).
 **A5: Accept, with the deposit.** `S: swipe up`, `S: step A5`. **Record** `Deposit to
 confirm` (expect **20**). `S: tapon request-accept`, wait 4 s, `S: swipe up`,
 `S: step A5b`. Server: `…/accept/` **200**. **Views:** `status: "awaiting_deposit"`, and
@@ -107,7 +113,8 @@ still no street on Ama's side. **Record** the line about what's left to pay (exp
 `£10 left to pay on the day, after the deposit`).
 **A6: What Efua is told.** `C: link "yasante:///bookings/<B1>"`, wait 4 s, `C: step A6`.
 Expect `£20 deposit due` and `£10 left to pay on the day, after the deposit`
-(`booking-balance`). **Record** the address row.
+(`booking-balance`). **Record** the address row. `C: swipe up` until
+`What you told them` shows, `C: step A6b`: **expect** the whole note, as in A4b.
 **A7: The deposit arrives.** `S: link "yasante:///requests/<B1>"`,
 `S: tapon request-deposit-received`, wait 4 s, `S: step A7`. **Views:**
 `status: "confirmed"`. Expect Ama's where-row to show now `4 Choumert Grove, SE15 4RB`
