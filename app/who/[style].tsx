@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { BadgeCheck, MapPin, Scissors, Star } from 'lucide-react-native';
+import { BadgeCheck, Images, MapPin, Scissors, Star } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
-import { useStyleTaxonomy } from '@/features/looks';
+import { useLook, useStyleTaxonomy } from '@/features/looks';
 import { useUpdateHairProfile, useUser } from '@/features/profile';
 import { useStylistsForStyle, type StylistSearchResult, type Within } from '@/features/stylist';
 import { formatMoney } from '@/shared/lib/format';
@@ -13,12 +13,15 @@ import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { Chip } from '@/shared/ui/Chip';
 import { Input } from '@/shared/ui/Input';
+import { ListRow } from '@/shared/ui/ListRow';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Screen } from '@/shared/ui/Screen';
+import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { Toggle } from '@/shared/ui/Toggle';
 import { areasFor, POSTCODE, tidyPostcode } from '@/shared/utils/postcode';
 
 // How far people usually go for a style, and further if they want.
@@ -47,6 +50,7 @@ const useStyles = makeStyles(t => ({
   near: { gap: space.sm, marginBottom: space.lg },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   where: { gap: space.md, marginBottom: space.lg },
+  sendLook: { marginBottom: space.lg },
 }));
 
 /**
@@ -57,7 +61,11 @@ export default function WhoDoesThisStyle() {
   const styles = useStyles();
   const theme = useTheme();
   const router = useRouter();
-  const { style } = useLocalSearchParams<{ style: string }>();
+  const { style, look: lookId } = useLocalSearchParams<{ style: string; look?: string }>();
+  // Opened from a look: she can send that exact picture with whichever stylist she asks.
+  const { data: look } = useLook(lookId ?? '');
+  const [sendLook, setSendLook] = useState(true);
+  const withLook = lookId && look && sendLook ? lookId : undefined;
   const { data: taxonomy = [] } = useStyleTaxonomy();
   const name = taxonomy.find(s => s.id === style)?.name ?? 'This style';
   const { user } = useAuth();
@@ -73,7 +81,7 @@ export default function WhoDoesThisStyle() {
   const row = (s: StylistSearchResult) => (
     <PressableScale
       key={s.accountId}
-      onPress={() => router.push(`/stylist/${s.handle}`)}
+      onPress={() => router.push(`/stylist/${s.handle}${withLook ? `?look=${withLook}` : ''}`)}
       accessibilityLabel={`${s.displayName}, ${s.baseArea}${s.fromPrice ? `, from ${formatMoney(s.fromPrice)}` : ''}`}
       style={styles.row}
     >
@@ -124,7 +132,11 @@ export default function WhoDoesThisStyle() {
         <Button
           label="Book"
           size="sm"
-          onPress={() => router.push(`/book/${s.handle}?service=${s.serviceId}`)}
+          onPress={() =>
+            router.push(
+              `/book/${s.handle}?service=${s.serviceId}${withLook ? `&look=${withLook}` : ''}`
+            )
+          }
           style={styles.book}
         />
       )}
@@ -140,6 +152,27 @@ export default function WhoDoesThisStyle() {
       modal
       testID="who-does-this"
     >
+      {!!lookId && !!look && (
+        <View style={styles.sendLook}>
+          <Section footer="Whoever you ask sees the picture with your request, so there's no guessing.">
+            <ListRow
+              title="Send this look with my request"
+              subtitle={look.caption || `Posted by ${look.authorName}`}
+              icon={Images}
+              onPress={() => setSendLook(on => !on)}
+              haptic="selection"
+              trailing={
+                <Toggle
+                  value={sendLook}
+                  onValueChange={setSendLook}
+                  accessibilityLabel="Send this look with my request"
+                />
+              }
+              testID="who-send-look"
+            />
+          </Section>
+        </View>
+      )}
       {place ? (
         <View style={styles.near}>
           <View style={styles.chips}>
