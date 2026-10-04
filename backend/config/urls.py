@@ -2,11 +2,9 @@
 Yasante Backend — Root URL Configuration
 
 All API endpoints live under /api/.
-Admin panel at /admin/.
 """
 
 from apps.accounts.views import InviteDetailView, InviteRedeemView
-from apps.common.metrics import metrics_view
 from apps.common.uploads import PrivateMediaView, UploadView
 from apps.accounts import views as account_views
 from apps.looks import views as looks_views
@@ -18,18 +16,12 @@ from apps.web.api import WaitlistView
 from apps.profiles.views import ConsentBatchView, EventBatchView
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-
-# Customise admin site
-admin.site.site_header = settings.ADMIN_SITE_HEADER
-admin.site.site_title = settings.ADMIN_SITE_TITLE
-admin.site.index_title = "Dashboard"
 
 # The schema and its docs describe every endpoint: fine in development, not something
 # to publish from production (SHOW_API_DOCS=True turns them on anywhere).
@@ -50,9 +42,6 @@ API_DOCS = (
 )
 
 urlpatterns = API_DOCS + [
-    # Admin
-    path("admin/metrics/", metrics_view, name="admin-metrics"),
-    path("admin/", admin.site.urls),
     # API
     path("api/auth/", include("apps.accounts.urls")),
     path("api/invites/<str:code>/", InviteDetailView.as_view(), name="invite-detail"),

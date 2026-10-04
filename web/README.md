@@ -6,6 +6,32 @@ stylist's own sign-up, from account to a live page. It's React,
 built with Vite, and it follows the same principles as the app: read
 [ARCHITECTURE.md](../ARCHITECTURE.md) first — nearly everything there applies here.
 
+## Staff workspace
+
+Open `http://admin.localhost:5173/` and sign in with a staff account. The React workspace includes
+live counts, 14-day activity charts, moderation and verification queues, recent
+admin activity, tool search (Ctrl/Cmd K), and a record browser for every registered
+ModelAdmin. Search, filters, ordering and pagination run on the server; lists return
+at most 25 rows. Create-only staff see their creation tools without read access.
+
+Creation, editing, inline records, relationship search, history, password settings,
+single and bulk deletion, all configured custom actions, and list quick edits are
+native React screens. Weekly business metrics are included for administrators.
+Django's registered forms, validators, permissions, save hooks and audit logging
+remain authoritative behind the JSON presentation. Nothing sends staff to Django's
+HTML admin. Record and inline revisions prevent stale saves; signed bulk reviews
+expire after ten minutes and must still match the selected records before applying.
+Related records and inline rows load 25 at a time. Unsaved edits require confirmation
+before navigation or closing the browser tab. Credentials never enter the query cache.
+
+Staff requests use same-origin Django session cookies, not public API tokens.
+Responses are private and cannot be cached; the separate React Query cache is
+memory-only and inactive queries are discarded immediately. No staff data is placed
+in the public API schema or public page data. Existing production HTTPS and secure
+cookie settings apply. MFA, infrastructure health monitoring and a full security
+assessment are not provided by this change.
+
+
 ## Run it
 
 ```bash
@@ -137,3 +163,17 @@ The same three rules as the app, enforced by ESLint:
   screenful, and the frame holds its shape so nothing jumps.
 - **Links start loading early.** `Link` takes a `preload`, run on hover, focus or touch,
   so the next page is usually in the cache by the click.
+
+## Staff workspace
+
+`npm run dev` serves the separate staff app at **http://admin.localhost:5173/**. Host-based
+Vite middleware serves staff.html for staff navigation; `/data` and `/django-admin` are
+proxied with the original Host. Run the Django backend on port 8000. Staff sign-in requires
+TOTP enrolment or a one-use recovery code. The staff QueryClient is memory-only with gcTime 0.
+
+Production builds have two manifest entries, index.html and staff.html. The public entry
+does not import staff code. Django's dedicated staff template selects staff.html's hashed
+assets, while the public template selects index.html. Staff routes live in src/staff/ and
+consume features/staff only through its index, following the same boundary rules as routes/.
+All staff JSON endpoints live under /data on STAFF_HOST and are excluded from OpenAPI.
+The unlinked /django-admin is an emergency fallback on that host.

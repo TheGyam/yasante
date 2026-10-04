@@ -34,7 +34,7 @@ def test_her_page_is_public_only_once_published(make_stylist, api):
     profile.save()
     assert web.get(f"/{profile.handle}").status_code == 404
     # The API and admin aren't shadowed by the handle route.
-    assert web.get("/admin/login/").status_code == 200
+    assert web.get("/admin/login/").status_code == 404
 
 
 def test_page_data_cannot_close_its_script(make_stylist):
@@ -125,16 +125,12 @@ def test_sitemap_robots_and_app_links(make_stylist, settings):
     assert aasa["applinks"]["details"][0]["appIDs"] == ["TEAM123.com.yasante.app"]
 
 
-def test_metrics_page_is_staff_only(make_user, make_stylist, make_look):
-    make_look(make_user())
-    make_stylist()
-    web = Client()
-    assert web.get("/admin/metrics/").status_code == 302
-    staff = make_user(is_staff=True)
-    web.force_login(staff)
-    page = web.get("/admin/metrics/")
-    assert page.status_code == 200 and "Activated stylists" in page.content.decode()
-    assert "Metrics" in web.get("/admin/").content.decode()
+def test_public_host_has_no_admin_metrics(make_user):
+    web=Client()
+    assert web.get("/admin/metrics/").status_code == 404
+    web.force_login(make_user(is_staff=True,is_superuser=True))
+    assert web.get("/admin/metrics/").status_code == 404
+    assert web.get("/admin/").status_code == 404
 
 
 def test_style_and_area_pages(make_stylist, make_user, make_look):

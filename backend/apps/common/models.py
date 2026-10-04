@@ -108,8 +108,12 @@ NOTIFICATION_CATEGORIES = [
     ("after_appointment", "After an appointment"),
     ("check_ins", "Style check-ins"),
     ("weekly_digest", "Your weekly numbers"),
-    ("account", "Your account and badges"),
+    ("account", "Your account, badges and important updates"),
+    ("news", "News and offers from Yasante"),
 ]
+
+# Promotional messages need a yes first (App Store guideline 4.5.4): off until switched on.
+OPT_IN_CATEGORIES = {"news"}
 
 
 class NotificationPreference(models.Model):
@@ -119,6 +123,8 @@ class NotificationPreference(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notification_preference"
     )
     muted = models.JSONField(default=list, blank=True)
+    # Opt-in categories she's switched on (see OPT_IN_CATEGORIES).
+    opted_in = models.JSONField(default=list, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
 
@@ -130,7 +136,9 @@ class NotificationLog(models.Model):
 
     STATUS_CHOICES = [
         ("queued", "Queued"),
-        ("sent", "Sent"),
+        ("logged", "Logged only (push delivery is off)"),
+        ("sent", "Accepted by Expo"),
+        ("delivered", "Delivered to Apple or Google"),
         ("muted", "Muted by preference"),
         ("no_device", "No device"),
         ("failed", "Failed"),
@@ -144,6 +152,8 @@ class NotificationLog(models.Model):
     data = models.JSONField(default=dict, blank=True)
     status = models.CharField(max_length=12, choices=STATUS_CHOICES, default="queued", db_index=True)
     error = models.CharField(max_length=300, blank=True, default="")
+    # Expo's receipt ids: Apple and Google's verdict arrives later, under these.
+    tickets = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     sent_at = models.DateTimeField(null=True, blank=True)
 
@@ -159,6 +169,7 @@ class ClientError(models.Model):
     """
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    fingerprint = models.CharField(max_length=40, blank=True, default="", db_index=True)
     kind = models.CharField(max_length=20, default="crash")  # crash, stall
     message = models.CharField(max_length=500)
     stack = models.TextField(blank=True, default="")
@@ -174,3 +185,21 @@ class ClientError(models.Model):
 
     def __str__(self):
         return f"{self.platform} {self.kind}: {self.message[:60]}"
+
+
+class ErrorIssue(models.Model):
+    fingerprint = models.CharField(max_length=40, unique=True)
+    title = models.CharField(max_length=500)
+    platform = models.CharField(max_length=20)
+    first_seen = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(auto_now_add=True, db_index=True)
+    count = models.PositiveIntegerField(default=0)
+    users_affected = models.PositiveIntegerField(default=0)
+    app_version = models.CharField(max_length=40, blank=True)
+    status = models.CharField(max_length=10, default="open", choices=[("open", "Open"), ("resolved", "Resolved"), ("ignored", "Ignored")], db_index=True)
+    resolved_in_version = models.CharField(max_length=40, blank=True)
+    note = models.TextField(blank=True)
+    regressed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title

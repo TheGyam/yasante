@@ -3,15 +3,17 @@ import type { LucideIcon } from 'lucide-react';
 import { Link } from './Link';
 import * as styles from './Button.css';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'quiet';
 export type ButtonSize = 'lg' | 'md' | 'sm';
 
 interface Common {
-  label: string;
+  label: ReactNode;
   variant?: ButtonVariant;
   size?: ButtonSize;
   icon?: LucideIcon;
   trailingIcon?: LucideIcon;
+  /** After the label: a count or a key hint. */
+  trailing?: ReactNode;
   fullWidth?: boolean;
   className?: string;
 }
@@ -38,6 +40,7 @@ export function Button(props: ButtonProps) {
     size = 'lg',
     icon: Icon,
     trailingIcon: Trailing,
+    trailing,
     fullWidth,
     className,
   } = props;
@@ -56,7 +59,8 @@ export function Button(props: ButtonProps) {
       ) : (
         Icon && <Icon size={ICON[size]} strokeWidth={2.2} aria-hidden />
       )}
-      <span>{label}</span>
+      {label !== '' && <span>{label}</span>}
+      {trailing}
       {Trailing && <Trailing size={ICON[size]} strokeWidth={2.2} aria-hidden />}
     </>
   );
@@ -82,6 +86,7 @@ export function Button(props: ButtonProps) {
     size: _s,
     icon: _i,
     trailingIcon: _t,
+    trailing: _tr,
     fullWidth: _f,
     className: _c,
     loading,

@@ -47,6 +47,17 @@ export const variant = styleVariants({
     color: vars.color.accent,
     selectors: { '&:hover:not(:disabled)': { background: vars.color.accentSoft } },
   },
+  /** Neutral and low-key: toolbars and secondary actions next to a primary one. */
+  quiet: {
+    background: 'transparent',
+    color: vars.color.text.secondary,
+    selectors: {
+      '&:hover:not(:disabled)': {
+        background: vars.color.glass.fillStrong,
+        color: vars.color.text.primary,
+      },
+    },
+  },
 });
 
 export const fullWidth = style({ width: '100%' });

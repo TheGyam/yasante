@@ -1,6 +1,30 @@
 from django.contrib import admin
 
-from .models import ClientError, Media, SearchLog
+from .admin_access import SuperusersOnly
+
+from .models import ClientError, ErrorIssue, Media, SearchLog
+from django.contrib.admin.models import LogEntry
+
+
+@admin.register(LogEntry)
+class ActivityAdmin(admin.ModelAdmin):
+    list_display = ("action_time", "user", "object_repr", "change_message")
+    list_filter = ("user", "action_flag")
+    readonly_fields = [f.name for f in LogEntry._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ErrorIssue)
+class ErrorIssueAdmin(admin.ModelAdmin):
+    list_display = ("title", "platform", "status", "count", "last_seen")
+    list_filter = ("platform", "status", "app_version")
+    search_fields = ("title",)
+    readonly_fields = ("fingerprint", "count", "users_affected", "first_seen", "last_seen", "platform", "app_version")
 
 
 @admin.register(Media)
@@ -24,7 +48,7 @@ class MediaAdmin(admin.ModelAdmin):
 
 
 @admin.register(SearchLog)
-class SearchLogAdmin(admin.ModelAdmin):
+class SearchLogAdmin(SuperusersOnly, admin.ModelAdmin):
     """What people search for: zero-result searches are the recruiting list."""
 
     list_display = ("created_at", "surface", "query", "filters", "result_count", "user")

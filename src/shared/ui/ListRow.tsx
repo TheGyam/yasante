@@ -19,6 +19,11 @@ export interface ListRowProps {
   /** Replaces the chevron, e.g. a Toggle. */
   trailing?: ReactNode;
   destructive?: boolean;
+  /**
+   * Show every word. For rows that hold something to read (a tip, someone's notes)
+   * rather than a label; labels stay on one line so a list lines up.
+   */
+  wrap?: boolean;
   accessibilityLabel?: string;
   testID?: string;
 }
@@ -73,6 +78,7 @@ export function ListRow({
   haptic,
   trailing,
   destructive = false,
+  wrap = false,
   accessibilityLabel,
   testID,
 }: ListRowProps) {
@@ -94,11 +100,15 @@ export function ListRow({
         </View>
       )}
       <View style={styles.text}>
-        <Text variant="callout" tone={destructive ? 'danger' : 'primary'} numberOfLines={1}>
+        <Text
+          variant="callout"
+          tone={destructive ? 'danger' : 'primary'}
+          numberOfLines={wrap ? undefined : 1}
+        >
           {title}
         </Text>
         {subtitle && (
-          <Text variant="footnote" tone="secondary" numberOfLines={2}>
+          <Text variant="footnote" tone="secondary" numberOfLines={wrap ? undefined : 2}>
             {subtitle}
           </Text>
         )}
