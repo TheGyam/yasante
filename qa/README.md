@@ -11,7 +11,9 @@ qa/
   reports/<RUN>.md   the executor's report for one run
   runs/<RUN>/        raw evidence (gitignored): server.log, journal.jsonl, steps/, MANIFEST.json
   bin/               env-up, metro, qadb, mailbox, dbcheck, env-down;
-                     web-up, qaweb, totp, staffaudit, pushlog, staff-fixtures (staff workspace)
+                     web-up, qaweb, totp, staffaudit, pushlog, staff-fixtures (staff workspace);
+                     secscan (Claude's automated security checks), canary (SEC plans)
+  sec/               the security tests secscan runs; see sec/README.md
 ```
 
 ## One run

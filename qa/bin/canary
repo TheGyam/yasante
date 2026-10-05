@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# SEC-01 canaries: canary plant (where a plan step says so) | canary hits [<run-id>] (read-only)
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+case "${1:-}" in plant|hits) ;; *) exec "$QA/.venv/bin/python" "$QA/bin/canary.py";; esac
+exec "$QA/.venv/bin/python" "$QA/bin/canary.py" "$@" 2>&1 | grep -v "objects imported automatically"

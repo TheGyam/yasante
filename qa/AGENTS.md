@@ -62,6 +62,7 @@ whole run. Do not "try anyway". A test account made on the live server is real d
 | `qa/bin/staffaudit [N] [--who <email>]` | the staff activity trail, read-only |
 | `qa/bin/pushlog <email> [N]` | the notifications the server made for someone, read-only |
 | `qa/bin/staff-fixtures phones …` / `clienterror "…"` | **only where a plan step says so**, with exactly its values |
+| `qa/bin/canary plant` / `canary hits <RUN>` | SEC plans: `plant` **only where a plan step says so**; `hits` (read-only) at each checkpoint |
 | `qa/bin/env-down` | stop everything at the end |
 
 Nothing else: no editing app or backend code, no `manage.py` commands of your own, no

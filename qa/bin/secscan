@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# Layer 1 of the security checks: everything a machine can decide. Claude runs it;
+# it is not an executor tool (Antigravity runs plans, not this).
+#
+# Usage: qa/bin/secscan <run-id>             static checks + the access tests (needs only Postgres)
+#        qa/bin/secscan --dynamic <run-id>   also fuzz the API and scan the site; needs
+#                                            `env-up <run-id>` and `web-up <run-id>` first
+# Raw output lands in qa/runs/<run-id>/sec/, one file per tool; SUMMARY.txt lists each
+# tool's exit code and count. Tools: see qa/sec/README.md for how each was installed.
+set -uo pipefail
+
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+REPO="$(dirname "$QA")"
+PY="$QA/.venv/bin/python"
+
+DYNAMIC=0
+if [[ "${1:-}" == "--dynamic" ]]; then DYNAMIC=1; shift; fi
+RUN="${1:?usage: secscan [--dynamic] <run-id>}"
+OUT="$QA/runs/$RUN/sec"
+mkdir -p "$OUT"
+: > "$OUT/SUMMARY.txt"
+note() { printf '%-14s exit %-3s %s\n' "$1" "$2" "$3" | tee -a "$OUT/SUMMARY.txt"; }
+
+# Postgres for the access tests (the same container env-up uses).
+if ! podman exec yasante-qa-db pg_isready -h 127.0.0.1 -U postgres >/dev/null 2>&1; then
+  podman start yasante-qa-db >/dev/null 2>&1 || podman run -d --name yasante-qa-db -p 127.0.0.1:5432:5432 \
+    -e POSTGRES_DB=yasante -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
+    docker.io/library/postgres:16-alpine >/dev/null
+  for _ in $(seq 30); do podman exec yasante-qa-db pg_isready -h 127.0.0.1 -U postgres >/dev/null 2>&1 && break; sleep 1; done
+fi
+
+# 1. Who can reach whose things (qa/sec/test_access.py).
+(cd "$REPO/backend" && "$PY" -m pytest -p no:cacheprovider --rootdir . -c pytest.ini ../qa/sec \
+  --color=no -rfE) > "$OUT/access-tests.txt" 2>&1
+note access-tests $? "$(grep -E '[0-9]+ (passed|failed|error)' "$OUT/access-tests.txt" | tail -1)"
+
+# 2. Known holes in dependencies.
+pip-audit -r "$REPO/backend/requirements.txt" --progress-spinner off > "$OUT/pip-audit.txt" 2>&1
+note pip-audit $? "$(grep -E '^[a-z0-9_.-]+ +[0-9]' "$OUT/pip-audit.txt" | awk '{print $1, $3}' | sort -u | wc -l) advisories (backend)"
+for lock in package-lock.json web/package-lock.json; do
+  name="osv-$(dirname "$lock" | tr / -)"; [[ "$name" == "osv-." ]] && name=osv-app
+  osv-scanner scan source --lockfile "$REPO/$lock" --format json > "$OUT/$name.json" 2>"$OUT/$name.err"
+  rc=$?
+  n=$("$PY" -c 'import json,sys; d=json.load(open(sys.argv[1])); print(sum(len(p["vulnerabilities"]) for r in d.get("results",[]) for p in r["packages"]))' "$OUT/$name.json" 2>/dev/null || echo "?")
+  note "$name" $rc "$n advisories ($lock)"
+done
+
+# 3. Secrets in git history. The baseline holds what was triaged (test data, local reset
+#    links in old reports, the Firebase key that ships in every Android app): only new hits count.
+gitleaks git "$REPO" --no-banner --redact --baseline-path "$QA/sec/gitleaks-baseline.json" \
+  -r "$OUT/gitleaks.json" > "$OUT/gitleaks.txt" 2>&1
+note gitleaks $? "$(grep -oE 'leaks found: [0-9]+|no leaks found' "$OUT/gitleaks.txt" | tail -1) (new since baseline)"
+
+# 4. Code patterns. Triaged false positives are listed in qa/sec/README.md.
+bandit -q -r "$REPO/backend/apps" "$REPO/backend/config" -x '*/tests/*,*/migrations/*' -ll > "$OUT/bandit.txt" 2>&1
+note bandit $? "$(grep -c '^>> Issue' "$OUT/bandit.txt") issues (medium+)"
+semgrep scan --config p/django --config p/python --config p/react --config p/typescript --config p/secrets \
+  --metrics=off --quiet --json -o "$OUT/semgrep.json" \
+  "$REPO/backend/apps" "$REPO/backend/config" "$REPO/src" "$REPO/app" "$REPO/web/src" > "$OUT/semgrep.err" 2>&1
+note semgrep $? "$("$PY" -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["results"]))' "$OUT/semgrep.json" 2>/dev/null || echo '?') results"
+
+# 5. Django's own production checklist, on the production settings. On a copy without
+#    backend/.env: decouple reads that file, and its DEBUG=True would switch on dev-only
+#    routes (the API schema) and hide what production really does.
+PROD="$(mktemp -d)"; trap 'rm -rf "$PROD"' EXIT
+rsync -a --exclude .env --exclude mediafiles --exclude '__pycache__' "$REPO/backend/" "$PROD/"
+(cd "$PROD" && env -i PATH="$PATH" HOME="$HOME" DJANGO_SETTINGS_MODULE=config.settings.production \
+  SECRET_KEY="$("$PY" -c 'import secrets; print(secrets.token_urlsafe(60))')" ALLOWED_HOSTS=api.yasante.com \
+  "$PY" -W ignore manage.py check --deploy) > "$OUT/check-deploy.txt" 2>&1
+note check-deploy $? "$(grep -c 'security\.W' "$OUT/check-deploy.txt") security warnings"
+
+if (( DYNAMIC )); then
+  curl -s -o /dev/null http://127.0.0.1:8000/ || { echo "backend is not running: qa/bin/env-up $RUN first"; exit 1; }
+  # 6. Fuzz every documented operation as a client; any 500 is a finding. Deletes and
+  #    sign-in routes are left out so the account under test survives the run.
+  token=$(curl -s -X POST http://127.0.0.1:8000/api/auth/login/ -H 'Content-Type: application/json' \
+    -d '{"email":"client@yasante.dev","password":"password123"}' | "$PY" -c 'import json,sys; print(json.load(sys.stdin)["accessToken"])')
+  (cd "$OUT" && st run "$REPO/openapi.yaml" --url http://127.0.0.1:8000 -H "Authorization: Bearer $token" \
+    -c not_a_server_error --max-examples 20 --exclude-method DELETE \
+    --exclude-path-regex '(/api/users/\{[^}]+\}/$|logout|/api/auth/)' --no-color \
+    --report-junit-path "$OUT/schemathesis.xml") > "$OUT/schemathesis.txt" 2>&1  # its cache stays in the run
+  note schemathesis $? "$(grep -oE 'Server error: [0-9]+' "$OUT/schemathesis.txt" | head -1)"
+  # 7. ZAP passive baseline of the site and the API. Locally the site comes from Vite, so
+  #    header alerts on it are about the dev server; production headers are checked in step 1's tests.
+  mkdir -p "$OUT/zap" && chmod 777 "$OUT/zap"
+  for target in "site http://localhost:5173/" "api http://localhost:8000/api/stylists/by-handle/braidsbyama/"; do
+    set -- $target
+    podman run --rm --network host -v "$OUT/zap:/zap/wrk:rw,Z" ghcr.io/zaproxy/zaproxy:stable \
+      zap-baseline.py -t "$2" -m 2 -r "$1.html" -J "$1.json" -I > "$OUT/zap/$1.txt" 2>&1
+    note "zap-$1" $? "$(grep -oE 'WARN-NEW: [0-9]+|FAIL-NEW: [0-9]+' "$OUT/zap/$1.txt" | paste -sd' ')"
+  done
+fi
+echo "raw output: $OUT"
