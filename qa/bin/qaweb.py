@@ -42,6 +42,9 @@ ALLOWED_HOSTS = {"admin.localhost", "localhost", "127.0.0.1"}
 ALLOWED_PORTS = {5173}
 # The seed data's photos are on Unsplash's image CDN: images may load from it, nothing else.
 IMAGE_HOSTS = {"images.unsplash.com"}
+# Photos uploaded during a run are served by the local backend (port 8000), a different
+# origin from the site, as they are in production; images may load from its /media/.
+MEDIA_PORT = 8000
 WINDOWS = ("lead", "helper", "visitor")
 SIZES = {"desktop": (1440, 900), "laptop": (1280, 800), "phone": (390, 844)}
 KEY_OK = re.compile(r"^((Control|Shift|Alt)\+)*(Enter|Escape|Tab|Backspace|Delete|ArrowUp|ArrowDown|ArrowLeft|ArrowRight|Home|End|PageUp|PageDown|Space|[a-z0-9/?])$")
@@ -111,8 +114,11 @@ class Browser:
 
         def guard(route):
             url = route.request.url
-            if allowed_url(url) or (route.request.method == "GET" and route.request.resource_type == "image"
-                                    and urlparse(url).scheme == "https" and urlparse(url).hostname in IMAGE_HOSTS):
+            u = urlparse(url)
+            image = route.request.method == "GET" and route.request.resource_type == "image"
+            if allowed_url(url) or (image and u.scheme == "https" and u.hostname in IMAGE_HOSTS) or (
+                    image and u.scheme == "http" and u.hostname in ALLOWED_HOSTS and u.port == MEDIA_PORT
+                    and u.path.startswith("/media/")):
                 route.continue_()
             else:
                 logs["net"].append(f"{now()} BLOCKED {route.request.method} {url[:200]}")
@@ -166,6 +172,13 @@ class Browser:
         self.size[window] = "desktop"
         return page
 
+    def pump(self):
+        # The sync API only dispatches browser events (guard, dialogs, network logging) inside
+        # a Playwright call. Between commands the page's requests would hang in `guard` until
+        # the next one, and the app's own timeouts fire ("That took too long", F21).
+        if self.pages:
+            next(iter(self.pages.values())).wait_for_timeout(20)
+
     def close(self):
         self.browser.close()
         self.pw.stop()
@@ -181,8 +194,14 @@ def serve(run_id, headed=False):
     srv.bind(str(sock_path))
     srv.listen(1)
     journal(d, {"cmd": "server_up", "headed": headed})
+    srv.settimeout(0.2)
     while True:
-        conn, _ = srv.accept()
+        try:
+            conn, _ = srv.accept()
+        except TimeoutError:
+            b.pump()
+            continue
+        conn.settimeout(None)
         with conn:
             data = b""
             while not data.endswith(b"\n"):

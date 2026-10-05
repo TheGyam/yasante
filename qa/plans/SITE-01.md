@@ -11,7 +11,7 @@ posting, Account); what staff see of it (waitlist entries, a flagged photo); and
 made in the app and answered on the web.
 **Time:** about 2 hours (part X starts an emulator).
 **Status:** dry-run by Claude on 05-10-2026 (`SETUP-site-dry`); the expectations below are
-what that run saw. Where a step says **Record**, write down what appears, word for word.
+what that run saw. Run by Antigravity and audited: `SITE-01-20261005-1642`. Where a step says **Record**, write down what appears, word for word.
 
 **Expected noise:** `GET /api/stylists/me/ -> 404` while Tola has no page yet (A5–A11) and
 for Efua (C1) is the site asking "is this person a stylist?". Not a FAIL.
@@ -358,7 +358,8 @@ time (the label is in `visible text`, e.g. `Tuesday 6 October, 09:00`; **record*
 T1). `C: swipe up`, `C: tapon "I accept QA Web Braids Tola"`, `C: tapon booking-send`,
 wait 4 s, `C: step X2b`. Server: `POST /api/bookings/ 201`.
 `qa/bin/bookings client@yasante.dev`: the newest ID is **B1**. **Record** whether the
-terms line mentions a deposit (Tola takes none).
+terms line mentions a deposit (Tola takes none; the label is in `tapon`'s echo). On
+06-10-2026 it still did: F30.
 
 **X3: Tola sees it on the web.** `V: open /requests --site`, `V: step X3`. Expect
 `Waiting for your answer` with `Efua Mensah · QA Knotless` and `Answer by …`.
@@ -389,7 +390,8 @@ Server: `…/decline/ 200`. `C: link "yasante:///bookings/<B2>"`, wait 3 s, `C: 
 `C: link "yasante:///looks/new"`, wait 3 s, `C: tapon look-pick`, wait 3 s,
 `C: tapon "Photo taken on" --nth=0`, wait 3 s, `C: step X6`. A crop screen comes up:
 **record** the shape of the crop box from `screen.png`, then `C: tapon CROP --exact`,
-wait 3 s. `C: swipe up` twice, `C: tapon "Say something about it"`,
+wait 3 s. `C: tapon "Knotless braids"` (under `What style is it?`; without a style
+`Post it` only says `Tag the style so people can find it.`), `C: swipe up` twice, `C: tapon "Say something about it"`,
 `C: type "QA duplicate check"` (`type` refuses unless the keyboard is up: tap the field
 first), `C: key BACK`, `C: tapon look-post`, wait 5 s, `C: step X6b`. If `Pick a username`
 shows instead: `C: tapon username-input`, `C: type "qa_efua"`,
