@@ -278,6 +278,15 @@ def pick(page, needle, flags, roles):
     return found[n - 1]
 
 
+def via_label(el):
+    """A checkbox or radio drawn as a card: the input is invisible to the pointer (opacity 0 or
+    pointer-events none) and its <label> takes the click, as it does for a person. Only then is
+    the label clicked, because a visible label can hold links (the 18-or-over tick's Terms)."""
+    styled_away = el.evaluate("""e => (e.type === 'checkbox' || e.type === 'radio') && !!e.closest('label')
+        && (getComputedStyle(e).opacity === '0' || getComputedStyle(e).pointerEvents === 'none')""")
+    return el.locator("xpath=ancestor::label[1]") if styled_away else None
+
+
 def check_where(page):
     if not allowed_url(page.url):
         raise Refused(f"the page is at {page.url}, outside the local servers")
@@ -312,7 +321,7 @@ def handle(b, window, cmd, args):
             page.wait_for_timeout(800)
             page.mouse.up()
         else:
-            el.click(timeout=5000)
+            (via_label(el) or el).click(timeout=5000)
         settle(page)
         b.accept_next.discard(window)  # one click, one pop-up at most
         entry["hit"] = label
@@ -354,7 +363,11 @@ def handle(b, window, cmd, args):
     elif cmd in ("check", "uncheck"):
         check_where(page)
         el = pick(page, words[0], flags, ("checkbox", "switch", "radio"))
-        el.check(timeout=5000) if cmd == "check" else el.uncheck(timeout=5000)
+        card = via_label(el)
+        if card is None:
+            el.check(timeout=5000) if cmd == "check" else el.uncheck(timeout=5000)
+        elif el.is_checked() != (cmd == "check"):
+            card.click(timeout=5000)
         settle(page)
         out = f"{cmd}ed {words[0]!r}: now {'on' if el.is_checked() else 'off'}"
     elif cmd == "upload":
@@ -438,6 +451,14 @@ def step(b, window, page, step_id, note):
                 if part and not (tag == "message" and el.locator("xpath=ancestor::main").count()):
                     shown.append(f"[{tag}]")
                     shown += part
+    # The browser's own form check ("Please include an '@'…") is a bubble no screenshot shows;
+    # :user-invalid holds only fields someone typed in or tried to submit.
+    invalid = page.evaluate("""() => [...document.querySelectorAll(':user-invalid')].map(e =>
+        ((e.labels && e.labels[0] && e.labels[0].innerText) || e.name || e.type).trim() + ': ' + e.validationMessage)""")
+    if invalid:
+        (sd / "invalid.txt").write_text("\n".join(invalid) + "\n")
+        shown = ["[browser check]"] + invalid + shown
+        lines = ["[browser check]"] + invalid + lines
     summary_lines = shown or lines
     logs = b.logs[window]
     net, con = logs["net"][:], logs["console"][:]
