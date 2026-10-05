@@ -460,6 +460,7 @@ def step(b, window, page, step_id, note):
         shown = ["[browser check]"] + invalid + shown
         lines = ["[browser check]"] + invalid + lines
     summary_lines = shown or lines
+    wide = page.evaluate("() => [document.documentElement.scrollWidth, window.innerWidth]")
     logs = b.logs[window]
     net, con = logs["net"][:], logs["console"][:]
     logs["net"].clear()
@@ -476,6 +477,7 @@ def step(b, window, page, step_id, note):
     out = [f"== step {step_id} [web:{window}] -> {sd.relative_to(QA)}  ({now()[11:23]})",
            f"   url: {page.url}   viewport: {b.size[window]}",
            f"   screen.png sha256 {files['screen.png'][:16]}…",
+           *([f"   sideways scroll: the page is {wide[0]}px wide in a {wide[1]}px window"] if wide[0] > wide[1] else []),
            "   visible text:" if not shown else "   visible text (dialogs, menus, messages, then main content; the sidebar is in visible.txt):"]
     out += [f"     | {l[:160]}" for l in summary_lines[:80]]
     if len(summary_lines) > 80:

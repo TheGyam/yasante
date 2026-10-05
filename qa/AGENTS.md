@@ -120,7 +120,10 @@ Each capture lists the screen's **testIDs**. They are the steadiest targets
 To type into a field: `qadb tapon <testID or label>`, then `qadb type "…"`. When the
 keyboard covers the element you name, `tapon` closes the keyboard first and says
 `closed the keyboard first`; that's expected.
-`qadb type` doesn't clear the field; `qadb clearfield` empties the focused one.
+`qadb type` doesn't clear the field; `qadb clearfield` empties the focused one. Both
+refuse when no field has the keyboard up: tap the field first. (Keys typed at a screen
+with no field reach the dev client's shortcuts; on 05-10-2026 that opened Android
+Settings.)
 `qadb type` reads the field back afterwards:
 - **`TYPE_MISMATCH`**: what landed isn't what you typed. **Never submit it.**
   `qadb clearfield`, type again, and note it under Other observations.
@@ -192,7 +195,10 @@ there, but the rest does: one agent, only the tools in section 3, evidence for e
   last step, with its status) and `console.txt`, and opens the step's section in the
   report, as `qadb step` does. A request that got no answer shows as `-> FAILED <reason>`;
   `net::ERR_ABORTED` means the page cancelled it itself (normal when it moves on), any other
-  reason is worth a line under Other observations. Its summary shows open dialogs, menus and messages first,
+  reason is worth a line under Other observations. A form the browser itself refused
+  (an email with no `@`) shows first as `[browser check]` with the browser's message
+  (also in `invalid.txt`): no screenshot shows that bubble. A page wider than its window
+  adds a `sideways scroll:` line. Its summary shows open dialogs, menus and messages first,
   then the main content; the sidebar is in `visible.txt`. Toasts fade after a few seconds,
   so capture straight after the action.
 - **Browser pop-ups** (`confirm()`: "Remove this from your menu?") get **Cancel** from
