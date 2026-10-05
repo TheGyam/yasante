@@ -43,4 +43,5 @@
 3. [ ] Dry-run SITE-01, then Antigravity runs it (its parts A–B are the stylist web studio's own security: address privacy, a client on the studio).
 4. [ ] Antigravity: STAFF-02 (after PR #6 is merged, or it re-confirms F17/F20).
 5. [ ] Antigravity: FIXES-01, NEW-01, NEW-02 (NEW-01/02 need a pull for upstream `2ac6306`'s stylist booking history and "send a look with a request").
-6. [ ] PHONE-01 when the phone is connected.
+6. [ ] PHONE-01 when the phone is connected. **Device is now the owner's Galaxy Tab A11+ 5G** (DEVICES.md): add a step that records the orientation and layout the app shows (the portrait lock is ignored on Android 16 large screens).
+7. [x] ~~05-10-2026 18:30~~ Device for phone runs is now the Galaxy Tab A11+ 5G tablet. Harness checked: `qadb` taps by UI-tree bounds and treats any real device the same; the APK has arm64. One fix: `qadb swipe` took its size from `wm size`, which ignores rotation, so on a tablet held upright `swipe left` started off the screen. It now reads the current display size (checked on an emulator turned to landscape: `wm size` 1080x2400, current 2400x1080).

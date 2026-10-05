@@ -459,7 +459,9 @@ def cmd_key(name):
 
 def cmd_swipe(direction):
     require_foreground({PKG}, "swipe")
-    w, h = map(int, re.findall(r"(\d+)x(\d+)", adb("shell", "wm", "size"))[-1])
+    # The display's current size, not `wm size`: that one ignores rotation, so on the
+    # tablet (landscape by nature) held upright, swipes would start off the screen.
+    w, h = map(int, re.search(r"cur=(\d+)x(\d+)", adb("shell", "dumpsys", "window", "displays")).groups())
     cx, cy = w // 2, h // 2
     d = {"up": (cx, int(h * .75), cx, int(h * .25)), "down": (cx, int(h * .25), cx, int(h * .75)),
          "left": (int(w * .8), cy, int(w * .2), cy), "right": (int(w * .2), cy, int(w * .8), cy)}
