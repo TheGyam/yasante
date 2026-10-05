@@ -292,6 +292,10 @@ def start_one(d, alias, serial):
     # phone must reach 8082 as-is; 8081 is forwarded too for the dev client's default.
     adb("reverse", "tcp:8082", "tcp:8082")
     adb("reverse", "tcp:8081", "tcp:8082")
+    # Photos posted on the website carry http://localhost:8000/… links; emulators have
+    # nothing on 8000, so they can load them as-is.
+    if serial.startswith("emulator-"):
+        adb("reverse", "tcp:8000", "tcp:8000")
     info["alias"] = alias
     (d / f"device-{alias}.json").write_text(json.dumps(info, indent=2))
     if len(run_devices()) == 1:
@@ -323,6 +327,12 @@ def cmd_recover():
         "-c", "android.intent.category.LAUNCHER", "-p", PKG)
     time.sleep(1)
     fg = foreground()
+    # A settings page the app itself opened sits in Yasante's own task, so bringing the
+    # task forward shows it again; one BACK closes it.
+    if fg == "com.android.settings":
+        adb("shell", "input", "keyevent", "4")
+        time.sleep(1)
+        fg = foreground()
     journal({"cmd": "recover", "foreground_after": fg})
     print(f"foreground now: {fg}")
 
@@ -397,6 +407,16 @@ def keyboard_top():
     return int(m.group(2)) if m else None
 
 
+def require_keyboard(what):
+    """Keys sent with no field to take them reach the dev client's debug shortcuts: on
+    05-10-2026 a caption typed onto a screen with no focused field opened Android's
+    'Display over other apps' settings. Only type when a field has the keyboard up."""
+    if "isVisible=true" not in adb("shell", "dumpsys", "window", "InputMethod", check=False):
+        journal({"cmd": "REFUSED", "what": what, "reason": "no keyboard"})
+        raise Refused(f"{what}: no text field has the keyboard. Tap the field first "
+                      "(`qadb tapon <field>`), capture a step if unsure, then try again")
+
+
 def focused_field():
     try:
         for n in ui_tree().iter("node"):
@@ -416,6 +436,7 @@ def cmd_type(text):
     if not text:
         raise Refused("nothing to type: the text is empty (did a command before this print nothing?)")
     time.sleep(0.4)  # let a field that was just tapped take focus
+    require_keyboard("type")
     for i in range(0, len(text), 4):
         adb("shell", "input", "text", shlex.quote(text[i:i + 4].replace(" ", "%s")))
         time.sleep(0.12)
@@ -439,6 +460,7 @@ def cmd_type(text):
 def cmd_clearfield():
     """Empties the focused field: select all, delete."""
     require_foreground({PKG}, "clearfield")
+    require_keyboard("clearfield")
     adb("shell", "input", "keycombination", "113", "29")  # CTRL+A
     adb("shell", "input", "keyevent", "67")
     field = focused_field()
