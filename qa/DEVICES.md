@@ -6,8 +6,10 @@ nobody has to keep it flat or dismiss popups, and two can run side by side (clie
 stylist). The **owner's phone** is for what an emulator cannot show, gathered into one
 device plan that runs now and then.
 
-**From 05-10-2026 the "phone" is the owner's Samsung Galaxy Tab A11+ 5G tablet**, not
-the S948B used for the September runs. Plans keep saying `Device: phone`, and it is just
+**From 05-10-2026 the owner has two devices for this: a Samsung Galaxy S23 Ultra (phone)
+and a Galaxy Tab A11+ 5G (tablet)**, not the S948B used for the September runs. The S23
+Ultra is the default for phone plans (a phone screen keeps the portrait lock); the tablet
+is for the large-screen layout (PHONE-01 part T). The notes below are about the tablet. Plans keep saying `Device: phone`, and it is just
 as personal: every rule in `AGENTS.md` §1 applies, and `qadb` treats it like any other
 real device. `qadb start` records its model and Android version in `device.json`. What the
 switch changes:
@@ -63,6 +65,7 @@ autofill off. TheGyam's dev-client APK (`qa/apk/dev-client.apk`, gitignored) inc
 
 - Each plan says **Device: emulator** or **Device: phone** at the top.
 - Emulator plans can be run end to end unattended.
-- `PHONE-01` (to write) gathers the phone-only rows above into one session with the owner
-  present: confirm F3, feel the scrolling, one sign-up with the real keyboard and password
-  prompt, one yasante.com link, one camera photo, one background kill.
+- `PHONE-01` gathers the phone-only rows above into one session on the S23 Ultra with the
+  owner present: security first (links at someone else's data, the session, sign-out,
+  Samsung Pass on password fields, the camera letting go), then F3 on real hardware, the
+  real keyboard, one yasante.com link, background, and feel; the tablet is its part T.
