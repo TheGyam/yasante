@@ -51,7 +51,8 @@ qa/
 | SETTINGS-01 | settings, notifications, privacy, data download, FAQs, policies, reports and appeals, sign-out (F1), delete account | written (1 emulator) |
 | FIXES-01, NEW-01, NEW-02 | rechecks of upstream's fixes; new booking and discovery features | written (emulators) |
 | STAFF-01 | staff workspace: sign-in, two-factor, recovery codes, Today, search, people records and hidden details, export, quick edit, errors, push notifications, a moderator's limits, sign-in limits | written (browser), dry-run by Claude |
-| PHONE-01 | the phone-only checks: links at someone else's data, session and sign-out, Samsung Pass, camera, F3 on real hardware, background, feel; tablet layout | written (S23 Ultra; owner at the start and, after an explicit wait, at the end), not yet run |
+| PHONE-01 | the phone-only checks: links at someone else's data, session and sign-out, Samsung Pass, camera, F3 on real hardware, background, feel; tablet layout | run and audited (`PHONE-01-20261006-0153`): security held; F32 new; `qadb recover` fixed |
+| SAVE-01 | F31 on the phone: a saved look next to an unsaved one, saving one and coming back, refresh, saving twice | written (S23 Ultra, owner throughout), not yet run |
 | SITE-01 | yasante.com: public pages, waitlist, stylist pages, policies; a stylist's web sign-up, set-up and studio (menu, hours, payments, posting, address privacy); a request from the app answered on the web | run and audited (`SITE-01-20261005-1642`): address privacy held end to end; F27, F29 again, new F30; A5/A11b were a `qaweb` bug (fixed) |
 | STAFF-02 | app ↔ workspace: report → hide → appeal → overturn, product approval, a tip of the day, review report | written (2 emulators + browser), workspace side dry-run by Claude |
 
