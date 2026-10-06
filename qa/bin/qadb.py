@@ -323,8 +323,15 @@ def cmd_launch():
 
 
 def cmd_recover():
-    adb("shell", "am", "start", "-a", "android.intent.action.MAIN",
-        "-c", "android.intent.category.LAUNCHER", "-p", PKG)
+    # What tapping the app's icon sends: its launcher activity by name, NEW_TASK |
+    # RESET_TASK_IF_NEEDED, so the running task comes forward where it was. Without the
+    # name, `am start` resolves nothing (no DEFAULT category): a silent no-op on the
+    # emulators, an error on the S23 Ultra (PHONE-01 B1, S3b).
+    out = adb("shell", "cmd", "package", "resolve-activity", "--brief",
+              "-c", "android.intent.category.LAUNCHER", PKG)
+    component = out.strip().splitlines()[-1]
+    adb("shell", "am", "start", "-n", component, "-a", "android.intent.action.MAIN",
+        "-c", "android.intent.category.LAUNCHER", "-f", "0x10200000")
     time.sleep(1)
     fg = foreground()
     # A settings page the app itself opened sits in Yasante's own task, so bringing the

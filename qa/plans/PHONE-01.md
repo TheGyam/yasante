@@ -9,7 +9,8 @@ sign-up with the real keyboard), and how the app feels.
 **Time:** about 30 minutes with the owner at the start, about 40 unattended, and 10 with
 the owner at the end (whenever they come back).
 **Status:** written 05-10-2026 from the code and DEVICES.md; reordered the same day
-around the owner's time; not yet run. Exact wording on Samsung's own prompts is unknown:
+around the owner's time. **Run 06-10-2026** (`PHONE-01-20261006-0153`, Antigravity) and
+audited: security held; F31 and F32 are candidates; P3a, S1, S3, L7 and E1 fixed below. Exact wording on Samsung's own prompts is unknown:
 where a step says **Record**, write down what appears, word for word.
 
 Read `qa/AGENTS.md` first, and section 1 twice: **this is the owner's own phone.** Its
@@ -84,8 +85,9 @@ may come up: `qadb tapon permission_deny_button`. `qadb link "yasante:///"`, wai
 `qadb step P2`. Expect the welcome screen (`Get started`, `I already have an account`).
 
 **P3: ROUTING GATE.** `qadb tapon "I already have an account"`, `qadb tapon email-input`,
-`qadb type "naomi.grant@yasante.dev"`, `qadb tapon password-input`, `qadb step P3a`,
-`qadb type "password123"`, `qadb tapon login-button`, wait 5 s, `qadb step P3b`.
+`qadb type "naomi.grant@yasante.dev"`, `qadb tapon password-input`,
+`qadb type "password123"`, `qadb step P3a` (the keyboard must be on screen: the first run
+captured before it came up), `qadb tapon login-button`, wait 5 s, `qadb step P3b`.
 **Server check:** `grep '"POST /api/auth/login/' qa/runs/<RUN>/server.log | tail -1`
 shows `200` from the last minute. **No line: stop the whole run.** Expect Home
 (`Hey Naomi`).
@@ -161,7 +163,8 @@ If the lock screen or anything else is in front instead: see "When the owner is 
 
 ## S1: Restart keeps you signed in
 
-**S1.** `qadb stop`, `qadb launch`, wait 20 s, `qadb step S1`. Expect Home as Naomi. The
+**S1.** `qadb stop`, `qadb launch`, wait 20 s, `qadb step S1`. (The dev client may land on
+`Unmatched Route`, its own launch URL; `qadb tapon "Go back"` and capture `S1b`. Not a bug.) Expect Home as Naomi. The
 login count must not have gone up (the app kept its token on the phone). A refresh
 (`POST /api/auth/refresh-token/ 200`) is fine; quote any.
 
@@ -197,7 +200,8 @@ appointment; **record** what shows. No `POST` may follow (quote the step's serve
 screen is worth a line). `qadb link "yasante:///"` to go home.
 
 **L7: yasante.com.** `qadb link "https://yasante.com/braidsbyama"`, wait 4 s,
-`qadb step L7`. The dev client usually doesn't take web links (they need the signed
+`qadb step L7`. `qadb link` hands the link to Yasante by name, so this only shows the app
+routes the path, not that Android sends a tapped link to the app. The dev client usually doesn't take web links (they need the signed
 release build and Android's link check, see DEVICES.md), so **record** what happens: the
 app's own screen, nothing, or a refusal from `qadb`. Not a FAIL either way. If anything
 outside Yasante comes to the front, `qadb recover` once and say so; if that doesn't bring
@@ -213,7 +217,8 @@ Expect Home as a guest (`Hey there`). **Server check:** the same count, up by on
 `200`. `qa/bin/dbcheck naomi.grant@yasante.dev`: **record** `refresh_tokens issued=… revoked=…`
 (revoked should have gone up since P3). No new logout line: **FAIL** (F1 is back).
 
-**S3: Signed out stays signed out.** `qadb stop`, `qadb launch`, wait 20 s, `qadb step S3`.
+**S3: Signed out stays signed out.** `qadb stop`, `qadb launch`, wait 20 s, `qadb step S3`
+(on `Unmatched Route`, `Go back` as in S1).
 Expect the guest Home or the welcome screen, **no** `Naomi` anywhere. `qadb key BACK`,
 wait 2 s, `qadb step S3b`: the back gesture must not bring back any of Naomi's screens
 (if `qadb` says `OUTSIDE_APP` because BACK left the app, run `qadb recover` and say so).
@@ -228,7 +233,8 @@ for a clear yes**. The backend and Metro stay up meanwhile; don't run `env-down`
 
 ## E: How it feels, then tidy up
 
-**E1.** Record the owner's reply and the time. Sign Naomi in as in P3 (the owner answers
+**E1.** Record the owner's reply and the time. Sign Naomi in as in P3 (`I already have an
+account`; the route is `yasante:///auth/login`, not `/auth/sign-in`) (the owner answers
 any prompt), `qadb step E1`: Home as Naomi.
 
 **E2.** `qadb link "yasante:///looks"`, wait 4 s, `qadb step E2`. `qadb swipe up` five

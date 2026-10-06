@@ -69,3 +69,10 @@ autofill off. TheGyam's dev-client APK (`qa/apk/dev-client.apk`, gitignored) inc
   owner present: security first (links at someone else's data, the session, sign-out,
   Samsung Pass on password fields, the camera letting go), then F3 on real hardware, the
   real keyboard, one yasante.com link, background, and feel; the tablet is its part T.
+- **PHONE-01 results (06-10-2026, S23 Ultra, Android 16):** F3 doesn't happen on the
+  phone. Sign-out reaches the server. The session survives 10+ minutes in the background
+  (same process) and a restart. The camera lets go after BACK. Samsung's first
+  save-password prompt offers only `Not now`, the second offers `Never`, and after `Never`
+  it didn't come back. Still open: whether Samsung's keyboard suggests words over a password
+  field (not captured), and `yasante.com` links (`qadb link` names the app, so L7 can't test
+  Android's link check). Feel: the owner saw nothing strange.
