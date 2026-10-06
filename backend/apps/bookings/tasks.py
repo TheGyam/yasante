@@ -78,7 +78,7 @@ def send_reminders(now=None):
                 b,
                 "unconfirmed",
                 f"{first} hasn’t confirmed",
-                f"{_when(b.scheduled_for, b)}. You might message them to check.",
+                f"{_when(b.scheduled_for, b)}. We’ve asked them. If they say yes, it shows on Today.",
                 category="reminders",
             )
         local, here = _local(b.scheduled_for, b), _local(now, b)
