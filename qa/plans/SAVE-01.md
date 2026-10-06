@@ -6,7 +6,9 @@ you've saved the look or not. The small bookmark under the photo is meant to fil
 not until the feed reloads. The code says so; nobody has seen a saved look on screen yet.
 **Time:** about 15 minutes, **with the owner the whole time**. The question is what a
 person sees at a glance, so the owner's eye is the evidence, with the screenshots.
-**Status:** written 06-10-2026 from the code and the seed; not yet run.
+**Status:** written 06-10-2026 from the code and the seed. **Run and audited 06-10-2026**
+(`SAVE-01-20261006-0320`): F31 confirmed. B2's `--nth` and caption check, and A3's way
+back to Home, fixed below.
 
 Read `qa/AGENTS.md` first, and section 1 twice: **this is the owner's own phone.**
 
@@ -89,7 +91,8 @@ tell which of the two you've saved?" Quote them. **Record** both bookmarks and t
 **Expect:** A1 and A2 look different. If the photo bookmark is drawn the same in both,
 that part of F31 is **confirmed**.
 
-**A3: The Home grid.** `qadb link "yasante:///"`, wait 4 s, `qadb step A3`. The grid of
+**A3: The Home grid.** A link to `yasante:///` leaves A1's and A2's pages on top, so
+`qadb tapon Back` twice first, then wait 4 s, `qadb step A3`. The grid of
 small tiles has only a photo bookmark (no row). `qadb find "Funmi"`: if her tile is on
 screen, ask the owner whether it looks saved next to the tiles around it, and quote them.
 If it isn't, `qadb swipe up` and `find` again, **at most three times**, capturing `A3b`,
@@ -106,10 +109,11 @@ Expect Ruth's card first, `Saved by 5 people` in the summary.
 **B2: Open the save sheet.** Save from the photo bookmark on **Ruth's** card:
 `qadb find "Save to a collection"` lists both kinds (the row bookmark's label contains the
 same words); `--exact` keeps only the photo bookmarks. Tap the first one (Ruth's card is
-on top): `qadb tapon "Save to a collection" --exact --nth=1`, wait 2 s,
+on top; `--nth` counts from 0): `qadb tapon "Save to a collection" --exact --nth=0`, wait 2 s,
 `qadb step B2`. Expect `Save to a collection` with a `Saved` row (`save-to-e0a1fbe2-…`).
-If it opened for any look but Ruth's (check the caption at the top), `qadb key BACK`, mark
-B2 BLOCKED and stop part B.
+The sheet doesn't name the look, so check the tap instead: the `tapon` echo must give
+coordinates inside Ruth's card in B1's `ui.xml`. If not, `qadb key BACK`, mark B2 BLOCKED
+and stop part B.
 
 **B3: Save it.** `qadb tapon save-to-e0a1fbe2-6099-52e4-aaac-9527fbaac975`. The sheet shows a
 tick and closes itself. Wait 3 s, `qadb step B3`. **Server check:** one

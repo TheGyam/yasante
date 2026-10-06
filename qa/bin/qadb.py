@@ -379,9 +379,12 @@ def cmd_tapon(needle, *flags):
     hits = match(ui_tree(), needle, exact)
     if not hits:
         raise Refused(f"no element matching '{needle}' on screen. Capture a step and look.")
+    listing = "\n".join(f"  [{i}] {h['text'] or h['desc'] or h['id']} @ {h['center']}" for i, h in enumerate(hits))
     if len(hits) > 1 and nth is None:
-        listing = "\n".join(f"  [{i}] {h['text'] or h['desc'] or h['id']} @ {h['center']}" for i, h in enumerate(hits))
         raise Refused(f"{len(hits)} elements match '{needle}'; pick one with --nth=N:\n{listing}")
+    # --nth counts from 0, as the listing does (SAVE-01 B2 asked for --nth=1 of one match).
+    if nth is not None and not 0 <= nth < len(hits):
+        raise Refused(f"--nth={nth} but only {len(hits)} match '{needle}' (counted from 0):\n{listing}")
     h = hits[nth or 0]
     # The UI tree still lists a button the keyboard covers, so the tap would land on a
     # key and type a stray letter into the field (28-09-2026, sign-in). A person would
