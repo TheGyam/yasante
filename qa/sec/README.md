@@ -26,6 +26,12 @@ Raw output goes to `qa/runs/<RUN>/sec/` (gitignored); `SUMMARY.txt` has one line
 | `test_input.py` | bodies of the wrong shape get a 4xx, not a crash |
 | `test_calendar.py` | line breaks in names can't add lines to someone's `.ics` |
 | `test_rendering.py` | the server-written HTML of yasante.com (title, meta, JSON-LD, page data) keeps user text as text; `qaweb` can't see this layer locally, since Vite serves the pages there |
+| `test_media_origin.py` | a look's photo and an avatar must be the person's own upload, not any address (F33) |
+| `test_own_record.py` | her own profile update and sign-up can't set staff, roles, verified flags, phone or id; a new email must be proved again |
+| `test_limits.py` | unauthenticated doors are rate limited: sign-in (control), forgot and reset password (F34) |
+| `test_uploads.py` | HTML, SVG, empty and truncated "photos" get a 400 and store nothing; a decompression bomb (F35) |
+| `test_devices.py` | push tokens can't be deleted or (F36, candidate) taken over by another account |
+| `test_staff_csrf.py` | every write under the staff workspace's `/data/`, and staff sign-in, needs the CSRF token |
 | `pip-audit`, `osv-scanner` | published advisories for the backend, app and website dependencies |
 | `gitleaks` | secrets in git history; only hits not in `gitleaks-baseline.json` count |
 | `bandit`, `semgrep` | risky code patterns |
