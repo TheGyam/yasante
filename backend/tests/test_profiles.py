@@ -134,3 +134,31 @@ def test_a_postcode_puts_them_on_the_map_privately(api, make_user, monkeypatch):
 def test_tips_come_from_the_server(api):
     tips = api().get("/api/tips/").json()
     assert len(tips) >= 20 and all(t["text"] for t in tips)
+
+
+def test_her_data_comes_as_a_file_with_everything_of_hers(api, make_user, make_stylist, make_look, book, mailoutbox):
+    import json
+
+    from apps.planner.models import Collection
+    from apps.profiles.tasks import collect_user_data
+
+    user = make_user(name="Efua Mensah")
+    make_look(user, caption="Two weeks in")
+    Collection.objects.create(user=user, name="Next time")
+    profile = make_stylist()
+    book(user, profile)
+    api(user).post(f"/api/users/{user.pk}/export/")
+
+    mail = mailoutbox[-1]
+    assert mail.to == [user.email] and "Efua" in mail.body
+    name, content, kind = mail.attachments[0]
+    assert name == "yasante-data.json" and kind == "application/json"
+    data = json.loads(content)
+    assert data["account"]["email"] == user.email and "password" not in data["account"]
+    assert [look["caption"] for look in data["looks"]] == ["Two weeks in"]
+    assert [c["name"] for c in data["collections"]] == ["Next time"]
+    assert len(data["bookings_as_client"]) == 1
+    # The stylist's copy of her bookings leaves out where the client lives.
+    stylist_data = collect_user_data(profile.account)
+    assert stylist_data["bookings_as_stylist"] and "address" not in stylist_data["bookings_as_stylist"][0]
+    assert stylist_data["stylist_menu"]
