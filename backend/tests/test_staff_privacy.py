@@ -68,9 +68,8 @@ def test_revealing_needs_the_permission(make_user):
     assert client.get("/data/" + phone["revealPath"]).json() == {"value": person.phone}
 
 
-def test_saving_without_revealing_keeps_the_hidden_value(make_user):
-    client, _ = staff_client(make_user, superuser=True)
-    person = make_user(name="Ama")
+def form_as_shown(client, person):
+    """The body the workspace sends back for a record saved without touching anything."""
     form = client.get(f"/data/forms/accounts/user/{person.pk}/").json()
     body = {"_revision": form["revision"]}
     for section in form["sections"]:
@@ -85,6 +84,13 @@ def test_saving_without_revealing_keeps_the_hidden_value(make_user):
                 body[f"{field['name']}_0"], body[f"{field['name']}_1"] = value
             else:
                 body[field["name"]] = "" if value is None else value
+    return body
+
+
+def test_saving_without_revealing_keeps_the_hidden_value(make_user):
+    client, _ = staff_client(make_user, superuser=True)
+    person = make_user(name="Ama")
+    body = form_as_shown(client, person)
     body["name"] = "Ama Mensah"
     before = person.phone
     assert client.post(f"/data/forms/accounts/user/{person.pk}/", body).status_code == 200
@@ -136,3 +142,40 @@ def test_retention_forgets_who_then_deletes(make_user, make_stylist):
     assert not SearchLog.objects.filter(pk=ancient.pk).exists()
     view.refresh_from_db()
     assert view.viewer is None
+
+
+def test_history_records_only_what_was_changed(make_user):
+    # roles has a callable default, so Django compared it with a hidden "initial-" copy the
+    # workspace never sends: every save logged "Changed Name and Roles."
+    client, _ = staff_client(make_user, superuser=True)
+    person = make_user(name="Ama")
+    body = form_as_shown(client, person)
+    body["name"] = "Ama Mensah"
+    assert client.post(f"/data/forms/accounts/user/{person.pk}/", body).status_code == 200
+    entry = LogEntry.objects.filter(object_id=str(person.pk)).latest("action_time")
+    assert entry.get_change_message() == "Changed Name."
+    body = form_as_shown(client, person)
+    body["roles"] = "client,stylist"
+    client.post(f"/data/forms/accounts/user/{person.pk}/", body)
+    assert LogEntry.objects.filter(object_id=str(person.pk)).latest("action_time").get_change_message() == "Changed Roles."
+
+
+def test_view_only_staff_see_yes_and_no(make_user):
+    # Read-only booleans arrive from the admin as an icon; stripping the tag left nothing.
+    client, staff = staff_client(make_user)
+    staff.user_permissions.add(Permission.objects.get(codename="view_user"))
+    person = make_user(name="Ama & Co")
+    shown = fields(client.get(f"/data/forms/accounts/user/{person.pk}/"))
+    assert shown["is_active"]["kind"] == "readonly" and shown["is_active"]["value"] == "Yes"
+    assert shown["is_staff"]["value"] == "No"
+    assert shown["name"]["value"] == "Ama & Co"
+
+
+def test_a_stylists_address_is_there_to_reveal(make_user, make_stylist):
+    client, _ = staff_client(make_user, superuser=True)
+    profile = make_stylist()
+    type(profile).objects.filter(pk=profile.pk).update(address="12 QA Road, Peckham, SE15 4QA")
+    address = fields(client.get(f"/data/forms/stylists/stylistprofile/{profile.pk}/"))["address"]
+    assert address["masked"] and address["hasValue"] and address["value"] == ""
+    shown = client.get("/data/" + address["revealPath"]).json()
+    assert shown["value"] == "12 QA Road, Peckham, SE15 4QA"

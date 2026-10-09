@@ -42,7 +42,9 @@ def decide(request, queue, object_id):
     if name not in actions or name not in ma.get_actions(request):
         raise PermissionDenied
     with transaction.atomic():
-        obj = ma.get_queryset(request).select_for_update().filter(pk=object_id, **filters).first()
+        # of=self: an admin's queryset may join nullable relations (reports join handled_by),
+        # and Postgres can't lock the nullable side of an outer join.
+        obj = ma.get_queryset(request).select_for_update(of=("self",)).filter(pk=object_id, **filters).first()
         if obj is None:
             return JsonResponse({"message": "This item was already reviewed. Refresh the queue."}, status=409)
         field = "moderation_status" if queue == "photos" else "status"
@@ -89,7 +91,7 @@ def undo(request):
         raise PermissionDenied
     ma, _, _, _ = queue_admin(request, data["queue"])
     with transaction.atomic():
-        obj = ma.get_queryset(request).select_for_update().get(pk=data["id"])
+        obj = ma.get_queryset(request).select_for_update(of=("self",)).get(pk=data["id"])
         if not ma.has_change_permission(request, obj):
             raise PermissionDenied
         if fingerprint(obj) != data["revision"]:

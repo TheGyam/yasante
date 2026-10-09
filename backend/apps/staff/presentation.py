@@ -1,5 +1,7 @@
 import hashlib
+import html
 import json
+import re
 from datetime import datetime
 from django import forms
 from django.db.models.expressions import BaseExpression
@@ -21,8 +23,18 @@ def queryset_revision(queryset, fields=()):
 
 
 
+# Django admin draws a read-only yes/no as an icon whose alt text is True, False or None.
+_BOOLEAN_ICON = re.compile(r'^<img src="[^"]*icon-(?:yes|no|unknown)[^"]*" alt="(True|False|None)">$')
+_BOOLEAN_TEXT = {"True": "Yes", "False": "No", "None": "—"}
+
+
 def text(value):
-    return strip_tags(str(value or ""))
+    """Plain text for the workspace, which escapes it itself: no tags, no &amp;."""
+    value = str(value or "")
+    icon = _BOOLEAN_ICON.match(value)
+    if icon:
+        return _BOOLEAN_TEXT[icon.group(1)]
+    return html.unescape(strip_tags(value))
 
 
 

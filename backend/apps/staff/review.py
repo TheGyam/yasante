@@ -70,7 +70,7 @@ def preview(request, queue, obj):
         data["facts"] = [f"{obj.review.rating}/5", obj.review.author_name, obj.review.booking.stylist_name]
     elif queue == "appeals":
         data.update(text=obj.body, content=content(request, obj.action.target))
-        data["facts"] = [obj.action.action, obj.action.reason, obj.author.name]
+        data["facts"] = [obj.action.get_action_display(), obj.action.reason, obj.author.name]
     elif queue == "stylist-checks":
         data.update(title=obj.account.name, text=obj.evidence)
         profile = getattr(obj.account, "stylistprofile", None)
