@@ -12,6 +12,7 @@ import { api } from '@/api';
 import { useAuth } from '@/features/auth';
 import { useUserStore } from '@/features/profile';
 import { useConsentStore, type ConsentPurpose } from '@/shared/config/consentStore';
+import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { confirm, notify } from '@/shared/ui/dialog';
 import { ListRow } from '@/shared/ui/ListRow';
@@ -48,6 +49,7 @@ export default function PrivacyScreen() {
   const styles = useStyles();
   const consents = useConsentStore(s => s.consents);
   const setConsent = useConsentStore(s => s.setConsent);
+  const router = useRouter();
   const { user, logout } = useAuth();
   const [busy, setBusy] = useState(false);
 
@@ -68,7 +70,7 @@ export default function PrivacyScreen() {
       await api.user.requestDataExport(userId);
       notify({
         title: 'Request sent',
-        message: 'We’ll email you a download link when your data is ready.',
+        message: 'We’ll email you a copy of everything we hold about you, as a file.',
       });
     }, 'Couldn’t send the request');
 
@@ -87,7 +89,10 @@ export default function PrivacyScreen() {
       // Nothing of hers stays on the phone either.
       useUserStore.getState().setHairProfile({});
       useUserStore.getState().setHairProfileOwner(null);
+      // Off this screen first, as signing out does, so nothing here asks for her data again.
+      router.dismissAll();
       await logout();
+      notify({ title: 'Your account is deleted', message: 'Thanks for being part of Yasante.' });
     }, 'Couldn’t delete your account');
   };
 

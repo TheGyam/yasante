@@ -97,6 +97,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/withPrivateActivities",
       [
         "expo-image-picker",
         {

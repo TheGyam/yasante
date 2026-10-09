@@ -16,7 +16,11 @@ if (Platform.OS !== 'web') {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
+      // A refusal (404, 403…) won't change on a second try; only no answer or a 5xx might.
+      retry: (failures, error) => {
+        const status = (error as { response?: { status?: number } }).response?.status ?? 0;
+        return failures < 2 && (status === 0 || status >= 500);
+      },
       // Dynamic staleTime based on query type
       staleTime: query => {
         const key = query.queryKey[0];

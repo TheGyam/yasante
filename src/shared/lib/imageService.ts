@@ -27,9 +27,17 @@ export async function requestMediaLibraryPermissions(): Promise<boolean> {
 }
 
 /**
+ * A profile photo is cropped square for its circle. Anything else stays whole: looks
+ * fill portrait frames from the full photo, and a crop would hide a re-posted photo
+ * from the stolen-portfolio check. (iOS crops only square anyway; `aspect` is Android's.)
+ */
+const CROP = (square: boolean) =>
+  square ? { allowsEditing: true, aspect: [1, 1] as [number, number] } : { allowsEditing: false };
+
+/**
  * Pick image from library
  */
-export async function pickImageFromLibrary(): Promise<ImagePickerResult | null> {
+export async function pickImageFromLibrary(square = false): Promise<ImagePickerResult | null> {
   const hasPermission = await requestMediaLibraryPermissions();
   if (!hasPermission) {
     throw new Error('Media library permission not granted');
@@ -37,8 +45,7 @@ export async function pickImageFromLibrary(): Promise<ImagePickerResult | null> 
 
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
-    allowsEditing: true,
-    aspect: [4, 3],
+    ...CROP(square),
     quality: 0.8,
   });
 
@@ -85,15 +92,14 @@ export async function pickImagesFromLibrary(limit = 20): Promise<ImagePickerResu
 /**
  * Take photo with camera
  */
-export async function takePhoto(): Promise<ImagePickerResult | null> {
+export async function takePhoto(square = false): Promise<ImagePickerResult | null> {
   const hasPermission = await requestCameraPermissions();
   if (!hasPermission) {
     throw new Error('Camera permission not granted');
   }
 
   const result = await ImagePicker.launchCameraAsync({
-    allowsEditing: true,
-    aspect: [4, 3],
+    ...CROP(square),
     quality: 0.8,
   });
 

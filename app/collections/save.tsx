@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Check, FolderHeart, FolderPlus } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
+import { useMarkLookSaved } from '@/features/looks';
 import {
   useAddToCollection,
   useCollections,
@@ -45,6 +46,7 @@ export default function SaveToCollectionScreen() {
 
   const { data: collections, isLoading } = useCollections();
   const add = useAddToCollection();
+  const markSaved = useMarkLookSaved();
   const create = useCreateCollection();
   const [newName, setNewName] = useState('');
   const [saved, setSaved] = useState<string>();
@@ -61,7 +63,10 @@ export default function SaveToCollectionScreen() {
     if (saved) return;
     try {
       await add.mutateAsync({ id, kind, refId, title, imageUri });
-      if (kind === 'look') track('save_look', { lookId: refId });
+      if (kind === 'look') {
+        markSaved(refId);
+        track('save_look', { lookId: refId });
+      }
       haptics.success();
       setSaved(id);
       // The tick has to be seen. Closing in the same breath as setting it meant the
