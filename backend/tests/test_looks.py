@@ -60,41 +60,44 @@ def test_likes_count_once_and_come_off(api, make_user, make_look):
     assert api(fan).get(f"/api/looks/{look.pk}/").json()["likeCount"] == 0
 
 
-def test_posting_needs_a_photo_and_a_style(api, make_user, styles):
-    me = api(make_user())
+def test_posting_needs_a_photo_and_a_style(api, make_user, styles, photo):
+    user = make_user()
+    me, uri = api(user), photo(user)
     assert me.post("/api/looks/", {"photoUri": "file:///local.jpg", "styles": ["knotless"]}).status_code == 400
-    no_style = me.post("/api/looks/", {"photoUri": "https://x.com/a.jpg", "styles": []})
+    no_style = me.post("/api/looks/", {"photoUri": uri, "styles": []})
     assert no_style.status_code == 400 and no_style.json()["message"] == "Tag the style"
     posted = me.post(
         "/api/looks/",
-        {"photoUri": "https://x.com/a.jpg", "styles": ["twists", "nonsense"], "hairTexture": "coily", "caption": " Two weeks in "},
+        {"photoUri": uri, "styles": ["twists", "nonsense"], "hairTexture": "coily", "caption": " Two weeks in "},
     )
     assert posted.status_code == 201
     assert posted.json()["styles"] == ["twists"] and posted.json()["caption"] == "Two weeks in"
 
 
-def test_a_stylist_is_credited_only_through_a_completed_booking(api, make_user, make_stylist, styles, book):
+def test_a_stylist_is_credited_only_through_a_completed_booking(api, make_user, make_stylist, styles, book, photo):
     from apps.bookings.models import Booking
 
     profile = make_stylist()
     client = make_user()
     booking = book(client, profile)
-    body = {"photoUri": "https://x.com/a.jpg", "styles": ["knotless"], "bookingId": booking["id"]}
+    body = {"photoUri": photo(client), "styles": ["knotless"], "bookingId": booking["id"]}
     not_yet = api(client).post("/api/looks/", body)
     assert not_yet.status_code == 400 and "completed booking" in not_yet.json()["message"]
     Booking.objects.filter(pk=booking["id"]).update(status="completed")
     credited = api(client).post("/api/looks/", body).json()
     assert credited["stylist"]["id"] == str(profile.account_id)
     assert credited["serviceName"] == "Knotless braids" and credited["price"] == 120
-    # Someone else can't use her booking.
-    assert api(make_user()).post("/api/looks/", body).status_code == 400
+    # Someone else can't use her booking, nor her photo.
+    stranger = make_user()
+    assert api(stranger).post("/api/looks/", {**body, "photoUri": photo(stranger)}).status_code == 400
+    assert api(stranger).post("/api/looks/", {"photoUri": body["photoUri"], "styles": ["knotless"]}).status_code == 400
 
 
-def test_a_stylists_own_post_credits_her_and_tags_her_service(api, make_stylist, styles):
+def test_a_stylists_own_post_credits_her_and_tags_her_service(api, make_stylist, styles, photo):
     profile = make_stylist()
     service = profile.menu_items.get(name="Cornrows")
     posted = api(profile.account).post(
-        "/api/looks/", {"photoUri": "https://x.com/a.jpg", "styles": ["cornrows"], "serviceId": str(service.pk)}
+        "/api/looks/", {"photoUri": photo(profile.account), "styles": ["cornrows"], "serviceId": str(service.pk)}
     ).json()
     assert posted["stylist"]["id"] == str(profile.account_id) and posted["price"] == 45
 
@@ -284,12 +287,14 @@ def test_top_comments_page_without_repeats_or_gaps(api, make_user, make_look):
     assert seen == _order(api(), look, limit=20)
 
 
-def test_a_live_stylist_can_post_her_back_catalogue(api, make_user, make_stylist, styles):
+def test_a_live_stylist_can_post_her_back_catalogue(api, make_user, make_stylist, styles, photo):
     """30 looks an hour stops a client long before it stops a stylist filling her page."""
-    look = {"photoUri": "https://x.com/a.jpg", "styles": ["knotless"]}
-    client = api(make_user())
+    user, profile = make_user(), make_stylist()
+    look = {"photoUri": photo(user), "styles": ["knotless"]}
+    client = api(user)
     answers = [client.post("/api/looks/", look).status_code for _ in range(31)]
     assert answers[:30] == [201] * 30 and answers[30] == 429
 
-    stylist = api(make_stylist().account)
+    stylist = api(profile.account)
+    look = {**look, "photoUri": photo(profile.account)}
     assert all(stylist.post("/api/looks/", look).status_code == 201 for _ in range(40))

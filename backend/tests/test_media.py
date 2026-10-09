@@ -125,3 +125,28 @@ def test_start_up_checkpoints_can_be_read_back(api):
     rows = client.get("/api/client-errors/").json()
     assert [r["checkpoint"] for r in rows] == ["js started"]  # crashes aren't listed
     assert rows[0]["platform"] == "ios" and rows[0]["launch"] == "ab12"
+
+
+def test_a_photo_must_be_her_own_upload_but_the_one_she_has_stays(api, make_user, make_stylist, settings):
+    settings.PUBLIC_BASE_URL = "https://api.yasante.com"  # an address URLField accepts, as in production
+    user = make_user()
+    type(user).objects.filter(pk=user.pk).update(avatar_uri="https://images.example.com/old.jpg")
+    user.refresh_from_db()
+    me = api(user).client
+    # The app sends the photo she already has with every save: that's not a new photo.
+    same = me.patch(f"/api/users/{user.pk}/", {"name": "Efua", "avatarUri": user.avatar_uri}, format="json")
+    assert same.status_code == 200, same.json()
+    elsewhere = me.patch(f"/api/users/{user.pk}/", {"avatarUri": "https://evil.example/me.jpg"}, format="json")
+    assert elsewhere.status_code == 400
+    someone_elses = _upload(api, make_user(), kind="avatar").json()["uri"]
+    assert me.patch(f"/api/users/{user.pk}/", {"avatarUri": someone_elses}, format="json").status_code == 400
+    mine = _upload(api, user, kind="avatar").json()["uri"]
+    assert me.patch(f"/api/users/{user.pk}/", {"avatarUri": mine}, format="json").status_code == 200
+    assert me.patch(f"/api/users/{user.pk}/", {"avatarUri": ""}, format="json").status_code == 200
+
+    stylist = make_stylist()
+    type(stylist).objects.filter(pk=stylist.pk).update(proof_photo_uri="https://images.example.com/proof.jpg")
+    page = api(stylist.account).client
+    kept = page.patch("/api/stylists/me/", {"bio": "New", "proofPhotoUri": "https://images.example.com/proof.jpg"}, format="json")
+    assert kept.status_code == 200
+    assert page.patch("/api/stylists/me/", {"avatarUri": "https://evil.example/a.jpg"}, format="json").status_code == 400

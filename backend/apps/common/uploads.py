@@ -11,7 +11,9 @@ photos for near-duplicates (the stolen-portfolio defence).
 """
 
 import io
+import re
 import uuid
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -32,6 +34,10 @@ from .schema import optional
 
 MAX_BYTES = 15 * 1024 * 1024
 MAX_EDGE = 2048
+# A 50-megapixel phone photo fits; a "bomb" (a small file of a huge, blank image)
+# doesn't. Decoding one holds about 3 bytes a pixel in memory.
+MAX_PIXELS = 60_000_000
+Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 FEED_WIDTH = 1080
 THUMB_WIDTH = 400
 # Hashes this close (of 64 bits) are the same photo, recompressed or lightly cropped.
@@ -83,6 +89,30 @@ def near_duplicate(phash, owner_id):
     return None
 
 
+# What media_url() hands out: a public copy (any size) or the owner-only view.
+_PUBLIC_PATH = re.compile(r"(uploads/[0-9a-f-]{36}/[0-9a-f]{32})(?:_w\d+)?\.jpg$")
+_PRIVATE_PATH = re.compile(r"/api/media/([0-9a-f-]{36})/?$")
+
+
+def own_media(user, uri, public=True):
+    """
+    The upload an address points at, if this person made it; None otherwise. Every
+    photo someone attaches comes through here, so it has been through /api/uploads/
+    (re-encoded, fingerprinted, moderated) and isn't someone else's upload or an
+    outside server that would see who looks at it.
+    """
+    path = urlsplit(str(uri or "")).path
+    match = _PUBLIC_PATH.search(path)
+    if match:
+        return Media.objects.filter(
+            owner=user, full_path=f"{match.group(1)}.jpg", visibility="public"
+        ).first()
+    match = _PRIVATE_PATH.search(path)
+    if match and not public:
+        return Media.objects.filter(owner=user, pk=match.group(1)).first()
+    return None
+
+
 def media_url(request, media, path):
     """
     Public copies are plain URLs; private ones go through the owner-only view. Both
@@ -122,8 +152,13 @@ class UploadView(APIView):
             return Response({"message": "That photo is too large"}, status=400)
         try:
             image = Image.open(upload)
+            # Read from the header, before anything is decoded.
+            if image.width * image.height > MAX_PIXELS:
+                return Response({"message": "That photo is too large"}, status=400)
             # Turn it the right way up before the orientation tag is dropped.
             image = ImageOps.exif_transpose(image)
+        except Image.DecompressionBombError:
+            return Response({"message": "That photo is too large"}, status=400)
         except (UnidentifiedImageError, OSError):
             return Response({"message": "That file isn’t a photo"}, status=400)
 

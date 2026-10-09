@@ -80,13 +80,17 @@ def test_verification_tier_comes_from_the_checks(api, make_stylist):
     assert "proofPhotoUri" not in page
 
 
-def test_a_stylists_proof_photo_joins_the_queue(api, make_stylist):
+def test_a_stylists_proof_photo_joins_the_queue(api, make_stylist, photo):
     from apps.stylists.models import Verification
 
     profile = make_stylist()
-    api(profile.account).patch("/api/stylists/me/", {"proofPhotoUri": "https://x.com/new-proof.jpg"})
+    me = api(profile.account)
+    # Only her own upload: not an outside address. A proof photo is a private one.
+    assert me.patch("/api/stylists/me/", {"proofPhotoUri": "https://x.com/new-proof.jpg"}).status_code == 400
+    proof = photo(profile.account, kind="proof")
+    assert me.patch("/api/stylists/me/", {"proofPhotoUri": proof}).status_code == 200
     check = Verification.objects.get(account_id=profile.account_id, type="proof_photo")
-    assert check.status == "pending" and check.evidence.endswith("new-proof.jpg")
+    assert check.status == "pending" and check.evidence == proof
 
 
 def test_policies_serve_the_current_published_version(api):

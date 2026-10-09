@@ -55,7 +55,7 @@ export interface paths {
         /**
          * @description POST /api/auth/forgot-password/
          *
-         *     Always returns 200 whether the email exists or not (timing-safe).
+         *     Always returns 200 whether the email exists or not.
          */
         post: operations["auth_forgot_password_create"];
         delete?: never;

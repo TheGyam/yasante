@@ -33,6 +33,16 @@ class UserUpdateSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=31, required=False)
     time_zone = serializers.CharField(max_length=64, required=False)
 
+    def validate_avatar_uri(self, value):
+        from apps.common.uploads import own_media
+
+        # A new photo is her own upload, never an outside address (see own_media). The
+        # one she already has comes back with every save, and stays.
+        user = self.context["user"]
+        if value and value != user.avatar_uri and own_media(user, value) is None:
+            raise serializers.ValidationError("Upload the photo first.")
+        return value
+
     def validate_time_zone(self, value):
         from apps.common.zones import is_zone
 

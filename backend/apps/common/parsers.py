@@ -5,6 +5,7 @@ so DRF serializers work with standard Python naming.
 
 import re
 
+from rest_framework.exceptions import ParseError
 from rest_framework.parsers import JSONParser
 
 
@@ -28,4 +29,8 @@ class CamelCaseJSONParser(JSONParser):
 
     def parse(self, stream, media_type=None, parser_context=None):
         data = super().parse(stream, media_type, parser_context)
+        # Every endpoint reads named fields. A list or a bare number is refused here,
+        # once, rather than crashing each view that calls request.data.get().
+        if not isinstance(data, dict):
+            raise ParseError("Send the details as a JSON object.")
         return _underscoreize(data)

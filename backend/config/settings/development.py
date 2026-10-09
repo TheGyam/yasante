@@ -12,6 +12,9 @@ DEBUG = True
 INSTALLED_APPS += ["debug_toolbar"]  # noqa: F405
 MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")  # noqa: F405
 INTERNAL_IPS = ["127.0.0.1"]
+# The debug toolbar runs inline scripts: report what CSP would block, block nothing.
+CSP_REPORT_ONLY = True
+
 DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": "apps.staff.middleware.show_debug_toolbar"}
 
 # Use eager Celery in dev so tasks run synchronously

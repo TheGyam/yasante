@@ -16,6 +16,7 @@ from apps.common.pagination import keyset_page
 from apps.common.people import person
 from apps.common.permissions import IsAuthenticatedOrReadOnly
 from apps.common.throttling import CommentThrottle, PostingThrottle, ReportThrottle
+from apps.common.uploads import media_url, own_media
 from apps.shelf.models import Product
 from apps.stylists.models import StylistProfile
 from django.contrib.contenttypes.models import ContentType
@@ -173,8 +174,8 @@ def create_look(request):
     """
     user = request.user
     body = request.data
-    photo_uri = str(body.get("photo_uri") or "").strip()
-    if not photo_uri.startswith(("http://", "https://")):
+    photo = own_media(user, body.get("photo_uri"))
+    if photo is None:
         return Response({"message": "A look needs a photo"}, status=400)
 
     wanted = body.get("styles") if isinstance(body.get("styles"), list) else []
@@ -212,10 +213,11 @@ def create_look(request):
     with transaction.atomic():
         look = Look.objects.create(
             author=user,
-            photo_uri=photo_uri,
-            thumb_uri=str(body.get("thumb_uri") or ""),
-            feed_uri=str(body.get("feed_uri") or ""),
-            photo_aspect=float(body.get("photo_aspect") or 0) or 1,
+            # Every size from the upload itself, never from what was sent.
+            photo_uri=media_url(request, photo, photo.full_path),
+            thumb_uri=media_url(request, photo, photo.thumb_path) if photo.thumb_path else "",
+            feed_uri=media_url(request, photo, photo.feed_path) if photo.feed_path else "",
+            photo_aspect=round(photo.width / photo.height, 4) if photo.height else 1,
             caption=str(body.get("caption") or "").strip()[:1000],
             visibility="private" if body.get("visibility") == "private" else "public",
             hair_texture=str(body.get("hair_texture") or "")[:20],
