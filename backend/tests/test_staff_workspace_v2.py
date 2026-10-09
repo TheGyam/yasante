@@ -211,3 +211,41 @@ def test_recovery_codes_can_be_counted_and_replaced_with_a_current_code(make_use
     fresh = client.post("/data/two-factor/codes/", {"code": code(factor.get_secret(), int(time.time()) // 30)}).json()["recoveryCodes"]
     assert len(fresh) == 10 and len(set(fresh)) == 10
     assert client.get("/data/two-factor/codes/").json()["remaining"] == 10
+
+
+def test_report_queue_decides_with_its_nullable_join(make_user, make_look):
+    # The reports admin joins the nullable handled_by; locking that join is refused by
+    # Postgres, which turned every Hide/Remove/Dismiss into a 500.
+    from django.contrib.contenttypes.models import ContentType
+    from apps.looks.models import Report
+
+    client, _ = staff_client(make_user, superuser=True)
+    reporter, author = make_user(), make_user()
+    look = make_look(author)
+    report = Report.objects.create(reporter=reporter, content_type=ContentType.objects.get_for_model(look),
+                                   object_id=look.pk, reason="other", status="open")
+    decided = client.post(f"/data/review/reports/{report.pk}/decide/", {"action": "hide_target", "confirmed": "yes"})
+    assert decided.status_code == 200, decided.content
+    look.refresh_from_db()
+    report.refresh_from_db()
+    assert look.status == "hidden" and report.status == "actioned"
+
+
+def test_a_review_report_shows_in_its_queue_and_on_today(make_user, make_stylist, book):
+    # ReviewReport.reason had no choices, so previewing one raised AttributeError and the
+    # overview behind every workspace page answered 500.
+    from apps.bookings.models import Booking, Review, ReviewReport
+
+    client, _ = staff_client(make_user, superuser=True)
+    profile, customer = make_stylist(), make_user()
+    booking = Booking.objects.get(pk=book(customer, profile)["id"])
+    review = Review.objects.create(booking=booking, rating=2, body="Late.", status="published",
+                                   author_name="Ama", service_name="Knotless braids")
+    report = ReviewReport.objects.create(review=review, reporter=make_user(), reason="hate", note="Rude")
+    assert client.get("/data/overview/").status_code == 200
+    queue = client.get("/data/review/review-reports/").json()
+    assert [(item["id"], item["title"]) for item in queue["items"]] == [(str(report.pk), "Hateful or abusive")]
+    decided = client.post(f"/data/review/review-reports/{report.pk}/decide/", {"action": "remove_review", "confirmed": "yes"})
+    assert decided.status_code == 200, decided.content
+    review.refresh_from_db()
+    assert review.status == "removed"
