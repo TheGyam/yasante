@@ -17,6 +17,7 @@ import {
   UserCheck,
   UserRound,
   X,
+  CalendarX,
 } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
@@ -61,6 +62,7 @@ import { Input } from '@/shared/ui/Input';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
+import { EmptyState } from '@/shared/ui/EmptyState';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
@@ -83,7 +85,7 @@ export default function RequestScreen() {
   const styles = useStyles();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: booking, isLoading } = useBooking(id);
+  const { data: booking, error, refetch } = useBooking(id);
 
   const accept = useAcceptRequest();
   const propose = useProposeTime();
@@ -135,10 +137,21 @@ export default function RequestScreen() {
     }
   };
 
-  if (isLoading || !booking) {
+  // Not hers, gone, or no connection: say so, rather than loading for ever.
+  if (!booking) {
     return (
       <Screen title="Request" back testID="request-screen">
-        <Skeleton height={240} />
+        {error ? (
+          <EmptyState
+            icon={CalendarX}
+            title="Couldn’t open this booking"
+            message={errorMessage(error, 'Check your connection and try again.')}
+            actionLabel="Try again"
+            onAction={() => refetch()}
+          />
+        ) : (
+          <Skeleton height={240} />
+        )}
       </Screen>
     );
   }

@@ -18,11 +18,11 @@ export function useImagePicker() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const pickFromLibrary = async (compress: boolean = true): Promise<string | null> => {
+  const pickFromLibrary = async (compress = true, square = false): Promise<string | null> => {
     try {
       setLoading(true);
       setError(null);
-      const result = await pickImageFromLibrary();
+      const result = await pickImageFromLibrary(square);
       if (!result) return null;
 
       if (compress) {
@@ -56,11 +56,11 @@ export function useImagePicker() {
     }
   };
 
-  const takePicture = async (compress: boolean = true): Promise<string | null> => {
+  const takePicture = async (compress = true, square = false): Promise<string | null> => {
     try {
       setLoading(true);
       setError(null);
-      const result = await takePhoto();
+      const result = await takePhoto(square);
       if (!result) return null;
 
       if (compress) {
