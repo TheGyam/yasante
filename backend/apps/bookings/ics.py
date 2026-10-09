@@ -22,14 +22,30 @@ def calendar_url(booking, viewer):
 
 
 def _text(value):
-    """iCalendar text: commas, semicolons and backslashes escaped, one line."""
+    """iCalendar text: backslashes, semicolons and commas escaped, and every line break
+    written as \\n, so nothing a person typed can start a line of its own (a URL:, say)."""
     return (
         str(value or "")
         .replace("\\", "\\\\")
-        .replace(";", "\;")
-        .replace(",", "\,")
-        .replace("\n", "\n")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\r\n", "\\n")
+        .replace("\r", "\\n")
+        .replace("\n", "\\n")
     )
+
+
+def _fold(line):
+    """RFC 5545: a line longer than 75 octets carries on in the next, after a space."""
+    out, current = [], b""
+    for char in line:
+        encoded = char.encode()
+        if len(current) + len(encoded) > (74 if out else 75):
+            out.append(current.decode())
+            current = b""
+        current += encoded
+    out.append(current.decode())
+    return "\r\n ".join(out)
 
 
 def _utc(dt):
@@ -71,6 +87,6 @@ def calendar_file(request, token):
         "END:VEVENT",
         "END:VCALENDAR",
     ]
-    response = HttpResponse("\r\n".join(lines) + "\r\n", content_type="text/calendar; charset=utf-8")
+    response = HttpResponse("\r\n".join(map(_fold, lines)) +"\r\n", content_type="text/calendar; charset=utf-8")
     response["Content-Disposition"] = 'inline; filename="yasante-appointment.ics"'
     return response

@@ -11,6 +11,7 @@ from apps.bookings.models import Booking, Review
 from apps.common import zones
 from apps.common.blocks import blocked_account_ids, is_blocked
 from apps.common.models import log_search
+from apps.common.uploads import media_url, own_media
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Q
@@ -353,6 +354,9 @@ class StylistCreateView(APIView):
         data = serializer.validated_data
         if _someones_username(data["handle"], request.user):
             return Response({"message": "That handle is taken."}, status=409)
+        proof = data.get("proof_photo_uri", "")
+        if proof and own_media(request.user, proof, public=False) is None:
+            return Response({"message": "Upload the photo first"}, status=400)
         policies = data.get("policies") or {}
         methods = _payment_methods(request.data.get("payment_methods") or []) or []
         availability = request.data.get("availability")
@@ -413,6 +417,12 @@ class StylistMeView(APIView):
         data = request.data
         update_fields = []
 
+        # A new photo is her own upload (see own_media); the proof photo is a private one.
+        # The one already on her page comes back with every save, and stays.
+        for field, public in (("avatar_uri", True), ("proof_photo_uri", False)):
+            value = str(data.get(field) or "").strip()
+            if value and value != getattr(profile, field) and own_media(request.user, value, public=public) is None:
+                return Response({"message": "Upload the photo first"}, status=400)
         for field in (
             "display_name",
             "bio",
@@ -716,9 +726,11 @@ class PortfolioListCreateView(APIView):
             return Response({"message": "Add up to 20 at a time"}, status=400)
         checked = []
         for raw in photos:
-            uri = str((raw or {}).get("uri") or "").strip()
-            if not uri.startswith(("http://", "https://")):
+            media = own_media(request.user, (raw or {}).get("uri"))
+            if media is None:
                 return Response({"message": "A photo needs a picture"}, status=400)
+            uri = media_url(request, media, media.full_path)
+            thumb = media_url(request, media, media.thumb_path) if media.thumb_path else ""
             service_id = (raw or {}).get("service_id")
             service = (
                 profile.menu_items.filter(pk=service_id).first()
@@ -732,7 +744,7 @@ class PortfolioListCreateView(APIView):
 
                 if not (_is_uuid(look_id) and Look.objects.filter(pk=look_id, author=request.user).exists()):
                     return Response({"message": "That look isn’t yours"}, status=400)
-            checked.append((uri, str((raw or {}).get("thumb_uri") or ""), service, look_id or None))
+            checked.append((uri, thumb, service, look_id or None))
 
         # Shared to the feed only from a live page: a draft page has nobody to send clients to.
         share = bool(request.data.get("post_as_looks")) and profile.published

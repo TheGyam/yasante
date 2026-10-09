@@ -21,6 +21,13 @@ class SignupThrottle(AnonRateThrottle):
     rate = "3/min"
 
 
+class PasswordResetThrottle(AnonRateThrottle):
+    """Forgot and reset password: each request can send an email or try a reset token."""
+
+    scope = "password_reset"
+    rate = "5/min"
+
+
 class PhoneCodeThrottle(UserRateThrottle):
     scope = "phone_code"
     rate = "2/min"

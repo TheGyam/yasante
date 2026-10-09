@@ -6,7 +6,12 @@ import logging
 from datetime import timedelta
 
 from apps.common.permissions import IsOwner
-from apps.common.throttling import LoginThrottle, PhoneCodeThrottle, SignupThrottle
+from apps.common.throttling import (
+    LoginThrottle,
+    PasswordResetThrottle,
+    PhoneCodeThrottle,
+    SignupThrottle,
+)
 from apps.common.utils import (
     generate_code,
     hash_code,
@@ -14,6 +19,7 @@ from apps.common.utils import (
 )
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
+from django.core.cache import cache
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, permissions, status
@@ -187,6 +193,9 @@ class RefreshTokenView(APIView):
             old_refresh.blacklist()
             # Create new tokens for the user
             user = User.objects.get(id=old_refresh["user_id"])
+            # Switched off: this device's sign-in ends now, and stays ended if it's switched back on.
+            if not user.is_active:
+                raise TokenError("inactive")
             new_refresh = RefreshToken.for_user(user)
 
             # The old refresh token is now revoked, so the new one goes back with it.
@@ -220,10 +229,14 @@ class ForgotPasswordView(APIView):
     """
     POST /api/auth/forgot-password/
 
-    Always returns 200 whether the email exists or not (timing-safe).
+    Always returns 200 whether the email exists or not.
     """
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [PasswordResetThrottle]
+    # One email per address per two minutes, whoever asks and from wherever: the
+    # per-IP limit alone wouldn't stop an inbox being flooded from many addresses.
+    RESEND_SECONDS = 120
 
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
@@ -232,6 +245,8 @@ class ForgotPasswordView(APIView):
 
         try:
             user = User.objects.get(email__iexact=email)
+            if not cache.add(f"password-reset:{user.pk}", 1, self.RESEND_SECONDS):
+                raise User.DoesNotExist  # sent one moment ago: same answer, no email
             token = default_token_generator.make_token(user)
             # A yasante.com link: the app's reset screen on a phone with the app, the
             # website's anywhere else. It carries who and the one-time token.
@@ -251,6 +266,7 @@ class ResetPasswordView(APIView):
     """POST /api/auth/reset-password/"""
 
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [PasswordResetThrottle]
 
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
