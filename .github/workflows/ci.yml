@@ -57,7 +57,8 @@ jobs:
         working-directory: backend
     services:
       postgres:
-        image: postgres:15
+        # The official image, from AWS's mirror: Docker Hub rate-limits shared CI runners.
+        image: public.ecr.aws/docker/library/postgres:15
         env:
           POSTGRES_USER: yasante
           POSTGRES_PASSWORD: yasante
