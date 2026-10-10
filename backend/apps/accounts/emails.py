@@ -130,6 +130,33 @@ def send_password_reset(email, name, link):
     )
 
 
+SITE = "https://yasante.com"
+
+
+def send_booking_notice(email, name, title, body, path, button):
+    """
+    A booking update for someone with no phone signed in to the app (she booked on the
+    website): the same words the notification would have said, and a button to the page.
+    """
+    first = (name or "").split(" ")[0] or "there"
+    # Written for a phone ("Tap to answer"); in an email it's a button.
+    body = body.replace("Tap to ", "Open it to ")
+    link = f"{SITE}{path}"
+    text = (
+        f"Hi {first},\n\n{title}\n\n{body}\n\n{button}: {link}\n\n"
+        "With love,\nThe Yasante team\nhttps://yasante.com\n"
+    )
+    html = f"""\
+<p style="margin:0 0 8px;font-size:15px;color:{SOFT};">Hi {escape(first)},</p>
+<h1 style="margin:0 0 16px;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-0.4px;color:{INK};">{escape(title)}</h1>
+<p style="margin:0 0 28px;font-size:16px;line-height:24px;color:{INK};">{escape(body)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+  <a href="{escape(link)}" style="display:inline-block;background:{PINK};color:{INK};font-size:16px;font-weight:700;text-decoration:none;padding:16px 36px;border-radius:999px;">{escape(button)}</a>
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:15px;line-height:22px;color:{INK};">With love,<br><strong>The Yasante team</strong></p>"""
+    return _send(email, title, text, _page(body, html))
+
+
 def _send(to, subject, text, html):
     """True if the mail server took it; False (logged) so the caller can say so."""
     message = EmailMultiAlternatives(

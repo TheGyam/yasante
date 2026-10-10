@@ -155,3 +155,34 @@ def test_monthly_recap_goes_to_stylists_who_had_a_month(make_stylist):
     assert log.title == "Your August" and log.body.startswith("1 page view,")
     assert not NotificationLog.objects.filter(user=quiet.account).exists()
     nightly_stats()  # runs clean over every published page
+
+
+def test_without_a_phone_signed_in_a_booking_update_comes_by_email(api, setup, book, mailoutbox, django_capture_on_commit_callbacks):
+    from apps.accounts.models import DeviceToken
+
+    profile, client = setup
+    with django_capture_on_commit_callbacks(execute=True):
+        booking = book(client, profile)
+    # The stylist runs her studio on the website: her new request arrives by email.
+    request = next(m for m in mailoutbox if m.to == [profile.account.email])
+    assert request.subject.startswith("New request from")
+    assert f"https://yasante.com/requests/{booking['id']}" in request.body
+    assert NotificationLog.objects.get(user=profile.account).status == "emailed"
+
+    # The client has the app: accepting reaches her phone, not her inbox.
+    DeviceToken.objects.create(user=client, token="ExponentPushToken[c]", platform="ios")
+    with django_capture_on_commit_callbacks(execute=True):
+        api(profile.account).post(
+            f"/api/bookings/{booking['id']}/accept/",
+            {"scheduledFor": booking["requestedTimes"][0], "deposit": {"amount": 20, "method": "Monzo"}},
+        )
+    assert not [m for m in mailoutbox if m.to == [client.email]]
+    assert NotificationLog.objects.get(event_key=f"booking:{booking['id']}:accepted").status == "logged"
+
+    # Without it, the next update is emailed, with a link to the booking on the website.
+    DeviceToken.objects.filter(user=client).delete()
+    with django_capture_on_commit_callbacks(execute=True):
+        api(profile.account).post(f"/api/bookings/{booking['id']}/deposit-received/")
+    confirmed = next(m for m in mailoutbox if m.to == [client.email])
+    assert confirmed.subject.startswith("Confirmed with")
+    assert f"https://yasante.com/bookings/{booking['id']}" in confirmed.alternatives[0][0]
