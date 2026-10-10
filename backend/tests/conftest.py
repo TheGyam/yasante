@@ -73,6 +73,29 @@ def api():
 
 
 @pytest.fixture
+def photo(settings, tmp_path):
+    """photo(user) uploads a small picture as that person and returns its address: the
+    only kind of address a look, avatar or portfolio photo accepts."""
+    import io
+
+    from PIL import Image
+
+    settings.MEDIA_ROOT = tmp_path
+
+    def upload(user, kind="look"):
+        shade = next(_seq) % 200
+        buf = io.BytesIO()
+        Image.new("RGB", (160, 200), (shade, 120, 150)).save(buf, "JPEG")
+        buf.seek(0)
+        buf.name = "photo.jpg"
+        r = Api(user).client.post("/api/uploads/", {"file": buf, "kind": kind}, format="multipart")
+        assert r.status_code == 201, r.content
+        return r.json()["uri"]
+
+    return upload
+
+
+@pytest.fixture
 def make_user(db):
     from apps.accounts.models import User
     from apps.profiles.models import HairProfile

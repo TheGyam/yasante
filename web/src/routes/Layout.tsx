@@ -12,7 +12,8 @@ const POLICIES = [
 
 /** The frame around every page. */
 export default function Layout() {
-  const signedIn = !!useSession();
+  const session = useSession();
+  const stylist = session?.user.roles.includes('stylist');
   return (
     <>
       <a className="visually-hidden" href="#main">
@@ -21,9 +22,11 @@ export default function Layout() {
       <SiteHeader
         links={[
           { label: 'Looks', to: '/looks' },
-          signedIn
-            ? { label: 'Your studio', to: '/today' }
-            : { label: 'For stylists', to: '/auth/signup' },
+          !session
+            ? { label: 'For stylists', to: '/auth/signup' }
+            : stylist
+              ? { label: 'Your studio', to: '/today' }
+              : { label: 'Your bookings', to: '/bookings' },
         ]}
         appTo="/#waitlist"
       />

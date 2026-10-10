@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, Megaphone, Send, ShieldAlert, X } from 'lucide-react';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
@@ -88,17 +88,26 @@ export function Composer({ csrf }: { csrf: string }) {
     JSON.stringify([kind, audience, chosen.map(person => person.id), url]),
     300
   );
+  // A failed count clears the number: an old one would promise a reach that isn't known.
+  const [recount, setRecount] = useState(0);
+  // A recount after a refused send keeps the reason on screen next to the new number.
+  const keepError = useRef(false);
   useEffect(() => {
     if (audience.who === 'people' && !chosen.length) return;
     let live = true;
     mutate<Reach>('broadcasts/audience/', form(), csrf)
-      .then(result => live && (setReach(result), setError('')))
-      .catch(failure => live && setError(staffMessage(failure)));
+      .then(result => {
+        if (!live) return;
+        setReach(result);
+        if (!keepError.current) setError('');
+        keepError.current = false;
+      })
+      .catch(failure => live && (setReach(undefined), setError(staffMessage(failure))));
     return () => {
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [key, recount]);
 
   const reach = audience.who === 'people' && !chosen.length ? undefined : lastReach;
   const ready = title.trim() && body.trim() && reach && reach.reachable > 0;
@@ -130,6 +139,9 @@ export function Composer({ csrf }: { csrf: string }) {
     } catch (failure) {
       setConfirming(false);
       setError(staffMessage(failure));
+      // "The audience changed": count again, so the button offers the number that will send.
+      keepError.current = true;
+      setRecount(n => n + 1);
     } finally {
       setBusy(false);
     }

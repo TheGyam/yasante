@@ -119,7 +119,7 @@ def test_menu_crud_and_import(api, make_stylist):
     assert imported.status_code == 201 and len(imported.json()) == 2
 
 
-def test_portfolio_posts_tagged_photos_to_looks(api, make_stylist, styles):
+def test_portfolio_posts_tagged_photos_to_looks(api, make_stylist, styles, photo):
     from apps.looks.models import Look
 
     profile = make_stylist()
@@ -130,8 +130,8 @@ def test_portfolio_posts_tagged_photos_to_looks(api, make_stylist, styles):
         {
             "postAsLooks": True,
             "photos": [
-                {"uri": "https://example.com/a.jpg", "serviceId": str(knotless.pk)},
-                {"uri": "https://example.com/b.jpg"},
+                {"uri": photo(profile.account, "portfolio"), "serviceId": str(knotless.pk)},
+                {"uri": photo(profile.account, "portfolio")},
             ],
         },
     )
@@ -145,7 +145,7 @@ def test_portfolio_posts_tagged_photos_to_looks(api, make_stylist, styles):
     before = Look.objects.count()
     quiet = me.post(
         "/api/stylists/me/portfolio/",
-        {"postAsLooks": False, "photos": [{"uri": "https://example.com/c.jpg", "serviceId": str(knotless.pk)}]},
+        {"postAsLooks": False, "photos": [{"uri": photo(profile.account, "portfolio"), "serviceId": str(knotless.pk)}]},
     )
     assert "lookId" not in quiet.json()[0] and Look.objects.count() == before
 
@@ -159,12 +159,12 @@ def test_portfolio_posts_tagged_photos_to_looks(api, make_stylist, styles):
     assert len(me.get("/api/stylists/me/portfolio/").json()) == 2
 
 
-def test_a_draft_page_shares_nothing(api, make_stylist, styles):
+def test_a_draft_page_shares_nothing(api, make_stylist, styles, photo):
     profile = make_stylist(published=False)
     knotless = profile.menu_items.get(name="Knotless braids")
     added = api(profile.account).post(
         "/api/stylists/me/portfolio/",
-        {"postAsLooks": True, "photos": [{"uri": "https://example.com/a.jpg", "serviceId": str(knotless.pk)}]},
+        {"postAsLooks": True, "photos": [{"uri": photo(profile.account, "portfolio"), "serviceId": str(knotless.pk)}]},
     )
     assert "lookId" not in added.json()[0]
 
@@ -263,25 +263,29 @@ def test_her_own_handle_is_available_to_her(api, make_stylist, make_user):
     assert api(profile.account).patch("/api/stylists/me/", {"handle": profile.handle, "bio": "New"}).status_code == 200
 
 
-def test_a_photo_she_posted_as_a_look_joins_her_page_linked_to_it(api, make_stylist, make_user, styles):
+def test_a_photo_she_posted_as_a_look_joins_her_page_linked_to_it(api, make_stylist, make_user, styles, photo):
     profile = make_stylist()
-    me = api(profile.account)
-    look = me.post("/api/looks/", {"photoUri": "https://x.com/a.jpg", "styles": ["knotless"]}).json()
+    me, mine = api(profile.account), photo(profile.account)
+    look = me.post("/api/looks/", {"photoUri": mine, "styles": ["knotless"]}).json()
     added = me.post(
         "/api/stylists/me/portfolio/",
-        {"photos": [{"uri": "https://x.com/a.jpg", "lookId": look["id"]}]},
+        {"photos": [{"uri": mine, "lookId": look["id"]}]},
     )
     assert added.status_code == 201 and added.json()[0]["lookId"] == look["id"]
     page = api().get(f"/api/stylists/by-handle/{profile.handle}/").json()
     assert page["photos"][0]["lookId"] == look["id"]
 
     # Someone else's look can't be claimed.
-    theirs = api(make_user()).post("/api/looks/", {"photoUri": "https://x.com/b.jpg", "styles": ["twists"]}).json()
+    other = make_user()
+    their_photo = photo(other)
+    theirs = api(other).post("/api/looks/", {"photoUri": their_photo, "styles": ["twists"]}).json()
     refused = me.post(
         "/api/stylists/me/portfolio/",
-        {"photos": [{"uri": "https://x.com/b.jpg", "lookId": theirs["id"]}]},
+        {"photos": [{"uri": mine, "lookId": theirs["id"]}]},
     )
-    assert refused.status_code == 400
+    assert refused.status_code == 400 and refused.json()["message"] == "That look isn’t yours"
+    # Nor can she put their photo on her page.
+    assert me.post("/api/stylists/me/portfolio/", {"photos": [{"uri": their_photo}]}).status_code == 400
 
 
 def test_who_does_a_style_comes_with_a_price_and_their_work(api, make_stylist, make_user, styles):

@@ -1,7 +1,7 @@
 import { memo, useCallback, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import { BookmarkPlus } from 'lucide-react-native';
+import { Bookmark, BookmarkPlus } from 'lucide-react-native';
 import { formatMoney } from '@/shared/lib/format';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
@@ -130,10 +130,12 @@ export const LookTile = memo(function LookTile({
         )}
         {onSave && (
           <IconButton
-            icon={BookmarkPlus}
-            variant="overlay"
+            icon={look.saved ? Bookmark : BookmarkPlus}
+            variant={look.saved ? 'accent' : 'overlay'}
             size={30}
-            accessibilityLabel="Save to a collection"
+            accessibilityLabel={
+              look.saved ? 'Saved. Save to another collection' : 'Save to a collection'
+            }
             onPress={() => onSave(look)}
             style={styles.save}
           />

@@ -1,3 +1,4 @@
+import icon from '@/shared/ui/app-icon.png';
 import * as s from './PhonePreview.css';
 
 /** Roughly how it lands on a locked phone: the app, the title, the first lines. */
@@ -7,10 +8,7 @@ export function PhonePreview({ title, body }: { title: string; body: string }) {
       <div className={s.time}>9:41</div>
       <div className={s.notice}>
         <div className={s.head}>
-          <svg className={s.icon} viewBox="0 0 1024 1024" aria-hidden>
-            <rect width="1024" height="1024" rx="230" fill="#0B0709" />
-            <path d="M310 245H430L512 478L597 245H716L486 776H375L451 607Z" fill="#FF8FB8" />
-          </svg>
+          <img className={s.icon} src={icon} alt="" />
           <span className={s.app}>YASANTE</span>
           <span className={s.now}>now</span>
         </div>

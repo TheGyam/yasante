@@ -59,6 +59,8 @@ class StylistProfileAdmin(admin.ModelAdmin):
                 "fields": (
                     "service_models",
                     "base_area",
+                    # Hidden behind Show, which is logged (apps/staff/privacy.py).
+                    "address",
                     "travel_radius_miles",
                     "instagram_handle",
                 )

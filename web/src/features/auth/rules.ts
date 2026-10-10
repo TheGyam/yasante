@@ -31,3 +31,16 @@ export const POLICY_VERSION = '2026-09';
 
 /** The stylist terms version she agrees to (backend migration 0008_first_stylist_terms). */
 export const STYLIST_TERMS_VERSION = '2026-09';
+
+/**
+ * Where to go once signed in: a page on this site that sent her here (?next=/book/ama),
+ * never another site, which a link could otherwise send her to.
+ */
+export function safeNext(value: string | null | undefined) {
+  return value && /^\/(?![/\\])/.test(value) ? value : undefined;
+}
+
+/** A sign-in or sign-up address that comes back to `next`. */
+export function withNext(path: string, next?: string) {
+  return next ? `${path}${path.includes('?') ? '&' : '?'}next=${encodeURIComponent(next)}` : path;
+}

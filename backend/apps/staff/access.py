@@ -29,7 +29,11 @@ def staff_data(view):
             return JsonResponse({"message": "Your account does not have permission for this action."}, status=403)
         except Http404:
             return JsonResponse({"message": "These records could not be found."}, status=404)
-        except (IncorrectLookupParameters, SuspiciousOperation, BadRequest):
+        except BadRequest as error:
+            # A view that explains itself ("Write a title and a message first.") is heard.
+            message = str(error) or "That search, filter, or page is not valid."
+            return JsonResponse({"message": message}, status=400)
+        except (IncorrectLookupParameters, SuspiciousOperation):
             return JsonResponse({"message": "That search, filter, or page is not valid."}, status=400)
         except Exception:
             logger.exception("Staff request failed: %s", request.path)

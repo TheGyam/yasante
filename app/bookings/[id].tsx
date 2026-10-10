@@ -21,6 +21,7 @@ import {
   Activity,
   Wallet,
   Repeat,
+  CalendarX,
 } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
@@ -63,6 +64,7 @@ import { Confetti } from '@/shared/ui/Motion';
 import { Screen } from '@/shared/ui/Screen';
 import { useCelebrateOnce } from '@/shared/hooks/useCelebrateOnce';
 import { Section } from '@/shared/ui/Section';
+import { EmptyState } from '@/shared/ui/EmptyState';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StarRating } from '@/shared/ui/StarRating';
 import { Text } from '@/shared/ui/Text';
@@ -113,7 +115,7 @@ export default function BookingScreen() {
   const router = useRouter();
   // `cancel=1` arrives from the reminder's "I can't make it" button.
   const { id, cancel: fromReminder } = useLocalSearchParams<{ id: string; cancel?: string }>();
-  const { data: booking, isLoading } = useBooking(id);
+  const { data: booking, error, refetch } = useBooking(id);
   // Confirmed is the moment she's been waiting for: a burst, once, the first time she sees it.
   const celebrate = useCelebrateOnce(booking?.id, booking?.status === 'confirmed');
   const cancel = useCancelBooking();
@@ -182,10 +184,21 @@ export default function BookingScreen() {
     if (yes) await act(() => contest.mutateAsync({ id, what }), 'Couldn’t send that');
   };
 
-  if (isLoading || !booking) {
+  // Not hers, gone, or no connection: say so, rather than loading for ever.
+  if (!booking) {
     return (
       <Screen title="Booking" back testID="booking-screen">
-        <Skeleton height={240} />
+        {error ? (
+          <EmptyState
+            icon={CalendarX}
+            title="Couldn’t open this booking"
+            message={errorMessage(error, 'Check your connection and try again.')}
+            actionLabel="Try again"
+            onAction={() => refetch()}
+          />
+        ) : (
+          <Skeleton height={240} />
+        )}
       </Screen>
     );
   }

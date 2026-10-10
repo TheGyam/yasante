@@ -2,12 +2,45 @@
  * The menu's starting points, the app's own (src/features/stylist/format.ts): what most
  * braiders offer and how it's usually priced. Never a price — that's hers to say.
  */
-import type { OptionGroup } from './types';
+import type { MenuItem, MenuOption, OptionGroup } from './types';
 
 export const OPTION_GROUPS: { group: OptionGroup; name: string }[] = [
   { group: 'length', name: 'Length' },
   { group: 'size', name: 'Size' },
 ];
+
+/** The groups a service is priced by, each with its choices in order. */
+export function optionGroups(item: Pick<MenuItem, 'options'>) {
+  return OPTION_GROUPS.map(({ group, name }) => ({
+    group,
+    name,
+    choices: (item.options ?? []).filter(o => o.group === group),
+  })).filter(g => g.choices.length > 0);
+}
+
+export type ChosenOptions = Partial<Record<OptionGroup, string>>;
+
+/**
+ * What it comes to with her choices: the base, plus each chosen option. Exact once
+ * every group is chosen; a starting price until then. The app's own sum; the server
+ * prices the request itself either way.
+ */
+export function estimate(item: MenuItem, chosen: ChosenOptions = {}) {
+  const groups = optionGroups(item);
+  const picked = groups
+    .map(g => g.choices.find(c => c.id === chosen[g.group]))
+    .filter((o): o is MenuOption => !!o);
+  const complete = picked.length === groups.length;
+  return {
+    price: item.price + picked.reduce((sum, o) => sum + o.add, 0),
+    minutes: item.durationMinutes
+      ? item.durationMinutes + picked.reduce((sum, o) => sum + (o.addMinutes ?? 0), 0)
+      : undefined,
+    labels: picked.map(o => o.label),
+    fromPrice: groups.length ? !complete : item.fromPrice,
+    complete,
+  };
+}
 
 export interface OptionDraft {
   group: OptionGroup;

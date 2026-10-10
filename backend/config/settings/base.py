@@ -74,6 +74,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 MIDDLEWARE = [
     "apps.common.middleware.SecurityHeadersMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
     "apps.staff.middleware.StaffHostMiddleware",
     # JSON shrinks to a fraction gzipped: a feed page is ~17KB plain. Bearer tokens
     # travel in headers, not bodies next to reflected input, so BREACH doesn't apply.
@@ -288,12 +289,19 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
-# CSP (django-csp)
+# CSP (django-csp). The staff host sends its own (apps/staff/middleware.py).
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_SCRIPT_SRC = ("'self'",)
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-CSP_IMG_SRC = ("'self'", "data:", "https:")
+# blob: for the preview of a photo before it's uploaded (the stylist studio).
+CSP_IMG_SRC = ("'self'", "data:", "blob:", "https:")
 CSP_FONT_SRC = ("'self'", "https://fonts.gstatic.com")
+CSP_OBJECT_SRC = ("'none'",)
+CSP_BASE_URI = ("'none'",)
+CSP_FORM_ACTION = ("'self'",)
+CSP_FRAME_ANCESTORS = ("'none'",)
+# The API docs (development only) load Swagger and Redoc from a CDN.
+CSP_EXCLUDE_URL_PREFIXES = ("/api/docs/",)
 
 # ──────────────────────────────────────────────
 # Internationalisation

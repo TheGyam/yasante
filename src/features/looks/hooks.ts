@@ -115,6 +115,18 @@ export function useLook(id: string) {
 }
 
 /**
+ * After a save to a collection: mark the look saved wherever it's cached, so the feed
+ * and grids show it at once instead of on their next read.
+ */
+export function useMarkLookSaved() {
+  const queryClient = useQueryClient();
+  return (id: string) =>
+    patchLook(queryClient, id, look =>
+      look.saved ? look : { ...look, saved: true, saveCount: (look.saveCount ?? 0) + 1 }
+    );
+}
+
+/**
  * A like is answered on the spot, and put back if the server says no. It's the
  * one place the cache is patched rather than re-read: re-reading every page of a
  * feed per tap would cost more than the like is worth.

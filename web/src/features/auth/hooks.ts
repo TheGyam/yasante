@@ -9,8 +9,8 @@ export function useSignup() {
     mutationFn: (body: SignupRequest) => authApi.signup(body),
     onSuccess: auth => {
       startSession(auth);
-      // She ticked the box for the terms, privacy and stylist terms: on the record.
-      void recordConsents(auth.user.id, consentsAtSignup());
+      // She ticked the box for the terms and privacy (and a stylist, her terms): on the record.
+      void recordConsents(auth.user.id, consentsAtSignup(auth.user.roles.includes('stylist')));
     },
   });
 }

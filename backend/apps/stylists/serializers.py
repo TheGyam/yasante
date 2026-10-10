@@ -2,6 +2,8 @@
 Stylist serializers.
 """
 
+from decimal import Decimal
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -62,7 +64,7 @@ class MenuItemDraftSerializer(serializers.Serializer):
     """For creating/updating menu items."""
 
     name = serializers.CharField(max_length=150)
-    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0.01)
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0.01"))
     from_price = serializers.BooleanField(default=False)
     duration_minutes = serializers.IntegerField(
         required=False, allow_null=True, min_value=1

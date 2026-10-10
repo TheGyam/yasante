@@ -15,6 +15,8 @@ PINK = "#FF8FB8"
 INK = "#0B0709"
 SOFT = "#6E5C65"
 PAPER = "#FFF7FA"
+# The app icon, hosted with the site (web/public/email-icon.png): mail apps need a full address.
+ICON = "https://yasante.com/static/site/email-icon.png"
 
 
 def _page(preheader, body):
@@ -35,7 +37,7 @@ def _page(preheader, body):
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
       <tr><td align="center" style="padding:0 0 28px;">
         <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-          <td style="background:{INK};border-radius:14px;width:44px;height:44px;text-align:center;vertical-align:middle;font-family:Helvetica,Arial,sans-serif;font-size:26px;font-weight:700;color:{PINK};line-height:44px;">y</td>
+          <td style="width:44px;height:44px;vertical-align:middle;"><img src="{ICON}" width="44" height="44" alt="" style="display:block;width:44px;height:44px;border:0;border-radius:10px;"></td>
           <td style="padding-left:10px;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:{INK};letter-spacing:-0.3px;">yasante</td>
         </tr></table>
       </td></tr>
@@ -126,6 +128,33 @@ def send_password_reset(email, name, link):
         text,
         _page("Choose a new password for your Yasante account.", body),
     )
+
+
+SITE = "https://yasante.com"
+
+
+def send_booking_notice(email, name, title, body, path, button):
+    """
+    A booking update for someone with no phone signed in to the app (she booked on the
+    website): the same words the notification would have said, and a button to the page.
+    """
+    first = (name or "").split(" ")[0] or "there"
+    # Written for a phone ("Tap to answer"); in an email it's a button.
+    body = body.replace("Tap to ", "Open it to ")
+    link = f"{SITE}{path}"
+    text = (
+        f"Hi {first},\n\n{title}\n\n{body}\n\n{button}: {link}\n\n"
+        "With love,\nThe Yasante team\nhttps://yasante.com\n"
+    )
+    html = f"""\
+<p style="margin:0 0 8px;font-size:15px;color:{SOFT};">Hi {escape(first)},</p>
+<h1 style="margin:0 0 16px;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-0.4px;color:{INK};">{escape(title)}</h1>
+<p style="margin:0 0 28px;font-size:16px;line-height:24px;color:{INK};">{escape(body)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+  <a href="{escape(link)}" style="display:inline-block;background:{PINK};color:{INK};font-size:16px;font-weight:700;text-decoration:none;padding:16px 36px;border-radius:999px;">{escape(button)}</a>
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:15px;line-height:22px;color:{INK};">With love,<br><strong>The Yasante team</strong></p>"""
+    return _send(email, title, text, _page(body, html))
 
 
 def _send(to, subject, text, html):

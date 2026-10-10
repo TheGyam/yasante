@@ -85,7 +85,8 @@ def send_push(self, log_id: str):
         return
     tokens = list(DeviceToken.objects.filter(user_id=log.user_id).values_list("token", flat=True))
     if not tokens:
-        NotificationLog.objects.filter(pk=log.pk).update(status="no_device")
+        if not _email_instead(log):
+            NotificationLog.objects.filter(pk=log.pk).update(status="no_device")
         return
     data = {k: v for k, v in log.data.items() if not k.startswith("_")}
     category = log.data.get("_category")
@@ -101,6 +102,8 @@ def send_push(self, log_id: str):
         for token in tokens
         if token.startswith(("ExponentPushToken", "ExpoPushToken"))
     ]
+    if not messages and _email_instead(log):
+        return
     if getattr(settings, "PUSH_DELIVERY", "log") != "expo":
         # Not "sent": nothing left the server, and the workspace says so.
         logger.info("Push (log only) %s → %s: %s", log.event_key, log.user_id, log.title)
@@ -126,6 +129,32 @@ def send_push(self, log_id: str):
         tickets=[[t["id"], m["to"]] for m, t in zip(messages, tickets) if t.get("status") == "ok" and t.get("id")],
         sent_at=timezone.now(),
     )
+
+
+def _email_instead(log):
+    """
+    A booking update for someone with no phone signed in (she booked on the website, or
+    runs her studio there): emailed instead, so it still reaches her. Once, like the push.
+    """
+    from apps.accounts.emails import send_booking_notice
+    from apps.accounts.models import User
+
+    from .models import NotificationLog
+
+    path = log.data.get("url")
+    if not log.data.get("bookingId") or not path:
+        return False
+    user = User.objects.filter(pk=log.user_id, is_active=True).first()
+    if user is None or not user.email:
+        return False
+    button = "Open the request" if path.startswith("/requests/") else "See your booking"
+    sent = send_booking_notice(user.email, user.name, log.title, log.body, path, button)
+    NotificationLog.objects.filter(pk=log.pk).update(
+        status="emailed" if sent else "failed",
+        error="" if sent else "The mail server didn’t take it",
+        sent_at=timezone.now(),
+    )
+    return True
 
 
 def _problem(answer):

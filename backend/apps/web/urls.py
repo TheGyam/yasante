@@ -6,6 +6,7 @@ from . import views
 urlpatterns = [
     path("", views.home, name="web-home"),
     path("robots.txt", views.robots),
+    path("favicon.ico", views.favicon),
     path("sitemap.xml", views.sitemap, name="web-sitemap"),
     path("llms.txt", views.llms_txt, name="web-llms"),
     path("llms-full.txt", views.llms_full_txt, name="web-llms-full"),
@@ -23,6 +24,10 @@ urlpatterns = [
     path("auth/login", views.sign_in, name="web-login"),
     path("auth/verify-email", views.verify_email, name="web-verify-email"),
     path("stylist-setup", views.stylist_setup, name="web-stylist-setup"),
+    # A client's booking, at the app's addresses.
+    path("book/<str:handle>", views.book, name="web-book"),
+    path("bookings", views.bookings, name="web-bookings"),
+    path("bookings/<uuid:pk>", views.booking, name="web-booking"),
     # Her studio, at the app's addresses for the same screens.
     path("today", views.studio_today, name="web-today"),
     path("requests", views.studio_requests, name="web-requests"),

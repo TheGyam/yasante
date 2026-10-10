@@ -64,6 +64,23 @@ describe('the site', () => {
     expect(screen.getByText(/Nobody on Yasante goes by @nobody/)).toBeInTheDocument();
   });
 
+  it('names only a district someone is in; any other area address is not found', async () => {
+    mockApi({
+      '/api/looks/areas/': ['Peckham'],
+      '/api/stylists/': [{ ...page.profile, accountId: 'a2', baseArea: 'Brixton' }],
+      '/api/looks/': { data: [] },
+    });
+    renderSite('/areas/peckham');
+    expect(await screen.findByRole('heading', { name: 'Braiders in Peckham' })).toBeInTheDocument();
+    renderSite('/areas/brixton');
+    expect(await screen.findByRole('heading', { name: 'Braiders in Brixton' })).toBeInTheDocument();
+
+    mockApi({ '/api/looks/areas/': ['Peckham'], '/api/stylists/': [] });
+    renderSite('/areas/free-braids-call-0800-000-000');
+    expect(await screen.findByRole('heading', { name: 'We don’t have that area yet' })).toBeInTheDocument();
+    expect(screen.queryByText(/Free Braids Call/i)).not.toBeInTheDocument();
+  });
+
   it('shows the site’s not-found page for an address it doesn’t have', () => {
     mockApi({});
     renderSite('/looks/some/where');

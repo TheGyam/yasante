@@ -184,6 +184,10 @@ studio_payments = account_page("Getting paid")
 studio_account = account_page("Account")
 verify_email = account_page("Check your email")
 stylist_setup = account_page("Set up your page")
+# A client's booking: asking for one, her list, and one of them.
+book = account_page("Request a booking")
+bookings = account_page("Your bookings")
+booking = account_page("Your booking")
 
 
 def policy(request, type):
@@ -228,7 +232,7 @@ AI_CRAWLERS = [
 # Pages for someone signing in or signed in: nothing there for search.
 PRIVATE = [
     "/api/", "/admin/", "/auth/", "/stylist-setup", "/today", "/requests", "/portfolio",
-    "/menu", "/availability", "/payment-methods", "/account", "/looks/new", "/book/",
+    "/menu", "/availability", "/payment-methods", "/account", "/looks/new", "/book/", "/bookings",
 ]
 
 
@@ -240,6 +244,17 @@ def robots(request):
         lines += [f"User-agent: {bot}", *rules, ""]
     lines += [f"Sitemap: {request.build_absolute_uri(reverse('web-sitemap'))}"]
     return HttpResponse("\n".join(lines) + "\n", content_type="text/plain")
+
+
+@cache_control(public=True, max_age=86400)
+def favicon(request):
+    """Browsers ask every host for /favicon.ico by themselves: the app icon, from the site build."""
+    from pathlib import Path
+
+    icon = Path(settings.BASE_DIR) / "apps/web/static/site/favicon.ico"
+    if not icon.exists():
+        raise Http404
+    return HttpResponse(icon.read_bytes(), content_type="image/x-icon")
 
 
 @cache_control(public=True, max_age=3600)

@@ -509,7 +509,10 @@ export default function RequestBookingScreen() {
         <Checkbox checked={accepted} onChange={setAccepted}>
           <Text variant="footnote" tone="secondary">
             I accept {profile.displayName}’s terms: {profile.policies.noticeHours} hours’ notice to
-            cancel, and the deposit is paid directly to them.
+            cancel
+            {profile.policies.depositType === 'none'
+              ? '.'
+              : ', and the deposit is paid directly to them.'}
           </Text>
         </Checkbox>
 

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { errorMessage } from '@/shared/lib/errors';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
@@ -8,16 +8,22 @@ import { Input } from '@/shared/ui/Input';
 import { Link } from '@/shared/ui/Link';
 import { Text } from '@/shared/ui/Text';
 import { useSignup } from '../hooks';
-import { POLICY_VERSION, isValidEmail, passwordProblem } from '../rules';
+import { POLICY_VERSION, isValidEmail, passwordProblem, safeNext, withNext } from '../rules';
 import { AuthLayout } from './AuthLayout';
 import { PasswordStrength } from './PasswordStrength';
 import * as styles from './AuthLayout.css';
 
 type Field = 'name' | 'email' | 'password' | 'confirm' | 'agreed';
 
-/** A stylist's account, as the app's sign-up with the stylist side chosen. */
+/**
+ * An account, as the app's sign-up: a stylist's by default, or a client's
+ * (?role=client), who comes back to what she was doing (?next=/book/ama).
+ */
 export function SignupScreen() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const next = safeNext(params.get('next'));
+  const client = params.get('role') === 'client';
   const signup = useSignup();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -32,17 +38,17 @@ export function SignupScreen() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const next: Partial<Record<Field, string>> = {};
-    if (!name.trim()) next.name = 'Add the name clients know you by';
-    if (!email.trim()) next.email = 'Enter your email';
-    else if (!isValidEmail(email.trim())) next.email = 'That email doesn’t look right';
+    const problems: Partial<Record<Field, string>> = {};
+    if (!name.trim()) problems.name = client ? 'Add your name' : 'Add the name clients know you by';
+    if (!email.trim()) problems.email = 'Enter your email';
+    else if (!isValidEmail(email.trim())) problems.email = 'That email doesn’t look right';
     const problem = passwordProblem(password);
-    if (problem) next.password = problem;
-    if (!confirm) next.confirm = 'Confirm your password';
-    else if (password !== confirm) next.confirm = 'Passwords don’t match';
-    if (!agreed) next.agreed = 'Confirm you’re 18 or over to continue';
-    setErrors(next);
-    if (Object.keys(next).length) return;
+    if (problem) problems.password = problem;
+    if (!confirm) problems.confirm = 'Confirm your password';
+    else if (password !== confirm) problems.confirm = 'Passwords don’t match';
+    if (!agreed) problems.agreed = 'Confirm you’re 18 or over to continue';
+    setErrors(problems);
+    if (Object.keys(problems).length) return;
 
     signup.mutate(
       {
@@ -50,23 +56,27 @@ export function SignupScreen() {
         email: email.trim(),
         password,
         passwordConfirm: confirm,
-        role: 'stylist',
+        role: client ? 'client' : 'stylist',
         ageConfirmed: true,
         policyVersion: POLICY_VERSION,
       },
       // Signed in now; the email is confirmed before anything else.
-      { onSuccess: () => navigate('/auth/verify-email') }
+      { onSuccess: () => navigate(withNext('/auth/verify-email', next)) }
     );
   };
 
   return (
     <AuthLayout
-      title="Set up your stylist account"
-      subtitle="Your page, menu and bookings in one place. Free for founding stylists."
+      title={client ? 'Create your account' : 'Set up your stylist account'}
+      subtitle={
+        client
+          ? 'To send your request, and keep your bookings in one place. Free.'
+          : 'Your page, menu and bookings in one place. Free for founding stylists.'
+      }
       footer={
         <Text variant="subhead" tone="secondary">
           Already have an account?{' '}
-          <Link to="/auth/login">
+          <Link to={withNext('/auth/login', next)}>
             <Text variant="subhead" tone="accent">
               Sign in
             </Text>
@@ -84,8 +94,8 @@ export function SignupScreen() {
           />
         )}
         <Input
-          label="Your name or business name"
-          placeholder="Braids by Ama"
+          label={client ? 'Your name' : 'Your name or business name'}
+          placeholder={client ? 'Efua Mensah' : 'Braids by Ama'}
           autoComplete="name"
           value={name}
           error={errors.name}
@@ -147,12 +157,16 @@ export function SignupScreen() {
                   Terms of Service
                 </Text>
               </Link>
-              ,{' '}
-              <Link to="/stylist-terms" target="_blank">
-                <Text variant="subhead" tone="accent">
-                  Stylist terms
-                </Text>
-              </Link>{' '}
+              {client ? ' ' : ', '}
+              {!client && (
+                <>
+                  <Link to="/stylist-terms" target="_blank">
+                    <Text variant="subhead" tone="accent">
+                      Stylist terms
+                    </Text>
+                  </Link>{' '}
+                </>
+              )}
               and{' '}
               <Link to="/privacy" target="_blank">
                 <Text variant="subhead" tone="accent">
@@ -167,7 +181,12 @@ export function SignupScreen() {
             </Text>
           )}
         </div>
-        <Button type="submit" label="Create stylist account" loading={signup.isPending} fullWidth />
+        <Button
+          type="submit"
+          label={client ? 'Create account' : 'Create stylist account'}
+          loading={signup.isPending}
+          fullWidth
+        />
       </form>
     </AuthLayout>
   );

@@ -212,7 +212,7 @@ export const LookCard = memo(function LookCard({
             onPress={onSave ? () => onSave(look) : undefined}
             disabled={!onSave}
             scaleTo={0.92}
-            accessibilityLabel={`Saved by ${look.saveCount ?? 0} ${look.saveCount === 1 ? 'person' : 'people'}${onSave ? '. Save to a collection' : ''}`}
+            accessibilityLabel={`Saved by ${look.saveCount ?? 0} ${look.saveCount === 1 ? 'person' : 'people'}${look.saved ? '. You saved it' : ''}${onSave ? '. Save to a collection' : ''}`}
             style={styles.action}
           >
             <Bookmark
@@ -361,10 +361,12 @@ export const LookCard = memo(function LookCard({
           </GestureDetector>
           {onSave && (
             <IconButton
-              icon={BookmarkPlus}
-              variant="overlay"
+              icon={look.saved ? Bookmark : BookmarkPlus}
+              variant={look.saved ? 'accent' : 'overlay'}
               size={32}
-              accessibilityLabel="Save to a collection"
+              accessibilityLabel={
+                look.saved ? 'Saved. Save to another collection' : 'Save to a collection'
+              }
               onPress={() => onSave(look)}
               style={styles.save}
             />

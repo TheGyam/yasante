@@ -225,6 +225,15 @@ def test_a_client_cancelling_in_time_or_late_is_the_servers_call(api, setup, boo
     assert api(client).post(f"/api/bookings/{hers}/cancel/").status_code == 409
 
 
+def test_a_client_can_withdraw_a_request_but_the_stylist_declines_it(api, setup, book):
+    profile, client = setup
+    asked = book(client, profile)
+    # The stylist answers a request with a no; cancelling isn't hers to do here.
+    assert api(profile.account).post(f"/api/bookings/{asked['id']}/cancel/").status_code == 409
+    withdrawn = api(client).post(f"/api/bookings/{asked['id']}/cancel/").json()
+    assert withdrawn["status"] == "cancelled_in_time"
+
+
 def test_a_cancellation_opens_the_slot_to_the_waitlist_but_not_the_canceller(api, setup, book, make_user):
     from apps.bookings.models import Booking, SlotInterest
 

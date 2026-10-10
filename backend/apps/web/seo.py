@@ -55,7 +55,7 @@ def organisation():
         "@id": f"{SITE}/#organization",
         "name": NAME,
         "url": SITE,
-        "logo": absolute("/static/site/favicon.png"),
+        "logo": absolute("/static/site/icon-512.png"),
         "description": ABOUT,
         "areaServed": {"@type": "City", "name": "London"},
         "sameAs": [s for s in getattr(settings, "SOCIAL_PROFILES", []) if s],

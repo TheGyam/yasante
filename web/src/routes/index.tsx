@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router';
 import { RouteError } from '@/shared/ui/RouteError';
 import AreaRoute from './area';
+import BookRoute, { BookingRoute, BookingsRoute } from './book';
 import DeleteAccountRoute from './delete-account';
 import HomeRoute from './home';
 import Layout from './Layout';
@@ -57,6 +58,10 @@ export const routes = [
       { path: '/auth/forgot-password', element: <ForgotPasswordRoute /> },
       { path: '/auth/verify-email', element: <VerifyEmailRoute /> },
       { path: '/stylist-setup', element: <StylistSetupRoute /> },
+      // A client's booking, at the app's addresses.
+      { path: '/book/:handle', element: <BookRoute /> },
+      { path: '/bookings', element: <BookingsRoute /> },
+      { path: '/bookings/:id', element: <BookingRoute /> },
       // Her studio: the app's stylist screens, at the app's addresses.
       {
         element: <StudioRoute />,

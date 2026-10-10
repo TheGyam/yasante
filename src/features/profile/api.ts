@@ -134,7 +134,7 @@ export const userApi = {
    * Request a copy of everything we hold on this user.
    * POST /api/users/{userId}/export/
    *
-   * Backend: assemble asynchronously and email a download link — the response here
+   * Backend: assemble asynchronously and email it as a file — the response here
    * only acknowledges the request.
    */
   requestDataExport: async (userId: string): Promise<ApiResponse<{ requestedAt: string }>> => {

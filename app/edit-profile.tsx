@@ -135,6 +135,7 @@ function ProfileForm({ user }: { user: User }) {
 
       <PhotoSourceSheet
         title="Profile photo"
+        square
         visible={picking}
         onClose={() => setPicking(false)}
         onPick={uri => {

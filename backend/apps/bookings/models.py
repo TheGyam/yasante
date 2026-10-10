@@ -190,10 +190,18 @@ class Review(TimeStampedModel):
 class ReviewReport(models.Model):
     """A report against a review."""
 
+    # The wording the reporter picked from (src/features/booking/types.ts).
+    REASON_CHOICES = [
+        ("not-real", "This appointment didn't happen"),
+        ("private", "It shares private details"),
+        ("hate", "Hateful or abusive"),
+        ("other", "Something else"),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name="reports")
     reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    reason = models.CharField(max_length=30)
+    reason = models.CharField(max_length=30, choices=REASON_CHOICES)
     note = models.TextField(max_length=500, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(

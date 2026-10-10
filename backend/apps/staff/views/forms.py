@@ -29,6 +29,34 @@ def keep_hidden_values(request, ma, object_id):
             request.POST[name] = stored[name] or ""
 
 
+def send_initial_values(request, ma, object_id):
+    """
+    A field whose model default is callable (roles=list) is compared with a hidden
+    "initial-" copy the admin page would have sent. The workspace sends none, so every
+    save logged it as changed. Supply the stored value, as that hidden input would.
+    """
+    obj = ma.get_object(request, quote(object_id))
+    if obj is None:
+        return
+    form = ma.get_form(request, obj, change=True)(instance=obj)
+    hidden = {name: field for name, field in form.fields.items() if field.show_hidden_initial}
+    if not hidden:
+        return
+    request.POST = request.POST.copy()
+    for name, field in hidden.items():
+        key, widget = form.add_initial_prefix(name), field.hidden_widget()
+        value = field.prepare_value(form[name].initial)
+        # A date and time is two inputs (key_0, key_1); everything else is one.
+        parts = (
+            zip(widget.widgets_names, widget.widgets, value if isinstance(value, (list, tuple)) else widget.decompress(value))
+            if isinstance(widget, forms.MultiWidget)
+            else [("", widget, value)]
+        )
+        for suffix, part, piece in parts:
+            if key + suffix not in request.POST:
+                request.POST[key + suffix] = part.format_value(piece) or ""
+
+
 @staff_data
 @csrf_protect
 @sensitive_post_parameters()
@@ -41,6 +69,8 @@ def record_form(request, app_label, model_name, object_id=None):
     if request.method == "POST" and object_id is not None:
         keep_hidden_values(request, ma, object_id)
     try:
+        if request.method == "POST" and object_id is not None:
+            send_initial_values(request, ma, object_id)
         response = ma.add_view(request) if object_id is None else ma.changeform_view(request, quote(object_id))
         return response
     except Conflict:

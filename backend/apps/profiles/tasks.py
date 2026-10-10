@@ -3,7 +3,8 @@ import logging
 
 from celery import shared_task
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
+from django.utils import timezone
 
 """
 Profile background tasks.
@@ -13,11 +14,81 @@ Profile background tasks.
 logger = logging.getLogger(__name__)
 
 
+# What a person gets back of their own data (UK GDPR, right of access): every row that is
+# theirs, by the relation that makes it theirs. Not included: staff records about them
+# (audit log, moderation notes), secrets (sign-in and push tokens, codes), and other
+# people's details (who blocked them, who's waiting on a stylist's slots).
+EXPORT = {
+    "account": ("accounts.User", "pk"),
+    "hair_profile": ("profiles.HairProfile", "user"),
+    "hair_snapshots": ("profiles.HairProfileSnapshot", "user"),
+    "hair_log": ("profiles.HairLog", "user"),
+    "consents": ("profiles.ConsentRecord", "user"),
+    "notification_settings": ("common.NotificationPreference", "user"),
+    "notifications_sent": ("common.NotificationLog", "user"),
+    "uploads": ("common.Media", "owner"),
+    "searches": ("common.SearchLog", "user"),
+    "activity": ("profiles.AnalyticsEvent", "user"),
+    "devices": ("accounts.DeviceToken", "user"),
+    "looks": ("looks.Look", "author"),
+    "look_likes": ("looks.LookLike", "user"),
+    "comments": ("looks.LookComment", "author"),
+    "comment_likes": ("looks.CommentLike", "user"),
+    "reports_made": ("looks.Report", "reporter"),
+    "people_blocked": ("looks.Block", "blocker"),
+    "moderation_of_your_content": ("looks.ModerationAction", "author"),
+    "appeals": ("looks.Appeal", "author"),
+    "collections": ("planner.Collection", "user"),
+    "collection_items": ("planner.CollectionItem", "collection__user"),
+    "care_plans": ("planner.CarePlan", "user"),
+    "care_plan_steps": ("planner.CarePlanStep", "plan__user"),
+    "care_plan_sessions": ("planner.CarePlanSession", "user"),
+    "shelf": ("shelf.ShelfItem", "user"),
+    "products_added": ("shelf.Product", "added_by"),
+    "saved_content": ("content.Favorite", "user"),
+    "bookings_as_client": ("bookings.Booking", "client"),
+    "booking_check_ins": ("bookings.CheckIn", "booking__client"),
+    "reviews_written": ("bookings.Review", "booking__client"),
+    "review_reports_made": ("bookings.ReviewReport", "reporter"),
+    "slot_alerts": ("bookings.SlotInterest", "client"),
+    "pages_viewed": ("stylists.PageView", "viewer"),
+    "stylist_page": ("stylists.StylistProfile", "account"),
+    "stylist_menu": ("stylists.MenuItem", "stylist__account"),
+    "stylist_portfolio": ("stylists.PortfolioPhoto", "stylist__account"),
+    "stylist_payment_methods": ("stylists.PaymentMethod", "stylist__account"),
+    "stylist_checks": ("stylists.Verification", "account"),
+    # Her appointments as a stylist. A client's address isn't hers to take away: she
+    # sees it only while a booking is confirmed.
+    "bookings_as_stylist": ("bookings.Booking", "stylist"),
+    "reviews_received": ("bookings.Review", "booking__stylist"),
+}
+# Never sent, on any row: credentials and the like.
+SECRET = ("password", "token", "secret", "code_hash", "apple_id", "google_id")
+NOT_FOR_STYLIST = ("address",)
+
+
+def collect_user_data(user):
+    """Everything EXPORT names, as plain JSON-ready dicts."""
+    from django.apps import apps
+
+    data = {"exported_at": timezone.now().isoformat()}
+    for key, (label, relation) in EXPORT.items():
+        model = apps.get_model(label)
+        names = [
+            f.attname
+            for f in model._meta.concrete_fields
+            if not any(word in f.name for word in SECRET)
+            and not (key == "bookings_as_stylist" and f.name in NOT_FOR_STYLIST)
+        ]
+        rows = list(model.objects.filter(**{relation: user.pk}).values(*names))
+        data[key] = rows[0] if key == "account" and rows else rows
+    return data
+
+
 @shared_task(bind=True, max_retries=3)
 def generate_data_export(self, user_id: str):
-    """Assemble all user data and email it."""
+    """Everything Yasante holds about her, emailed to her as a file."""
     from apps.accounts.models import User
-    from apps.profiles.models import ConsentRecord, HairProfile, HairProfileSnapshot
 
     try:
         user = User.objects.get(pk=user_id)
@@ -25,51 +96,23 @@ def generate_data_export(self, user_id: str):
         logger.warning("Data export: user %s not found", user_id)
         return
 
-    # Collect all data
-
-    data = {
-        "user": {
-            "id": str(user.pk),
-            "name": user.name,
-            "email": user.email,
-            "phone": user.phone,
-            "roles": user.roles,
-            "created_at": user.created_at.isoformat(),
-        },
-    }
-
-    # Hair profile
-    try:
-        hp = user.hair_profile
-        data["hair_profile"] = {
-            "texture": hp.texture,
-            "length": hp.length,
-            "density": hp.density,
-            "porosity": hp.porosity,
-            "goals": hp.goals,
-            "scalp": hp.scalp,
-            "chemicals": hp.chemicals,
-        }
-    except HairProfile.DoesNotExist:
-        pass
-
-    # Snapshots
-    snapshots = HairProfileSnapshot.objects.filter(user=user).values()
-    data["hair_snapshots"] = list(snapshots)
-
-    # Consents
-    consents = ConsentRecord.objects.filter(user=user).values()
-    data["consents"] = list(consents)
-
-    # In production: upload to S3 and email a signed URL
-    # For now, email the JSON directly
-    send_mail(
-        "Your Yasante Data Export",
-        f"Here is your data export:\n\n{json.dumps(data, indent=2, default=str)}",
+    payload = json.dumps(collect_user_data(user), indent=2, default=str, ensure_ascii=False)
+    first = (user.name or "").split(" ")[0] or "there"
+    message = EmailMessage(
+        "Your Yasante data",
+        f"Hi {first},\n\nAttached is a copy of everything Yasante holds about you: your "
+        "account, hair profile, looks, comments, collections, shelf, care plans, bookings "
+        "and reviews. It's a JSON file, which any text editor opens.\n\n"
+        "Didn't ask for this? Reply to this email and we'll look into it.\n\n"
+        "The Yasante team\n",
         settings.DEFAULT_FROM_EMAIL,
         [user.email],
-        fail_silently=True,
     )
+    message.attach("yasante-data.json", payload, "application/json")
+    try:
+        message.send()
+    except Exception as error:  # the mail server; try again shortly
+        raise self.retry(exc=error, countdown=60)
 
     logger.info("Data export sent to %s", user.email)
 

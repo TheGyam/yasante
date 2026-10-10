@@ -17,9 +17,9 @@ interface Consent {
   source: 'web';
 }
 
-export function consentsAtSignup(now = new Date()): Consent[] {
+export function consentsAtSignup(stylist = true, now = new Date()): Consent[] {
   const recordedAt = now.toISOString();
-  return [
+  const all: Consent[] = [
     { purpose: 'terms', granted: true, policyVersion: POLICY_VERSION, recordedAt, source: 'web' },
     { purpose: 'privacy', granted: true, policyVersion: POLICY_VERSION, recordedAt, source: 'web' },
     {
@@ -30,6 +30,8 @@ export function consentsAtSignup(now = new Date()): Consent[] {
       source: 'web',
     },
   ];
+  // A client agrees to the terms and privacy policy; the stylist terms are a stylist's.
+  return stylist ? all : all.filter(consent => consent.purpose !== 'stylist_terms');
 }
 
 /** Remembers the consents for this account, then tries to send them. */

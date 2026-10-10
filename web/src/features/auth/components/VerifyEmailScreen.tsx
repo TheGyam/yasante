@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router';
+import { Navigate, useNavigate, useSearchParams } from 'react-router';
 import { ApiError } from '@/shared/lib/api/client';
 import { errorMessage } from '@/shared/lib/errors';
 import { Button } from '@/shared/ui/Button';
@@ -7,6 +7,7 @@ import { CodeInput } from '@/shared/ui/CodeInput';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
 import { Text } from '@/shared/ui/Text';
 import { useStartEmail, useVerifyEmail } from '../hooks';
+import { safeNext } from '../rules';
 import { useSession } from '../session';
 import { AuthLayout } from './AuthLayout';
 import * as styles from './AuthLayout.css';
@@ -17,6 +18,8 @@ const CODE_LENGTH = 6;
 export function VerifyEmailScreen() {
   const session = useSession();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const after = safeNext(params.get('next')) ?? '/stylist-setup';
   const start = useStartEmail();
   const verify = useVerifyEmail();
   const [code, setCode] = useState('');
@@ -43,12 +46,12 @@ export function VerifyEmailScreen() {
   }, [resendIn]);
 
   if (!session) return <Navigate to="/auth/signup" replace />;
-  if (session.user.emailVerified) return <Navigate to="/stylist-setup" replace />;
+  if (session.user.emailVerified) return <Navigate to={after} replace />;
 
   const submit = (value = code) => {
     if (value.length !== CODE_LENGTH || verify.isPending) return;
     verify.mutate(value, {
-      onSuccess: () => navigate('/stylist-setup', { replace: true }),
+      onSuccess: () => navigate(after, { replace: true }),
       onError: () => setCode(''),
     });
   };

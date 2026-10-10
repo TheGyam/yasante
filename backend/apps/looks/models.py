@@ -251,3 +251,6 @@ class Appeal(TimeStampedModel):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     decided_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Appeal from {self.author.name}: {self.action.get_action_display()}"
