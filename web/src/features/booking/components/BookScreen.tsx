@@ -8,6 +8,7 @@ import {
   formatDuration,
   formatServicePrice,
   hoursLabel,
+  noticeLabel,
   optionGroups,
   useStylistPage,
   type ChosenOptions,
@@ -30,7 +31,7 @@ import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Switch } from '@/shared/ui/Switch';
 import { Text } from '@/shared/ui/Text';
-import { whenLabel } from '../format';
+import { inSentence, replyBy, whenLabel } from '../format';
 import { useFreeSlots, useMyBookings, useRequestBooking } from '../hooks';
 import { GetTheApp } from './GetTheApp';
 import { SlotPicker } from './SlotPicker';
@@ -72,7 +73,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
   const page = useStylistPage(handle);
   const { data: fromLook } = useLook(lookId ?? '');
   const request = useRequestBooking();
-  const [sent, setSent] = useState<{ id: string; name: string }>();
+  const [sent, setSent] = useState<{ id: string; name: string; until?: string }>();
 
   const [draft, setDraft] = useState<Draft>(
     () => readJson<Draft>(draftKey(handle), 'session') ?? { ...EMPTY, serviceId: fromLookService }
@@ -140,7 +141,10 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
             Sent to {sent.name}
           </Text>
           <Text variant="body" tone="secondary">
-            They have 48 hours to reply. We’ll email you the moment they do.
+            {sent.until
+              ? `They have until ${inSentence(whenLabel(sent.until, profile.timeZone))} to reply.`
+              : 'They’ll reply soon.'}{' '}
+            We’ll email you the moment they do.
           </Text>
           <div className={styles.actions}>
             <Button label="See your booking" to={`/bookings/${sent.id}`} fullWidth />
@@ -174,7 +178,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
     : !quote?.complete
       ? `Pick your ${groupNames}.`
       : !time
-        ? 'Pick a time and they have 48 hours to reply.'
+        ? 'Pick a time to send your request.'
         : comesToMe && !addressReady
           ? 'Add your street and postcode so they can get to you.'
           : !accepted
@@ -206,7 +210,8 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
         clientAddress: comesToMe ? joinAddress(street, postcode) : undefined,
       },
       {
-        onSuccess: booking => setSent({ id: booking.id, name: profile.displayName }),
+        onSuccess: booking =>
+          setSent({ id: booking.id, name: profile.displayName, until: booking.expiresAt }),
         // Someone may have got there first: show what's still free.
         onError: () => void slots.refetch(),
       }
@@ -350,7 +355,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
               ? 'Pick a service to see when they’re free.'
               : !quote?.complete
                 ? `Pick your ${groupNames} to see when they’re free.`
-                : `When suits you?${hoursLabel(profile.availability) ? ` They work ${hoursLabel(profile.availability)}.` : ''}`}
+                : `When suits you? They ${hoursLabel(profile.availability) ? `work ${hoursLabel(profile.availability)}, and ` : ''}need ${noticeLabel(profile.availability?.leadHours)}.`}
           </Text>
           {quote?.complete && (
             <SlotPicker
@@ -451,7 +456,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
           <Text variant="caption" tone="tertiary">
             {missing ??
               (session
-                ? `${whenLabel(time!, slots.data?.timeZone)}. They have 48 hours to reply.`
+                ? `${whenLabel(time!, slots.data?.timeZone)}. They have until ${inSentence(whenLabel(replyBy(time!).toISOString(), slots.data?.timeZone))} to reply.`
                 : 'It takes a minute. Everything you’ve picked stays here.')}
           </Text>
           {!session && (

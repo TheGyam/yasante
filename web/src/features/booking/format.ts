@@ -149,3 +149,13 @@ export function suggestedDeposit(booking: Booking) {
     return Math.round((booking.price * depositAmount) / 100);
   return 0;
 }
+
+/**
+ * When the stylist has to answer by: 48 hours from now, but never later than 2 hours
+ * before the time asked for. The server sets the real deadline; this says it beforehand.
+ */
+export function replyBy(time: string, now = new Date()) {
+  const lapse = now.getTime() + 48 * 3_600_000;
+  const before = new Date(time).getTime() - 2 * 3_600_000;
+  return new Date(before > now.getTime() ? Math.min(lapse, before) : new Date(time).getTime());
+}

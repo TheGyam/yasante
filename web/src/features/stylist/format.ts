@@ -100,3 +100,22 @@ export function depositLabel(policies: PublicProfile['policies']) {
   if (policies.depositType === 'percent') return `${policies.depositAmount}% deposit`;
   return `${formatMoney(policies.depositAmount ?? 0)} deposit`;
 }
+
+/**
+ * The notice she can ask for before an appointment (backend BOOKING_NOTICE_CHOICES),
+ * a day unless she says otherwise. Her free times start this far ahead. As the app's.
+ */
+export const NOTICE_CHOICES = [
+  { hours: 3, label: '3 hours' },
+  { hours: 12, label: '12 hours' },
+  { hours: 24, label: 'A day' },
+  { hours: 48, label: '2 days' },
+  { hours: 72, label: '3 days' },
+] as const;
+export const DEFAULT_NOTICE_HOURS = 24;
+
+/** "a day’s notice", "3 hours’ notice": as a sentence says it. */
+export function noticeLabel(hours = DEFAULT_NOTICE_HOURS) {
+  if (hours % 24 === 0) return hours === 24 ? 'a day’s notice' : `${hours / 24} days’ notice`;
+  return `${hours} hours’ notice`;
+}

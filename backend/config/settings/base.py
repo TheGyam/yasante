@@ -403,7 +403,11 @@ BOOKING_REQUEST_LAPSE_HOURS = 48
 BOOKING_DEPOSIT_LAPSE_HOURS = 24
 BOOKING_AUTO_COMPLETE_HOURS = 24
 BOOKING_SLOT_LOOKAHEAD_DAYS = 28
-BOOKING_SLOT_MIN_LEAD_HOURS = 3
+# The notice a stylist needs before an appointment: hers to choose from these, a day
+# unless she says otherwise. Requests and deposits lapse this long before the start.
+BOOKING_NOTICE_CHOICES = (3, 12, 24, 48, 72)
+BOOKING_NOTICE_DEFAULT_HOURS = 24
+BOOKING_ANSWER_BEFORE_START_HOURS = 2
 
 # Phone verification
 VERIFICATION_CODE_LENGTH = 6

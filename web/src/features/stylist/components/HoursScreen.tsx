@@ -11,7 +11,7 @@ import { Input } from '@/shared/ui/Input';
 import { Page } from '@/shared/ui/Page';
 import { Text } from '@/shared/ui/Text';
 import { useUpdateProfile } from '../hooks';
-import { hoursLabel } from '../format';
+import { DEFAULT_NOTICE_HOURS, NOTICE_CHOICES, hoursLabel } from '../format';
 import type { Availability, StylistProfile } from '../types';
 import * as styles from './StudioScreens.css';
 
@@ -93,6 +93,26 @@ export function HoursScreen({
               </div>
             );
           })}
+        </Glass>
+
+        <Glass padded radius="xl" className={styles.card}>
+          <Text variant="overline" tone="tertiary" as="h2">
+            Notice you need
+          </Text>
+          <div className={styles.chips}>
+            {NOTICE_CHOICES.map(choice => (
+              <Chip
+                key={choice.hours}
+                label={choice.label}
+                selected={(hours.leadHours ?? DEFAULT_NOTICE_HOURS) === choice.hours}
+                onClick={() => setHours(h => ({ ...h, leadHours: choice.hours }))}
+              />
+            ))}
+          </div>
+          <Text variant="footnote" tone="secondary">
+            Clients only see times at least this far ahead. A request you haven’t answered lapses 2
+            hours before its time.
+          </Text>
         </Glass>
 
         <Glass padded radius="xl" className={styles.card}>

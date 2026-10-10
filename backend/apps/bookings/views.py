@@ -108,6 +108,19 @@ def _local_day(at, profile):
     return at.astimezone(zones.of(profile)).date()
 
 
+def answer_by(start, hours):
+    """
+    When a request or a deposit lapses: `hours` from now, but never later than shortly
+    before the appointment itself, so nothing is still waiting once it should have begun.
+    """
+    now = timezone.now()
+    lapse = now + hours * HOUR
+    if start is None:
+        return lapse
+    before = start - settings.BOOKING_ANSWER_BEFORE_START_HOURS * HOUR
+    return min(lapse, before) if before > now else start
+
+
 def _take(booking, scheduled_for, deposit):
     """Taking a time: straight to confirmed with no deposit, otherwise a day to pay it."""
     booking.scheduled_for = scheduled_for
@@ -123,7 +136,7 @@ def _take(booking, scheduled_for, deposit):
         booking.deposit_amount = amount
         booking.deposit_method = str((deposit or {}).get("method") or "").strip()[:200]
         booking.deposit_status = "awaiting"
-        booking.expires_at = timezone.now() + settings.BOOKING_DEPOSIT_LAPSE_HOURS * HOUR
+        booking.expires_at = answer_by(scheduled_for, settings.BOOKING_DEPOSIT_LAPSE_HOURS)
     else:
         booking.status = "confirmed"
         booking.expires_at = None
@@ -199,6 +212,12 @@ class BookingListCreateView(APIView):
         starts = [_parse_time(t) for t in times]
         if any(s is None for s in starts):
             return _err("Pick one of the stylist’s times", 400)
+        from apps.stylists.slots import notice_hours
+
+        notice = notice_hours(profile)
+        if starts[0] < timezone.now() + notice * HOUR:
+            wait = "a day’s" if notice == 24 else f"{notice // 24} days’" if notice % 24 == 0 else f"{notice} hours’"
+            return _err(f"{profile.display_name} needs {wait} notice. Pick a later time", 400)
         if any(not is_open_on(profile, s) for s in starts):
             return _err("The stylist doesn’t work one of those days. Pick another", 400)
         minutes = priced["minutes"] or service.duration_minutes or 120
@@ -245,7 +264,7 @@ class BookingListCreateView(APIView):
                 from_look=_bookable_look(data.get("look_id")),
                 notes=str(data.get("notes") or "").strip()[:1000],
                 requested_times=starts,
-                expires_at=timezone.now() + settings.BOOKING_REQUEST_LAPSE_HOURS * HOUR,
+                expires_at=answer_by(starts[0], settings.BOOKING_REQUEST_LAPSE_HOURS),
                 # The client's postcode district when the stylist travels, so they can
                 # judge the journey before saying yes; the street waits for confirming.
                 area=outcode if at_client else profile.base_area,
@@ -298,6 +317,8 @@ class BookingAcceptView(_BookingAction):
         when = _parse_time(request.data.get("scheduled_for"))
         if when is None:
             return _err("Pick the time you’re accepting", 400)
+        if when <= timezone.now():
+            return _err("That time has passed. Suggest another instead", 400)
         _take(booking, when, request.data.get("deposit"))
         recompute_public_stats(booking.stylist_profile)
         return _ok(booking, request)
@@ -313,6 +334,8 @@ class BookingProposeView(_BookingAction):
         when = _parse_time(request.data.get("scheduled_for"))
         if when is None:
             return _err("Pick the time you’re suggesting", 400)
+        if when <= timezone.now():
+            return _err("Suggest a time that hasn’t passed", 400)
         deposit = request.data.get("deposit") or {}
         try:
             amount = float(deposit.get("amount") or 0)
@@ -327,8 +350,8 @@ class BookingProposeView(_BookingAction):
             ),
         }
         booking.responded_at = booking.responded_at or timezone.now()
-        # Now the client has 48 hours to answer.
-        booking.expires_at = timezone.now() + settings.BOOKING_REQUEST_LAPSE_HOURS * HOUR
+        # Now the client has up to 48 hours to answer, and never past the time itself.
+        booking.expires_at = answer_by(when, settings.BOOKING_REQUEST_LAPSE_HOURS)
         booking.save()
         recompute_public_stats(booking.stylist_profile)
         return _ok(booking, request)

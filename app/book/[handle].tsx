@@ -17,6 +17,7 @@ import { errorMessage, useAuth } from '@/features/auth';
 import { useLook } from '@/features/looks';
 import {
   SlotPicker,
+  inSentence,
   useBooking,
   useBookings,
   useFreeSlots,
@@ -28,6 +29,8 @@ import {
   formatDuration,
   formatPrice,
   hoursLabel,
+  noticeLabel,
+  replyBy,
   optionGroups,
   useStylistPage,
   type ChosenOptions,
@@ -117,7 +120,7 @@ export default function RequestBookingScreen() {
   // The look she's booking from: shown here, and to the stylist with the request.
   const { data: fromLookData } = useLook(lookId ?? '');
   const fromLook = lookId ? fromLookData : undefined;
-  const [sent, setSent] = useState<{ id: string; name: string } | null>(null);
+  const [sent, setSent] = useState<{ id: string; name: string; until?: string } | null>(null);
   const { user } = useAuth();
   const { data, isLoading } = useStylistPage(handle);
   const request = useRequestBooking();
@@ -214,7 +217,7 @@ export default function RequestBookingScreen() {
       });
       haptics.success();
       // A beat to see it went, then the booking itself.
-      setSent({ id: booking.id, name: data.profile.displayName });
+      setSent({ id: booking.id, name: data.profile.displayName, until: booking.expiresAt });
     } catch (error) {
       haptics.error();
       const message = errorMessage(error, 'Check your connection and try again.');
@@ -244,7 +247,10 @@ export default function RequestBookingScreen() {
               Sent to {sent.name}
             </Text>
             <Text variant="body" tone="secondary" align="center" style={{ marginTop: space.xs }}>
-              They have 48 hours to reply. We’ll let you know the moment they do.
+              {sent.until
+                ? `They have until ${inSentence(whenLabel(sent.until, slots.data?.timeZone))} to reply.`
+                : 'They’ll reply soon.'}{' '}
+              We’ll let you know the moment they do.
             </Text>
           </Animated.View>
         </View>
@@ -273,7 +279,7 @@ export default function RequestBookingScreen() {
     : !quote?.complete
       ? `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')}.`
       : !time
-        ? 'Pick a time and they have 48 hours to reply.'
+        ? 'Pick a time to send your request.'
         : comesToMe && !addressReady
           ? 'Add your street and postcode so they can get to you.'
           : !accepted
@@ -406,7 +412,7 @@ export default function RequestBookingScreen() {
               ? 'Pick a service to see when they’re free.'
               : !quoteReady
                 ? `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')} to see when they’re free.`
-                : `When suits you?${hoursLabel(profile.availability) ? ` They work ${hoursLabel(profile.availability)}.` : ''}`}
+                : `When suits you? They ${hoursLabel(profile.availability) ? `work ${hoursLabel(profile.availability)}, and ` : ''}need ${noticeLabel(profile.availability?.leadHours)}.`}
           </Text>
           {quoteReady && (
             <SlotPicker
@@ -526,7 +532,8 @@ export default function RequestBookingScreen() {
             testID="booking-send"
           />
           <Text variant="caption" tone="tertiary" align="center">
-            {missing ?? `${whenLabel(time!, slots.data?.timeZone)}. They have 48 hours to reply.`}
+            {missing ??
+              `${whenLabel(time!, slots.data?.timeZone)}. They have until ${inSentence(whenLabel(replyBy(time!).toISOString(), slots.data?.timeZone))} to reply.`}
           </Text>
         </View>
       </View>

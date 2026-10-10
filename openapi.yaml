@@ -2844,6 +2844,8 @@ components:
           items:
             type: string
             format: date
+        leadHours:
+          type: integer
       required:
       - blocked
       - week

@@ -5,6 +5,8 @@ import { CalendarOff, X } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
   DEFAULT_AVAILABILITY,
+  DEFAULT_NOTICE_HOURS,
+  NOTICE_CHOICES,
   hoursLabel,
   useMyStylistProfile,
   useUpdateStylistProfile,
@@ -14,6 +16,7 @@ import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
+import { Chip } from '@/shared/ui/Chip';
 import { DateTimeField } from '@/shared/ui/DateTimeField';
 import { notify } from '@/shared/ui/dialog';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -45,6 +48,7 @@ const useStyles = makeStyles(() => ({
     paddingBottom: space.md,
   },
   half: { flex: 1 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   footer: { paddingTop: space.lg },
 }));
 
@@ -163,6 +167,26 @@ export default function AvailabilityScreen() {
             );
           })}
         </Section>
+
+        <View style={{ gap: space.sm }}>
+          <Text variant="overline" tone="tertiary">
+            Notice you need
+          </Text>
+          <View style={styles.chips}>
+            {NOTICE_CHOICES.map(choice => (
+              <Chip
+                key={choice.hours}
+                label={choice.label}
+                selected={(draft.leadHours ?? DEFAULT_NOTICE_HOURS) === choice.hours}
+                onPress={() => setDraft(current => ({ ...current, leadHours: choice.hours }))}
+              />
+            ))}
+          </View>
+          <Text variant="footnote" tone="secondary">
+            Clients only see times at least this far ahead. A request you haven’t answered lapses 2
+            hours before its time.
+          </Text>
+        </View>
 
         <View style={{ gap: space.sm }}>
           <Text variant="overline" tone="tertiary">

@@ -108,6 +108,8 @@ class AvailabilitySerializer(serializers.Serializer):
     # Sunday first; null is a day off, so each day's hours are written out here.
     week = WeekField()
     blocked = serializers.ListField(child=serializers.DateField())
+    # The notice she needs before an appointment, in hours (3, 12, 24, 48 or 72).
+    lead_hours = optional(serializers.IntegerField())
 
 
 @extend_schema_field(optional(AvailabilitySerializer()))
@@ -118,7 +120,10 @@ class AvailabilityField(serializers.JSONField):
         week = (value or {}).get("week")
         if not isinstance(week, list) or len(week) != 7:
             return None
-        return {"week": week, "blocked": list(value.get("blocked") or [])}
+        shown = {"week": week, "blocked": list(value.get("blocked") or [])}
+        if value.get("lead_hours"):
+            shown["lead_hours"] = value["lead_hours"]
+        return shown
 
 
 @extend_schema_field({"type": "integer", "enum": [0, 1, 2]})
