@@ -141,6 +141,7 @@ class NotificationLog(models.Model):
         ("delivered", "Delivered to Apple or Google"),
         ("muted", "Muted by preference"),
         ("no_device", "No device"),
+        ("emailed", "Emailed (no phone signed in)"),
         ("failed", "Failed"),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
