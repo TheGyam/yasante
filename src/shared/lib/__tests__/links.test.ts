@@ -15,6 +15,7 @@ describe('incoming links', () => {
 
   it('never mistakes a site page for a handle', () => {
     expect(routeForLink('https://yasante.com/looks')).toBe('/looks');
+    expect(routeForLink('https://yasante.com/links')).toBe('/links');
     expect(routeForLink('https://yasante.com/terms')).toBe('/policy/terms');
   });
 

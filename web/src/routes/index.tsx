@@ -5,6 +5,7 @@ import BookRoute, { BookingRoute, BookingsRoute } from './book';
 import DeleteAccountRoute from './delete-account';
 import HomeRoute from './home';
 import Layout from './Layout';
+import LinksRoute from './links';
 import LookRoute from './look';
 import LooksRoute from './looks';
 import NotFoundRoute from './not-found';
@@ -37,6 +38,7 @@ import StylistRoute from './stylist';
  * Add a page in both places.
  */
 export const routes = [
+  { path: '/links', element: <LinksRoute />, errorElement: <RouteError /> },
   {
     element: <Layout />,
     errorElement: <RouteError />,

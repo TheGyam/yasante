@@ -69,6 +69,27 @@ def test_every_page_is_the_site(make_stylist):
     assert '<div id="root">' not in web.get("/api/nothing-here/").content.decode()
 
 
+def test_brand_links_are_public_without_javascript_and_stay_in_the_browser(settings):
+    from apps.stylists.models import NOT_HANDLES
+
+    web = Client()
+    response = web.get("/links")
+    assert response.status_code == 200
+    body = response.content.decode()
+    assert "<title>Our links · Yasante</title>" in body
+    assert '<link rel="canonical" href="https://yasante.com/links">' in body
+    for href in (
+        "https://yasante.com",
+        "https://www.instagram.com/yasantebeauty/",
+        "https://www.tiktok.com/@yasante_beauty",
+    ):
+        assert f'href="{href}"' in body
+    assert "links" in NOT_HANDLES
+    settings.APPLE_TEAM_ID = "TEAM123"
+    association = web.get("/.well-known/apple-app-site-association").json()
+    assert {"/": "/links", "exclude": True} in association["applinks"]["details"][0]["components"]
+
+
 def test_a_stylist_can_sign_up_on_the_web():
     web = Client()
     signup = web.get("/auth/signup").content.decode()
