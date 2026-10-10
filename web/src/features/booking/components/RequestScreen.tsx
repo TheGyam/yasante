@@ -318,8 +318,8 @@ function AwaitingDeposit({ booking }: { booking: Booking }) {
   return (
     <Glass padded radius="xl" className={styles.card}>
       <Text variant="body">
-        Accepted for {inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))}. They’ve been asked for{' '}
-        {formatMoney(booking.deposit?.amount ?? 0)}
+        Accepted for {inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))}. They’ve
+        been asked for {formatMoney(booking.deposit?.amount ?? 0)}
         {booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}.
         Marking it received confirms the booking and{' '}
         {booking.atClient ? 'sends you their address' : 'shares your address'}.

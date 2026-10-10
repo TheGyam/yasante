@@ -9,7 +9,9 @@ from django.utils import timezone
 
 # Valid transitions
 TRANSITIONS = {
-    "requested": {"awaiting_deposit", "confirmed", "declined", "expired"},
+    # The client can withdraw a request she no longer wants: nothing is booked yet, so
+    # it's always in time. (The stylist declines one; she doesn't cancel it.)
+    "requested": {"awaiting_deposit", "confirmed", "declined", "expired", "cancelled_in_time"},
     "awaiting_deposit": {"confirmed", "expired", "cancelled_in_time", "cancelled_late"},
     "confirmed": {
         "completed",

@@ -7,3 +7,12 @@ export const appLink = {
   stylist: (handle: string) => `yasante://stylist/${handle}`,
   look: (id: string) => `yasante://looks/${id}`,
 };
+
+/**
+ * Where to download the app. Empty until it's in the stores: until then the prompts
+ * offer the waitlist instead. Fill these in at launch.
+ */
+export const STORE_LINKS = {
+  appStore: '',
+  googlePlay: '',
+};

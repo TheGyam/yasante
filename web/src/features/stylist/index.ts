@@ -19,3 +19,6 @@ export {
 export { uploadPhoto, addToPortfolio } from './api';
 export { formatPrice as formatServicePrice, hoursLabel } from './format';
 export type { StylistProfile, MenuItem, PortfolioPhoto } from './types';
+export { estimate, optionGroups, type ChosenOptions } from './menu';
+export { formatDuration } from './format';
+export { useStylistPage } from './hooks';

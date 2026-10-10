@@ -4,3 +4,5 @@ export type Booking = Schemas['Booking'];
 export type BookingStatus = Schemas['BookingStatusEnum'];
 export type CloseOut = Schemas['CloseRequestRequest'];
 export type Deposit = Schemas['MoneyMethodRequest'];
+export type FreeSlots = Schemas['FreeSlots'];
+export type BookingDraft = Schemas['BookingCreateRequestRequest'];

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { errorMessage } from '@/shared/lib/errors';
 import { Button } from '@/shared/ui/Button';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
@@ -7,13 +7,15 @@ import { Input } from '@/shared/ui/Input';
 import { Link } from '@/shared/ui/Link';
 import { Text } from '@/shared/ui/Text';
 import { useLogin } from '../hooks';
-import { isValidEmail } from '../rules';
+import { isValidEmail, safeNext, withNext } from '../rules';
 import { AuthLayout } from './AuthLayout';
 import * as styles from './AuthLayout.css';
 
-/** Back to finish setting up a page: the same email and password as the app. */
+/** The same email and password as the app; back to what she was doing (?next=). */
 export function LoginScreen() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const back = safeNext(params.get('next'));
   const login = useLogin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +31,10 @@ export function LoginScreen() {
     login.mutate(
       { email: email.trim(), password },
       {
-        onSuccess: ({ user }) => navigate(user.emailVerified ? '/today' : '/auth/verify-email'),
+        onSuccess: ({ user }) => {
+          const home = back ?? (user.roles.includes('stylist') ? '/today' : '/bookings');
+          navigate(user.emailVerified ? home : withNext('/auth/verify-email', home));
+        },
       }
     );
   };
@@ -37,13 +42,17 @@ export function LoginScreen() {
   return (
     <AuthLayout
       title="Sign in"
-      subtitle="To your studio: your page, menu, work and requests."
+      subtitle={
+        back
+          ? 'With the same email and password as the app.'
+          : 'To your bookings, or your studio if you’re a stylist.'
+      }
       footer={
         <Text variant="subhead" tone="secondary">
           New to Yasante?{' '}
-          <Link to="/auth/signup">
+          <Link to={back ? withNext('/auth/signup?role=client', back) : '/auth/signup'}>
             <Text variant="subhead" tone="accent">
-              Set up a stylist account
+              {back ? 'Create an account' : 'Set up a stylist account'}
             </Text>
           </Link>
         </Text>

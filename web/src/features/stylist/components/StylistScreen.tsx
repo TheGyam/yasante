@@ -11,7 +11,6 @@ import {
   UserRoundX,
 } from 'lucide-react';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
-import { appLink } from '@/shared/lib/links';
 import { formatMonth, plural } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
@@ -119,16 +118,11 @@ function Stylist({ page }: { page: StylistPage }) {
               <Button
                 label="Request a booking"
                 icon={CalendarPlus}
-                href={appLink.stylist(profile.handle)}
+                to={`/book/${profile.handle}`}
                 fullWidth
               />
               <Text variant="footnote" tone="tertiary">
-                Booking happens in the Yasante app.{' '}
-                <Link to={`/?from=${encodeURIComponent(profile.handle)}#waitlist`}>
-                  <Text variant="footnote" tone="accent">
-                    Not got it yet?
-                  </Text>
-                </Link>
+                Right here, no app needed. They have 48 hours to reply.
               </Text>
             </div>
           </Glass>
