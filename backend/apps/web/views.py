@@ -40,6 +40,17 @@ def home(request):
 
 
 @public
+def links(request):
+    return page(
+        request,
+        title="Our links",
+        description="Find Yasante on Instagram and TikTok, or explore our website. Everything for your hair, in one place.",
+        image="https://yasante.com/static/site/apple-touch-icon.png",
+        content_template="web/content/links.html",
+    )
+
+
+@public
 def looks(request):
     style = Style.objects.filter(slug=request.GET.get("style") or "").first()
     content, jsonld = seo.looks_index(style)
@@ -402,7 +413,7 @@ def llms_full_txt(request):
 
 # Paths the app opens itself; everything else on the site stays in the browser.
 APP_PATHS = ["/looks/*", "/invite/*", "/waitlist/*", "/book/*", "/*"]
-NOT_APP_PATHS = ["/admin/*", "/api/*", "/static/*", "/media/*", "/terms", "/privacy", "/guidelines", "/delete-account"]
+NOT_APP_PATHS = ["/admin/*", "/api/*", "/static/*", "/media/*", "/terms", "/privacy", "/guidelines", "/delete-account", "/links", "/links/"]
 
 
 @cache_control(public=True, max_age=3600)

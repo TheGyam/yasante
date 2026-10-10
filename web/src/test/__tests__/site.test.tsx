@@ -36,6 +36,26 @@ const page = {
 };
 
 describe('the site', () => {
+  it('opens the branded bio page with its three destinations without fetching data', () => {
+    const calls = mockApi({});
+    renderSite('/links');
+    expect(screen.getByRole('heading', { name: 'yasante' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(3);
+    expect(screen.getByRole('link', { name: /Visit our website/ })).toHaveAttribute(
+      'href',
+      'https://yasante.com'
+    );
+    expect(screen.getByRole('link', { name: /Instagram/ })).toHaveAttribute(
+      'href',
+      'https://www.instagram.com/yasantebeauty/'
+    );
+    expect(screen.getByRole('link', { name: /TikTok/ })).toHaveAttribute(
+      'href',
+      'https://www.tiktok.com/@yasante_beauty'
+    );
+    expect(calls).toEqual([]);
+  });
+
   it('opens her page on the data the server sent with it, without asking again', () => {
     const calls = mockApi({});
     document.body.insertAdjacentHTML(

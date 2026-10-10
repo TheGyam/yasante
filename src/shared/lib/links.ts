@@ -7,6 +7,7 @@ export const PUBLIC_HOSTS = ['yasante.com', 'www.yasante.com'];
  */
 export const NOT_HANDLES = new Set([
   // The site's own pages.
+  'links',
   'manage',
   'looks',
   'invite',
