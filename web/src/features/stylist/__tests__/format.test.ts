@@ -1,5 +1,6 @@
 import { formatDuration, hoursLabel, replyLabel, serviceDetails, timingLabelText } from '../format';
 import type { Availability, MenuItem } from '../types';
+import { estimate, optionGroups } from '../menu';
 
 const nineToSix = { start: '09:00', end: '18:00' };
 
@@ -49,5 +50,32 @@ describe('her page’s wording', () => {
       ],
     } as MenuItem;
     expect(serviceDetails(item)).toBe('5 hrs · priced by length and size · hair included');
+  });
+});
+
+describe('estimate', () => {
+  const item = {
+    id: 'm1',
+    name: 'Knotless braids',
+    price: 120,
+    fromPrice: true,
+    durationMinutes: 300,
+    options: [
+      { id: 'l1', group: 'length', label: 'Shoulder', add: 0 },
+      { id: 'l2', group: 'length', label: 'Waist', add: 40, addMinutes: 120 },
+      { id: 's1', group: 'size', label: 'Small', add: 20, addMinutes: 60 },
+    ],
+  } as unknown as MenuItem;
+
+  it('is a starting price until every group is chosen, then her exact quote', () => {
+    expect(estimate(item, { length: 'l2' })).toMatchObject({ price: 160, fromPrice: true, complete: false });
+    expect(estimate(item, { length: 'l2', size: 's1' })).toMatchObject({
+      price: 180,
+      minutes: 480,
+      labels: ['Waist', 'Small'],
+      fromPrice: false,
+      complete: true,
+    });
+    expect(optionGroups(item).map(g => g.group)).toEqual(['length', 'size']);
   });
 });

@@ -106,7 +106,11 @@ export function RequestsScreen() {
           {deposits.length > 0 && (
             <Section title="Waiting for a deposit">
               {deposits.map(b =>
-                row(b, `${whenLabel(b.scheduledFor ?? '', b.timeZone)} · mark it when it arrives`, Wallet)
+                row(
+                  b,
+                  `${whenLabel(b.scheduledFor ?? '', b.timeZone)} · mark it when it arrives`,
+                  Wallet
+                )
               )}
             </Section>
           )}
@@ -117,7 +121,9 @@ export function RequestsScreen() {
           )}
           {done.length > 0 && (
             <Section title="Past">
-              {done.map(b => row(b, b.scheduledFor ? whenLabel(b.scheduledFor, b.timeZone) : 'Not booked'))}
+              {done.map(b =>
+                row(b, b.scheduledFor ? whenLabel(b.scheduledFor, b.timeZone) : 'Not booked')
+              )}
             </Section>
           )}
         </>

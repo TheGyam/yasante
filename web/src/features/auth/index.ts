@@ -7,3 +7,4 @@ export { RequireAccount } from './components/RequireAccount';
 export { SignedInAs } from './components/SignedInAs';
 export { useSession, endSession } from './session';
 export type { Session, User } from './types';
+export { POLICY_VERSION, safeNext, withNext } from './rules';

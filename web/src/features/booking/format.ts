@@ -107,6 +107,40 @@ export const STATUS_LABELS: Record<Booking['status'], string> = {
   no_show: 'Didn’t turn up',
 };
 
+/** Where a booking is up to, told to the client: "they" is the stylist. As the app says it. */
+export const CLIENT_STATUS_LABELS: Record<Booking['status'], string> = {
+  requested: 'Waiting for them to reply',
+  awaiting_deposit: 'Send the deposit to confirm',
+  confirmed: 'Confirmed',
+  completed: 'Done',
+  declined: 'They couldn’t take it',
+  expired: 'No reply in time',
+  cancelled_in_time: 'Cancelled',
+  cancelled_late: 'Cancelled late',
+  cancelled_by_stylist: 'They had to cancel',
+  no_show: 'Marked as a no-show',
+};
+
+/** The states where something is still going to happen. */
+export const isLive = (booking: Pick<Booking, 'status'>) =>
+  ['requested', 'awaiting_deposit', 'confirmed'].includes(booking.status);
+
+/** A free time on the stylist's clock: its day ("2026-10-04"), "10:00", and the hour. */
+export function slotParts(iso: string, zone?: string) {
+  const [day, time] = toSalonInput(iso, zone).split('T');
+  return { day, time, hour: Number(time.slice(0, 2)) };
+}
+
+/** Whether cancelling now counts as late: inside her notice window. The server decides. */
+export function cancellingIsLate(
+  booking: Pick<Booking, 'scheduledFor' | 'policy'>,
+  now = new Date()
+) {
+  if (!booking.scheduledFor) return false;
+  const hours = (new Date(booking.scheduledFor).getTime() - now.getTime()) / 3_600_000;
+  return hours < booking.policy.noticeHours;
+}
+
 /** The deposit she'd ask for this booking, from her own rules. */
 export function suggestedDeposit(booking: Booking) {
   const { depositType, depositAmount } = booking.policy;

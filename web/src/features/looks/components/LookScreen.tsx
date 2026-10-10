@@ -1,4 +1,12 @@
-import { Heart, ImageOff, MessageCircle, Scissors, ShoppingBag, Smartphone } from 'lucide-react';
+import {
+  CalendarPlus,
+  Heart,
+  ImageOff,
+  MessageCircle,
+  Scissors,
+  ShoppingBag,
+  Smartphone,
+} from 'lucide-react';
 import { usePrefetchStylist } from '@/features/stylist';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
 import { appLink } from '@/shared/lib/links';
@@ -125,7 +133,15 @@ export function LookScreen({ id }: { id: string }) {
           )}
 
           <div className={styles.actions}>
-            <Button label="Open in the app" icon={Smartphone} href={appLink.look(look.id)} />
+            {look.stylist?.handle && look.serviceId ? (
+              <Button
+                label="Book this look"
+                icon={CalendarPlus}
+                to={`/book/${look.stylist.handle}?service=${look.serviceId}&look=${look.id}`}
+              />
+            ) : (
+              <Button label="Open in the app" icon={Smartphone} href={appLink.look(look.id)} />
+            )}
             {look.stylist?.handle && (
               <Button
                 label={`See ${look.stylist.name}’s page`}

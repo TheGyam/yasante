@@ -1,5 +1,5 @@
 import { api } from '@/shared/lib/api/client';
-import type { Booking, BookingStatus, CloseOut, Deposit } from './types';
+import type { Booking, BookingDraft, BookingStatus, CloseOut, Deposit, FreeSlots } from './types';
 
 /** Her side of the bookings, newest first. */
 export const listBookings = (status: BookingStatus[]) =>
@@ -27,3 +27,41 @@ export const closeBooking = (id: string, closeOut: CloseOut) =>
 
 /** She has to cancel. Their deposit is always returned, and it counts against her. */
 export const cancelBooking = (id: string) => api.post<Booking>(`/bookings/${id}/cancel/`, {});
+
+/* The client's side. */
+
+/** Her bookings, as a client: every one, newest first. */
+export const listMyBookings = () => api.get<Booking[]>('/bookings/', { role: 'client' });
+
+/** The stylist's free times for this job (its options change how long it runs). */
+export const getFreeSlots = (handle: string, serviceId: string, optionIds: string[]) =>
+  api.get<FreeSlots>(`/stylists/by-handle/${handle}/slots/`, {
+    service: serviceId,
+    options: optionIds.join(',') || undefined,
+  });
+
+/** She asks. The server prices it from the stylist's menu and checks the time is free. */
+export const requestBooking = (draft: BookingDraft) => api.post<Booking>('/bookings/', draft);
+
+/** "Yes, I'm coming". */
+export const confirmAttendance = (id: string) => api.post<Booking>(`/bookings/${id}/attending/`);
+
+/** The stylist suggested another time: she takes it, or doesn't. */
+export const answerProposal = (id: string, accept: boolean) =>
+  api.post<Booking>(`/bookings/${id}/proposal/`, { accept });
+
+/** Ask to move it. One move is free. */
+export const requestMove = (id: string, scheduledFor: string) =>
+  api.post<Booking>(`/bookings/${id}/move/`, { scheduledFor });
+
+/** The other side asked to move it: yes or no. */
+export const answerMove = (id: string, accept: boolean) =>
+  api.post<Booking>(`/bookings/${id}/move/answer/`, { accept });
+
+/** Did it start on time? Her one tap, after. */
+export const startedOnTime = (id: string, onTime: boolean) =>
+  api.post<Booking>(`/bookings/${id}/started-on-time/`, { onTime });
+
+/** Her review of a finished appointment: once, and checked before it shows. */
+export const reviewBooking = (id: string, rating: number, body?: string) =>
+  api.post<unknown>(`/bookings/${id}/review/`, { rating, body });

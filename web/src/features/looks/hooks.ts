@@ -50,6 +50,7 @@ export function useLook(id: string) {
     queryKey: lookKeys.look(id),
     queryFn: () => getLook(id),
     placeholderData: () => fromFeeds(client, id),
+    enabled: !!id,
   });
 }
 
