@@ -15,6 +15,8 @@ PINK = "#FF8FB8"
 INK = "#0B0709"
 SOFT = "#6E5C65"
 PAPER = "#FFF7FA"
+# The app icon, hosted with the site (web/public/email-icon.png): mail apps need a full address.
+ICON = "https://yasante.com/static/site/email-icon.png"
 
 
 def _page(preheader, body):
@@ -35,7 +37,7 @@ def _page(preheader, body):
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;">
       <tr><td align="center" style="padding:0 0 28px;">
         <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-          <td style="background:{INK};border-radius:14px;width:44px;height:44px;text-align:center;vertical-align:middle;font-family:Helvetica,Arial,sans-serif;font-size:26px;font-weight:700;color:{PINK};line-height:44px;">y</td>
+          <td style="width:44px;height:44px;vertical-align:middle;"><img src="{ICON}" width="44" height="44" alt="" style="display:block;width:44px;height:44px;border:0;border-radius:10px;"></td>
           <td style="padding-left:10px;font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:{INK};letter-spacing:-0.3px;">yasante</td>
         </tr></table>
       </td></tr>

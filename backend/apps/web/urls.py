@@ -6,6 +6,7 @@ from . import views
 urlpatterns = [
     path("", views.home, name="web-home"),
     path("robots.txt", views.robots),
+    path("favicon.ico", views.favicon),
     path("sitemap.xml", views.sitemap, name="web-sitemap"),
     path("llms.txt", views.llms_txt, name="web-llms"),
     path("llms-full.txt", views.llms_full_txt, name="web-llms-full"),
