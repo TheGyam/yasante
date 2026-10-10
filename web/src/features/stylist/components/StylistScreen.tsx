@@ -122,7 +122,7 @@ function Stylist({ page }: { page: StylistPage }) {
                 fullWidth
               />
               <Text variant="footnote" tone="tertiary">
-                Right here, no app needed. They have 48 hours to reply.
+                Right here, no app needed. They reply within 48 hours.
               </Text>
             </div>
           </Glass>

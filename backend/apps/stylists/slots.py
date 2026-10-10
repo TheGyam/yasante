@@ -11,6 +11,12 @@ from django.utils import timezone
 DEFAULT_HOURS = {"start": "09:00", "end": "18:00"}
 
 
+def notice_hours(profile):
+    """How much notice she needs before an appointment (her choice, a day by default)."""
+    chosen = (getattr(profile, "availability", None) or {}).get("lead_hours")
+    return chosen if chosen in settings.BOOKING_NOTICE_CHOICES else settings.BOOKING_NOTICE_DEFAULT_HOURS
+
+
 def compute_free_slots(profile, service, option_ids: list[str]) -> dict:
     from apps.stylists.pricing import price_choice
 
@@ -26,7 +32,8 @@ def compute_free_slots(profile, service, option_ids: list[str]) -> dict:
     # Her hours are wall-clock times where she works; slots go out in UTC.
     zone = zones.of(profile)
     now = timezone.now()
-    min_start = now + timedelta(hours=settings.BOOKING_SLOT_MIN_LEAD_HOURS)
+    # Nothing inside her notice is offered: a day with no time far enough ahead isn't shown.
+    min_start = now + timedelta(hours=notice_hours(profile))
     today = now.astimezone(zone).date()
     max_date = today + timedelta(days=settings.BOOKING_SLOT_LOOKAHEAD_DAYS - 1)
     ranges = held_ranges(profile)

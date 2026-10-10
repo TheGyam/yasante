@@ -259,3 +259,32 @@ export const SERVICE_PRESETS: { name: string; minutes: number; by: OptionGroup[]
 
 /** Quick picks for how long a job takes, in minutes. */
 export const DURATION_PICKS = [60, 120, 180, 240, 300, 360, 480];
+
+/**
+ * The notice she can ask for before an appointment (backend BOOKING_NOTICE_CHOICES),
+ * a day unless she says otherwise. Her free times start this far ahead.
+ */
+export const NOTICE_CHOICES = [
+  { hours: 3, label: '3 hours' },
+  { hours: 12, label: '12 hours' },
+  { hours: 24, label: 'A day' },
+  { hours: 48, label: '2 days' },
+  { hours: 72, label: '3 days' },
+] as const;
+export const DEFAULT_NOTICE_HOURS = 24;
+
+/** "a day’s notice", "3 hours’ notice": as a sentence says it. */
+export function noticeLabel(hours = DEFAULT_NOTICE_HOURS) {
+  if (hours % 24 === 0) return hours === 24 ? 'a day’s notice' : `${hours / 24} days’ notice`;
+  return `${hours} hours’ notice`;
+}
+
+/**
+ * When the stylist has to answer by: 48 hours from now, but never later than 2 hours
+ * before the time asked for. The server sets the real deadline; this says it beforehand.
+ */
+export function replyBy(time: string, now = new Date()) {
+  const lapse = now.getTime() + 48 * 3_600_000;
+  const before = new Date(time).getTime() - 2 * 3_600_000;
+  return new Date(before > now.getTime() ? Math.min(lapse, before) : new Date(time).getTime());
+}

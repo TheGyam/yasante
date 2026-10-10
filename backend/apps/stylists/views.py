@@ -96,6 +96,8 @@ def _valid_availability(value):
             continue
         if not isinstance(day, dict) or not day.get("start") or not day.get("end"):
             return False
+    if "lead_hours" in value and value["lead_hours"] not in settings.BOOKING_NOTICE_CHOICES:
+        return False
     return isinstance(value.get("blocked", []), list)
 
 

@@ -39,6 +39,8 @@ export interface Availability {
   week: [DayHours, DayHours, DayHours, DayHours, DayHours, DayHours, DayHours];
   /** Days off on top of the week — holidays, a wedding — as yyyy-MM-dd. */
   blocked: string[];
+  /** The notice she needs before an appointment, in hours. A day when unset. */
+  leadHours?: number;
 }
 
 export interface StylistProfile {

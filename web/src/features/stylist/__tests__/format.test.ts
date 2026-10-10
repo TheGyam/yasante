@@ -68,7 +68,11 @@ describe('estimate', () => {
   } as unknown as MenuItem;
 
   it('is a starting price until every group is chosen, then her exact quote', () => {
-    expect(estimate(item, { length: 'l2' })).toMatchObject({ price: 160, fromPrice: true, complete: false });
+    expect(estimate(item, { length: 'l2' })).toMatchObject({
+      price: 160,
+      fromPrice: true,
+      complete: false,
+    });
     expect(estimate(item, { length: 'l2', size: 's1' })).toMatchObject({
       price: 180,
       minutes: 480,

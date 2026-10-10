@@ -1851,6 +1851,7 @@ export interface components {
                 } | null
             ];
             blocked: string[];
+            leadHours?: number;
         };
         BarcodeResult: {
             product: components["schemas"]["ProductResponse"];

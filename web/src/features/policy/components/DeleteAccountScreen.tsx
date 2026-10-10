@@ -34,8 +34,8 @@ export function DeleteAccountScreen() {
           What’s deleted
         </Text>
         <Text as="p">
-          Your account, profile, hair profile, collections, shelf, looks, comments, photos and
-          saved items are deleted. If you’re a stylist, your page, menu and work photos go too.
+          Your account, profile, hair profile, collections, shelf, looks, comments, photos and saved
+          items are deleted. If you’re a stylist, your page, menu and work photos go too.
         </Text>
         <Text as="h2" variant="title3">
           What’s kept, and for how long
