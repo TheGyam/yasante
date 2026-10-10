@@ -10,6 +10,7 @@ from django.templatetags.static import static
 from django.urls import include, path, re_path
 
 from apps.common.client_errors import ClientErrorView
+from apps.web.views import favicon
 
 admin.site.site_header = settings.ADMIN_SITE_HEADER
 admin.site.site_title = settings.ADMIN_SITE_TITLE
@@ -55,6 +56,7 @@ def shell(request, **kwargs):
 urlpatterns = [
     path("robots.txt", lambda request: HttpResponse("User-agent: *\nDisallow: /", content_type="text/plain")),
     # The staff app reports its own errors here: its CSP only allows its own origin.
+    path("favicon.ico", favicon),
     path("data/client-errors/", ClientErrorView.as_view()),
     path("data/", include("apps.staff.urls")),
     # Admin shares workspace 2FA. Break glass via the server shell:

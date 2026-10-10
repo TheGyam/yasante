@@ -242,6 +242,17 @@ def robots(request):
     return HttpResponse("\n".join(lines) + "\n", content_type="text/plain")
 
 
+@cache_control(public=True, max_age=86400)
+def favicon(request):
+    """Browsers ask every host for /favicon.ico by themselves: the app icon, from the site build."""
+    from pathlib import Path
+
+    icon = Path(settings.BASE_DIR) / "apps/web/static/site/favicon.ico"
+    if not icon.exists():
+        raise Http404
+    return HttpResponse(icon.read_bytes(), content_type="image/x-icon")
+
+
 @cache_control(public=True, max_age=3600)
 def sitemap(request):
     """Every public page, with stylists' and looks' photos for Google Images."""
