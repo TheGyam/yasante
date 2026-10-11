@@ -70,16 +70,17 @@ export const figure = style({
   },
 });
 
-export const canvas = style({
+globalStyle(`${figure} > img, ${figure} > canvas`, {
   position: 'absolute',
   inset: 0,
-  zIndex: 1,
+  display: 'block',
   width: '100%',
   height: '100%',
 });
-
-export const poster = style({ position: 'absolute', inset: 0, width: '100%', height: '100%' });
-globalStyle(`${canvas}[data-ready="true"] ~ ${poster}`, { visibility: 'hidden' });
+// the still painting until the turning one is drawn, and again if the GPU gives up
+globalStyle(`${figure} > canvas`, { visibility: 'hidden' });
+globalStyle(`${figure}[data-live] > canvas`, { visibility: 'visible' });
+globalStyle(`${figure}[data-live] > img`, { visibility: 'hidden' });
 
 // ---------------------------------------------------------------- the copy, left
 export const copy = style({
@@ -202,7 +203,10 @@ export const watch = style({
   padding: '0 18px 0 6px',
   borderRadius: 999,
   border: '1px solid rgba(255,255,255,0.18)',
-  background: 'rgba(255,255,255,0.04)',
+  // dark glass: it sits on her white tee on wide screens
+  background: 'rgba(34,6,15,0.5)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
   cursor: 'pointer',
   selectors: { '&:hover': { borderColor: 'rgba(255,255,255,0.36)' } },
 });
@@ -244,7 +248,7 @@ export const dot = style({ width: 7, height: 7, borderRadius: '50%', background:
 
 export const track = style({
   position: 'relative',
-  width: 132,
+  width: 100,
   height: 1,
   margin: '0 4px',
   background: 'rgba(248,241,244,0.3)',
@@ -301,6 +305,11 @@ export const badge = style({
   placeItems: 'center',
   width: 116,
   height: 116,
+  borderRadius: '50%',
+  // dark glass, like the button beside it, over her shoulder
+  background: 'rgba(34,6,15,0.5)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
 });
 
 export const ring = style({

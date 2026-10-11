@@ -1,4 +1,4 @@
-import { FRAME_COUNT, MAX_ANGLE, angleFromPointer, describeAngle, loadOrder } from '../gaze';
+import { MAX_ANGLE, angleFromPointer, describeAngle, settle } from '../gaze';
 
 describe('the hero’s gaze', () => {
   it('looks straight ahead at the centre and 60° at either edge', () => {
@@ -14,10 +14,15 @@ describe('the hero’s gaze', () => {
     expect(describeAngle(60)).toBe('60° right');
   });
 
-  it('loads the centre first, then every frame exactly once', () => {
-    const order = loadOrder();
-    expect(order[0]).toBe((FRAME_COUNT - 1) / 2);
-    expect(new Set(order).size).toBe(FRAME_COUNT);
-    expect(order).toHaveLength(FRAME_COUNT);
+  it('glides to where she’s looking without ever going past it', () => {
+    let x = 0;
+    let v = 0;
+    let furthest = 0;
+    for (let i = 0; i < 120; i++) {
+      [x, v] = settle(x, v, 40, 7, 1 / 60);
+      furthest = Math.max(furthest, x);
+    }
+    expect(furthest).toBeLessThanOrEqual(40);
+    expect(x).toBeCloseTo(40, 1);
   });
 });

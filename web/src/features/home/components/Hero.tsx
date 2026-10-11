@@ -3,7 +3,8 @@ import { ArrowRight, ArrowUpLeft, Check, Play } from 'lucide-react';
 import { useReducedMotion } from '@/shared/theme/useReducedMotion';
 import { Link } from '@/shared/ui/Link';
 import { describeAngle, startGaze } from '../gaze';
-import { AVATARS, FRAMES_LARGE, FRAMES_SMALL, PROPS } from '../media';
+import { AMA, AMA_DEPTH, AVATARS, PROPS } from '../media';
+import { turnable } from '../turn';
 import * as styles from './Hero.css';
 
 const CARDS = [
@@ -27,52 +28,75 @@ const CARDS = [
   },
 ];
 
-const CENTRE = Math.floor((FRAMES_LARGE.length - 1) / 2);
+/** Where her chin and collar are in the painting, and the depth her head turns about (../turn.ts). */
+const TURN = { chin: 0.63, collar: 0.77, pivot: 0.5, amount: 0.09 };
 
 /**
- * The landing page's first screen. Bobbi, the bust in the bob, turns to look wherever the
- * pointer goes (on a phone she looks around by herself until touched); see ../gaze.ts.
+ * The landing page's first screen. Ama turns to look wherever the pointer goes (on a phone
+ * she looks around by herself until touched); see ../gaze.ts and ../turn.ts. The painting
+ * shows at once as a plain image; the turning canvas takes over once it's ready.
  */
 export function Hero({ onWatch }: { onWatch: () => void }) {
   const root = useRef<HTMLElement>(null);
+  const figure = useRef<HTMLDivElement>(null);
+  const painting = useRef<HTMLImageElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const readout = useRef<HTMLSpanElement>(null);
   const reduced = useReducedMotion();
 
   useEffect(() => {
     const stage = root.current;
+    const box = figure.current;
+    const art = painting.current;
     const surface = canvas.current;
-    if (!stage || !surface) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const big = surface.getBoundingClientRect().width * dpr > 720;
-    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
-      .connection;
-    return startGaze({
-      canvas: surface,
-      root: stage,
-      frames: big ? FRAMES_LARGE : FRAMES_SMALL,
-      reducedMotion: reduced,
-      light: !!connection?.saveData,
-      onAngle: angle => {
-        if (readout.current) readout.current.textContent = describeAngle(angle);
-      },
-    });
+    if (!stage || !box || !art || !surface) return;
+    let stop = () => {};
+    let cancelled = false;
+    const depth = new Image();
+    depth.src = AMA_DEPTH;
+    // A lost GPU context leaves the still painting showing.
+    const lost = () => delete box.dataset.live;
+    surface.addEventListener('webglcontextlost', lost);
+    // (inside a then, so a browser without decode() just keeps the still painting)
+    Promise.resolve()
+      .then(() => Promise.all([art.decode(), depth.decode()]))
+      .then(() => {
+        if (cancelled) return;
+        const draw = turnable(surface, art, depth, TURN);
+        if (!draw) return;
+        draw({ turn: 0, nod: 0 });
+        box.dataset.live = '';
+        stop = startGaze({
+          root: stage,
+          figure: box,
+          pose: draw,
+          reducedMotion: reduced,
+          onAngle: angle => {
+            if (readout.current) readout.current.textContent = describeAngle(angle);
+          },
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      stop();
+      surface.removeEventListener('webglcontextlost', lost);
+    };
   }, [reduced]);
 
   return (
     <section ref={root} className={styles.stage} aria-labelledby="hero-title">
-      <div className={styles.figure}>
-        <canvas ref={canvas} className={styles.canvas} aria-hidden />
+      <div ref={figure} className={styles.figure}>
         <img
-          className={styles.poster}
-          src={FRAMES_SMALL[CENTRE]}
-          srcSet={`${FRAMES_SMALL[CENTRE]} 640w, ${FRAMES_LARGE[CENTRE]} 1200w`}
-          sizes="(min-width: 960px) 62vw, 100vw"
-          width={1200}
-          height={1200}
-          alt="A mannequin in a sleek black bob with a blunt fringe, wearing a berry turtleneck"
+          ref={painting}
+          src={AMA}
+          alt=""
+          width={1400}
+          height={1400}
+          decoding="async"
           fetchPriority="high"
         />
+        <canvas ref={canvas} aria-hidden />
       </div>
 
       <span className={styles.eye} aria-hidden>
@@ -94,8 +118,8 @@ export function Hero({ onWatch }: { onWatch: () => void }) {
           <span className={styles.silk}>Wear it.</span>
         </h1>
         <p className={styles.lede}>
-          Meet Bobbi, a silk-press bob with somewhere to be.{' '}
-          <span className={styles.hoverOnly}>Move your cursor: she’s looking too.</span>
+          Meet Ama: two braids, a middle part, and opinions about your edges.{' '}
+          <span className={styles.hoverOnly}>Move your cursor: she’s watching.</span>
           <span className={styles.touchOnly}>Drag across her: she’ll follow.</span> Yasante shows
           you styles on hair like yours, the stylist who did them, and what they used.
         </p>
