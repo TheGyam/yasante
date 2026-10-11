@@ -3,6 +3,7 @@ import {
   createGlobalThemeContract,
   createGlobalTheme,
   globalStyle,
+  style,
 } from '@vanilla-extract/css';
 import { darkTheme, lightTheme, type Theme } from './themes';
 import { duration, media } from './tokens';
@@ -32,6 +33,12 @@ globalStyle(':root[data-theme="light"]', {
   vars: assignVars(color, colorShape(lightTheme)),
 });
 globalStyle(':root[data-theme="dark"]', {
+  colorScheme: 'dark',
+  vars: assignVars(color, colorShape(darkTheme)),
+});
+
+/** A surface that is always dark (the home page's hero), whatever the reader's setting. */
+export const darkSurface = style({
   colorScheme: 'dark',
   vars: assignVars(color, colorShape(darkTheme)),
 });
