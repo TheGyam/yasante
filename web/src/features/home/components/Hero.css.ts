@@ -426,9 +426,9 @@ export const card = style({
 
 export const prop = style({
   position: 'absolute',
-  right: '-30%',
-  bottom: '-2%',
-  width: '100%',
+  right: '-28%',
+  bottom: '-12%',
+  width: '92%',
   height: 'auto',
   pointerEvents: 'none',
   transition: `transform 350ms ${EASE_OUT}`,
