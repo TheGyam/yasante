@@ -1,9 +1,8 @@
 """
-Rendered PNGs -> the WebPs the home page loads.
+Rendered card objects -> the WebPs the home page loads.
 
   python web/scripts/hero/encode.py <render dir> [--ffmpeg path/to/ffmpeg]
 
-bob-NN.png -> media/bob/1200/bob-NN.webp and media/bob/640/bob-NN.webp
 prop-X.png -> media/props/X.webp (480px)
 """
 import argparse
@@ -26,10 +25,6 @@ def webp(src, dst, size, quality):
                     '-c:v', 'libwebp', '-quality', str(quality), '-pix_fmt', 'yuva420p', dst], check=True)
 
 
-for f in sorted(glob.glob(os.path.join(args.src, 'bob-*.png'))):
-    name = os.path.splitext(os.path.basename(f))[0]
-    webp(f, os.path.join(MEDIA, 'bob/1200', name + '.webp'), 1200, 80)
-    webp(f, os.path.join(MEDIA, 'bob/640', name + '.webp'), 640, 78)
 for f in glob.glob(os.path.join(args.src, 'prop-*.png')):
     name = os.path.splitext(os.path.basename(f))[0][5:]
     webp(f, os.path.join(MEDIA, 'props', name + '.webp'), 480, 82)
