@@ -28,6 +28,7 @@ urlpatterns = [
     path(
         "me/summary/", views.StylistSummaryView.as_view(), name="stylist-summary"
     ),
+    path("me/closed-days/", views.ClosedDayView.as_view(), name="stylist-closed-days"),
     path(
         "by-handle/<str:handle>/",
         views.StylistByHandleView.as_view(),

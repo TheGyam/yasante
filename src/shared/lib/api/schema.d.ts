@@ -1440,7 +1440,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description GET /api/stylists/by-handle/:handle/slots/?service=&options= — her free times. */
+        /**
+         * @description GET /api/stylists/by-handle/:handle/slots/?service=&options=&from=&to= — her free
+         *     times on the days asked for, two months at most. With ?booking= instead of a
+         *     service, the times the client could move that appointment to.
+         */
         get: operations["stylists_by_handle_slots_retrieve"];
         put?: never;
         post?: never;
@@ -1483,6 +1487,27 @@ export interface paths {
         head?: never;
         /** @description GET / PATCH /api/stylists/me/ */
         patch: operations["stylists_me_partial_update"];
+        trace?: never;
+    };
+    "/api/stylists/me/closed-days/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/stylists/me/closed-days/ {date, closed} — she has enough clients that day:
+         *     no new requests for it. Appointments already on it stay as they are. `closed: false`
+         *     opens it again.
+         */
+        post: operations["stylists_me_closed_days_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/stylists/me/menu/": {
@@ -1851,7 +1876,10 @@ export interface components {
                 } | null
             ];
             blocked: string[];
+            closed?: string[];
             leadHours?: number;
+            aheadDays?: number;
+            gapMinutes?: number;
         };
         BarcodeResult: {
             product: components["schemas"]["ProductResponse"];
@@ -1983,6 +2011,14 @@ export interface components {
          * @enum {string}
          */
         BudgetEnum: "under_50" | "50_100" | "100_150" | "150_plus";
+        Busy: {
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+            /** @description The viewer's own: why some times aren't offered */
+            mine?: boolean;
+        };
         /**
          * @description * `client` - client
          *     * `stylist` - stylist
@@ -2102,6 +2138,12 @@ export interface components {
             /** Format: double */
             actualPrice?: number;
             timing?: components["schemas"]["TimingRequest"];
+        };
+        ClosedDayRequestRequest: {
+            /** Format: date */
+            date: string;
+            /** @default true */
+            closed: boolean;
         };
         CodeSent: {
             resendInSeconds: number;
@@ -2315,12 +2357,34 @@ export interface components {
             /** Format: date */
             date: string;
             times: string[];
+            /** @description What's already in her diary that day */
+            busy?: components["schemas"]["Busy"][];
         };
         FreeSlots: {
             minutes: number;
+            /** @description Days asked for with a time free, in order */
             days: components["schemas"]["FreeDay"][];
             /** @description The stylist's zone (IANA): whose clock the times are on */
             timeZone: string;
+            noticeHours?: number;
+            /**
+             * Format: date
+             * @description The furthest day she can be booked; one more opens each morning
+             */
+            lastDate?: string;
+            /** @description Days she works with no time left, or closed as full */
+            full?: string[];
+            away?: string[];
+            /**
+             * Format: date-time
+             * @description Her first free time, whatever days were asked for
+             */
+            soonest?: string;
+            /**
+             * Format: date-time
+             * @description Her first free Saturday or Sunday time
+             */
+            weekend?: string;
         };
         /**
          * @description * `daily` - daily
@@ -3078,6 +3142,8 @@ export interface components {
             stylistHandle?: string;
             /** Format: date */
             openedOn?: string;
+            /** @description Waiting for days she isn't taking bookings for yet */
+            opens: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date */
@@ -5662,7 +5728,18 @@ export interface operations {
     };
     stylists_by_handle_slots_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Her appointment to move: its length, its own time left free */
+                booking?: string;
+                /** @description First day wanted, yyyy-MM-dd (today if left out) */
+                from?: string;
+                /** @description Its chosen option ids, comma separated */
+                options?: string;
+                /** @description The menu item */
+                service?: string;
+                /** @description Last day wanted, yyyy-MM-dd (four weeks on if left out) */
+                to?: string;
+            };
             header?: never;
             path: {
                 handle: string;
@@ -5729,6 +5806,29 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["PatchedStylistProfileDraftRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StylistProfile"];
+                };
+            };
+        };
+    };
+    stylists_me_closed_days_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClosedDayRequestRequest"];
             };
         };
         responses: {

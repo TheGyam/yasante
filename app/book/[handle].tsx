@@ -3,7 +3,6 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 import { useLocalSearchParams } from 'expo-router';
 import {
-  BellRing,
   CalendarClock,
   Car,
   Check,
@@ -20,7 +19,7 @@ import {
   inSentence,
   useBooking,
   useBookings,
-  useFreeSlots,
+  useRefreshFreeSlots,
   useRequestBooking,
   whenLabel,
 } from '@/features/booking';
@@ -185,13 +184,9 @@ export default function RequestBookingScreen() {
   // Her free times depend on how long the job runs, so they follow the options.
   const optionIds = Object.values(chosen).filter((id): id is string => !!id);
   const quoteReady = !!service && estimate(service, chosen).complete;
-  const slots = useFreeSlots(handle, quoteReady ? serviceId : undefined, optionIds);
-  // A different job can take a different amount of time; a picked time may no longer fit.
-  useEffect(() => {
-    if (time && slots.data && !slots.data.days.some(d => d.times.includes(time))) {
-      setTime(undefined);
-    }
-  }, [slots.data, time]);
+  const refreshSlots = useRefreshFreeSlots();
+  // Her clock: times read as she'll keep them.
+  const zone = data?.profile.timeZone;
 
   // A beat on "sent", then the booking. Closing the screen first cancels the hop.
   useEffect(() => {
@@ -223,7 +218,7 @@ export default function RequestBookingScreen() {
       const message = errorMessage(error, 'Check your connection and try again.');
       await notify({ title: 'Couldn’t send that', message });
       // Someone got there first: show what's still free.
-      slots.refetch();
+      refreshSlots();
     }
   };
 
@@ -248,7 +243,7 @@ export default function RequestBookingScreen() {
             </Text>
             <Text variant="body" tone="secondary" align="center" style={{ marginTop: space.xs }}>
               {sent.until
-                ? `They have until ${inSentence(whenLabel(sent.until, slots.data?.timeZone))} to reply.`
+                ? `They have until ${inSentence(whenLabel(sent.until, zone))} to reply.`
                 : 'They’ll reply soon.'}{' '}
               We’ll let you know the moment they do.
             </Text>
@@ -363,7 +358,11 @@ export default function RequestBookingScreen() {
                     index === 0 ? choice.label : `${choice.label} · +${formatMoney(choice.add)}`
                   }
                   selected={chosen[group] === choice.id}
-                  onPress={() => setChosen(current => ({ ...current, [group]: choice.id }))}
+                  onPress={() => {
+                    setChosen(current => ({ ...current, [group]: choice.id }));
+                    // A longer job may not fit the time picked for a shorter one.
+                    setTime(undefined);
+                  }}
                 />
               ))}
             </View>
@@ -416,21 +415,14 @@ export default function RequestBookingScreen() {
           </Text>
           {quoteReady && (
             <SlotPicker
-              slots={slots.data}
-              loading={slots.isLoading}
-              refreshing={slots.isPlaceholderData}
+              query={{ handle, serviceId, optionIds }}
+              stylistId={profile.accountId}
+              stylistName={profile.displayName}
+              availability={profile.availability}
+              timeZone={zone}
               value={time}
               onChange={setTime}
               initialDay={slotDay}
-              whenFull={
-                <Button
-                  label="Tell me when a slot opens"
-                  icon={BellRing}
-                  variant="secondary"
-                  onPress={() => router.replace(`/waitlist/${handle}`)}
-                  fullWidth
-                />
-              }
             />
           )}
         </View>
@@ -533,7 +525,7 @@ export default function RequestBookingScreen() {
           />
           <Text variant="caption" tone="tertiary" align="center">
             {missing ??
-              `${whenLabel(time!, slots.data?.timeZone)}. They have until ${inSentence(whenLabel(replyBy(time!).toISOString(), slots.data?.timeZone))} to reply.`}
+              `${whenLabel(time!, zone)}. They have until ${inSentence(whenLabel(replyBy(time!).toISOString(), zone))} to reply.`}
           </Text>
         </View>
       </View>

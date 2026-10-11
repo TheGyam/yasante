@@ -77,6 +77,13 @@ export const stylistApi = {
   },
 
   /** PATCH /api/stylists/me/ */
+  /**
+   * POST /api/stylists/me/closed-days/ — she has enough clients that day: no new
+   * requests for it. What's already booked stays. `closed: false` opens it again.
+   */
+  closeDay: async (date: string, closed: boolean) =>
+    (await apiClient.post<StylistProfile>('/api/stylists/me/closed-days/', { date, closed })).data,
+
   update: async (changes: Partial<StylistProfileDraft>) => {
     const body = { ...changes };
     if (body.proofPhotoUri)

@@ -2214,14 +2214,41 @@ paths:
   /api/stylists/by-handle/{handle}/slots/:
     get:
       operationId: stylists_by_handle_slots_retrieve
-      description: GET /api/stylists/by-handle/:handle/slots/?service=&options= —
-        her free times.
+      description: |-
+        GET /api/stylists/by-handle/:handle/slots/?service=&options=&from=&to= — her free
+        times on the days asked for, two months at most. With ?booking= instead of a
+        service, the times the client could move that appointment to.
       parameters:
+      - in: query
+        name: booking
+        schema:
+          type: string
+        description: 'Her appointment to move: its length, its own time left free'
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: First day wanted, yyyy-MM-dd (today if left out)
       - in: path
         name: handle
         schema:
           type: string
         required: true
+      - in: query
+        name: options
+        schema:
+          type: string
+        description: Its chosen option ids, comma separated
+      - in: query
+        name: service
+        schema:
+          type: string
+        description: The menu item
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: Last day wanted, yyyy-MM-dd (four weeks on if left out)
       tags:
       - stylists
       security:
@@ -2275,6 +2302,30 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedStylistProfileDraftRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StylistProfile'
+          description: ''
+  /api/stylists/me/closed-days/:
+    post:
+      operationId: stylists_me_closed_days_create
+      description: |-
+        POST /api/stylists/me/closed-days/ {date, closed} — she has enough clients that day:
+        no new requests for it. Appointments already on it stay as they are. `closed: false`
+        opens it again.
+      tags:
+      - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClosedDayRequestRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -2844,7 +2895,17 @@ components:
           items:
             type: string
             format: date
+        closed:
+          type: array
+          items:
+            type: string
+            format: date
         leadHours:
+          type: integer
+          minimum: 1
+        aheadDays:
+          type: integer
+        gapMinutes:
           type: integer
       required:
       - blocked
@@ -3136,6 +3197,21 @@ components:
         * `50_100` - £50–100
         * `100_150` - £100–150
         * `150_plus` - £150+
+    Busy:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        mine:
+          type: boolean
+          description: 'The viewer''s own: why some times aren''t offered'
+      required:
+      - end
+      - start
     ByEnum:
       enum:
       - client
@@ -3384,6 +3460,17 @@ components:
           $ref: '#/components/schemas/TimingRequest'
       required:
       - outcome
+    ClosedDayRequestRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        closed:
+          type: boolean
+          default: true
+      required:
+      - date
     CodeSent:
       type: object
       properties:
@@ -3859,6 +3946,11 @@ components:
           items:
             type: string
             format: date-time
+        busy:
+          type: array
+          items:
+            $ref: '#/components/schemas/Busy'
+          description: What's already in her diary that day
       required:
       - date
       - times
@@ -3871,9 +3963,35 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FreeDay'
+          description: Days asked for with a time free, in order
         timeZone:
           type: string
           description: 'The stylist''s zone (IANA): whose clock the times are on'
+        noticeHours:
+          type: integer
+        lastDate:
+          type: string
+          format: date
+          description: The furthest day she can be booked; one more opens each morning
+        full:
+          type: array
+          items:
+            type: string
+            format: date
+          description: Days she works with no time left, or closed as full
+        away:
+          type: array
+          items:
+            type: string
+            format: date
+        soonest:
+          type: string
+          format: date-time
+          description: Her first free time, whatever days were asked for
+        weekend:
+          type: string
+          format: date-time
+          description: Her first free Saturday or Sunday time
       required:
       - days
       - minutes
@@ -5573,6 +5691,9 @@ components:
         openedOn:
           type: string
           format: date
+        opens:
+          type: boolean
+          description: Waiting for days she isn't taking bookings for yet
         createdAt:
           type: string
           format: date-time
@@ -5586,6 +5707,7 @@ components:
       - createdAt
       - from
       - id
+      - opens
       - stylistId
       - stylistName
       - to

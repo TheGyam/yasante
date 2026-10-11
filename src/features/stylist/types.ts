@@ -39,8 +39,14 @@ export interface Availability {
   week: [DayHours, DayHours, DayHours, DayHours, DayHours, DayHours, DayHours];
   /** Days off on top of the week — holidays, a wedding — as yyyy-MM-dd. */
   blocked: string[];
+  /** Days she's closed to new bookings (she has enough clients); what's booked stays. */
+  closed?: string[];
   /** The notice she needs before an appointment, in hours. A day when unset. */
   leadHours?: number;
+  /** How far ahead clients can book her, in days. Twelve weeks when unset. */
+  aheadDays?: number;
+  /** Minutes she keeps free between clients. */
+  gapMinutes?: number;
 }
 
 export interface StylistProfile {

@@ -1,5 +1,14 @@
 import { api } from '@/shared/lib/api/client';
-import type { Booking, BookingDraft, BookingStatus, CloseOut, Deposit, FreeSlots } from './types';
+import type {
+  Booking,
+  BookingDraft,
+  BookingStatus,
+  CloseOut,
+  Deposit,
+  FreeSlots,
+  SlotInterest,
+  SlotQuery,
+} from './types';
 
 /** Her side of the bookings, newest first. */
 export const listBookings = (status: BookingStatus[]) =>
@@ -34,11 +43,22 @@ export const cancelBooking = (id: string) => api.post<Booking>(`/bookings/${id}/
 export const listMyBookings = () => api.get<Booking[]>('/bookings/', { role: 'client' });
 
 /** The stylist's free times for this job (its options change how long it runs). */
-export const getFreeSlots = (handle: string, serviceId: string, optionIds: string[]) =>
+export const getFreeSlots = (
+  { handle, serviceId, optionIds = [], booking }: SlotQuery,
+  from?: string,
+  to?: string
+) =>
   api.get<FreeSlots>(`/stylists/by-handle/${handle}/slots/`, {
-    service: serviceId,
-    options: optionIds.join(',') || undefined,
+    service: booking ? undefined : serviceId,
+    options: booking ? undefined : optionIds.join(',') || undefined,
+    booking,
+    from,
+    to,
   });
+
+/** Be told when a time opens with her on these days (or when they open for booking). */
+export const watchSlots = (stylistId: string, from: string, to: string) =>
+  api.post<SlotInterest>('/slot-interests/', { stylistId, from, to });
 
 /** She asks. The server prices it from the stylist's menu and checks the time is free. */
 export const requestBooking = (draft: BookingDraft) => api.post<Booking>('/bookings/', draft);

@@ -9,10 +9,12 @@ import type {
   CheckInWeek,
   CloseOut,
   ReviewReportReason,
+  SlotQuery,
 } from './types';
 import { track } from '@/shared/lib/analytics';
 
 const KEY = 'bookings';
+const FREE = 'slots';
 
 /** One side's bookings. Both sides are keyed by account: they see different fields. */
 export function useBookings(role: BookingRole, status?: BookingStatus[]) {
@@ -26,20 +28,27 @@ export function useBookings(role: BookingRole, status?: BookingStatus[]) {
 }
 
 /**
- * A stylist's free times for the job being asked for. Fresh for half a minute:
- * a slot someone else takes should stop showing soon, and the server refuses a
- * clash either way.
+ * A stylist's free times for the job being asked for (or the appointment being moved),
+ * on the days asked for. Fresh for half a minute: a slot someone else takes should stop
+ * showing soon, and the server refuses a clash either way.
  */
-export function useFreeSlots(handle: string, serviceId?: string, optionIds: string[] = []) {
+export function useFreeSlots(query: SlotQuery, from?: string, to?: string, enabled = true) {
+  const ids = [...(query.optionIds ?? [])].sort().join(',');
   return useQuery({
-    queryKey: ['slots', handle, serviceId, [...optionIds].sort().join(',')],
-    queryFn: () => bookingApi.slots(handle, serviceId!, optionIds),
-    enabled: !!handle && !!serviceId,
+    queryKey: [FREE, query.handle, query.booking ?? query.serviceId, ids, from, to],
+    queryFn: () => bookingApi.slots(query, from, to),
+    enabled: enabled && !!query.handle && !!(query.booking || query.serviceId),
     staleTime: 30 * 1000,
-    // Changing a size keeps the times on screen while the new ones load, so nothing
-    // jumps out from under a finger that's about to tap.
+    // Changing a size or a month keeps the last times on screen while the new ones
+    // load, so nothing jumps out from under a finger that's about to tap.
     placeholderData: keepPreviousData,
   });
+}
+
+/** After a time was taken from under someone: every picker asks again. */
+export function useRefreshFreeSlots() {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: [FREE] });
 }
 
 export function useBooking(id: string) {

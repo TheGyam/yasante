@@ -34,6 +34,10 @@ export const updateProfile = (draft: Partial<StylistProfileDraft>) =>
 
 export const publishProfile = () => api.post<StylistProfile>('/stylists/me/publish/');
 
+/** Enough clients that day: no new requests for it (what's booked stays), or open again. */
+export const closeDay = (date: string, closed: boolean) =>
+  api.post<StylistProfile>('/stylists/me/closed-days/', { date, closed });
+
 export const checkHandle = (handle: string) =>
   api.get<HandleCheck>('/stylists/handle-available/', { handle });
 

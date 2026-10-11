@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { format } from 'date-fns';
-import { CalendarOff, X } from 'lucide-react-native';
+import { addDays, format } from 'date-fns';
+import { CalendarOff, CalendarX2, X } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
+  AHEAD_CHOICES,
+  DEFAULT_AHEAD_DAYS,
   DEFAULT_AVAILABILITY,
   DEFAULT_NOTICE_HOURS,
+  GAP_CHOICES,
+  MAX_NOTICE_HOURS,
   NOTICE_CHOICES,
+  bookingRulesLabel,
   hoursLabel,
+  noticeLabel,
   useMyStylistProfile,
   useUpdateStylistProfile,
   type Availability,
@@ -20,6 +26,7 @@ import { Chip } from '@/shared/ui/Chip';
 import { DateTimeField } from '@/shared/ui/DateTimeField';
 import { notify } from '@/shared/ui/dialog';
 import { IconButton } from '@/shared/ui/IconButton';
+import { Input } from '@/shared/ui/Input';
 import { ListRow } from '@/shared/ui/ListRow';
 import { dayKey, MonthCalendar } from '@/shared/ui/MonthCalendar';
 import { Screen } from '@/shared/ui/Screen';
@@ -39,7 +46,7 @@ const DAYS = [
   { index: 0, name: 'Sunday' },
 ];
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles(t => ({
   body: { gap: space.xl },
   hours: {
     flexDirection: 'row',
@@ -50,7 +57,18 @@ const useStyles = makeStyles(() => ({
   half: { flex: 1 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   footer: { paddingTop: space.lg },
+  group: { gap: space.sm },
+  own: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
+  ownNumber: { flex: 1 },
+  sees: {
+    gap: space.xs,
+    padding: space.lg,
+    borderRadius: 20,
+    backgroundColor: t.colors.accentSoft,
+  },
 }));
+
+const PRESET_NOTICE: readonly number[] = NOTICE_CHOICES.map(c => c.hours);
 
 const toDate = (time: string) => {
   const [h, m] = time.split(':').map(Number);
@@ -71,10 +89,34 @@ export default function AvailabilityScreen() {
   const update = useUpdateStylistProfile();
   const [draft, setDraft] = useState<Availability>(DEFAULT_AVAILABILITY);
   const [month, setMonth] = useState(new Date());
+  // Her own notice, typed: a number and whether it's hours or days.
+  const [own, setOwn] = useState<{ text: string; unit: 'hours' | 'days' } | null>(null);
 
   useEffect(() => {
-    if (profile?.availability) setDraft(profile.availability);
+    if (!profile?.availability) return;
+    setDraft(profile.availability);
+    const lead = profile.availability.leadHours;
+    if (lead && !PRESET_NOTICE.includes(lead)) {
+      setOwn(
+        lead % 24
+          ? { text: String(lead), unit: 'hours' }
+          : { text: String(lead / 24), unit: 'days' }
+      );
+    }
   }, [profile?.availability]);
+
+  const setOwnNotice = (text: string, unit: 'hours' | 'days') => {
+    setOwn({ text, unit });
+    const count = Number.parseInt(text, 10);
+    const hours = count * (unit === 'days' ? 24 : 1);
+    if (count > 0 && hours <= MAX_NOTICE_HOURS)
+      setDraft(current => ({ ...current, leadHours: hours }));
+  };
+  const ownHours = own ? Number.parseInt(own.text, 10) * (own.unit === 'days' ? 24 : 1) : 0;
+  const ownProblem =
+    own && !(ownHours >= 1 && ownHours <= MAX_NOTICE_HOURS)
+      ? 'Anything from an hour to 30 days'
+      : undefined;
 
   const setDay = (index: number, hours: Availability['week'][number]) =>
     setDraft(current => {
@@ -95,6 +137,7 @@ export default function AvailabilityScreen() {
   };
 
   const save = async () => {
+    if (ownProblem) return;
     try {
       await update.mutateAsync({ availability: draft });
       haptics.success();
@@ -117,6 +160,9 @@ export default function AvailabilityScreen() {
   }
 
   const upcoming = draft.blocked.filter(d => d >= dayKey(new Date()));
+  const closed = (draft.closed ?? []).filter(d => d >= dayKey(new Date()));
+  const ahead = draft.aheadDays ?? DEFAULT_AHEAD_DAYS;
+  const lead = draft.leadHours ?? DEFAULT_NOTICE_HOURS;
 
   return (
     <Screen title="Working hours" modal testID="availability">
@@ -168,7 +214,7 @@ export default function AvailabilityScreen() {
           })}
         </Section>
 
-        <View style={{ gap: space.sm }}>
+        <View style={styles.group}>
           <Text variant="overline" tone="tertiary">
             Notice you need
           </Text>
@@ -177,14 +223,87 @@ export default function AvailabilityScreen() {
               <Chip
                 key={choice.hours}
                 label={choice.label}
-                selected={(draft.leadHours ?? DEFAULT_NOTICE_HOURS) === choice.hours}
-                onPress={() => setDraft(current => ({ ...current, leadHours: choice.hours }))}
+                selected={!own && lead === choice.hours}
+                onPress={() => {
+                  setOwn(null);
+                  setDraft(current => ({ ...current, leadHours: choice.hours }));
+                }}
+              />
+            ))}
+            <Chip
+              label="Your own"
+              selected={!!own}
+              onPress={() => setOwn(current => current ?? { text: '', unit: 'hours' })}
+            />
+          </View>
+          {own && (
+            <View style={styles.own}>
+              <Input
+                label={own.unit === 'days' ? 'Days' : 'Hours'}
+                value={own.text}
+                onChangeText={text => setOwnNotice(text.replace(/\D/g, ''), own.unit)}
+                keyboardType="number-pad"
+                maxLength={3}
+                error={own.text ? ownProblem : undefined}
+                containerStyle={styles.ownNumber}
+                testID="availability-own-notice"
+              />
+              <View style={[styles.chips, { paddingTop: space.md }]}>
+                <Chip
+                  label="Hours"
+                  selected={own.unit === 'hours'}
+                  onPress={() => setOwnNotice(own.text, 'hours')}
+                />
+                <Chip
+                  label="Days"
+                  selected={own.unit === 'days'}
+                  onPress={() => setOwnNotice(own.text, 'days')}
+                />
+              </View>
+            </View>
+          )}
+          <Text variant="footnote" tone="secondary">
+            Clients only see times at least {noticeLabel(lead).replace(' notice', '')} away. A
+            request you haven’t answered lapses 2 hours before its time.
+          </Text>
+        </View>
+
+        <View style={styles.group}>
+          <Text variant="overline" tone="tertiary">
+            How far ahead
+          </Text>
+          <View style={styles.chips}>
+            {AHEAD_CHOICES.map(choice => (
+              <Chip
+                key={choice.days}
+                label={choice.label}
+                selected={ahead === choice.days}
+                onPress={() => setDraft(current => ({ ...current, aheadDays: choice.days }))}
               />
             ))}
           </View>
           <Text variant="footnote" tone="secondary">
-            Clients only see times at least this far ahead. A request you haven’t answered lapses 2
-            hours before its time.
+            Clients can book up to {format(addDays(new Date(), ahead - 1), 'EEEE d MMMM')}. One more
+            day opens each morning, and anyone waiting for a later month hears when it does.
+          </Text>
+        </View>
+
+        <View style={styles.group}>
+          <Text variant="overline" tone="tertiary">
+            Time between clients
+          </Text>
+          <View style={styles.chips}>
+            {GAP_CHOICES.map(choice => (
+              <Chip
+                key={choice.minutes}
+                label={choice.label}
+                selected={(draft.gapMinutes ?? 0) === choice.minutes}
+                onPress={() => setDraft(current => ({ ...current, gapMinutes: choice.minutes }))}
+              />
+            ))}
+          </View>
+          <Text variant="footnote" tone="secondary">
+            Kept free after each appointment: to tidy up, take a breath, or get to the next client.
           </Text>
         </View>
 
@@ -223,6 +342,47 @@ export default function AvailabilityScreen() {
               ))}
             </Section>
           )}
+        </View>
+
+        {closed.length > 0 && (
+          <Section
+            title="Closed to new bookings"
+            footer="You have enough clients those days. What’s booked stays; tap the cross to take requests again."
+          >
+            {closed.map(day => (
+              <ListRow
+                key={day}
+                title={format(new Date(`${day}T12:00:00`), 'EEEE d MMMM')}
+                icon={CalendarX2}
+                iconTone="neutral"
+                trailing={
+                  <IconButton
+                    icon={X}
+                    variant="plain"
+                    size={32}
+                    accessibilityLabel={`Take requests on ${day} again`}
+                    onPress={() => {
+                      haptics.selection();
+                      setDraft(current => ({
+                        ...current,
+                        closed: (current.closed ?? []).filter(d => d !== day),
+                      }));
+                    }}
+                  />
+                }
+              />
+            ))}
+          </Section>
+        )}
+
+        <View style={styles.sees}>
+          <Text variant="callout" tone="accent">
+            What clients see
+          </Text>
+          <Text variant="subhead">
+            “{profile?.displayName ?? 'You'} works {hoursLabel(draft)}, {bookingRulesLabel(draft)}
+            .”
+          </Text>
         </View>
 
         <View style={styles.footer}>

@@ -4,7 +4,7 @@ Stylist views: her page, menu, portfolio, free times, numbers and summary.
 
 import logging
 import uuid
-from datetime import timedelta
+from datetime import date, timedelta
 
 from apps.accounts.models import User
 from apps.bookings.models import Booking, Review
@@ -17,7 +17,7 @@ from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -34,6 +34,7 @@ from .models import (
 from .numbers import numbers_for, timing_label_for
 from .pricing import clean_options
 from .serializers import (
+    ClosedDayRequestSerializer,
     FreeSlotsSerializer,
     HandleCheckResponseSerializer,
     MenuImportRequestSerializer,
@@ -49,7 +50,7 @@ from .serializers import (
     StylistSearchResultSerializer,
     StylistSummarySerializer,
 )
-from .slots import compute_free_slots
+from .slots import DEFAULT_HOURS, free_times, job_minutes, today_for
 from .style_match import style_for_service
 
 logger = logging.getLogger(__name__)
@@ -85,6 +86,15 @@ def _payment_methods(raw):
     return kept
 
 
+def _dates(value):
+    if not isinstance(value, list):
+        return None
+    try:
+        return sorted({date.fromisoformat(str(d)).isoformat() for d in value})
+    except ValueError:
+        return None
+
+
 def _valid_availability(value):
     if not isinstance(value, dict):
         return False
@@ -96,9 +106,27 @@ def _valid_availability(value):
             continue
         if not isinstance(day, dict) or not day.get("start") or not day.get("end"):
             return False
-    if "lead_hours" in value and value["lead_hours"] not in settings.BOOKING_NOTICE_CHOICES:
+    lead = value.get("lead_hours")
+    # One of the usual choices, or her own number of hours.
+    if lead is not None and not (type(lead) is int and 1 <= lead <= settings.BOOKING_NOTICE_MAX_HOURS):
         return False
-    return isinstance(value.get("blocked", []), list)
+    if value.get("ahead_days") not in (None, *settings.BOOKING_AHEAD_CHOICES):
+        return False
+    if value.get("gap_minutes") not in (None, *settings.BOOKING_GAP_CHOICES):
+        return False
+    return all(_dates(value.get(key, [])) is not None for key in ("blocked", "closed"))
+
+
+def _merged_availability(profile, value):
+    """
+    What she sent, over what's saved: a screen that doesn't know a setting (an older
+    app) leaves it as it was. Days gone by drop off her lists.
+    """
+    merged = {**(profile.availability or {}), **value}
+    today = today_for(profile).isoformat()
+    for key in ("blocked", "closed"):
+        merged[key] = [d for d in _dates(merged.get(key, [])) or [] if d >= today]
+    return merged
 
 
 def _someones_username(handle, user):
@@ -469,7 +497,7 @@ class StylistMeView(APIView):
         if "availability" in data:
             if not _valid_availability(data["availability"]):
                 return Response({"message": "Those working hours don’t look right"}, status=400)
-            profile.availability = data["availability"]
+            profile.availability = _merged_availability(profile, data["availability"])
             update_fields.append("availability")
 
         if "handle" in data:
@@ -515,6 +543,11 @@ class StylistMeView(APIView):
                 profile.save(update_fields=update_fields + ["updated_at"])
         if {"base_area", "address"} & set(update_fields):
             _place(profile)
+        if "availability" in update_fields:
+            # Booking further ahead opens days someone may be waiting for.
+            from apps.bookings.held import open_new_days
+
+            open_new_days([profile])
 
         profile.refresh_from_db()
         return Response(StylistProfileSerializer(profile).data)
@@ -831,9 +864,31 @@ class PortfolioDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@extend_schema_view(get=extend_schema(responses=FreeSlotsSerializer))
+def _day_param(value):
+    try:
+        return date.fromisoformat(value) if value else None
+    except ValueError:
+        return None
+
+
+@extend_schema_view(
+    get=extend_schema(
+        parameters=[
+            OpenApiParameter("service", str, description="The menu item"),
+            OpenApiParameter("options", str, description="Its chosen option ids, comma separated"),
+            OpenApiParameter("from", str, description="First day wanted, yyyy-MM-dd (today if left out)"),
+            OpenApiParameter("to", str, description="Last day wanted, yyyy-MM-dd (four weeks on if left out)"),
+            OpenApiParameter("booking", str, description="Her appointment to move: its length, its own time left free"),
+        ],
+        responses=FreeSlotsSerializer,
+    )
+)
 class StylistSlotsView(APIView):
-    """GET /api/stylists/by-handle/:handle/slots/?service=&options= — her free times."""
+    """
+    GET /api/stylists/by-handle/:handle/slots/?service=&options=&from=&to= — her free
+    times on the days asked for, two months at most. With ?booking= instead of a
+    service, the times the client could move that appointment to.
+    """
 
     permission_classes = [permissions.AllowAny]
 
@@ -841,18 +896,74 @@ class StylistSlotsView(APIView):
         profile = StylistProfile.objects.filter(handle=handle.lower(), published=True).first()
         if profile is None:
             return Response({"message": "No page at that address"}, status=404)
-        service_id = request.query_params.get("service")
-        service = (
-            profile.menu_items.filter(pk=service_id).first()
-            if service_id and _is_uuid(service_id)
-            else None
+        viewer = request.user if request.user.is_authenticated else None
+        moving = request.query_params.get("booking")
+        if moving:
+            booking = (
+                Booking.objects.filter(pk=moving, stylist_profile=profile, client=viewer, status="confirmed").first()
+                if viewer and _is_uuid(moving)
+                else None
+            )
+            if booking is None:
+                return Response({"message": "That appointment isn’t yours to move"}, status=404)
+            minutes, exclude = booking.duration_minutes or 120, booking.pk
+        else:
+            service_id = request.query_params.get("service")
+            service = (
+                profile.menu_items.filter(pk=service_id).first()
+                if service_id and _is_uuid(service_id)
+                else None
+            )
+            if service is None:
+                return Response({"message": "Pick a service from the menu"}, status=400)
+            option_ids = [
+                o.strip() for o in request.query_params.get("options", "").split(",") if o.strip()
+            ]
+            minutes, exclude = job_minutes(service, option_ids), None
+        params = request.query_params
+        return Response(
+            free_times(
+                profile,
+                minutes,
+                first=_day_param(params.get("from")),
+                last=_day_param(params.get("to")),
+                viewer_id=viewer.pk if viewer else None,
+                exclude_id=exclude,
+            )
         )
-        if service is None:
-            return Response({"message": "Pick a service from the menu"}, status=400)
-        option_ids = [
-            o.strip() for o in request.query_params.get("options", "").split(",") if o.strip()
-        ]
-        return Response(compute_free_slots(profile, service, option_ids))
+
+
+@extend_schema_view(post=extend_schema(request=ClosedDayRequestSerializer, responses=StylistProfileSerializer))
+class ClosedDayView(APIView):
+    """
+    POST /api/stylists/me/closed-days/ {date, closed} — she has enough clients that day:
+    no new requests for it. Appointments already on it stay as they are. `closed: false`
+    opens it again.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        profile = _my_profile(request)
+        if profile is None:
+            return Response(NO_PROFILE, status=404)
+        day = _day_param(str(request.data.get("date") or ""))
+        if day is None:
+            return Response({"message": "Pick a day"}, status=400)
+        if day < today_for(profile):
+            return Response({"message": "That day has been and gone"}, status=400)
+        closed = request.data.get("closed", True) is not False
+        with transaction.atomic():
+            profile = StylistProfile.objects.select_for_update().get(pk=profile.pk)
+            availability = dict(profile.availability or {})
+            if not isinstance(availability.get("week"), list):
+                # Hours she never set are 9 to 6 every day; written down, so she sees them.
+                availability["week"] = [dict(DEFAULT_HOURS)] * 7
+            days = set(availability.get("closed") or [])
+            (days.add if closed else days.discard)(day.isoformat())
+            profile.availability = _merged_availability(profile, {**availability, "closed": sorted(days)})
+            profile.save(update_fields=["availability", "updated_at"])
+        return Response(StylistProfileSerializer(profile).data)
 
 
 @extend_schema_view(get=extend_schema(responses=NumbersSerializer))

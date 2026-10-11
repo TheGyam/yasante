@@ -402,12 +402,25 @@ STYLIST_TIME_ZONE = "Europe/London"
 BOOKING_REQUEST_LAPSE_HOURS = 48
 BOOKING_DEPOSIT_LAPSE_HOURS = 24
 BOOKING_AUTO_COMPLETE_HOURS = 24
+# What an older app sees when it asks for free times without saying which days.
 BOOKING_SLOT_LOOKAHEAD_DAYS = 28
-# The notice a stylist needs before an appointment: hers to choose from these, a day
-# unless she says otherwise. Requests and deposits lapse this long before the start.
+# The most days one call for free times covers: two months side by side.
+BOOKING_SLOT_WINDOW_MAX_DAYS = 62
+# The notice a stylist needs before an appointment: one of these, or her own number of
+# hours up to the most, a day unless she says otherwise.
 BOOKING_NOTICE_CHOICES = (3, 12, 24, 48, 72)
 BOOKING_NOTICE_DEFAULT_HOURS = 24
+BOOKING_NOTICE_MAX_HOURS = 30 * 24
+# Requests and deposits lapse this long before the start.
 BOOKING_ANSWER_BEFORE_START_HOURS = 2
+# How far ahead clients can book her, in days (4, 8 or 12 weeks, or 6 months).
+BOOKING_AHEAD_CHOICES = (28, 56, 84, 182)
+BOOKING_AHEAD_DEFAULT_DAYS = 84
+# A gap she keeps between clients: to tidy up, or to travel to the next one.
+BOOKING_GAP_CHOICES = (0, 15, 30, 45, 60)
+# Unanswered requests one client can have with one stylist at a time, so nobody can
+# hold her diary with asks they won't keep.
+BOOKING_OPEN_REQUESTS_PER_STYLIST = 2
 
 # Phone verification
 VERIFICATION_CODE_LENGTH = 6

@@ -208,4 +208,55 @@ describe('her studio', () => {
       deposit: { amount: 20, method: 'Monzo · monzo.me/ama' },
     });
   });
+
+  it('takes her own notice and how far ahead', async () => {
+    const calls = signedIn({
+      'PATCH /api/stylists/me/': (call: { body?: unknown }) => ({
+        ...profile,
+        ...(call.body as object),
+      }),
+    });
+    const typist = userEvent.setup();
+    renderSite('/availability');
+    await typist.click(await screen.findByRole('button', { name: 'Your own' }));
+    await typist.type(screen.getByLabelText('Hours'), '36');
+    await typist.click(screen.getByRole('button', { name: '6 months' }));
+    await typist.click(screen.getByRole('button', { name: 'Save hours' }));
+    await waitFor(() =>
+      expect(calls.find(c => c.method === 'PATCH')?.body).toMatchObject({
+        availability: { leadHours: 36, aheadDays: 182 },
+      })
+    );
+  });
+
+  it('closes a day she has enough clients for, from Today', async () => {
+    const tomorrow = new Date(Date.now() + 86_400_000);
+    tomorrow.setHours(11, 0, 0, 0);
+    const day = tomorrow.toLocaleDateString('en-CA');
+    const calls = signedIn({
+      '/api/bookings/': [
+        {
+          id: 'b2',
+          status: 'confirmed',
+          clientName: 'Efua Mensah',
+          serviceName: 'Knotless braids',
+          scheduledFor: tomorrow.toISOString(),
+        },
+      ],
+      'POST /api/stylists/me/closed-days/': {
+        ...profile,
+        availability: { ...profile.availability, closed: [day] },
+      },
+    });
+    const typist = userEvent.setup();
+    renderSite('/today');
+    await typist.click(await screen.findByRole('switch', { name: /Taking new requests/ }));
+    await waitFor(() =>
+      expect(calls.find(c => c.url === '/api/stylists/me/closed-days/')?.body).toEqual({
+        date: day,
+        closed: true,
+      })
+    );
+    expect(await screen.findByText('Closed: you have enough clients this day')).toBeInTheDocument();
+  });
 });

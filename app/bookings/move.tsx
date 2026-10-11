@@ -4,7 +4,15 @@ import { useLocalSearchParams } from 'expo-router';
 import { addDays, setHours, startOfHour } from 'date-fns';
 import { CalendarSync } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
-import { inSentence, useBooking, useRequestMove, whenLabel } from '@/features/booking';
+import {
+  SlotPicker,
+  inSentence,
+  useBooking,
+  useRefreshFreeSlots,
+  useRequestMove,
+  whenLabel,
+} from '@/features/booking';
+import { useStylistPage } from '@/features/stylist';
 import { haptics } from '@/shared/lib/haptics';
 import { zoneMark } from '@/shared/lib/timeZone';
 import { useRouter } from '@/shared/lib/navigation';
@@ -35,6 +43,10 @@ export default function MoveBookingScreen() {
   const { data: booking, isLoading } = useBooking(id);
   const requestMove = useRequestMove();
   const [when, setWhen] = useState(() => setHours(startOfHour(addDays(new Date(), 2)), 10));
+  // A client moves to one of the stylist's free times, as when booking.
+  const [time, setTime] = useState<string>();
+  const { data: page } = useStylistPage(booking?.stylistHandle ?? '');
+  const refreshSlots = useRefreshFreeSlots();
 
   if (isLoading || !booking) {
     return (
@@ -48,8 +60,10 @@ export default function MoveBookingScreen() {
   const other = asStylist ? booking.clientName.split(' ')[0] : booking.stylistName;
 
   const send = async () => {
+    const scheduledFor = asStylist ? when.toISOString() : time;
+    if (!scheduledFor) return;
     try {
-      await requestMove.mutateAsync({ id, scheduledFor: when.toISOString() });
+      await requestMove.mutateAsync({ id, scheduledFor });
       haptics.success();
       router.back();
       await notify({
@@ -62,6 +76,7 @@ export default function MoveBookingScreen() {
         title: 'Couldn’t ask',
         message: errorMessage(error, 'Check your connection and try again.'),
       });
+      refreshSlots();
     }
   };
 
@@ -72,23 +87,36 @@ export default function MoveBookingScreen() {
           It’s at {inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))} now. Pick
           the new time and {other} will be asked to agree.
         </Text>
-        <View style={styles.group}>
-          <DateTimeField
-            title="Day"
+        {asStylist || !booking.stylistHandle ? (
+          // Her own appointment: she can move it to any time, inside her hours or not.
+          <View style={styles.group}>
+            <DateTimeField
+              title="Day"
+              timeZone={booking.timeZone}
+              mode="date"
+              value={when}
+              onChange={setWhen}
+              minimumDate={new Date()}
+            />
+            <DateTimeField
+              title={`Start at${zoneMark(booking.timeZone)}`}
+              timeZone={booking.timeZone}
+              mode="time"
+              value={when}
+              onChange={setWhen}
+            />
+          </View>
+        ) : (
+          <SlotPicker
+            query={{ handle: booking.stylistHandle, booking: id }}
+            stylistId={booking.stylistId ?? page?.profile.accountId}
+            stylistName={booking.stylistName}
+            availability={page?.profile.availability}
             timeZone={booking.timeZone}
-            mode="date"
-            value={when}
-            onChange={setWhen}
-            minimumDate={new Date()}
+            value={time}
+            onChange={setTime}
           />
-          <DateTimeField
-            title={`Start at${zoneMark(booking.timeZone)}`}
-            timeZone={booking.timeZone}
-            mode="time"
-            value={when}
-            onChange={setWhen}
-          />
-        </View>
+        )}
         <InlineAlert
           tone="info"
           message="One move is free and keeps the deposit and the history. After that, changing it means cancelling and booking again."
@@ -98,6 +126,7 @@ export default function MoveBookingScreen() {
             label="Ask to move it"
             icon={CalendarSync}
             onPress={send}
+            disabled={!asStylist && !!booking.stylistHandle && !time}
             loading={requestMove.isPending}
             fullWidth
             testID="move-send"

@@ -50,6 +50,8 @@ const slots = {
   minutes: 420,
   timeZone: 'Europe/London',
   days: [{ date: '2026-11-03', times: ['2026-11-03T10:00:00Z', '2026-11-03T14:00:00Z'] }],
+  soonest: '2026-11-03T10:00:00Z',
+  lastDate: '2027-01-02',
 };
 
 const booking = {
@@ -85,6 +87,8 @@ beforeEach(() => {
 async function fillIn() {
   await userEvent.click(await screen.findByRole('radio', { name: /Knotless braids/ }));
   await userEvent.click(screen.getByRole('button', { name: 'Waist · +£40' }));
+  // Her soonest opens its day; another time that day is one tap more.
+  await userEvent.click(await screen.findByRole('button', { name: /Soonest/ }));
   await userEvent.click(await screen.findByRole('button', { name: '14:00' }));
   await userEvent.click(screen.getByRole('checkbox'));
 }

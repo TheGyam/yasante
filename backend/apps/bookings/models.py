@@ -287,6 +287,9 @@ class SlotInterest(TimeStampedModel):
     from_date = models.DateField()
     to_date = models.DateField()
     opened_on = models.DateField(null=True, blank=True)
+    # Waiting for days she isn't taking bookings for yet ("tell me when January opens"),
+    # rather than for a full day to free up.
+    opens = models.BooleanField(default=False)
 
     class Meta:
         db_table = "bookings_slot_interest"
