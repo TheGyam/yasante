@@ -206,7 +206,6 @@ export const watch = style({
   // dark glass: it sits on her white tee on wide screens
   background: 'rgba(34,6,15,0.5)',
   backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
   cursor: 'pointer',
   selectors: { '&:hover': { borderColor: 'rgba(255,255,255,0.36)' } },
 });
@@ -309,7 +308,6 @@ export const badge = style({
   // dark glass, like the button beside it, over her shoulder
   background: 'rgba(34,6,15,0.5)',
   backdropFilter: 'blur(12px)',
-  WebkitBackdropFilter: 'blur(12px)',
 });
 
 export const ring = style({
@@ -428,7 +426,6 @@ export const card = style({
   borderTopColor: 'rgba(255,255,255,0.28)',
   boxShadow: '0 18px 40px rgba(20,4,12,0.35)',
   backdropFilter: 'blur(14px) saturate(1.3)',
-  WebkitBackdropFilter: 'blur(14px) saturate(1.3)',
   transition: `transform 250ms ${EASE_OUT}`,
   selectors: { '&:hover': { transform: 'translateY(-4px)' } },
 });
