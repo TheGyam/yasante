@@ -8,95 +8,10 @@ from apps.common.models import TimeStampedModel
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.db.models.functions import Upper
 
-# Reserved handles — website paths that can't be taken
-NOT_HANDLES = {
-    "links",
-    "manage",
-    "admin",
-    "api",
-    "auth",
-    "login",
-    "signup",
-    "register",
-    "about",
-    "terms",
-    "privacy",
-    "help",
-    "support",
-    "settings",
-    "search",
-    "explore",
-    "discover",
-    "feed",
-    "home",
-    "profile",
-    "account",
-    "book",
-    "booking",
-    "bookings",
-    "stylist",
-    "stylists",
-    "looks",
-    "learn",
-    "library",
-    "shop",
-    "reset-password",
-    "forgot-password",
-    "invite",
-    "invites",
-    "verify",
-    "notifications",
-    "messages",
-    "static",
-    "media",
-    "assets",
-    "css",
-    "js",
-    "images",
-    "fonts",
-    ".well-known",
-    "favicon.ico",
-    "robots.txt",
-    "sitemap.xml",
-    "waitlist",
-    "delete-account",
-    # App screens opened by path (src/shared/lib/links.ts reserves the same words).
-    "planner",
-    "saved",
-    "insights",
-    "who",
-    "work",
-    "requests",
-    "numbers",
-    "shelf",
-    "collections",
-    "care-plans",
-    "hair-profile",
-    "check-in",
-    "close-out",
-    "menu",
-    "portfolio",
-    "availability",
-    "review",
-    "onboarding",
-    "edit-profile",
-    "username",
-    "policy",
-    "payment-methods",
-    "stylist-setup",
-    "today",
-    "styles",
-    "areas",
-    "guidelines",
-    "stylist-terms",
-    "content",
-    "hair-log",
-    "styles",
-    "areas",
-    "yasante",
-    "hair",
-}
+# Kept here for callers that import the reserved site names from the model.
+from apps.common.identifiers import NOT_HANDLES, POLICY, validate_model_identifier
 
 SERVICE_MODEL_CHOICES = [
     ("salon", "Salon"),
@@ -172,9 +87,20 @@ class StylistProfile(TimeStampedModel):
     class Meta:
         db_table = "stylists_profile"
         ordering = ["-created_at"]
+        indexes = [models.Index(Upper("handle"), name="stylist_handle_ci_idx")]
 
     def __str__(self):
         return f"@{self.handle} ({self.display_name})"
+
+    def clean(self):
+        super().clean()
+        validate_model_identifier(self, "handle", max_length=POLICY["handle_max"])
+
+    def save(self, *args, **kwargs):
+        fields = kwargs.get("update_fields")
+        if fields is None or "handle" in fields:
+            validate_model_identifier(self, "handle", max_length=POLICY["handle_max"])
+        return super().save(*args, **kwargs)
 
     @property
     def policies(self) -> dict:
