@@ -9,7 +9,8 @@ from rest_framework import serializers
 
 from apps.common.schema import BlankIsOptional, optional
 
-from .models import NOT_HANDLES, MenuItem, PaymentMethod, PortfolioPhoto, StylistProfile
+from apps.common.identifiers import POLICY, identifier_problem, normalise
+from .models import MenuItem, PaymentMethod, PortfolioPhoto, StylistProfile
 
 
 class PaymentMethodSerializer(BlankIsOptional, serializers.ModelSerializer):
@@ -200,20 +201,10 @@ class StylistProfileDraftSerializer(serializers.Serializer):
     payment_methods = PaymentMethodSerializer(many=True, required=False)
 
     def validate_handle(self, value):
-        import re
-
-        value = value.lower().strip()
-        if value in NOT_HANDLES:
-            raise serializers.ValidationError("That handle is reserved.")
-        # The same rules the app checks as she types.
-        if (
-            not re.fullmatch(r"[a-z0-9][a-z0-9._]*", value)
-            or re.search(r"[._]{2,}", value)
-            or value[-1] in "._"
-        ):
-            raise serializers.ValidationError(
-                "Letters, numbers, dots and underscores only."
-            )
+        value = normalise(value)
+        problem = identifier_problem(value, max_length=POLICY["handle_max"])
+        if problem:
+            raise serializers.ValidationError(problem)
         return value
 
 

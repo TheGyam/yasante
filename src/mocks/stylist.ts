@@ -1,13 +1,15 @@
-import { NOT_HANDLES } from '@/shared/lib/links';
 import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
 import { TIMING_REASONS } from '@/features/booking/types';
 import { respondedAt } from './bookings';
 import { lookFromPortfolio } from './looks';
 import { db } from './db';
-
-/** Handles already in use, plus the ones we keep for ourselves. */
-// The site's own paths too, so yasante.com/{handle} can never be ambiguous.
-const RESERVED = new Set(['yasante', 'admin', 'stylist', 'hair', ...NOT_HANDLES]);
+import {
+  identifierPolicy,
+  nameProblem,
+  nameTaken,
+  normaliseName,
+  unavailableName,
+} from './identifiers';
 
 /** Her menu, created empty the first time she adds to it. */
 function menuOf(accountId: string) {
@@ -73,8 +75,9 @@ function paymentMethods(list: unknown) {
   return kept;
 }
 
-const taken = (handle: string) =>
-  RESERVED.has(handle) || [...db.stylists.values()].some(s => s.handle === handle);
+const taken = (handle: string, accountId?: string) =>
+  nameProblem(handle, identifierPolicy.handle_max, db.stylists.get(accountId ?? '')?.handle) ||
+  nameTaken(handle, accountId);
 
 /**
  * Only what moderation has passed, and nothing that says who the client is. The
@@ -214,13 +217,18 @@ export function numbersFor(stylistId: string, now = new Date()) {
 }
 
 defineMocks({
-  'GET /api/stylists/handle-available/': ({ query }) => {
-    const handle = (query.get('handle') ?? '').toLowerCase();
-    if (!taken(handle)) return { handle, available: true };
+  'GET /api/stylists/handle-available/': ({ query, accountId }) => {
+    const handle = normaliseName(query.get('handle'));
+    if (!handle) throw new MockError(400, 'Enter a handle to check.');
+    if (nameProblem(handle, identifierPolicy.handle_max, db.stylists.get(accountId ?? '')?.handle))
+      return { handle, available: false, suggestions: [] };
+    if (!taken(handle, accountId)) return { handle, available: true };
     return {
       handle,
       available: false,
-      suggestions: [`${handle}hair`, `${handle}.london`, `${handle}studio`].filter(s => !taken(s)),
+      suggestions: [`${handle}hair`, `${handle}.london`, `${handle}studio`].filter(
+        s => !taken(s, accountId)
+      ),
     };
   },
 
@@ -317,8 +325,10 @@ defineMocks({
   'POST /api/stylists/': request => {
     const accountId = requireAccount(request);
     if (db.stylists.has(accountId)) throw new MockError(400, 'You already have a stylist page');
-    const handle = String(request.body?.handle ?? '').toLowerCase();
-    if (taken(handle)) throw new MockError(409, 'That handle has just been taken');
+    const handle = normaliseName(request.body?.handle);
+    const problem = nameProblem(handle, identifierPolicy.handle_max);
+    if (problem) throw new MockError(400, problem);
+    if (nameTaken(handle, accountId)) throw new MockError(409, unavailableName);
     const profile = {
       ...request.body,
       handle,
@@ -340,6 +350,12 @@ defineMocks({
     const profile = db.stylists.get(accountId);
     if (!profile) throw new MockError(404, 'No stylist profile yet');
     const changes = { ...request.body };
+    if ('handle' in changes) {
+      changes.handle = normaliseName(changes.handle);
+      const problem = nameProblem(changes.handle, identifierPolicy.handle_max, profile.handle);
+      if (problem) throw new MockError(400, problem);
+      if (nameTaken(changes.handle, accountId)) throw new MockError(409, unavailableName);
+    }
     if ('paymentMethods' in changes)
       changes.paymentMethods = paymentMethods(changes.paymentMethods);
     Object.assign(profile, changes);

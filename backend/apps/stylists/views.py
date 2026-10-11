@@ -9,6 +9,7 @@ from datetime import timedelta
 from apps.accounts.models import User
 from apps.bookings.models import Booking, Review
 from apps.common import zones
+from apps.common.identifiers import POLICY, UNAVAILABLE, identifier_problem, normalise
 from apps.common.blocks import blocked_account_ids, is_blocked
 from apps.common.models import log_search
 from apps.common.uploads import media_url, own_media
@@ -24,7 +25,6 @@ from rest_framework.views import APIView
 from .models import (
     held_checks,
     record_check,
-    NOT_HANDLES,
     MenuItem,
     PageView,
     PaymentMethod,
@@ -103,7 +103,7 @@ def _valid_availability(value):
 
 def _someones_username(handle, user):
     """Handles and usernames are one namespace: another person's username is taken."""
-    return User.objects.filter(username=handle).exclude(pk=user.pk).exists()
+    return User.objects.filter(username__iexact=handle).exclude(pk=user.pk).exists()
 
 
 @extend_schema_view(get=extend_schema(responses=HandleCheckResponseSerializer))
@@ -113,9 +113,15 @@ class HandleCheckView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        handle = request.query_params.get("handle", "").lower().strip()
+        handle = normalise(request.query_params.get("handle", ""))
         if not handle:
             return Response({"message": "Enter a handle to check."}, status=400)
+
+        current = None
+        if request.user.is_authenticated:
+            current = StylistProfile.objects.filter(account=request.user).values_list("handle", flat=True).first()
+        if identifier_problem(handle, max_length=POLICY["handle_max"], current=current):
+            return Response({"handle": handle, "available": False, "suggestions": []})
 
         # Her own handle isn't "taken": editing her page checks the one she already has.
         others = StylistProfile.objects.all()
@@ -128,7 +134,11 @@ class HandleCheckView(APIView):
 
         def taken(h):
             # A stylist's handle can't be someone's username either: one namespace.
-            return h in NOT_HANDLES or others.filter(handle=h).exists() or people.filter(username=h).exists()
+            return (
+                identifier_problem(h, max_length=POLICY["handle_max"], current=current)
+                or others.filter(handle__iexact=h).exists()
+                or people.filter(username__iexact=h).exists()
+            )
 
         if not taken(handle):
             return Response({"handle": handle, "available": True})
@@ -354,8 +364,11 @@ class StylistCreateView(APIView):
         serializer = StylistProfileDraftSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        if _someones_username(data["handle"], request.user):
-            return Response({"message": "That handle is taken."}, status=409)
+        if (
+            _someones_username(data["handle"], request.user)
+            or StylistProfile.objects.filter(handle__iexact=data["handle"]).exists()
+        ):
+            return Response({"message": UNAVAILABLE}, status=409)
         proof = data.get("proof_photo_uri", "")
         if proof and own_media(request.user, proof, public=False) is None:
             return Response({"message": "Upload the photo first"}, status=400)
@@ -460,16 +473,18 @@ class StylistMeView(APIView):
             update_fields.append("availability")
 
         if "handle" in data:
-            new_handle = str(data["handle"] or "").lower().strip()
+            new_handle = normalise(data["handle"])
             if new_handle != profile.handle:
+                problem = identifier_problem(new_handle, max_length=POLICY["handle_max"])
+                if problem:
+                    return Response({"message": problem}, status=400)
                 if (
-                    new_handle in NOT_HANDLES
-                    or _someones_username(new_handle, request.user)
-                    or StylistProfile.objects.filter(handle=new_handle)
+                    _someones_username(new_handle, request.user)
+                    or StylistProfile.objects.filter(handle__iexact=new_handle)
                     .exclude(pk=profile.pk)
                     .exists()
                 ):
-                    return Response({"message": "That handle is taken."}, status=409)
+                    return Response({"message": UNAVAILABLE}, status=409)
                 profile.handle = new_handle
                 update_fields.append("handle")
 
