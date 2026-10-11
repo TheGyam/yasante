@@ -4,6 +4,7 @@ import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import {
   addMenuItem,
   checkHandle,
+  closeDay,
   createProfile,
   getMenu,
   getMyProfile,
@@ -164,6 +165,15 @@ export function useUpdateProfile(accountId: string) {
   return useMutation({
     mutationFn: (changes: Partial<StylistProfileDraft> & { address?: string }) =>
       updateProfile(changes),
+    onSuccess: profile => client.setQueryData(stylistKeys.mine(accountId), profile),
+  });
+}
+
+/** Closes a day to new bookings, or opens it again. */
+export function useCloseDay(accountId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ date, closed }: { date: string; closed: boolean }) => closeDay(date, closed),
     onSuccess: profile => client.setQueryData(stylistKeys.mine(accountId), profile),
   });
 }

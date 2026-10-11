@@ -102,7 +102,7 @@ def test_days_off_and_times_outside_working_hours_are_refused(api, setup):
     assert off.status_code == 400 and "doesn’t work" in off.json()["message"]
     monday_late = (sunday + timedelta(days=1)).replace(hour=17)
     late = api(client).post("/api/bookings/", {**body, "requestedTimes": [_iso(monday_late)]})
-    assert late.status_code == 400 and "outside the stylist’s hours" in late.json()["message"]
+    assert late.status_code == 400 and f"outside {profile.display_name}’s hours" in late.json()["message"]
 
 
 def test_the_same_time_can_only_be_asked_for_once(api, setup, make_user, book, slot):
@@ -189,7 +189,11 @@ def test_she_can_suggest_another_time_and_the_client_answers(api, setup, book, m
     assert taken["status"] == "confirmed" and "proposal" not in taken
 
     second = book(client, profile)
-    api(profile.account).post(f"/api/bookings/{second['id']}/propose/", {"scheduledFor": later})
+    # Never a time that's already booked.
+    taken_time = api(profile.account).post(f"/api/bookings/{second['id']}/propose/", {"scheduledFor": later})
+    assert taken_time.status_code == 409 and "already booked" in taken_time.json()["message"]
+    other = _iso(timezone.now() + timedelta(days=11))
+    api(profile.account).post(f"/api/bookings/{second['id']}/propose/", {"scheduledFor": other})
     no = api(client).post(f"/api/bookings/{second['id']}/proposal/", {"accept": False}).json()
     assert no["status"] == "declined"
 
@@ -498,11 +502,14 @@ def test_her_notice_hides_times_too_soon_and_the_server_holds_to_it(api, setup, 
     }
     refused = api(client).post("/api/bookings/", body)
     assert refused.status_code == 400 and "3 days’ notice" in refused.json()["message"]
-    # She chooses from the list, not any number.
+    # One of the usual choices or her own number of hours, from an hour to 30 days.
     me = api(profile.account)
-    assert me.patch("/api/stylists/me/", {"availability": {**profile.availability, "leadHours": 5}}).status_code == 400
-    assert me.patch("/api/stylists/me/", {"availability": {**profile.availability, "leadHours": 12}}).status_code == 200
-    assert me.get("/api/stylists/me/").json()["availability"]["leadHours"] == 12
+    for wrong in (0, -3, 721, "12", True, 1.5):
+        assert me.patch("/api/stylists/me/", {"availability": {**profile.availability, "leadHours": wrong}}).status_code == 400
+    assert me.patch("/api/stylists/me/", {"availability": {**profile.availability, "leadHours": 36}}).status_code == 200
+    assert me.get("/api/stylists/me/").json()["availability"]["leadHours"] == 36
+    refused = api(client).post("/api/bookings/", body)
+    assert "36 hours’ notice" in refused.json()["message"]
 
 
 def test_a_time_already_gone_cant_be_accepted_or_suggested(api, setup, book):

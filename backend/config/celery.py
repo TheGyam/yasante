@@ -31,6 +31,11 @@ app.conf.beat_schedule = {
         "task": "apps.bookings.tasks.sweep_bookings",
         "schedule": crontab(minute="*/5"),
     },
+    # One more day comes into reach each morning: tell whoever was waiting for it.
+    "open-new-days": {
+        "task": "apps.bookings.tasks.open_new_days",
+        "schedule": crontab(hour=7, minute=0),
+    },
     # Prep (3 days), attendance (24h), stylist heads-up (12h), morning-of.
     "send-reminders": {
         "task": "apps.bookings.tasks.send_reminders",

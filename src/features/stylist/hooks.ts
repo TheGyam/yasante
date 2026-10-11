@@ -150,6 +150,16 @@ export function useUpdateStylistProfile() {
   });
 }
 
+/** Closes a day to new bookings, or opens it again. */
+export function useCloseDay() {
+  const save = useSaveProfile();
+  return useMutation({
+    mutationFn: ({ date, closed }: { date: string; closed: boolean }) =>
+      stylistApi.closeDay(date, closed),
+    onSuccess: save,
+  });
+}
+
 /** Puts the page live. The server refuses until the phone is verified. */
 export function usePublishPage() {
   const save = useSaveProfile();

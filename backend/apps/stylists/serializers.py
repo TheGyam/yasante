@@ -108,9 +108,16 @@ class WeekField(serializers.JSONField):
 class AvailabilitySerializer(serializers.Serializer):
     # Sunday first; null is a day off, so each day's hours are written out here.
     week = WeekField()
+    # Days away: she isn't working.
     blocked = serializers.ListField(child=serializers.DateField())
-    # The notice she needs before an appointment, in hours (3, 12, 24, 48 or 72).
-    lead_hours = optional(serializers.IntegerField())
+    # Days closed to new bookings: she has enough clients; what's booked stays.
+    closed = optional(serializers.ListField(child=serializers.DateField()))
+    # The notice she needs before an appointment, in hours: 3, 12, 24, 48, 72 or her own.
+    lead_hours = optional(serializers.IntegerField(min_value=1))
+    # How far ahead clients can book, in days: 28, 56, 84 (when unset) or 182.
+    ahead_days = optional(serializers.IntegerField())
+    # Minutes she keeps free between clients: 0, 15, 30, 45 or 60.
+    gap_minutes = optional(serializers.IntegerField())
 
 
 @extend_schema_field(optional(AvailabilitySerializer()))
@@ -122,8 +129,9 @@ class AvailabilityField(serializers.JSONField):
         if not isinstance(week, list) or len(week) != 7:
             return None
         shown = {"week": week, "blocked": list(value.get("blocked") or [])}
-        if value.get("lead_hours"):
-            shown["lead_hours"] = value["lead_hours"]
+        for key in ("closed", "lead_hours", "ahead_days", "gap_minutes"):
+            if value.get(key):
+                shown[key] = value[key]
         return shown
 
 
@@ -320,15 +328,33 @@ class StylistPageResponseSerializer(serializers.Serializer):
     timing_label = optional(TimingLabelSerializer())
 
 
+class BusySerializer(serializers.Serializer):
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    mine = optional(serializers.BooleanField(help_text="The viewer's own: why some times aren't offered"))
+
+
 class FreeDaySerializer(serializers.Serializer):
     date = serializers.DateField()
     times = serializers.ListField(child=serializers.DateTimeField())
+    busy = serializers.ListField(child=BusySerializer(), required=False, help_text="What's already in her diary that day")
 
 
 class FreeSlotsSerializer(serializers.Serializer):
     minutes = serializers.IntegerField()
-    days = FreeDaySerializer(many=True)
+    days = FreeDaySerializer(many=True, help_text="Days asked for with a time free, in order")
     time_zone = serializers.CharField(help_text="The stylist's zone (IANA): whose clock the times are on")
+    notice_hours = optional(serializers.IntegerField())
+    last_date = optional(serializers.DateField(help_text="The furthest day she can be booked; one more opens each morning"))
+    full = optional(serializers.ListField(child=serializers.DateField(), help_text="Days she works with no time left, or closed as full"))
+    away = optional(serializers.ListField(child=serializers.DateField()))
+    soonest = optional(serializers.DateTimeField(help_text="Her first free time, whatever days were asked for"))
+    weekend = optional(serializers.DateTimeField(help_text="Her first free Saturday or Sunday time"))
+
+
+class ClosedDayRequestSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    closed = serializers.BooleanField(default=True)
 
 
 class WeekCountsSerializer(serializers.Serializer):

@@ -2,6 +2,7 @@ import { defineMocks, MockError, requireAccount } from '@/shared/lib/api/mock';
 import { TIMING_REASONS } from '@/features/booking/types';
 import { respondedAt } from './bookings';
 import { lookFromPortfolio } from './looks';
+import { DEFAULT_AVAILABILITY } from '@/features/stylist/format';
 import { db } from './db';
 import {
   identifierPolicy,
@@ -359,6 +360,21 @@ defineMocks({
     if ('paymentMethods' in changes)
       changes.paymentMethods = paymentMethods(changes.paymentMethods);
     Object.assign(profile, changes);
+    return profile;
+  },
+
+  // Enough clients that day: no new requests for it. What's booked stays.
+  'POST /api/stylists/me/closed-days/': request => {
+    const accountId = requireAccount(request);
+    const profile = db.stylists.get(accountId);
+    if (!profile) throw new MockError(404, 'No stylist profile yet');
+    const date = String(request.body?.date ?? '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new MockError(400, 'Pick a day');
+    const availability = profile.availability ?? { ...DEFAULT_AVAILABILITY };
+    const days = new Set(availability.closed ?? []);
+    if (request.body?.closed === false) days.delete(date);
+    else days.add(date);
+    profile.availability = { ...availability, closed: [...days].sort() };
     return profile;
   },
 

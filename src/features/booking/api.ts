@@ -10,6 +10,7 @@ import type {
   CloseOut,
   FreeSlots,
   SlotInterest,
+  SlotQuery,
   Review,
   ReviewReportReason,
 } from './types';
@@ -26,11 +27,24 @@ export const bookingApi = {
   /** GET /api/bookings/:id/ */
   get: async (id: string) => (await apiClient.get<Booking>(`/api/bookings/${id}/`)).data,
 
-  /** GET /api/stylists/by-handle/:handle/slots/?service=&options= — her free times for a job. */
-  slots: async (handle: string, serviceId: string, optionIds: string[]) =>
+  /**
+   * GET /api/stylists/by-handle/:handle/slots/?service=&options=&from=&to= — her free
+   * times for a job (or for moving an appointment) on the days asked for.
+   */
+  slots: async (
+    { handle, serviceId, optionIds = [], booking }: SlotQuery,
+    from?: string,
+    to?: string
+  ) =>
     (
       await apiClient.get<FreeSlots>(`/api/stylists/by-handle/${handle}/slots/`, {
-        params: { service: serviceId, options: optionIds.join(',') || undefined },
+        params: {
+          service: booking ? undefined : serviceId,
+          options: booking ? undefined : optionIds.join(',') || undefined,
+          booking,
+          from,
+          to,
+        },
       })
     ).data,
 

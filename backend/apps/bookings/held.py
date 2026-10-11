@@ -1,7 +1,16 @@
-"""Diary holds and clash checks. Two clients cannot take the same time."""
+"""
+Diary holds and clash checks. Two clients cannot take the same time, and nobody can
+take a time someone is still waiting to hear about.
+
+A booking holds its time from the moment it's asked for until it's done with: the time
+asked for while the stylist decides, the time she suggests while the client decides, the
+appointment once agreed, and a time either side has asked to move it to while the other
+decides. A hold lapses with its request, so a time nobody answered comes free again.
+"""
 
 from datetime import timedelta
 
+from django.db.models import Q
 from django.utils import timezone
 
 from .models import Booking
@@ -9,42 +18,61 @@ from .models import Booking
 HOLD_STATUSES = ("requested", "awaiting_deposit", "confirmed")
 
 
-def held_start(booking) -> list:
-    """Times this booking occupies: scheduled, else proposal, else requested."""
-    starts = []
-    if booking.scheduled_for:
-        starts.append(booking.scheduled_for)
-    elif booking.proposal and booking.proposal.get("scheduled_for"):
-        from apps.common.timeparse import parse_iso
+def held_starts(booking) -> list:
+    """The times this booking occupies (see the module docstring)."""
+    from apps.common.timeparse import parse_iso
 
-        starts.append(parse_iso(booking.proposal["scheduled_for"]))
-    elif booking.requested_times:
-        starts.extend(booking.requested_times)
+    if booking.scheduled_for:
+        starts = [booking.scheduled_for]
+        if booking.move_request and booking.move_request.get("scheduled_for"):
+            starts.append(parse_iso(booking.move_request["scheduled_for"]))
+    elif booking.proposal and booking.proposal.get("scheduled_for"):
+        starts = [parse_iso(booking.proposal["scheduled_for"])]
+    else:
+        starts = list(booking.requested_times or [])
     return [s for s in starts if s]
 
 
-def held_ranges(profile, exclude_id=None):
-    qs = Booking.objects.filter(stylist_profile=profile, status__in=HOLD_STATUSES)
-    if exclude_id:
-        qs = qs.exclude(pk=exclude_id)
-    ranges = []
-    for booking in qs:
-        duration = booking.duration_minutes or 120
-        for start in held_start(booking):
-            ranges.append((start, start + timedelta(minutes=duration)))
-    return ranges
+def holding(qs, exclude_id=None):
+    """Bookings that still hold a time: live, and not lapsed even if the sweep is late."""
+    qs = qs.filter(status__in=HOLD_STATUSES).filter(
+        Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+    )
+    return qs.exclude(pk=exclude_id) if exclude_id else qs
+
+
+def _ranges(qs, gap=0):
+    pad = timedelta(minutes=gap)
+    return [
+        (start - pad, start + timedelta(minutes=booking.duration_minutes or 120) + pad, booking)
+        for booking in qs
+        for start in held_starts(booking)
+    ]
+
+
+def held_ranges(profile, exclude_id=None, gap=0):
+    """Her diary as (start, end, booking), each widened by the gap she keeps between clients."""
+    return _ranges(holding(Booking.objects.filter(stylist_profile=profile), exclude_id), gap)
+
+
+def client_ranges(client_id, exclude_id=None):
+    """Where a client already is, with any stylist: she can't be in two chairs at once."""
+    if not client_id:
+        return []
+    return _ranges(holding(Booking.objects.filter(client_id=client_id), exclude_id))
+
+
+def clashing(start, minutes, ranges):
+    """The first booking in `ranges` that a job of `minutes` from `start` would overlap."""
+    end = start + timedelta(minutes=minutes)
+    for held_from, held_to, booking in ranges:
+        if start < held_to and end > held_from:
+            return booking
+    return None
 
 
 def clashes(start, minutes, ranges) -> bool:
-    end = start + timedelta(minutes=minutes)
-    for held_start_dt, held_end in ranges:
-        if start < held_end and end > held_start_dt:
-            return True
-    return False
-
-
-def clash_exists(profile, start, minutes, exclude_id=None) -> bool:
-    return clashes(start, minutes, held_ranges(profile, exclude_id=exclude_id))
+    return clashing(start, minutes, ranges) is not None
 
 
 def expire_if_due(booking) -> Booking:
@@ -61,14 +89,14 @@ def expire_if_due(booking) -> Booking:
     return booking
 
 
-def release(booking):
+def release(booking, start=None):
     """
-    A slot came free: anyone waiting on that stylist for that day hears about it,
+    A time came free: anyone waiting on that stylist for that day hears about it,
     except the client whose booking it was.
     """
     from .models import SlotInterest
 
-    start = booking.scheduled_for or (booking.requested_times or [None])[0]
+    start = start or booking.scheduled_for or (booking.requested_times or [None])[0]
     if not start or not booking.stylist_id:
         return
     from apps.common import zones
@@ -79,6 +107,7 @@ def release(booking):
         from_date__lte=day,
         to_date__gte=day,
         opened_on__isnull=True,
+        opens=False,
     ).exclude(client_id=booking.client_id):
         interest.opened_on = day
         interest.save(update_fields=["opened_on", "updated_at"])
@@ -91,6 +120,42 @@ def release(booking):
             f"A slot opened with {interest.stylist_name}",
             f"{day:%a} {day.day} {day:%b}. Ask before someone else does.",
             url=f"/book/{interest.stylist_handle}?date={day.isoformat()}",
+            mode="client",
+        )
+
+
+def open_new_days(profiles=None):
+    """
+    Each morning one more day comes into reach (and many at once when a stylist books
+    further ahead): anyone waiting for those days to open hears, once.
+    """
+    from apps.common.notifications import notify
+    from apps.stylists.models import StylistProfile
+    from apps.stylists.slots import last_day
+
+    from .models import SlotInterest
+
+    waiting = SlotInterest.objects.filter(opens=True, opened_on__isnull=True)
+    if profiles is not None:
+        waiting = waiting.filter(stylist_id__in=[p.account_id for p in profiles])
+    reach = {}
+    for interest in waiting:
+        if interest.stylist_id not in reach:
+            profile = StylistProfile.objects.filter(account_id=interest.stylist_id).first()
+            reach[interest.stylist_id] = last_day(profile) if profile and profile.published else None
+        last = reach[interest.stylist_id]
+        if last is None or interest.from_date > last:
+            continue
+        interest.opened_on = interest.from_date
+        interest.save(update_fields=["opened_on", "updated_at"])
+        month = f"{interest.from_date:%B}"
+        notify(
+            interest.client_id,
+            "waitlist",
+            f"opens:{interest.pk}",
+            f"{interest.stylist_name} is taking bookings for {month}",
+            f"From {interest.from_date:%a} {interest.from_date.day} {interest.from_date:%b}. Ask before the best times go.",
+            url=f"/book/{interest.stylist_handle}?date={interest.from_date.isoformat()}",
             mode="client",
         )
 

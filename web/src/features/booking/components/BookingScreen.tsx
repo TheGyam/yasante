@@ -13,42 +13,35 @@ import {
   Star,
   UserCheck,
 } from 'lucide-react';
-import { formatDuration } from '@/features/stylist';
+import { formatDuration, useStylistPage } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
 import { formatMoney } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Glass } from '@/shared/ui/Glass';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
-import { Input, TextArea } from '@/shared/ui/Input';
+import { TextArea } from '@/shared/ui/Input';
 import { Link } from '@/shared/ui/Link';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Page } from '@/shared/ui/Page';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
-import {
-  CLIENT_STATUS_LABELS,
-  cancellingIsLate,
-  fromSalonInput,
-  inSentence,
-  isLive,
-  toSalonInput,
-  whenLabel,
-  zoneMark,
-} from '../format';
+import { CLIENT_STATUS_LABELS, cancellingIsLate, inSentence, isLive, whenLabel } from '../format';
 import {
   useAnswerMove,
   useAnswerProposal,
   useBooking,
   useCancel,
   useConfirmAttendance,
+  useRefreshFreeSlots,
   useRequestMove,
   useReview,
   useStartedOnTime,
 } from '../hooks';
 import type { Booking } from '../types';
 import { GetTheApp } from './GetTheApp';
+import { SlotPicker } from './SlotPicker';
 import * as styles from './BookingScreen.css';
 
 const serviceLine = (b: Booking) => [b.serviceName, ...(b.optionLabels ?? [])].join(' · ');
@@ -107,7 +100,10 @@ export function BookingScreen({ id }: { id: string }) {
   const askMove = useRequestMove();
   const onTime = useStartedOnTime();
   const [cancelling, setCancelling] = useState(false);
+  // Moving it: '' while she picks, then the new time (ISO) from the stylist's free ones.
   const [moving, setMoving] = useState<string>();
+  const refreshSlots = useRefreshFreeSlots();
+  const { data: page } = useStylistPage(moving === undefined ? '' : (booking?.stylistHandle ?? ''));
   // The last thing that failed, said in words where it happened.
   const [problem, setProblem] = useState<string>();
   const act = (run: () => Promise<unknown>) => {
@@ -356,51 +352,61 @@ export function BookingScreen({ id }: { id: string }) {
           </Section>
         )}
 
-        {booking.status === 'confirmed' && !booking.moves && !booking.moveRequest && (
-          <Section
-            title="Move it"
-            footer="One move is free and keeps the deposit and the history. They have to agree."
-          >
-            {moving === undefined ? (
-              <Button
-                label="Ask to move it"
-                variant="secondary"
-                size="md"
-                onClick={() => setMoving(toSalonInput(booking.scheduledFor!, zone))}
-              />
-            ) : (
-              <div className={styles.move}>
-                <Input
-                  label={`New time${zoneMark(zone)}`}
-                  type="datetime-local"
-                  value={moving}
-                  onChange={event => setMoving(event.target.value)}
+        {booking.status === 'confirmed' &&
+          !booking.moves &&
+          !booking.moveRequest &&
+          !!booking.stylistHandle && (
+            <Section
+              title="Move it"
+              footer="One move is free and keeps the deposit and the history. They have to agree."
+            >
+              {moving === undefined ? (
+                <Button
+                  label="Ask to move it"
+                  variant="secondary"
+                  size="md"
+                  onClick={() => setMoving('')}
                 />
-                <div className={styles.answers}>
-                  <Button
-                    label="Ask them"
-                    size="md"
-                    loading={askMove.isPending}
-                    disabled={!moving}
-                    onClick={() =>
-                      act(() =>
-                        askMove
-                          .mutateAsync({ id, at: fromSalonInput(moving, zone) })
-                          .then(() => setMoving(undefined))
-                      )
-                    }
+              ) : (
+                <div className={styles.move}>
+                  <SlotPicker
+                    query={{ handle: booking.stylistHandle, booking: id }}
+                    stylistName={booking.stylistName}
+                    availability={page?.profile.availability}
+                    timeZone={zone}
+                    value={moving || undefined}
+                    onChange={iso => setMoving(iso ?? '')}
                   />
-                  <Button
-                    label="Keep it as it is"
-                    size="md"
-                    variant="ghost"
-                    onClick={() => setMoving(undefined)}
-                  />
+                  <div className={styles.answers}>
+                    <Button
+                      label="Ask them"
+                      size="md"
+                      loading={askMove.isPending}
+                      disabled={!moving}
+                      onClick={() =>
+                        act(() =>
+                          askMove
+                            .mutateAsync({ id, at: moving })
+                            .then(() => setMoving(undefined))
+                            .catch(e => {
+                              // Taken since she looked: show what's still free.
+                              void refreshSlots();
+                              throw e;
+                            })
+                        )
+                      }
+                    />
+                    <Button
+                      label="Keep it as it is"
+                      size="md"
+                      variant="ghost"
+                      onClick={() => setMoving(undefined)}
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
-          </Section>
-        )}
+              )}
+            </Section>
+          )}
 
         {isLive(booking) && (
           <div className={styles.footer}>
