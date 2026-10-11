@@ -136,12 +136,20 @@ const HOLDS: BookingStatus[] = ['requested', 'awaiting_deposit', 'confirmed'];
 
 /** Her diary as time ranges, so a slot can't be offered — or asked for — twice. */
 function busyFor(stylistId: string) {
-  return db.bookings
-    .filter(b => b.stylistId === stylistId && HOLDS.includes(b.status))
-    .map(b => {
-      const start = new Date(b.scheduledFor ?? b.proposal?.scheduledFor ?? b.requestedTimes[0]);
-      return { start: start.getTime(), end: start.getTime() + (b.durationMinutes ?? 120) * 60_000 };
-    });
+  const blocked = db.timeBlocks
+    .filter(b => b.stylistId === stylistId)
+    .map(b => ({ start: new Date(b.start).getTime(), end: new Date(b.end).getTime() }));
+  return blocked.concat(
+    db.bookings
+      .filter(b => b.stylistId === stylistId && HOLDS.includes(b.status))
+      .map(b => {
+        const start = new Date(b.scheduledFor ?? b.proposal?.scheduledFor ?? b.requestedTimes[0]);
+        return {
+          start: start.getTime(),
+          end: start.getTime() + (b.durationMinutes ?? 120) * 60_000,
+        };
+      })
+  );
 }
 
 /** How long the job runs, from her menu and the options chosen. Unknown is two hours. */

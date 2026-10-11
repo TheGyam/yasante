@@ -34,6 +34,15 @@ export interface PaymentMethod {
 /** "09:00" to "18:00", or closed. */
 export type DayHours = { start: string; end: string } | null;
 
+/** Part of a day she's taken out of her diary. Clients see it as booked. */
+export interface TimeBlock {
+  id: string;
+  start: string;
+  end: string;
+  /** Hers alone: never shown to clients. */
+  note?: string;
+}
+
 export interface Availability {
   /** Sunday is 0, as JavaScript counts. */
   week: [DayHours, DayHours, DayHours, DayHours, DayHours, DayHours, DayHours];

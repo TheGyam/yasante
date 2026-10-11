@@ -17,6 +17,19 @@ Account signup uses email; public usernames are chosen through profile setup.
   names also reject numeric suffixes, common lookalikes (`adm1n`, `adrnin`), and
   authority terms separated by dots/underscores (`support.london`). This is a
   deliberately scoped heuristic, not a complete Unicode-confusable detector.
+- Well-known companies and brands, so nobody can pose as them. Distinctive names
+  (`instagram`, `tiktok`, `paypal`, `sephora`, `monzo` and about 60 more) are blocked
+  anywhere in a name (`instagram_braids`). Companies whose names are also ordinary
+  words or names (`apple`, `dove`, `boots`, `nike`, `amazon`) are blocked as the whole
+  name, with an official-sounding word (`apple_support`) or a number (`apple1`), but
+  not inside a longer name (`applepiebraids`, `nikeshabraids`).
+- Abuse: slurs and sexual terms with no innocent reading are blocked anywhere, through
+  separators and lookalikes (`f.u.c.k`, `sh1t`). Short words that hide inside ordinary
+  ones are blocked only as the whole name or a dotted part (`sex.braids`, but not
+  `essexbraids`, `scunthorpe.hair`, `peacockhair` or `therapist.ama`). Personal names
+  that some filters wrongly block (`isis`, `jihad`, `kikelomo`, `nazir`) are allowed.
+- Misspellings of Yasante (`yassante`, `yasantee`) and pages a social app has or will
+  have (`inbox`, `reels`, `trending`, `gift-cards`).
 - New public names use ASCII letters, digits, dots and underscores. They must
   start/end with a letter or digit and cannot repeat separators. Usernames have
   3–30 characters; stylist handles have 3–24, matching the app and website.
@@ -24,10 +37,19 @@ Account signup uses email; public usernames are chosen through profile setup.
   than transliterated. Personal display names remain Unicode-capable.
 
 The policy does not ban arbitrary substrings from ordinary names. For example,
-`rootedbeauty`, `supportivecurls`, `admina`, and `yasmin` remain valid. It does not
-attempt to reserve every person's name, trademark, offensive word or language.
-Those require a separate moderation policy; no finite list prevents every form
-of impersonation, especially through display names, photos or biographies.
+`rootedbeauty`, `supportivecurls`, `admina`, and `yasmin` remain valid. The lists
+cover the companies, brands and abuse people most often reach for; no finite list
+covers every trademark, slur or language, so reports and moderation remain the
+backstop, along with display names, photos and bios, which this policy doesn't cover.
+Add to the JSON as cases come up; the tests hold ordinary names that must stay valid.
+
+## Names given up are held
+
+A username or handle someone gives up, by choosing a new one or deleting their
+account, is held for 14 days (`NAME_HOLD_DAYS`), as Instagram and X do: nobody else
+can take it and pass themselves off as the person who had it. Its last owner can
+take it back meanwhile. Holds keep only the name and the old account ID, and are
+deleted by the daily retention job once over.
 
 ## Where it is enforced
 

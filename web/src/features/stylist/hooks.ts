@@ -3,8 +3,11 @@ import { ApiError } from '@/shared/lib/api/client';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import {
   addMenuItem,
+  addTimeBlock,
   checkHandle,
   closeDay,
+  getTimeBlocks,
+  removeTimeBlock,
   createProfile,
   getMenu,
   getMyProfile,
@@ -168,6 +171,24 @@ export function useUpdateProfile(accountId: string) {
     onSuccess: profile => client.setQueryData(stylistKeys.mine(accountId), profile),
   });
 }
+
+export function useTimeBlocks(accountId: string) {
+  return useQuery({ queryKey: ['stylist', 'blocks', accountId], queryFn: getTimeBlocks });
+}
+
+function useBlockChange<A>(accountId: string, change: (args: A) => Promise<unknown>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: change,
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['stylist', 'blocks', accountId] });
+      client.invalidateQueries({ queryKey: ['slots'] });
+    },
+  });
+}
+
+export const useAddTimeBlock = (accountId: string) => useBlockChange(accountId, addTimeBlock);
+export const useRemoveTimeBlock = (accountId: string) => useBlockChange(accountId, removeTimeBlock);
 
 /** Closes a day to new bookings, or opens it again. */
 export function useCloseDay(accountId: string) {

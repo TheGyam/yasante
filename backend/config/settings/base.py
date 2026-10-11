@@ -398,6 +398,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Stylists set their hours as local wall-clock times ("09:00") in this zone.
 STYLIST_TIME_ZONE = "Europe/London"
 
+# A username or handle someone gives up is held this long before anyone else can take it.
+NAME_HOLD_DAYS = 14
+
 # Booking timing
 BOOKING_REQUEST_LAPSE_HOURS = 48
 BOOKING_DEPOSIT_LAPSE_HOURS = 24

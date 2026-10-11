@@ -149,33 +149,54 @@ def free_times(profile, minutes, first=None, last=None, viewer_id=None, exclude_
     hers = held_ranges(profile, exclude_id, gap_minutes(profile))
     own = client_ranges(viewer_id, exclude_id) if viewer_id else []
 
+    # Each hold filed under the local days it touches, so a start only checks its own
+    # day's: the work stays the same however full the diary is further out.
+    def by_day(ranges):
+        index = {}
+        for held in ranges:
+            day, last = held[0].astimezone(zone).date(), held[1].astimezone(zone).date()
+            while day <= last:
+                index.setdefault(day, []).append(held)
+                day += timedelta(days=1)
+        return index
+
+    hers_on, own_on = by_day(hers), by_day(own)
+
     @lru_cache(maxsize=None)
     def times_on(day):
         hours = day_hours(profile, day)
         if isinstance(hours, str):
-            return hours, ()
-        found, reachable = [], False
+            return hours, (), 0
+        # The next day's too: a job longer than her day can run past midnight.
+        after = day + timedelta(days=1)
+        held = hers_on.get(day, []) + own_on.get(day, []) + hers_on.get(after, []) + own_on.get(after, [])
+        found, reachable = [], 0
         for start in _starts(day, *hours, minutes, zone):
             if start < earliest:
                 continue
-            reachable = True
-            if not clashing(start, minutes, hers) and not clashing(start, minutes, own):
+            reachable += 1
+            if not clashing(start, minutes, held):
                 found.append(start)
-        return ("open" if found else "full" if reachable else "notice"), tuple(found)
+        return ("open" if found else "full" if reachable else "notice"), tuple(found), reachable
 
-    # Her diary for the day's timeline: appointments as they are (no gap), plus the
-    # viewer's own elsewhere, which is why some times aren't offered to them.
-    blocks = [(s + gap, e - gap, b) for s, e, b in hers]
-    blocks += [r for r in own if r[2].stylist_profile_id != profile.pk]
-    blocks.sort(key=lambda r: r[0])
+    def room(found, reachable):
+        """How much of her day is left for a job like this: plenty while at least half
+        the times it could start are free, a few once fewer (or only one or two) are."""
+        return "few" if len(found) <= 2 or len(found) * 2 < reachable else "plenty"
 
     def busy_on(day):
-        opens = datetime.combine(day, time.min, tzinfo=zone)
-        closes = opens + timedelta(days=1)
+        """Her diary for the day's timeline: appointments and blocks as they are (no gap),
+        plus the viewer's own elsewhere, which is why some times aren't offered to them.
+        A block reads as booked: what it's for is hers."""
+        blocks = [(s + gap, e - gap, b) for s, e, b in hers_on.get(day, [])]
+        blocks += [r for r in own_on.get(day, []) if r[2].stylist_profile_id != profile.pk]
         return [
-            {"start": _iso(s), "end": _iso(e), **({"mine": True} if viewer_id and b.client_id == viewer_id else {})}
-            for s, e, b in blocks
-            if s < closes and e > opens
+            {
+                "start": _iso(s),
+                "end": _iso(e),
+                **({"mine": True} if viewer_id and getattr(b, "client_id", None) == viewer_id else {}),
+            }
+            for s, e, b in sorted(blocks, key=lambda r: r[0])
         ]
 
     first = max(first or today, today)
@@ -187,9 +208,14 @@ def free_times(profile, minutes, first=None, last=None, viewer_id=None, exclude_
     days, full, away = [], [], []
     day = first
     while day <= last:
-        state, times = times_on(day)
+        state, times, reachable = times_on(day)
         if times:
-            days.append({"date": day.isoformat(), "times": [_iso(t) for t in times], "busy": busy_on(day)})
+            days.append({
+                "date": day.isoformat(),
+                "times": [_iso(t) for t in times],
+                "room": room(times, reachable),
+                "busy": busy_on(day),
+            })
         elif state in ("full", "closed"):
             full.append(day.isoformat())
         elif state == "away":

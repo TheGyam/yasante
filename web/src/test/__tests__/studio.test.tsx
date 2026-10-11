@@ -259,4 +259,37 @@ describe('her studio', () => {
     );
     expect(await screen.findByText('Closed: you have enough clients this day')).toBeInTheDocument();
   });
+
+  it('blocks out part of a day on her own clock, with a note only she sees', async () => {
+    const calls = signedIn({
+      'GET /api/stylists/me/': { ...profile, timeZone: 'Europe/London' },
+      'GET /api/stylists/me/blocks/': [],
+      'POST /api/stylists/me/blocks/': {
+        status: 201,
+        body: { id: 't1', start: '2026-12-05T11:00:00Z', end: '2026-12-05T13:00:00Z' },
+      },
+    });
+    const typist = userEvent.setup();
+    renderSite('/availability');
+    const day = await screen.findByLabelText('Day');
+    await typist.type(day, '2026-12-05');
+    const from = screen.getAllByLabelText('From').at(-1)!;
+    await typist.clear(from);
+    await typist.type(from, '11:00');
+    const until = screen.getAllByLabelText('Until').at(-1)!;
+    await typist.clear(until);
+    await typist.type(until, '13:00');
+    await typist.type(screen.getByLabelText('Note for you (optional)'), 'Private client');
+    await typist.click(screen.getByRole('button', { name: 'Block it out' }));
+    // December in London is UTC.
+    await waitFor(() =>
+      expect(
+        calls.find(c => c.url === '/api/stylists/me/blocks/' && c.method === 'POST')?.body
+      ).toEqual({
+        start: '2026-12-05T11:00:00.000Z',
+        end: '2026-12-05T13:00:00.000Z',
+        note: 'Private client',
+      })
+    );
+  });
 });

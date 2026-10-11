@@ -1,5 +1,6 @@
 from datetime import timedelta
 from celery import shared_task
+from django.conf import settings
 from django.utils import timezone
 from .models import ClientError
 
@@ -27,6 +28,7 @@ def enforce_retention():
     after 12 months. Stylist page views lose the viewer after 90 days; the counts stay,
     because stylists see them.
     """
+    from apps.accounts.models import ReleasedName
     from apps.profiles.models import AnalyticsEvent
     from apps.stylists.models import PageView
 
@@ -38,4 +40,8 @@ def enforce_retention():
         "searches_deleted": SearchLog.objects.filter(created_at__lt=now - DELETE_AFTER).delete()[0],
         "searches_anonymised": SearchLog.objects.filter(created_at__lt=now - FORGET_WHO_AFTER, user__isnull=False).update(user=None),
         "views_anonymised": PageView.objects.filter(viewed_at__lt=now - FORGET_WHO_AFTER, viewer__isnull=False).update(viewer=None),
+        # A given-up name, once its hold is over, is nobody's business.
+        "name_holds_deleted": ReleasedName.objects.filter(
+            released_at__lt=now - timedelta(days=settings.NAME_HOLD_DAYS)
+        ).delete()[0],
     }

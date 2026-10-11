@@ -363,6 +363,31 @@ defineMocks({
     return profile;
   },
 
+  // Time she's blocked out: clients see it as booked.
+  'GET /api/stylists/me/blocks/': request => {
+    const accountId = requireAccount(request);
+    const now = new Date().toISOString();
+    return db.timeBlocks
+      .filter(b => b.stylistId === accountId && b.end > now)
+      .map(({ stylistId: _, ...block }) => block);
+  },
+
+  'POST /api/stylists/me/blocks/': request => {
+    const accountId = requireAccount(request);
+    const { start, end, note } = request.body ?? {};
+    if (!start || !end || end <= start)
+      throw new MockError(400, 'Pick when it starts and when it ends');
+    const block = { id: `tb_${Date.now()}`, stylistId: accountId, start, end, note };
+    db.timeBlocks.push(block);
+    return { id: block.id, start, end, note };
+  },
+
+  'DELETE /api/stylists/me/blocks/:id/': request => {
+    const accountId = requireAccount(request);
+    db.timeBlocks = db.timeBlocks.filter(b => !(b.id === request.params.id && b.stylistId === accountId));
+    return undefined;
+  },
+
   // Enough clients that day: no new requests for it. What's booked stays.
   'POST /api/stylists/me/closed-days/': request => {
     const accountId = requireAccount(request);

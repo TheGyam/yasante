@@ -10,7 +10,8 @@ import { InlineAlert } from '@/shared/ui/InlineAlert';
 import { Input } from '@/shared/ui/Input';
 import { Page } from '@/shared/ui/Page';
 import { Text } from '@/shared/ui/Text';
-import { useUpdateProfile } from '../hooks';
+import { fromSalonInput, toSalonInput, whenLabel } from '@/shared/lib/salonTime';
+import { useAddTimeBlock, useRemoveTimeBlock, useTimeBlocks, useUpdateProfile } from '../hooks';
 import {
   AHEAD_CHOICES,
   DEFAULT_AHEAD_DAYS,
@@ -131,6 +132,8 @@ export function HoursScreen({
             );
           })}
         </Glass>
+
+        <BlockedTime accountId={accountId} timeZone={profile.timeZone} />
 
         <Glass padded radius="xl" className={styles.card}>
           <Text variant="overline" tone="tertiary" as="h2">
@@ -318,5 +321,96 @@ export function HoursScreen({
         </div>
       </div>
     </Page>
+  );
+}
+
+/**
+ * Part of a day taken out of her diary: a client booked elsewhere, a school run. Saved
+ * as she adds it. Clients see it as booked; only she sees the note.
+ */
+function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: string }) {
+  const { data: blocks = [] } = useTimeBlocks(accountId);
+  const add = useAddTimeBlock(accountId);
+  const remove = useRemoveTimeBlock(accountId);
+  const [day, setDay] = useState('');
+  const [from, setFrom] = useState('10:00');
+  const [until, setUntil] = useState('12:00');
+  const [note, setNote] = useState('');
+  const [today] = useState(() => toSalonInput(new Date(), timeZone).slice(0, 10));
+  const backwards = !!from && !!until && until <= from;
+
+  return (
+    <Glass padded radius="xl" className={styles.card}>
+      <Text variant="overline" tone="tertiary" as="h2">
+        Time blocked out
+      </Text>
+      <Text variant="footnote" tone="secondary">
+        A client booked elsewhere, a school run, a long lunch: clients see it as booked, and nothing
+        can land on it. Only you see the note.
+      </Text>
+      <div className={styles.option}>
+        <Input
+          label="Day"
+          type="date"
+          min={today}
+          value={day}
+          onChange={e => setDay(e.target.value)}
+        />
+        <Input
+          label="From"
+          type="time"
+          step={900}
+          value={from}
+          onChange={e => setFrom(e.target.value)}
+        />
+        <Input
+          label="Until"
+          type="time"
+          step={900}
+          value={until}
+          error={backwards ? 'After the start' : undefined}
+          onChange={e => setUntil(e.target.value)}
+        />
+      </div>
+      <Input
+        label="Note for you (optional)"
+        maxLength={100}
+        placeholder="Private client"
+        value={note}
+        onChange={e => setNote(e.target.value)}
+      />
+      {add.isError && <InlineAlert message={errorMessage(add.error, 'Couldn’t block that out.')} />}
+      <div>
+        <Button
+          label="Block it out"
+          variant="secondary"
+          size="md"
+          disabled={!day || !from || !until || backwards}
+          loading={add.isPending}
+          onClick={() =>
+            add.mutate(
+              {
+                start: fromSalonInput(`${day}T${from}`, timeZone),
+                end: fromSalonInput(`${day}T${until}`, timeZone),
+                note: note.trim() || undefined,
+              },
+              { onSuccess: () => setNote('') }
+            )
+          }
+        />
+      </div>
+      {blocks.length > 0 && (
+        <div className={styles.chips}>
+          {blocks.map(block => (
+            <Chip
+              key={block.id}
+              label={`${whenLabel(block.start, timeZone)}–${toSalonInput(block.end, timeZone).slice(11)}${block.note ? ` · ${block.note}` : ''}`}
+              icon={X}
+              onClick={() => remove.mutate(block.id)}
+            />
+          ))}
+        </div>
+      )}
+    </Glass>
   );
 }

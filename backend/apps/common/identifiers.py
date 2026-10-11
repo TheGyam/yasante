@@ -26,17 +26,27 @@ def _skeleton(value):
     return value.translate(_LOOKALIKES).replace("rn", "m").replace("l", "i")
 
 
+def _with_affixes(roots):
+    """Each root alone and with an official-sounding word either side ("apple_support")."""
+    return frozenset(
+        _skeleton(name)
+        for root in roots
+        for name in [root, *[root + a for a in POLICY["affixes"]], *[a + root for a in POLICY["affixes"]]]
+    )
+
+
 _RESERVED = frozenset(_compact(name) for name in NOT_HANDLES)
-_BRANDS = frozenset(_skeleton(name) for name in POLICY["brands"])
-_PROTECTED = frozenset(
-    _skeleton(name)
-    for root in POLICY["protected"]
-    for name in [
-        root,
-        *[root + a for a in POLICY["affixes"]],
-        *[a + root for a in POLICY["affixes"]],
-    ]
-)
+# Matched anywhere in a name: terms no ordinary word contains.
+_ANYWHERE = frozenset(_skeleton(name) for name in POLICY["brands"] + POLICY["offensive"])
+# Matched as the whole name, with a number after it.
+_COMPANIES = _with_affixes(POLICY["companies"])
+# Matched as the whole name or any dotted part of it, with a number after it.
+_PROTECTED = _with_affixes(POLICY["protected"]) | frozenset(_skeleton(w) for w in POLICY["offensive_words"])
+
+
+def _forms(value):
+    """A name as it reads, and as it reads without a number on the end."""
+    return {_skeleton(value), _skeleton(value.rstrip("0123456789"))}
 
 
 def is_reserved(value):
@@ -45,15 +55,12 @@ def is_reserved(value):
     if compact in _RESERVED:
         return True
     skeleton = _skeleton(compact)
-    if any(brand in skeleton for brand in _BRANDS):
+    if any(term in skeleton for term in _ANYWHERE):
         return True
-    # Restrict lookalike and numeric variants to authority names, not ordinary words.
-    candidates = [compact, *re.split(r"[._-]", value)]
-    return any(
-        _skeleton(candidate) in _PROTECTED
-        or _skeleton(candidate.rstrip("0123456789")) in _PROTECTED
-        for candidate in candidates
-    )
+    if _forms(compact) & _COMPANIES:
+        return True
+    # Lookalike and numeric variants only for authority names and short slurs, not words.
+    return any(_forms(candidate) & _PROTECTED for candidate in [compact, *re.split(r"[._-]", value)])
 
 
 def identifier_problem(value, *, max_length, current=None):
@@ -75,6 +82,7 @@ def validate_model_identifier(instance, field, *, max_length, optional=False):
     """Model forms and normal ORM saves enforce the same rule as the API.
 
     An unchanged legacy value may stay; adopting a newly reserved value may not.
+    Returns the value saved before, so a name given up can be held.
     Bulk updates and SQL deliberately bypass model hooks: audit them separately.
     """
     current = None
@@ -87,12 +95,13 @@ def validate_model_identifier(instance, field, *, max_length, optional=False):
         )
     raw = getattr(instance, field)
     if current is not None and raw == current:
-        return
+        return current
     value = normalise(raw)
     if optional and not value:
         setattr(instance, field, None)
-        return
+        return current
     problem = identifier_problem(value, max_length=max_length)
     if problem:
         raise ValidationError({field: problem})
     setattr(instance, field, value)
+    return current

@@ -2311,6 +2311,66 @@ paths:
               schema:
                 $ref: '#/components/schemas/StylistProfile'
           description: ''
+  /api/stylists/me/blocks/:
+    get:
+      operationId: stylists_me_blocks_list
+      description: |-
+        GET / POST /api/stylists/me/blocks/ — part of a day she's taken out of her diary
+        (a client booked elsewhere, a school run). Clients see it as booked.
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeBlock'
+          description: ''
+    post:
+      operationId: stylists_me_blocks_create
+      description: |-
+        GET / POST /api/stylists/me/blocks/ — part of a day she's taken out of her diary
+        (a client booked elsewhere, a school run). Clients see it as booked.
+      tags:
+      - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeBlockRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeBlock'
+          description: ''
+  /api/stylists/me/blocks/{id}/:
+    delete:
+      operationId: stylists_me_blocks_destroy
+      description: DELETE /api/stylists/me/blocks/:id/ — the time is hers to book
+        again.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/stylists/me/closed-days/:
     post:
       operationId: stylists_me_closed_days_create
@@ -3946,6 +4006,13 @@ components:
           items:
             type: string
             format: date-time
+        room:
+          description: |-
+            Plenty while at least half the times a job like this could start are free
+
+            * `plenty` - plenty
+            * `few` - few
+          $ref: '#/components/schemas/RoomEnum'
         busy:
           type: array
           items:
@@ -5515,6 +5582,14 @@ components:
         * `client` - client
         * `stylist` - stylist
         * `admin` - admin
+    RoomEnum:
+      enum:
+      - plenty
+      - few
+      type: string
+      description: |-
+        * `plenty` - plenty
+        * `few` - few
     ServiceModelEnum:
       enum:
       - salon
@@ -6061,6 +6136,39 @@ components:
         * `curly` - Curly
         * `coily` - Coily
         * `kinky` - Kinky
+    TimeBlock:
+      type: object
+      properties:
+        id:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        note:
+          type: string
+          description: 'Hers alone: never shown to clients'
+      required:
+      - end
+      - id
+      - start
+    TimeBlockRequestRequest:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        note:
+          type: string
+          maxLength: 100
+      required:
+      - end
+      - start
     TimeOfDayEnum:
       enum:
       - morning

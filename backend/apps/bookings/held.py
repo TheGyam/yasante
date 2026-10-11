@@ -6,14 +6,43 @@ A booking holds its time from the moment it's asked for until it's done with: th
 asked for while the stylist decides, the time she suggests while the client decides, the
 appointment once agreed, and a time either side has asked to move it to while the other
 decides. A hold lapses with its request, so a time nobody answered comes free again.
+Time she blocks out herself holds the same way.
 """
 
+from contextlib import contextmanager
 from datetime import timedelta
 
+from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import Booking
+from .models import Booking, TimeBlock
+
+# What working out a hold reads from a booking, and nothing more: read as plain rows,
+# not whole bookings, because a busy diary is hundreds of them on every look.
+_HOLD_FIELDS = (
+    "id", "status", "scheduled_for", "move_request", "proposal", "requested_times",
+    "duration_minutes", "client_id", "client_name", "stylist_profile_id", "stylist_name",
+)
+
+
+@contextmanager
+def diary_lock(profile_id, client_id=None):
+    """
+    One change at a time to a stylist's diary, and to her client's: two people can look
+    at the same free time, but only the first to take it gets it. Always the stylist
+    first, then the client, so two changes never wait on each other.
+    """
+    from django.contrib.auth import get_user_model
+
+    from apps.stylists.models import StylistProfile
+
+    with transaction.atomic():
+        if profile_id:
+            list(StylistProfile.objects.select_for_update().filter(pk=profile_id).values_list("pk"))
+        if client_id:
+            list(get_user_model().objects.select_for_update().filter(pk=client_id).values_list("pk"))
+        yield
 
 HOLD_STATUSES = ("requested", "awaiting_deposit", "confirmed")
 
@@ -34,10 +63,14 @@ def held_starts(booking) -> list:
 
 
 def holding(qs, exclude_id=None):
-    """Bookings that still hold a time: live, and not lapsed even if the sweep is late."""
+    """
+    Bookings that still hold a time: live, not lapsed even if the sweep is late, and not
+    an appointment already a day gone (it can't clash with anything still to come).
+    """
+    now = timezone.now()
     qs = qs.filter(status__in=HOLD_STATUSES).filter(
-        Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
-    )
+        Q(expires_at__isnull=True) | Q(expires_at__gt=now)
+    ).exclude(scheduled_for__lt=now - timedelta(days=1))
     return qs.exclude(pk=exclude_id) if exclude_id else qs
 
 
@@ -45,14 +78,24 @@ def _ranges(qs, gap=0):
     pad = timedelta(minutes=gap)
     return [
         (start - pad, start + timedelta(minutes=booking.duration_minutes or 120) + pad, booking)
-        for booking in qs
+        for booking in qs.values_list(*_HOLD_FIELDS, named=True)
         for start in held_starts(booking)
     ]
 
 
-def held_ranges(profile, exclude_id=None, gap=0):
-    """Her diary as (start, end, booking), each widened by the gap she keeps between clients."""
-    return _ranges(holding(Booking.objects.filter(stylist_profile=profile), exclude_id), gap)
+def held_ranges(profile, exclude_id=None, gap=0, blocks=True):
+    """
+    Her diary as (start, end, booking or time block), each widened by the gap she keeps
+    between clients.
+    """
+    ranges = _ranges(holding(Booking.objects.filter(stylist_profile=profile), exclude_id), gap)
+    if blocks:
+        pad = timedelta(minutes=gap)
+        ranges += [
+            (b.start - pad, b.end + pad, b)
+            for b in TimeBlock.objects.filter(stylist_profile=profile, end__gt=timezone.now())
+        ]
+    return ranges
 
 
 def client_ranges(client_id, exclude_id=None):
@@ -63,7 +106,7 @@ def client_ranges(client_id, exclude_id=None):
 
 
 def clashing(start, minutes, ranges):
-    """The first booking in `ranges` that a job of `minutes` from `start` would overlap."""
+    """The first booking (or time block) in `ranges` a job of `minutes` from `start` would overlap."""
     end = start + timedelta(minutes=minutes)
     for held_from, held_to, booking in ranges:
         if start < held_to and end > held_from:
@@ -94,21 +137,25 @@ def release(booking, start=None):
     A time came free: anyone waiting on that stylist for that day hears about it,
     except the client whose booking it was.
     """
-    from .models import SlotInterest
-
     start = start or booking.scheduled_for or (booking.requested_times or [None])[0]
-    if not start or not booking.stylist_id:
-        return
+    if start and booking.stylist_profile_id:
+        open_day(booking.stylist_profile, start, booking.client_id)
+
+
+def open_day(profile, start, except_client_id=None):
+    """Anyone waiting on her for the day `start` falls on hears a slot opened, once."""
     from apps.common import zones
 
-    day = start.astimezone(zones.of(booking.stylist_profile)).date()
+    from .models import SlotInterest
+
+    day = start.astimezone(zones.of(profile)).date()
     for interest in SlotInterest.objects.filter(
-        stylist_id=booking.stylist_id,
+        stylist_id=profile.account_id,
         from_date__lte=day,
         to_date__gte=day,
         opened_on__isnull=True,
         opens=False,
-    ).exclude(client_id=booking.client_id):
+    ).exclude(client_id=except_client_id):
         interest.opened_on = day
         interest.save(update_fields=["opened_on", "updated_at"])
         from apps.common.notifications import notify

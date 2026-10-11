@@ -179,7 +179,8 @@ def test_she_is_booked_as_far_ahead_as_she_says_a_month_at_a_time(api, make_styl
 def test_closing_a_day_stops_new_requests_but_keeps_whats_booked(api, make_stylist, make_user, book):
     profile = make_stylist()
     cornrows = profile.menu_items.get(name="Cornrows")
-    booking = book(make_user(), profile, cornrows, options={"size": "big"})
+    morning = _slots(api(), profile, cornrows, options="big")["days"][1]["times"][0]  # 09:00
+    booking = book(make_user(), profile, cornrows, options={"size": "big"}, time=morning)
     start = _at(booking["requestedTimes"][0])
     day = start.astimezone(LONDON).date()
     me = api(profile.account)
@@ -208,7 +209,8 @@ def test_the_gap_she_keeps_between_clients(api, make_stylist, make_user, book):
     cornrows = profile.menu_items.get(name="Cornrows")
     me = api(profile.account)
     assert me.patch("/api/stylists/me/", {"availability": {**profile.availability, "gapMinutes": 30}}).status_code == 200
-    booking = book(make_user(), profile, cornrows, options={"size": "big"})  # two hours
+    morning = _slots(api(), profile, cornrows, options="big")["days"][1]["times"][0]  # 09:00
+    booking = book(make_user(), profile, cornrows, options={"size": "big"}, time=morning)  # two hours
     start = _at(booking["requestedTimes"][0])
     found = _slots(api(), profile, cornrows, options="big")
     same_day = next(d for d in found["days"] if d["date"] == start.astimezone(LONDON).date().isoformat())
@@ -239,3 +241,51 @@ def test_waiting_for_days_she_isnt_taking_bookings_for_yet(api, make_stylist, ma
     told = NotificationLog.objects.get(user=client)
     assert "taking bookings for" in told.title and told.data["url"].startswith(f"/book/{profile.handle}?date=")
     assert api(client).get("/api/slot-interests/").json()[0]["openedOn"]
+
+
+def test_time_she_blocks_out_is_never_offered_or_taken(api, make_stylist, make_user, book):
+    profile = make_stylist()
+    cornrows = profile.menu_items.get(name="Cornrows")
+    me = api(profile.account)
+    found = _slots(api(), profile, cornrows, options="big")
+    day = found["days"][1]  # a whole day ahead
+    nine = _at(day["times"][0])
+    blocked = me.post("/api/stylists/me/blocks/", {
+        "start": _iso(nine), "end": _iso(nine + timedelta(hours=3)), "note": "Private client",
+    })
+    assert blocked.status_code == 201
+    after = _slots(api(), profile, cornrows, options="big")
+    same = next(d for d in after["days"] if d["date"] == day["date"])
+    # Two-hour jobs can start once it's over; clients see it as booked, never the note.
+    assert _at(same["times"][0]) == nine + timedelta(hours=3)
+    assert same["busy"] == [{"start": _iso(nine).replace("Z", ".000Z"), "end": _iso(nine + timedelta(hours=3)).replace("Z", ".000Z")}]
+    assert _ask(api(make_user()), profile, cornrows, nine, {"size": "big"}).status_code == 409
+    assert me.get("/api/stylists/me/blocks/").json()[0]["note"] == "Private client"
+
+    # She can't suggest a time inside it either, nor block over someone's appointment.
+    asked = book(make_user(), profile, cornrows, options={"size": "big"}, time=same["times"][0])
+    suggest = me.post(f"/api/bookings/{asked['id']}/propose/", {"scheduledFor": _iso(nine)})
+    assert suggest.status_code == 409 and "blocked that time out" in suggest.json()["message"]
+    over = me.post("/api/stylists/me/blocks/", {
+        "start": _iso(nine + timedelta(hours=3)), "end": _iso(nine + timedelta(hours=4)),
+    })
+    assert over.status_code == 409 and "request" in over.json()["message"]
+    # Removing it frees the time.
+    assert me.delete(f"/api/stylists/me/blocks/{blocked.json()['id']}/").status_code == 204
+    assert _ask(api(make_user()), profile, cornrows, nine, {"size": "big"}).status_code == 201
+    # Nonsense is refused.
+    for wrong in ({"start": _iso(nine), "end": _iso(nine)}, {"start": "soon"},
+                  {"start": _iso(nine), "end": _iso(nine + timedelta(days=2))}):
+        assert me.post("/api/stylists/me/blocks/", wrong).status_code == 400
+
+
+def test_room_is_how_much_of_the_day_is_left_for_a_job_like_this(api, make_stylist, make_user, book):
+    profile = make_stylist()
+    cornrows = profile.menu_items.get(name="Cornrows")  # two hours, 9 to 6: 15 starts
+    found = _slots(api(), profile, cornrows, options="big")
+    whole = found["days"][1]
+    assert len(whole["times"]) == 15 and whole["room"] == "plenty"
+    # A five-hour appointment from nine leaves five of the fifteen: a few.
+    book(make_user(), profile, time=whole["times"][0])
+    later = next(d for d in _slots(api(), profile, cornrows, options="big")["days"] if d["date"] == whole["date"])
+    assert len(later["times"]) == 5 and later["room"] == "few"

@@ -294,3 +294,26 @@ class SlotInterest(TimeStampedModel):
     class Meta:
         db_table = "bookings_slot_interest"
         ordering = ["-created_at"]
+
+
+class TimeBlock(models.Model):
+    """
+    Part of a day a stylist has taken out of her diary: a client booked outside
+    Yasante, a school run, a long lunch. Clients see it as booked; nothing can land
+    on it.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    stylist_profile = models.ForeignKey(
+        "stylists.StylistProfile", on_delete=models.CASCADE, related_name="time_blocks"
+    )
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+    # Hers alone ("Private client"): never shown to clients.
+    note = models.CharField(max_length=100, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "bookings_time_block"
+        ordering = ["start"]
+        indexes = [models.Index(fields=["stylist_profile", "end"])]

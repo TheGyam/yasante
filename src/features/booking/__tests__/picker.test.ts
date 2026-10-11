@@ -35,6 +35,12 @@ describe('the picker calendar', () => {
     expect(roomOn('2026-10-30', slots)).toBe('full');
     expect(roomOn('2026-10-23', slots)).toBe('away');
     expect(roomOn('2026-10-28', slots)).toBe('none');
+    // The server's word wins: four starts left of twelve is a few.
+    const said = {
+      ...slots,
+      days: [{ date: '2026-10-29', times: ['a', 'b', 'c', 'd'], room: 'few' as const }],
+    };
+    expect(roomOn('2026-10-29', said)).toBe('few');
   });
 
   it('filters weekends and weekdays', () => {

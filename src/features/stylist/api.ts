@@ -9,6 +9,7 @@ import type {
   PortfolioPhotoDraft,
   StylistPage,
   StylistProfile,
+  TimeBlock,
   StylistProfileDraft,
   StylistNumbers,
   StylistSummary,
@@ -83,6 +84,18 @@ export const stylistApi = {
    */
   closeDay: async (date: string, closed: boolean) =>
     (await apiClient.post<StylistProfile>('/api/stylists/me/closed-days/', { date, closed })).data,
+
+  /** GET /api/stylists/me/blocks/ — time she's blocked out, still to come. */
+  blocks: async () => (await apiClient.get<TimeBlock[]>('/api/stylists/me/blocks/')).data,
+
+  /** POST /api/stylists/me/blocks/ — refused over an appointment or a waiting request. */
+  addBlock: async (block: Omit<TimeBlock, 'id'>) =>
+    (await apiClient.post<TimeBlock>('/api/stylists/me/blocks/', block)).data,
+
+  /** DELETE /api/stylists/me/blocks/:id/ */
+  removeBlock: async (id: string) => {
+    await apiClient.delete(`/api/stylists/me/blocks/${id}/`);
+  },
 
   update: async (changes: Partial<StylistProfileDraft>) => {
     const body = { ...changes };

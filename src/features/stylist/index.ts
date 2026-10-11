@@ -1,5 +1,6 @@
 export type {
   Availability,
+  TimeBlock,
   DayHours,
   DepositType,
   MenuItem,

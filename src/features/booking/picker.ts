@@ -31,20 +31,26 @@ export function monthWeeks(month: string): (string | null)[][] {
   return Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7));
 }
 
-/** A few left: worth knowing before the last ones go. */
+/** A few left, when the server hasn't said: worth knowing before the last ones go. */
 export const FEW = 3;
 
 export type Room = 'plenty' | 'few' | 'full' | 'away' | 'none';
 
-/** How much room a day has, from the free times: the bar under its date. */
-export function roomOn(day: string, slots?: FreeSlots): Room {
-  if (!slots) return 'none';
-  const free = slots.days.find(d => d.date === day);
-  if (free) return free.times.length <= FEW ? 'few' : 'plenty';
-  if (slots.full?.includes(day)) return 'full';
-  if (slots.away?.includes(day)) return 'away';
-  return 'none';
+/**
+ * How much room each day has, looked up once per answer: the server's word for a day
+ * with times (plenty while at least half the times a job like this could start are
+ * free), else full or away.
+ */
+export function roomIndex(slots?: FreeSlots) {
+  const rooms = new Map<string, Room>();
+  for (const day of slots?.full ?? []) rooms.set(day, 'full');
+  for (const day of slots?.away ?? []) rooms.set(day, 'away');
+  for (const day of slots?.days ?? [])
+    rooms.set(day.date, day.room ?? (day.times.length <= FEW ? 'few' : 'plenty'));
+  return rooms;
 }
+
+export const roomOn = (day: string, slots?: FreeSlots): Room => roomIndex(slots).get(day) ?? 'none';
 
 export type DayFilter = 'any' | 'weekends' | 'weekdays';
 export const passes = (day: string, filter: DayFilter) =>

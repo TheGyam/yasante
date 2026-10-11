@@ -14,6 +14,8 @@ from django.contrib.auth.models import (
 )
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 from django.db.models.functions import Upper
 from django.utils import timezone
 
@@ -99,9 +101,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
         fields = kwargs.get("update_fields")
+        previous = None
         if fields is None or "username" in fields:
-            validate_model_identifier(self, "username", max_length=POLICY["username_max"], optional=True)
-        return super().save(*args, **kwargs)
+            previous = validate_model_identifier(
+                self, "username", max_length=POLICY["username_max"], optional=True
+            )
+        result = super().save(*args, **kwargs)
+        if previous and previous.lower() != (self.username or "").lower():
+            ReleasedName.hold(previous, self.pk)
+        return result
 
     @property
     def is_stylist(self) -> bool:
@@ -181,3 +189,38 @@ class DeviceToken(models.Model):
 
     def __str__(self):
         return f"{self.platform} device for {self.user.email}"
+
+
+class ReleasedName(models.Model):
+    """
+    A public name someone gave up (a new username or handle, a deleted account), held
+    for a while so nobody else can take it straight away and pass themselves off as
+    them. Its last owner can take it back meanwhile. Like Instagram's and X's holds.
+    """
+
+    name = models.CharField(max_length=30, db_index=True)  # lower case
+    # Not a key: the hold outlives a deleted account, and keeps nothing else about it.
+    owner_id = models.UUIDField(null=True, blank=True)
+    released_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "accounts_released_name"
+
+    @classmethod
+    def hold(cls, name, owner_id):
+        if name:
+            cls.objects.create(name=name.lower(), owner_id=owner_id)
+
+    @classmethod
+    def held(cls, name, user=None):
+        """Whether `name` is still held from `user` (anyone, when None)."""
+        since = timezone.now() - timezone.timedelta(days=settings.NAME_HOLD_DAYS)
+        holds = cls.objects.filter(name=name.lower(), released_at__gt=since)
+        if user is not None:
+            holds = holds.exclude(owner_id=user.pk)
+        return holds.exists()
+
+
+@receiver(pre_delete, sender=User)
+def _hold_username(sender, instance, **kwargs):
+    ReleasedName.hold(instance.username, instance.pk)

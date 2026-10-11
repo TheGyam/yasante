@@ -337,6 +337,10 @@ class BusySerializer(serializers.Serializer):
 class FreeDaySerializer(serializers.Serializer):
     date = serializers.DateField()
     times = serializers.ListField(child=serializers.DateTimeField())
+    room = optional(serializers.ChoiceField(
+        choices=["plenty", "few"],
+        help_text="Plenty while at least half the times a job like this could start are free",
+    ))
     busy = serializers.ListField(child=BusySerializer(), required=False, help_text="What's already in her diary that day")
 
 
@@ -350,6 +354,19 @@ class FreeSlotsSerializer(serializers.Serializer):
     away = optional(serializers.ListField(child=serializers.DateField()))
     soonest = optional(serializers.DateTimeField(help_text="Her first free time, whatever days were asked for"))
     weekend = optional(serializers.DateTimeField(help_text="Her first free Saturday or Sunday time"))
+
+
+class TimeBlockSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    note = optional(serializers.CharField(help_text="Hers alone: never shown to clients"))
+
+
+class TimeBlockRequestSerializer(serializers.Serializer):
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    note = serializers.CharField(required=False, allow_blank=True, max_length=100)
 
 
 class ClosedDayRequestSerializer(serializers.Serializer):
