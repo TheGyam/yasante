@@ -19,23 +19,33 @@ const skeleton = (value: string) =>
     .replace(/rn/g, 'm')
     .replace(/l/g, 'i');
 const reserved = new Set([...policy.routes, ...policy.reserved].map(compact));
-const brands = policy.brands.map(skeleton);
-const protectedNames = new Set(
-  policy.protected
-    .flatMap(root => [root, ...policy.affixes.flatMap(a => [root + a, a + root])])
-    .map(skeleton)
-);
+/** Each root alone and with an official-sounding word either side ("apple_support"). */
+const withAffixes = (roots: string[]) =>
+  new Set(
+    roots
+      .flatMap(root => [root, ...policy.affixes.flatMap(a => [root + a, a + root])])
+      .map(skeleton)
+  );
+// Matched anywhere in a name: terms no ordinary word contains.
+const anywhere = [...policy.brands, ...policy.offensive].map(skeleton);
+// Matched as the whole name, with a number after it.
+const companies = withAffixes(policy.companies);
+// Matched as the whole name or any dotted part of it, with a number after it.
+const protectedNames = new Set([
+  ...withAffixes(policy.protected),
+  ...policy.offensive_words.map(skeleton),
+]);
+const forms = (value: string) => [skeleton(value), skeleton(value.replace(/[0-9]+$/, ''))];
 
 export function isReservedName(value: string) {
   value = normaliseName(value);
   const key = compact(value);
   return (
     reserved.has(key) ||
-    brands.some(brand => skeleton(key).includes(brand)) ||
-    [key, ...value.split(/[._-]/)].some(
-      candidate =>
-        protectedNames.has(skeleton(candidate)) ||
-        protectedNames.has(skeleton(candidate.replace(/[0-9]+$/, '')))
+    anywhere.some(term => skeleton(key).includes(term)) ||
+    forms(key).some(form => companies.has(form)) ||
+    [key, ...value.split(/[._-]/)].some(candidate =>
+      forms(candidate).some(form => protectedNames.has(form))
     )
   );
 }

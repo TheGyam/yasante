@@ -158,7 +158,7 @@ export interface FreeSlots {
   /** How long the job runs, which is what decides the times. */
   minutes: number;
   /** Days with a time free, in order. */
-  days: { date: string; times: string[]; busy?: Busy[] }[];
+  days: { date: string; times: string[]; room?: 'plenty' | 'few'; busy?: Busy[] }[];
   /** Days she works with nothing left, or that she's closed as full. */
   full?: string[];
   /** Days she's away. */

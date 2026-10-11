@@ -165,3 +165,62 @@ def test_suggestions_are_valid_and_within_the_handle_limit(api, make_stylist):
     for suggestion in result["suggestions"]:
         assert identifier_problem(suggestion, max_length=POLICY["handle_max"]) is None
         assert api().get("/api/stylists/handle-available/", handle=suggestion).json()["available"] is True
+
+
+@pytest.mark.parametrize("value", [
+    # Companies and brands, as they are and as someone posing as them would write them.
+    "instagram_braids", "realtiktokhair", "g00gle", "paypa1", "apple", "apple_support",
+    "officialdove", "apple1", "amazon.uk", "metaofficial", "x_official", "onlyfans.ama",
+    # The platform, misspelled.
+    "yassante", "yasantee", "the.yasante.hq",
+    # Abuse, with separators and lookalikes.
+    "f.u.c.k", "sh1t", "sex.braids", "n1gga", "porn.star", "hitler88", "ama.cunt",
+    # Pages a social app has or will have.
+    "inbox", "reels", "trending", "nhs",
+])
+def test_brands_companies_and_abuse_are_reserved(value):
+    assert is_reserved(value)
+
+
+@pytest.mark.parametrize("value", [
+    # Ordinary names that contain a brand, a company or a rude word.
+    "scunthorpe.hair", "essexbraids", "sussex.curls", "peacockhair", "therapist.ama",
+    "analysa", "grapevinebraids", "applepiebraids", "amazonianbeauty", "metallicbraids",
+    "visagebeauty", "nikeshabraids", "freshairbraids", "openairbeauty", "revolutionhair",
+    "philanthropic", "kikelomo", "isis.braids", "nazir", "dickensbraids", "cumbriacurls",
+    "sirius", "elle.braids", "bootsandbraids",
+])
+def test_ordinary_names_with_brands_or_rude_words_inside_are_fine(value):
+    assert not is_reserved(value)
+
+
+@pytest.mark.django_db
+def test_a_name_given_up_is_held_for_its_owner(api, make_user, make_stylist, settings):
+    from django.utils import timezone
+
+    from apps.accounts.models import ReleasedName
+
+    ama, someone = make_user(), make_user()
+    assert api(ama).patch(f"/api/users/{ama.pk}/", {"username": "amabraids"}).status_code == 200
+    assert api(ama).patch(f"/api/users/{ama.pk}/", {"username": "ama.new"}).status_code == 200
+    # Nobody else can take the old one straight away, by any route.
+    assert api(someone).get("/api/users/username-check/", username="amabraids").json()["available"] is False
+    assert api(someone).patch(f"/api/users/{someone.pk}/", {"username": "amabraids"}).status_code == 400
+    assert api().get("/api/stylists/handle-available/", handle="amabraids").json()["available"] is False
+    # Its owner can have it back.
+    assert api(ama).patch(f"/api/users/{ama.pk}/", {"username": "amabraids"}).status_code == 200
+
+    # A handle given up, and a deleted account's names, are held the same way.
+    stylist = make_stylist()
+    old = stylist.handle
+    assert api(stylist.account).patch("/api/stylists/me/", {"handle": "efua.braids"}).status_code == 200
+    assert api(someone).patch(f"/api/users/{someone.pk}/", {"username": old}).status_code == 400
+    ama.delete()
+    assert api(someone).patch(f"/api/users/{someone.pk}/", {"username": "amabraids"}).status_code == 400
+
+    # Once the hold is over, it's anyone's.
+    ReleasedName.objects.update(released_at=timezone.now() - timezone.timedelta(days=settings.NAME_HOLD_DAYS + 1))
+    assert api(someone).patch(f"/api/users/{someone.pk}/", {"username": "amabraids"}).status_code == 200
+    from apps.common.tasks import enforce_retention
+
+    assert enforce_retention()["name_holds_deleted"] >= 2

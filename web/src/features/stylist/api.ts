@@ -11,6 +11,7 @@ import type {
   StylistProfile,
   StylistProfileDraft,
   StylistSearchResult,
+  TimeBlock,
   Upload,
 } from './types';
 
@@ -33,6 +34,12 @@ export const updateProfile = (draft: Partial<StylistProfileDraft>) =>
   api.patch<StylistProfile>('/stylists/me/', draft);
 
 export const publishProfile = () => api.post<StylistProfile>('/stylists/me/publish/');
+
+/** Time she's blocked out of her diary, still to come. Clients see it as booked. */
+export const getTimeBlocks = () => api.get<TimeBlock[]>('/stylists/me/blocks/');
+export const addTimeBlock = (block: { start: string; end: string; note?: string }) =>
+  api.post<TimeBlock>('/stylists/me/blocks/', block);
+export const removeTimeBlock = (id: string) => api.delete(`/stylists/me/blocks/${id}/`);
 
 /** Enough clients that day: no new requests for it (what's booked stays), or open again. */
 export const closeDay = (date: string, closed: boolean) =>

@@ -1489,6 +1489,47 @@ export interface paths {
         patch: operations["stylists_me_partial_update"];
         trace?: never;
     };
+    "/api/stylists/me/blocks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET / POST /api/stylists/me/blocks/ — part of a day she's taken out of her diary
+         *     (a client booked elsewhere, a school run). Clients see it as booked.
+         */
+        get: operations["stylists_me_blocks_list"];
+        put?: never;
+        /**
+         * @description GET / POST /api/stylists/me/blocks/ — part of a day she's taken out of her diary
+         *     (a client booked elsewhere, a school run). Clients see it as booked.
+         */
+        post: operations["stylists_me_blocks_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/me/blocks/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description DELETE /api/stylists/me/blocks/:id/ — the time is hers to book again. */
+        delete: operations["stylists_me_blocks_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stylists/me/closed-days/": {
         parameters: {
             query?: never;
@@ -2357,6 +2398,13 @@ export interface components {
             /** Format: date */
             date: string;
             times: string[];
+            /**
+             * @description Plenty while at least half the times a job like this could start are free
+             *
+             *     * `plenty` - plenty
+             *     * `few` - few
+             */
+            room?: components["schemas"]["RoomEnum"];
             /** @description What's already in her diary that day */
             busy?: components["schemas"]["Busy"][];
         };
@@ -3058,6 +3106,12 @@ export interface components {
          */
         RolesEnum: "client" | "stylist" | "admin";
         /**
+         * @description * `plenty` - plenty
+         *     * `few` - few
+         * @enum {string}
+         */
+        RoomEnum: "plenty" | "few";
+        /**
          * @description * `salon` - salon
          *     * `home` - home
          *     * `mobile` - mobile
@@ -3289,6 +3343,22 @@ export interface components {
          * @enum {string}
          */
         TextureEnum: "straight" | "wavy" | "curly" | "coily" | "kinky";
+        TimeBlock: {
+            id: string;
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+            /** @description Hers alone: never shown to clients */
+            note?: string;
+        };
+        TimeBlockRequestRequest: {
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+            note?: string;
+        };
         /**
          * @description * `morning` - morning
          *     * `afternoon` - afternoon
@@ -5816,6 +5886,68 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["StylistProfile"];
                 };
+            };
+        };
+    };
+    stylists_me_blocks_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeBlock"][];
+                };
+            };
+        };
+    };
+    stylists_me_blocks_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeBlockRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeBlock"];
+                };
+            };
+        };
+    };
+    stylists_me_blocks_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

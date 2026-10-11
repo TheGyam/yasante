@@ -296,6 +296,8 @@ export const db = {
    * it and never sets it, so every transition is checked in one place.
    */
   bookings: [] as MockBooking[],
+  /** Time stylists have blocked out, by account. */
+  timeBlocks: [] as { id: string; stylistId: string; start: string; end: string; note?: string }[],
 
   /** Clients waiting for a slot with a stylist on any day in a range. */
   slotInterests: [] as {

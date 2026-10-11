@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { addDays, format } from 'date-fns';
-import { CalendarOff, CalendarX2, X } from 'lucide-react-native';
+import { addDays, format, setHours, startOfHour } from 'date-fns';
+import { CalendarOff, CalendarX2, Clock, Plus, X } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
+import { salonTime, whenLabel } from '@/features/booking';
 import {
   AHEAD_CHOICES,
   DEFAULT_AHEAD_DAYS,
@@ -14,7 +15,10 @@ import {
   bookingRulesLabel,
   hoursLabel,
   noticeLabel,
+  useAddTimeBlock,
   useMyStylistProfile,
+  useRemoveTimeBlock,
+  useTimeBlocks,
   useUpdateStylistProfile,
   type Availability,
 } from '@/features/stylist';
@@ -214,6 +218,8 @@ export default function AvailabilityScreen() {
           })}
         </Section>
 
+        <BlockedTime timeZone={profile?.timeZone} />
+
         <View style={styles.group}>
           <Text variant="overline" tone="tertiary">
             Notice you need
@@ -396,5 +402,137 @@ export default function AvailabilityScreen() {
         </View>
       </View>
     </Screen>
+  );
+}
+
+const wallMinutes = (at: Date, zone?: string) => {
+  const t = salonTime(at, zone);
+  return t.getHours() * 60 + t.getMinutes();
+};
+
+/**
+ * Part of a day taken out of her diary: a client booked elsewhere, a school run. Saved
+ * as she adds it, apart from the rest of the screen. Clients see it as booked.
+ */
+function BlockedTime({ timeZone }: { timeZone?: string }) {
+  const styles = useStyles();
+  const { data: blocks = [] } = useTimeBlocks();
+  const add = useAddTimeBlock();
+  const remove = useRemoveTimeBlock();
+  const [adding, setAdding] = useState(false);
+  // One moment for the day and start; the end is a time on that same day.
+  const [from, setFrom] = useState(() => setHours(startOfHour(addDays(new Date(), 1)), 10));
+  const [until, setUntil] = useState(() => setHours(startOfHour(addDays(new Date(), 1)), 12));
+  const [note, setNote] = useState('');
+  const length = wallMinutes(until, timeZone) - wallMinutes(from, timeZone);
+
+  const save = async () => {
+    try {
+      await add.mutateAsync({
+        start: from.toISOString(),
+        end: new Date(from.getTime() + length * 60_000).toISOString(),
+        note: note.trim() || undefined,
+      });
+      haptics.success();
+      setAdding(false);
+      setNote('');
+    } catch (error) {
+      haptics.error();
+      await notify({
+        title: 'Couldn’t block that out',
+        message: errorMessage(error, 'Check your connection and try again.'),
+      });
+    }
+  };
+
+  return (
+    <View style={styles.group}>
+      <Text variant="overline" tone="tertiary">
+        Time blocked out
+      </Text>
+      <Text variant="footnote" tone="secondary">
+        A client booked elsewhere, a school run, a long lunch: clients see it as booked, and nothing
+        can land on it. Only you see the note.
+      </Text>
+      {blocks.length > 0 && (
+        <Section>
+          {blocks.map(block => (
+            <ListRow
+              key={block.id}
+              title={`${whenLabel(block.start, timeZone)}–${format(salonTime(block.end, timeZone), 'HH:mm')}`}
+              subtitle={block.note || undefined}
+              icon={Clock}
+              iconTone="neutral"
+              trailing={
+                <IconButton
+                  icon={X}
+                  variant="plain"
+                  size={32}
+                  accessibilityLabel={`Free up ${whenLabel(block.start, timeZone)} again`}
+                  onPress={() => remove.mutate(block.id)}
+                />
+              }
+            />
+          ))}
+        </Section>
+      )}
+      {adding ? (
+        <>
+          <Section>
+            <DateTimeField
+              title="Day"
+              mode="date"
+              timeZone={timeZone}
+              value={from}
+              minimumDate={new Date()}
+              onChange={day => {
+                // The same hours, moved to the new day.
+                setUntil(new Date(day.getTime() + (until.getTime() - from.getTime())));
+                setFrom(day);
+              }}
+            />
+            <DateTimeField
+              title="From"
+              mode="time"
+              timeZone={timeZone}
+              value={from}
+              onChange={setFrom}
+            />
+            <DateTimeField
+              title="Until"
+              mode="time"
+              timeZone={timeZone}
+              value={until}
+              onChange={setUntil}
+            />
+          </Section>
+          <Input
+            label="Note for you (optional)"
+            value={note}
+            onChangeText={setNote}
+            placeholder="Private client"
+            maxLength={100}
+            error={length <= 0 ? 'It has to end after it starts' : undefined}
+          />
+          <Button
+            label="Block it out"
+            onPress={save}
+            disabled={length <= 0}
+            loading={add.isPending}
+            fullWidth
+            testID="block-save"
+          />
+        </>
+      ) : (
+        <Button
+          label="Block out time"
+          icon={Plus}
+          variant="secondary"
+          onPress={() => setAdding(true)}
+          fullWidth
+          testID="block-add"
+        />
+      )}
+    </View>
   );
 }

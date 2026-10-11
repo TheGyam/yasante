@@ -6,7 +6,6 @@ import logging
 import uuid
 from datetime import date, timedelta
 
-from apps.accounts.models import User
 from apps.bookings.models import Booking, Review
 from apps.common import zones
 from apps.common.identifiers import POLICY, UNAVAILABLE, identifier_problem, normalise
@@ -35,6 +34,8 @@ from .numbers import numbers_for, timing_label_for
 from .pricing import clean_options
 from .serializers import (
     ClosedDayRequestSerializer,
+    TimeBlockRequestSerializer,
+    TimeBlockSerializer,
     FreeSlotsSerializer,
     HandleCheckResponseSerializer,
     MenuImportRequestSerializer,
@@ -129,9 +130,11 @@ def _merged_availability(profile, value):
     return merged
 
 
-def _someones_username(handle, user):
-    """Handles and usernames are one namespace: another person's username is taken."""
-    return User.objects.filter(username__iexact=handle).exclude(pk=user.pk).exists()
+def _taken(handle, user):
+    """Someone else's username or handle (one namespace), or a name still held."""
+    from apps.accounts.usernames import name_in_use
+
+    return name_in_use(handle, user if user.is_authenticated else None)
 
 
 @extend_schema_view(get=extend_schema(responses=HandleCheckResponseSerializer))
@@ -152,20 +155,9 @@ class HandleCheckView(APIView):
             return Response({"handle": handle, "available": False, "suggestions": []})
 
         # Her own handle isn't "taken": editing her page checks the one she already has.
-        others = StylistProfile.objects.all()
-        if request.user.is_authenticated:
-            others = others.exclude(account=request.user)
-
-        people = User.objects.exclude(username=None)
-        if request.user.is_authenticated:
-            people = people.exclude(pk=request.user.pk)
-
         def taken(h):
-            # A stylist's handle can't be someone's username either: one namespace.
-            return (
-                identifier_problem(h, max_length=POLICY["handle_max"], current=current)
-                or others.filter(handle__iexact=h).exists()
-                or people.filter(username__iexact=h).exists()
+            return identifier_problem(h, max_length=POLICY["handle_max"], current=current) or (
+                h != current and _taken(h, request.user)
             )
 
         if not taken(handle):
@@ -392,10 +384,7 @@ class StylistCreateView(APIView):
         serializer = StylistProfileDraftSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        if (
-            _someones_username(data["handle"], request.user)
-            or StylistProfile.objects.filter(handle__iexact=data["handle"]).exists()
-        ):
+        if _taken(data["handle"], request.user):
             return Response({"message": UNAVAILABLE}, status=409)
         proof = data.get("proof_photo_uri", "")
         if proof and own_media(request.user, proof, public=False) is None:
@@ -506,12 +495,7 @@ class StylistMeView(APIView):
                 problem = identifier_problem(new_handle, max_length=POLICY["handle_max"])
                 if problem:
                     return Response({"message": problem}, status=400)
-                if (
-                    _someones_username(new_handle, request.user)
-                    or StylistProfile.objects.filter(handle__iexact=new_handle)
-                    .exclude(pk=profile.pk)
-                    .exists()
-                ):
+                if _taken(new_handle, request.user):
                     return Response({"message": UNAVAILABLE}, status=409)
                 profile.handle = new_handle
                 update_fields.append("handle")
@@ -931,6 +915,100 @@ class StylistSlotsView(APIView):
                 exclude_id=exclude,
             )
         )
+
+
+def _present_block(block):
+    return {"id": str(block.pk), "start": block.start, "end": block.end, "note": block.note}
+
+
+def _when_parsed(value):
+    from apps.common.timeparse import parse_iso
+
+    try:
+        return parse_iso(value) if value else None
+    except (TypeError, ValueError):
+        return None
+
+
+@extend_schema_view(
+    get=extend_schema(responses=TimeBlockSerializer(many=True)),
+    post=extend_schema(request=TimeBlockRequestSerializer, responses={201: TimeBlockSerializer}),
+)
+class TimeBlockListView(APIView):
+    """
+    GET / POST /api/stylists/me/blocks/ — part of a day she's taken out of her diary
+    (a client booked elsewhere, a school run). Clients see it as booked.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.bookings.models import TimeBlock
+
+        profile = _my_profile(request)
+        if profile is None:
+            return Response(NO_PROFILE, status=404)
+        blocks = TimeBlock.objects.filter(stylist_profile=profile, end__gt=timezone.now())
+        return Response([_present_block(b) for b in blocks])
+
+    def post(self, request):
+        from apps.bookings.held import diary_lock, held_ranges
+        from apps.bookings.models import TimeBlock
+
+        profile = _my_profile(request)
+        if profile is None:
+            return Response(NO_PROFILE, status=404)
+        start, end = _when_parsed(request.data.get("start")), _when_parsed(request.data.get("end"))
+        if start is None or end is None or end <= start:
+            return Response({"message": "Pick when it starts and when it ends"}, status=400)
+        if end <= timezone.now():
+            return Response({"message": "That time has been and gone"}, status=400)
+        if end - start > timedelta(hours=24):
+            return Response({"message": "For whole days, add them as days away instead"}, status=400)
+        with diary_lock(profile.pk):
+            # Never over someone's appointment, or a time someone's waiting to hear about.
+            for held_from, held_to, booking in held_ranges(profile, blocks=False):
+                if start < held_to and end > held_from:
+                    first = (booking.client_name or "A client").split(" ")[0]
+                    at = held_from.astimezone(zones.of(profile))
+                    asked = booking.status == "requested"
+                    return Response(
+                        {
+                            "message": f"That covers {first}’s {'request' if asked else 'appointment'} "
+                            f"at {at:%H:%M} on {at:%a} {at.day} {at:%b}. "
+                            f"{'Answer it' if asked else 'Move or cancel it'} first."
+                        },
+                        status=409,
+                    )
+            block = TimeBlock.objects.create(
+                stylist_profile=profile,
+                start=start,
+                end=end,
+                note=str(request.data.get("note") or "").strip()[:100],
+            )
+        return Response(_present_block(block), status=201)
+
+
+@extend_schema_view(delete=extend_schema(responses={204: None}))
+class TimeBlockDetailView(APIView):
+    """DELETE /api/stylists/me/blocks/:id/ — the time is hers to book again."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk):
+        from apps.bookings.held import open_day
+        from apps.bookings.models import TimeBlock
+
+        profile = _my_profile(request)
+        block = TimeBlock.objects.filter(pk=pk, stylist_profile=profile).first() if profile else None
+        if block is None:
+            return Response({"message": "Already gone"}, status=404)
+        start = block.start
+        block.delete()
+        if block.end > timezone.now():
+            # Anyone waiting on that day hears it has room again.
+            open_day(profile, max(start, timezone.now()))
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(post=extend_schema(request=ClosedDayRequestSerializer, responses=StylistProfileSerializer))

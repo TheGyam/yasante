@@ -17,6 +17,12 @@ describe('the mock follows the server’s name policy', () => {
     'y4s4nte',
     'no.reply',
     'payment_methods',
+    'instagram_braids',
+    'apple_support',
+    'g00gle',
+    'yassante',
+    'f.u.c.k',
+    'sex.braids',
   ])('reserves %s', name => expect(isReservedName(name)).toBe(true));
 
   it.each([
@@ -26,6 +32,11 @@ describe('the mock follows the server’s name policy', () => {
     'admina',
     'ama.braids',
     'officiallybraids',
+    'scunthorpe.hair',
+    'essexbraids',
+    'applepiebraids',
+    'freshairbraids',
+    'kikelomo',
   ])('allows %s', name => expect(nameProblem(name, 24)).toBeUndefined());
 
   it.each([

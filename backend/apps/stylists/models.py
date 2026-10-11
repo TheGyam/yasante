@@ -8,6 +8,8 @@ from apps.common.models import TimeStampedModel
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 from django.db.models.functions import Upper
 
 # Kept here for callers that import the reserved site names from the model.
@@ -98,9 +100,15 @@ class StylistProfile(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         fields = kwargs.get("update_fields")
+        previous = None
         if fields is None or "handle" in fields:
-            validate_model_identifier(self, "handle", max_length=POLICY["handle_max"])
-        return super().save(*args, **kwargs)
+            previous = validate_model_identifier(self, "handle", max_length=POLICY["handle_max"])
+        result = super().save(*args, **kwargs)
+        if previous and previous.lower() != self.handle.lower():
+            from apps.accounts.models import ReleasedName
+
+            ReleasedName.hold(previous, self.account_id)
+        return result
 
     @property
     def policies(self) -> dict:
@@ -295,3 +303,10 @@ def record_check(account_id, type, status="verified", evidence="", by=None):
     )
     recompute_tier(account_id)
     return check
+
+
+@receiver(pre_delete, sender=StylistProfile)
+def _hold_handle(sender, instance, **kwargs):
+    from apps.accounts.models import ReleasedName
+
+    ReleasedName.hold(instance.handle, instance.account_id)

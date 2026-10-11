@@ -6,7 +6,6 @@ decides it. Every transition not allowed by the state machine is refused (409).
 import logging
 import re
 import uuid
-from contextlib import contextmanager
 from datetime import timedelta
 
 from apps.common.timeparse import parse_iso
@@ -15,7 +14,6 @@ from apps.stylists.numbers import recompute_public_stats
 from apps.stylists.pricing import option_groups, price_choice
 from apps.stylists.slots import bookable_problem
 from django.conf import settings
-from django.db import transaction
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from apps.common.throttling import BookingRequestThrottle, ReviewThrottle
@@ -24,8 +22,8 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .held import clashing, client_ranges, held_ranges, held_starts, holding, release, sweep
-from .models import Booking, CheckIn, Review, ReviewReport, SlotInterest
+from .held import clashing, client_ranges, diary_lock, held_ranges, held_starts, holding, release, sweep
+from .models import Booking, CheckIn, Review, ReviewReport, SlotInterest, TimeBlock
 from .serializers import (
     AcceptRequestSerializer,
     AnswerRequestSerializer,
@@ -92,23 +90,6 @@ def _find(pk):
     return qs.select_related("client", "stylist_profile").first()
 
 
-@contextmanager
-def _diary(profile_id, client_id=None):
-    """
-    One change at a time to a stylist's diary, and to her client's: two people can look
-    at the same free time, but only the first to take it gets it. Always the stylist
-    first, then the client, so two changes never wait on each other.
-    """
-    from django.contrib.auth import get_user_model
-
-    with transaction.atomic():
-        if profile_id:
-            list(StylistProfile.objects.select_for_update().filter(pk=profile_id).values_list("pk"))
-        if client_id:
-            list(get_user_model().objects.select_for_update().filter(pk=client_id).values_list("pk"))
-        yield
-
-
 def _taken(booking, when):
     """Why `when` can't become this booking's time now, or None: it must never land on
     another appointment or hold, nor on another of the client's own."""
@@ -118,7 +99,10 @@ def _taken(booking, when):
 
     minutes = booking.duration_minutes or 120
     profile = booking.stylist_profile
-    if clashing(when, minutes, held_ranges(profile, booking.pk, gap_minutes(profile))):
+    taken = clashing(when, minutes, held_ranges(profile, booking.pk, gap_minutes(profile)))
+    if isinstance(taken, TimeBlock):
+        return "You’ve blocked that time out. Remove the block first, or pick another"
+    if taken:
         return "That time is already booked. Pick another"
     mine = clashing(when, minutes, client_ranges(booking.client_id, booking.pk))
     if mine:
@@ -267,7 +251,7 @@ class BookingListCreateView(APIView):
             if not outcode:
                 return _err("Add your street and postcode so the stylist can get to you", 400)
 
-        with _diary(profile.pk, user.pk):
+        with diary_lock(profile.pk, user.pk):
             # Inside the lock: the time may have gone since she saw it.
             problem = bookable_problem(profile, start, minutes, client_id=user.pk)
             if problem:
@@ -342,7 +326,7 @@ class _BookingAction(APIView):
         if whose is None:
             return _err("That booking is gone", 404)
         # Every change happens inside the diary lock, read fresh, lapses applied.
-        with _diary(*whose):
+        with diary_lock(*whose):
             booking = _find(pk)
             booking._actor = request.user  # for the audit trail
             return self.act(request, booking)

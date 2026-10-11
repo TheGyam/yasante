@@ -31,7 +31,7 @@ import {
   passes,
   reachableMonths,
   readyBy,
-  roomOn,
+  roomIndex,
   shiftDay,
   shiftMonth,
   type DayFilter,
@@ -206,6 +206,7 @@ export function SlotPicker({
   const span = monthSpan(month);
   const slots = useFreeSlots(query, span.from, span.to);
   const data = slots.data;
+  const rooms = useMemo(() => roomIndex(data), [data]);
   const zone = data?.timeZone ?? timeZone;
   const reach = reachableMonths(today, data?.lastDate);
   const lastMonth = reach[reach.length - 1];
@@ -428,7 +429,7 @@ export function SlotPicker({
           <View key={week.find(Boolean)} style={styles.week}>
             {week.map((day, i) => {
               if (!day) return <View key={i} style={styles.cell} />;
-              const room = passes(day, filter) ? roomOn(day, data) : 'none';
+              const room = passes(day, filter) ? (rooms.get(day) ?? 'none') : 'none';
               const on = day === picked && !choosingEvent;
               const open = room === 'plenty' || room === 'few';
               const tappable = choosingEvent ? day > today : open || room === 'full';
@@ -545,7 +546,7 @@ export function SlotPicker({
             haptics.selection();
             onChange(iso);
           }}
-          full={roomOn(picked, data) === 'full'}
+          full={rooms.get(picked) === 'full'}
           toldFree={told.includes(picked)}
           asking={watch.isPending}
           onAskFree={stylistId ? () => ask(picked, picked, picked) : undefined}

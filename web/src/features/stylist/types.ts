@@ -6,6 +6,7 @@ export type MenuItem = Schemas['MenuItem'];
 export type PortfolioPhoto = Schemas['PortfolioPhoto'];
 export type PageReview = Schemas['PageReview'];
 export type Availability = Schemas['Availability'];
+export type TimeBlock = Schemas['TimeBlock'];
 export type StylistSearchResult = Schemas['StylistSearchResult'];
 
 /** What the stylist search can be narrowed by (GET /api/stylists/). */

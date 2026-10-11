@@ -16,7 +16,7 @@ import {
   passes,
   reachableMonths,
   readyBy,
-  roomOn,
+  roomIndex,
   sayDay,
   shiftDay,
   shiftMonth,
@@ -165,69 +165,72 @@ export function SlotPicker({
   const shown: { month: string; data?: FreeSlots }[] = [{ month, data }];
   if (month < lastMonth) shown.push({ month: nextMonth, data: beside.data });
 
-  const renderMonth = (m: string, monthData: FreeSlots | undefined, index: number) => (
-    <div key={m} className={`${styles.month} ${index ? styles.second : ''}`}>
-      <Text variant="callout" as="h3">
-        {sayDay(`${m}-01`, { month: 'long', year: 'numeric' })}
-      </Text>
-      <div className={styles.week} aria-hidden>
-        {WEEKDAYS.map((label, i) => (
-          <span key={i} className={styles.weekday}>
-            {label}
-          </span>
-        ))}
-      </div>
-      {monthWeeks(m).map(week => (
-        <div key={week.find(Boolean)} className={styles.week}>
-          {week.map((day, i) => {
-            if (!day) return <span key={i} />;
-            const room = passes(day, filter) ? roomOn(day, monthData) : 'none';
-            const on = day === picked;
-            const open = room === 'plenty' || room === 'few';
-            const tappable = open || room === 'full';
-            const label = `${sayDay(day, { weekday: 'long', day: 'numeric', month: 'long' })}, ${
-              room === 'none' && lastDate && day > lastDate
-                ? 'not open for booking yet'
-                : WORDS[room]
-            }${day === event ? ', your day' : ''}`;
-            return (
-              <button
-                key={day}
-                type="button"
-                disabled={!tappable}
-                aria-pressed={on}
-                aria-label={label}
-                title={label}
-                onClick={() => pickDay(day)}
-                className={[
-                  styles.day,
-                  open && styles.dayState.open,
-                  room === 'full' && styles.dayState.full,
-                  ringed.has(day) && !on && styles.dayState.before,
-                  day === event && styles.dayState.event,
-                  on && styles.dayState.on,
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                {Number(day.slice(8))}
-                <span
+  const renderMonth = (m: string, monthData: FreeSlots | undefined, index: number) => {
+    const rooms = roomIndex(monthData);
+    return (
+      <div key={m} className={`${styles.month} ${index ? styles.second : ''}`}>
+        <Text variant="callout" as="h3">
+          {sayDay(`${m}-01`, { month: 'long', year: 'numeric' })}
+        </Text>
+        <div className={styles.week} aria-hidden>
+          {WEEKDAYS.map((label, i) => (
+            <span key={i} className={styles.weekday}>
+              {label}
+            </span>
+          ))}
+        </div>
+        {monthWeeks(m).map(week => (
+          <div key={week.find(Boolean)} className={styles.week}>
+            {week.map((day, i) => {
+              if (!day) return <span key={i} />;
+              const room = passes(day, filter) ? (rooms.get(day) ?? 'none') : 'none';
+              const on = day === picked;
+              const open = room === 'plenty' || room === 'few';
+              const tappable = open || room === 'full';
+              const label = `${sayDay(day, { weekday: 'long', day: 'numeric', month: 'long' })}, ${
+                room === 'none' && lastDate && day > lastDate
+                  ? 'not open for booking yet'
+                  : WORDS[room]
+              }${day === event ? ', your day' : ''}`;
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  disabled={!tappable}
+                  aria-pressed={on}
+                  aria-label={label}
+                  title={label}
+                  onClick={() => pickDay(day)}
                   className={[
-                    styles.bar,
-                    room === 'plenty' && styles.barRoom.plenty,
-                    room === 'few' && styles.barRoom.few,
-                    on && open && styles.barRoom.on,
+                    styles.day,
+                    open && styles.dayState.open,
+                    room === 'full' && styles.dayState.full,
+                    ringed.has(day) && !on && styles.dayState.before,
+                    day === event && styles.dayState.event,
+                    on && styles.dayState.on,
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                />
-              </button>
-            );
-          })}
-        </div>
-      ))}
-    </div>
-  );
+                >
+                  {Number(day.slice(8))}
+                  <span
+                    className={[
+                      styles.bar,
+                      room === 'plenty' && styles.barRoom.plenty,
+                      room === 'few' && styles.barRoom.few,
+                      on && open && styles.barRoom.on,
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className={styles.body}>
