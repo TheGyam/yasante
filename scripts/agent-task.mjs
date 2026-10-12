@@ -20,10 +20,19 @@ const AGENTS = {
   codex: prompt => ['codex', ['exec', '--full-auto', prompt]],
   // Antigravity CLI (agy) replaces Gemini CLI and uses your Google AI plan's models;
   // Gemini CLI is the fallback where agy isn't installed. agy may edit files on its own;
-  // shell commands follow the allow rules in its /permissions.
+  // shell commands follow the allow rules in its /permissions. Pro by default; AGY_MODEL overrides.
   gemini: prompt =>
     has('agy')
-      ? ['agy', ['--mode=accept-edits', '-p', prompt]]
+      ? [
+          'agy',
+          [
+            '--mode=accept-edits',
+            '--model',
+            process.env.AGY_MODEL || 'gemini-3.1-pro-high',
+            '-p',
+            prompt,
+          ],
+        ]
       : ['gemini', ['--yolo', '-p', prompt]],
 };
 
