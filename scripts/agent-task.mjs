@@ -80,7 +80,10 @@ if (out('git', ['diff', '--cached', '--quiet'], { cwd: worktree }) === null) {
   run('git', ['commit', '-m', `chore(agent): ${agent} works on ${task}`], { cwd: worktree });
 }
 if (out('git', ['rev-list', '--count', 'origin/master..HEAD'], { cwd: worktree }) === '0') {
-  fail(`${agent} changed nothing`);
+  // Nothing to keep, so leave nothing behind: a rerun would stop on the worktree.
+  run('git', ['worktree', 'remove', '--force', worktree], { cwd: root });
+  run('git', ['branch', '-D', branch], { cwd: root });
+  fail(`${agent} changed nothing; removed its worktree and branch`);
 }
 if (!run('git', ['push', '-u', 'origin', branch], { cwd: worktree })) fail('push failed');
 
