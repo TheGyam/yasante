@@ -1,0 +1,88 @@
+name: Agent task
+
+# Claude (the lead) runs this to hand one task file to Codex or Gemini.
+# The agent works on its own branch and the result comes back as a draft PR
+# for Claude to review. Needs the OPENAI_API_KEY and/or GEMINI_API_KEY repo
+# secrets, and "Allow GitHub Actions to create pull requests" turned on.
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Task file, e.g. tasks/012-diary-repeat-badge.md
+        required: true
+      agent:
+        description: Who does it
+        required: true
+        type: choice
+        options: [codex, gemini]
+
+concurrency:
+  group: agent-task-${{ inputs.task }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      TASK: ${{ inputs.task }}
+      AGENT: ${{ inputs.agent }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check the task is ready and assigned to this agent
+        run: |
+          test -f "$TASK" || { echo "No such task file: $TASK"; exit 1; }
+          grep -Eq "^assignee: *$AGENT\b" "$TASK" || { echo "$TASK is not assigned to $AGENT"; exit 1; }
+          grep -Eq '^status: *ready\b' "$TASK" || { echo "$TASK is not status: ready"; exit 1; }
+          BRANCH=$(sed -n 's/^branch: *//p' "$TASK" | head -1)
+          case "$BRANCH" in agent/"$AGENT"/*) ;; *) echo "branch must start with agent/$AGENT/"; exit 1;; esac
+          echo "BRANCH=$BRANCH" >> "$GITHUB_ENV"
+          git checkout -b "$BRANCH"
+
+      - run: npm ci
+
+      - name: Run Codex
+        if: inputs.agent == 'codex'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CODEX_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          npx -y @openai/codex exec --full-auto \
+            "You are an implementer on this repo. Follow AGENTS.md exactly. Your task is $TASK."
+
+      - name: Run Gemini
+        if: inputs.agent == 'gemini'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          npx -y @google/gemini-cli --yolo -p \
+            "You are an implementer on this repo. Follow GEMINI.md and AGENTS.md exactly. Your task is $TASK."
+
+      - name: Commit, push and open a draft PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "$AGENT (via Agent task)"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore(agent): $AGENT works on $TASK"
+          if [ "$(git rev-list --count origin/${{ github.ref_name }}..HEAD)" = 0 ]; then
+            echo "The agent changed nothing."; exit 1
+          fi
+          git push -u origin "$BRANCH"
+          TITLE="[$(sed -n 's/^id: *//p' "$TASK" | head -1)] $(grep -m1 '^# ' "$TASK" | sed 's/^# //')"
+          gh pr create --draft --base "${{ github.ref_name }}" --head "$BRANCH" --title "$TITLE" \
+            --body "Implements \`$TASK\`, done by **$AGENT**. Waiting on Claude's review against the task's acceptance criteria."
+          # Pushes made with github.token don't start workflows, so start CI by hand.
+          gh workflow run ci.yml --ref "$BRANCH"

@@ -3,6 +3,8 @@ name: CI
 on:
   push:
   pull_request:
+  # The Agent task workflow starts CI on its branches this way: its own pushes don't trigger runs.
+  workflow_dispatch:
   # The deploy workflow runs this first and only ships what passes.
   workflow_call:
 
