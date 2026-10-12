@@ -1,67 +1,23 @@
-# Yasante App - Backend API Documentation
+# Documentation
 
-Welcome! This folder contains comprehensive API documentation for the Yasante mobile app backend implementation.
+This folder contains the specifications, requirements, and implementation guides for the Yasante app and backend. For the API, the generated `openapi.yaml` in the root is the source of truth, and typed clients are generated into `src/shared/lib/api/` and `web/src/shared/lib/api/`.
 
-## Documentation Files
+## Index
 
-### 📘 [BACKEND_API_DOCUMENTATION.md](./BACKEND_API_DOCUMENTATION.md)
+- [API_INTEGRATION.md](API_INTEGRATION.md) — **Out of date**. Describes an early API integration pattern and uses an incorrect base URL (`yasante.com` instead of `api.yasante.com`). Verified against `app.json`.
+- [API_SERVICES_IMPLEMENTATION.md](API_SERVICES_IMPLEMENTATION.md) — **Out of date**. Lists services in `src/api/services/`, a folder that does not exist. Features now own their own API calls in `src/features/<name>/api.ts`. Verified against `src/features/`.
+- [BACKEND_API_DOCUMENTATION.md](BACKEND_API_DOCUMENTATION.md) — **Out of date**. Claims a `/api/v1` prefix and structure that does not match the current API. Verified against `openapi.yaml`.
+- [BACKEND_API_REQUIREMENTS.md](BACKEND_API_REQUIREMENTS.md) — **Out of date**. References the project as "Beauty app" instead of "Yasante". Verified against `README.md`.
+- [BACKEND_BRIEF.md](BACKEND_BRIEF.md) — **Current**. The foundational brief for the backend API, covering all rules, endpoints, and the mock server behavior. For backend engineers.
+- [BACKEND_QUICK_REFERENCE.md](BACKEND_QUICK_REFERENCE.md) — **Current**. A short summary of backend requirements, including cursor pagination and database indexing.
+- [LOGOUT_IMPLEMENTATION.md](LOGOUT_IMPLEMENTATION.md) — **Out of date**. References `app/(tabs)/profile/` and `src/contexts/`, paths that have since moved or been renamed. Verified against `app/` and `src/features/auth/`.
+- [QUICK_REFERENCE.md](QUICK_REFERENCE.md) — **Out of date**. Claims a `/api/v1` prefix and old data models. Verified against `openapi.yaml`.
+- [README.md](README.md) — This index.
+- [STORE_SUBMISSION.md](STORE_SUBMISSION.md) — **Current**. Preparation notes for App Store and Google Play submissions, including screenshots and privacy details.
+- [USERNAME_POLICY.md](USERNAME_POLICY.md) — **Current**. The detailed policy for handles and usernames, including reserved words and length rules.
 
-**Complete API Specification** - This is the main documentation file containing:
-
-- Detailed endpoint specifications
-- Request/response formats
-- Data models and TypeScript interfaces
-- Authentication and authorization details
-- Error handling guidelines
-- Security considerations
-- File upload requirements
-- Deep linking information
-
-**Start here for comprehensive understanding.**
-
-### ⚡ [QUICK_REFERENCE.md](./QUICK_REFERENCE.md)
-
-**Quick Reference Guide** - A condensed version for quick lookups:
-
-- Endpoint summary
-- Key data models
-- Security checklist
-- Common status codes
-- Testing credentials
-
-**Use this for quick reference during development.**
-
-## Getting Started
-
-1. **Read the Overview** in `BACKEND_API_DOCUMENTATION.md` to understand the app architecture
-2. **Review Authentication** section to understand the JWT flow
-3. **Study Data Models** to understand the data structures
-4. **Reference Endpoints** as you implement each feature
-5. **Check Security Considerations** before deploying
-
-## Key Points
-
-- **Base URL**: `https://yasante.com`
-- **Authentication**: JWT Bearer tokens (15 min access, 7-30 day refresh)
-- **Response Format**: All responses wrapped in `{ data: ... }` format
-- **File Uploads**: Use `multipart/form-data` for images
-- **Date Format**: ISO 8601 for all dates/times
-
-## Questions?
-
-If you have questions or need clarifications:
-
-1. Check the detailed documentation first
-2. Review the TypeScript types in the frontend codebase (`src/types/`)
-3. Contact the frontend development team
-
-## App Information
+## App information
 
 - **App Name**: Yasante
-- **Package**: com.yasante.app
-- **Deep Link Scheme**: yasante://
-- **Framework**: React Native with Expo
-
----
-
-Happy coding! 🚀
+- **Package**: `com.yasante.app`
+- **Deep Link Scheme**: `yasante` (verified against `app.json`)
