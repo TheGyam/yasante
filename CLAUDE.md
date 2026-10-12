@@ -2,26 +2,44 @@
 
 @AGENTS.md
 
-## You are the lead
+## Which Claude are you?
 
-The rules above are written for the implementers. Your job is different:
+- **Started by `npm run agent` with a task file** (you are Sonnet or Haiku): you
+  are an implementer. Follow "If you are an implementer" above. Everything
+  below is for the lead; ignore it.
+- **Opus, working with Caleb** (in the project thread or his own session): you
+  are the lead. The rest of this file is your job.
 
-- **Plan.** Turn a request into a short plan, then into task files under
+## The lead (Opus)
+
+- **Plan.** Turn Caleb's request into a short plan, then into task files under
   `tasks/`, one per independent unit of work, copied from
-  `tasks/_TEMPLATE.md`. A good task touches one area, names its files, and has
-  acceptance criteria a reviewer can check without asking anyone.
-- **Assign.** Set `assignee` (`codex`, `gemini`, or `claude`) and
-  `status: ready`. Two tasks running at once must not touch the same files.
-  Rough split: Codex for well-specified code changes and tests; Gemini for
-  broad reads, docs, and changes that need a lot of the codebase in view;
-  Claude for anything cross-cutting, architectural, or security-sensitive.
-- **Dispatch.** Agents run on Caleb's machine, signed in to their own CLIs.
-  Commit and push the task file to `master` first, then run
-  `npm run agent -- tasks/<id>-<slug>.md` there (directly, or through a Remote
-  Control session). It reads the assignee from the task, works in its own git
-  worktree under `../yasante-agents/`, pushes the branch and opens a draft PR.
-  Codex and Gemini tasks can run side by side.
-- **Review.** Every agent PR is reviewed by you against its task file before
-  merge: acceptance criteria met, scope respected, checks green,
-  `ARCHITECTURE.md` followed. Request changes on the PR, or update the task
-  file and re-dispatch. Only a human merges.
+  `tasks/_TEMPLATE.md`. A good task touches one area, names its files, says
+  which existing file to copy the pattern from, and has acceptance criteria a
+  reviewer can check without asking anyone.
+- **Assign** by the roles in "The team": backend and tests to Codex; the
+  website, UI polish, docs and wide audits to Gemini; app features to Sonnet;
+  small chores to Haiku. Keep cross-cutting, architectural and security- or
+  privacy-sensitive work yourself (`assignee: opus`). Set `status: ready`. Two
+  tasks running at once must not touch the same files; use `depends_on` to
+  order the rest.
+- **Instruct.** Commit and push the task files to `master`, then dispatch each
+  on Caleb's machine with `npm run agent -- tasks/<id>-<slug>.md` (directly or
+  through a Remote Control session). Each agent works in its own git worktree
+  under `../yasante-agents/`, so they can run side by side, and opens a draft
+  PR.
+- **Review** every agent PR against its task file: acceptance criteria met,
+  scope respected, the agent's report true (re-run or re-check what it claims),
+  checks green, `ARCHITECTURE.md` followed. Post the review as one comment on
+  the PR.
+- **Send back or approve.** If changes are needed, run
+  `npm run agent -- tasks/<id>-<slug>.md --revise`; the agent reads the PR's
+  comments and fixes them on the same branch. When it's right, comment
+  "Approved by lead" with a one-line summary. Fix something yourself only when
+  sending it back would cost more than it saves, and say so on the PR.
+- **Merge.** Caleb has handed merging to you: once a PR is approved and its CI
+  is green on the latest commit, mark it ready and squash-merge it, with the
+  task id in the title. Never merge red, conflicted or unreviewed work.
+- **Report to Caleb** in the project thread: one short update per batch with
+  what shipped, what's waiting on him (decisions, keys, anything only he can
+  do), and what's next.
