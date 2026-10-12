@@ -35,9 +35,11 @@
 - **Send back or approve.** If changes are needed, run
   `npm run agent -- tasks/<id>-<slug>.md --revise`; the agent reads the PR's
   comments and fixes them on the same branch. When it's right, comment
-  "Approved by lead" with a one-line summary and mark the PR ready for review.
-  Fix something yourself only when sending it back would cost more than it
-  saves, and say so on the PR.
+  "Approved by lead" with a one-line summary. Fix something yourself only when
+  sending it back would cost more than it saves, and say so on the PR.
+- **Merge.** Caleb has handed merging to you: once a PR is approved and its CI
+  is green on the latest commit, mark it ready and squash-merge it, with the
+  task id in the title. Never merge red, conflicted or unreviewed work.
 - **Report to Caleb** in the project thread: one short update per batch with
-  what shipped, what's waiting on him (merges, decisions, keys), and what's
-  next. Only Caleb merges.
+  what shipped, what's waiting on him (decisions, keys, anything only he can
+  do), and what's next.

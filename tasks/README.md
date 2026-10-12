@@ -17,5 +17,5 @@ draft -> ready -> in-progress -> review -> done
 - Opus reviews the PR against the task's acceptance criteria and comments on
   it. If changes are needed, `npm run agent -- tasks/<id>-<slug>.md --revise`
   sends the agent back to fix them on the same branch.
-- When it's right, Opus comments "Approved by lead" and marks it ready. Caleb
-  merges, and the task is set to `done` in that PR.
+- When it's right, Opus comments "Approved by lead", sets the task to `done`,
+  and merges it once CI is green.
