@@ -31,6 +31,7 @@ urlpatterns = [
     path("me/closed-days/", views.ClosedDayView.as_view(), name="stylist-closed-days"),
     path("me/blocks/", views.TimeBlockListView.as_view(), name="stylist-blocks"),
     path("me/blocks/<uuid:pk>/", views.TimeBlockDetailView.as_view(), name="stylist-block"),
+    path("me/blocks/<uuid:pk>/skip/", views.TimeBlockSkipView.as_view(), name="stylist-block-skip"),
     path(
         "by-handle/<str:handle>/",
         views.StylistByHandleView.as_view(),

@@ -1530,6 +1530,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stylists/me/blocks/{id}/skip/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/stylists/me/blocks/:id/skip/ {date, skip} — one day a repeating block
+         *     doesn't come round (working through lunch next Tuesday), or does again.
+         */
+        post: operations["stylists_me_blocks_skip_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stylists/me/closed-days/": {
         parameters: {
             query?: never;
@@ -3353,6 +3373,8 @@ export interface components {
             note?: string;
             /** @description Weekdays it comes round again (Sunday 0), at the same time; empty is once */
             repeats: number[];
+            /** @description Days still to come it doesn't come round */
+            skips: string[];
         };
         TimeBlockRequestRequest: {
             /** Format: date-time */
@@ -3361,6 +3383,12 @@ export interface components {
             end: string;
             note?: string;
             repeats?: number[];
+        };
+        TimeBlockSkipRequestRequest: {
+            /** Format: date */
+            date: string;
+            /** @default true */
+            skip: boolean;
         };
         /**
          * @description * `morning` - morning
@@ -5951,6 +5979,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    stylists_me_blocks_skip_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeBlockSkipRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeBlock"];
+                };
             };
         };
     };

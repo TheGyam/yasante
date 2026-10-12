@@ -8,6 +8,7 @@ import {
   closeDay,
   getTimeBlocks,
   removeTimeBlock,
+  skipTimeBlock,
   createProfile,
   getMenu,
   getMyProfile,
@@ -189,6 +190,7 @@ function useBlockChange<A>(accountId: string, change: (args: A) => Promise<unkno
 
 export const useAddTimeBlock = (accountId: string) => useBlockChange(accountId, addTimeBlock);
 export const useRemoveTimeBlock = (accountId: string) => useBlockChange(accountId, removeTimeBlock);
+export const useSkipTimeBlock = (accountId: string) => useBlockChange(accountId, skipTimeBlock);
 
 /** Closes a day to new bookings, or opens it again. */
 export function useCloseDay(accountId: string) {

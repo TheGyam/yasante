@@ -315,6 +315,9 @@ class TimeBlock(models.Model):
     # time on her clock, until she removes it: a daily lunch, a Friday school run.
     # Empty is once.
     repeats = ArrayField(models.PositiveSmallIntegerField(), default=list, blank=True)
+    # Days on her calendar a repeating block doesn't come round (working through lunch
+    # next Tuesday). The rest of the series stays.
+    skips = ArrayField(models.DateField(), default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -333,7 +336,7 @@ class TimeBlock(models.Model):
         day = max(first, begins.date())
         found = []
         while day <= last:
-            if (day.weekday() + 1) % 7 in self.repeats:
+            if (day.weekday() + 1) % 7 in self.repeats and day not in self.skips:
                 start = datetime.combine(day, begins.time(), tzinfo=zone)
                 found.append((start, start + length))
             day += timedelta(days=1)

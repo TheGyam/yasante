@@ -15,11 +15,13 @@ import {
   bookingRulesLabel,
   hoursLabel,
   noticeLabel,
+  nextOccurrences,
   repeatChoices,
   repeatLabel,
   useAddTimeBlock,
   useMyStylistProfile,
   useRemoveTimeBlock,
+  useSkipTimeBlock,
   useTimeBlocks,
   useUpdateStylistProfile,
   type Availability,
@@ -421,6 +423,9 @@ function BlockedTime({ timeZone }: { timeZone?: string }) {
   const { data: blocks = [] } = useTimeBlocks();
   const add = useAddTimeBlock();
   const remove = useRemoveTimeBlock();
+  const skip = useSkipTimeBlock();
+  // Today on her calendar: where the days a repeating block lands on start.
+  const [today] = useState(() => format(salonTime(new Date(), timeZone), 'yyyy-MM-dd'));
   const [adding, setAdding] = useState(false);
   // One moment for the day and start; the end is a time on that same day.
   const [from, setFrom] = useState(() => setHours(startOfHour(addDays(new Date(), 1)), 10));
@@ -483,6 +488,41 @@ function BlockedTime({ timeZone }: { timeZone?: string }) {
           ))}
         </Section>
       )}
+      {blocks
+        .filter(block => block.repeats?.length)
+        .map(block => (
+          <View key={block.id} style={{ gap: space.xs }}>
+            <Text variant="footnote" tone="secondary">
+              {block.note || repeatLabel(block.repeats)}: tap a day to skip it, again to put it back
+            </Text>
+            <View style={styles.chips}>
+              {nextOccurrences(block.repeats!, today).map(day => {
+                const skipped = block.skips?.includes(day);
+                return (
+                  <Chip
+                    key={day}
+                    label={format(new Date(`${day}T12:00:00`), 'EEE d')}
+                    selected={!skipped}
+                    accessibilityLabel={`${format(new Date(`${day}T12:00:00`), 'EEEE d MMMM')}, ${skipped ? 'skipped' : 'blocked'}`}
+                    onPress={() => {
+                      haptics.selection();
+                      skip.mutate(
+                        { id: block.id, date: day, skip: !skipped },
+                        {
+                          onError: error =>
+                            notify({
+                              title: 'Couldn’t change that day',
+                              message: errorMessage(error, 'Check your connection and try again.'),
+                            }),
+                        }
+                      );
+                    }}
+                  />
+                );
+              })}
+            </View>
+          </View>
+        ))}
       {adding ? (
         <>
           <Section>

@@ -294,4 +294,32 @@ describe('her studio', () => {
       })
     );
   });
+
+  it('skips one day of a repeating block, and puts it back', async () => {
+    const lunch = {
+      id: 't2',
+      start: '2026-10-12T12:00:00Z',
+      end: '2026-10-12T13:00:00Z',
+      note: 'Lunch',
+      repeats: [0, 1, 2, 3, 4, 5, 6],
+      skips: [],
+    };
+    const calls = signedIn({
+      'GET /api/stylists/me/blocks/': [lunch],
+      'POST /api/stylists/me/blocks/t2/skip/': (call: { body?: unknown }) => ({
+        ...lunch,
+        skips: [(call.body as { date: string }).date],
+      }),
+    });
+    const typist = userEvent.setup();
+    renderSite('/availability');
+    const days = await screen.findByRole('group', { name: 'Days it lands on' });
+    const first = within(days).getAllByRole('button')[0];
+    await typist.click(first);
+    await waitFor(() =>
+      expect(calls.find(c => c.url === '/api/stylists/me/blocks/t2/skip/')?.body).toMatchObject({
+        skip: true,
+      })
+    );
+  });
 });

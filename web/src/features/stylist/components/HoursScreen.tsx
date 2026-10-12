@@ -11,7 +11,13 @@ import { Input } from '@/shared/ui/Input';
 import { Page } from '@/shared/ui/Page';
 import { Text } from '@/shared/ui/Text';
 import { fromSalonInput, toSalonInput, whenLabel } from '@/shared/lib/salonTime';
-import { useAddTimeBlock, useRemoveTimeBlock, useTimeBlocks, useUpdateProfile } from '../hooks';
+import {
+  useAddTimeBlock,
+  useRemoveTimeBlock,
+  useSkipTimeBlock,
+  useTimeBlocks,
+  useUpdateProfile,
+} from '../hooks';
 import {
   AHEAD_CHOICES,
   DEFAULT_AHEAD_DAYS,
@@ -22,6 +28,7 @@ import {
   bookingRulesLabel,
   hoursLabel,
   noticeLabel,
+  nextOccurrences,
   repeatChoices,
   repeatLabel,
 } from '../format';
@@ -334,6 +341,7 @@ function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: st
   const { data: blocks = [] } = useTimeBlocks(accountId);
   const add = useAddTimeBlock(accountId);
   const remove = useRemoveTimeBlock(accountId);
+  const skip = useSkipTimeBlock(accountId);
   const [day, setDay] = useState('');
   const [from, setFrom] = useState('10:00');
   const [until, setUntil] = useState('12:00');
@@ -435,6 +443,32 @@ function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: st
             />
           ))}
         </div>
+      )}
+      {blocks
+        .filter(block => block.repeats.length)
+        .map(block => (
+          <div key={block.id} className={styles.card}>
+            <Text variant="footnote" tone="secondary">
+              {block.note || repeatLabel(block.repeats)}: click a day to skip it, again to put it
+              back
+            </Text>
+            <div className={styles.chips} role="group" aria-label="Days it lands on">
+              {nextOccurrences(block.repeats, today).map(day => {
+                const skipped = block.skips.includes(day);
+                return (
+                  <Chip
+                    key={day}
+                    label={`${new Date(`${day}T12:00:00Z`).toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric' })}${skipped ? ' · skipped' : ''}`}
+                    selected={!skipped}
+                    onClick={() => skip.mutate({ id: block.id, date: day, skip: !skipped })}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      {skip.isError && (
+        <InlineAlert message={errorMessage(skip.error, 'Couldn’t change that day.')} />
       )}
     </Glass>
   );

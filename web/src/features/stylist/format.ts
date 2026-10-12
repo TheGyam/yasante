@@ -194,3 +194,14 @@ export function repeatLabel(days: number[] = []) {
     .map(d => WEEKDAY_NAMES[d].slice(0, 3))
     .join(', ');
 }
+
+/** The next `count` days (yyyy-MM-dd, from `today`) a repeating block lands on. */
+export function nextOccurrences(repeats: number[], today: string, count = 7) {
+  const found: string[] = [];
+  const day = new Date(`${today}T12:00:00Z`);
+  for (let i = 0; i < 70 && found.length < count; i++) {
+    if (repeats.includes(day.getUTCDay())) found.push(day.toISOString().slice(0, 10));
+    day.setUTCDate(day.getUTCDate() + 1);
+  }
+  return found;
+}

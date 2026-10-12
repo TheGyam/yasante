@@ -92,6 +92,10 @@ export const stylistApi = {
   addBlock: async (block: Omit<TimeBlock, 'id'>) =>
     (await apiClient.post<TimeBlock>('/api/stylists/me/blocks/', block)).data,
 
+  /** POST /api/stylists/me/blocks/:id/skip/ — one day of a repeating block off, or on again. */
+  skipBlock: async ({ id, date, skip }: { id: string; date: string; skip: boolean }) =>
+    (await apiClient.post<TimeBlock>(`/api/stylists/me/blocks/${id}/skip/`, { date, skip })).data,
+
   /** DELETE /api/stylists/me/blocks/:id/ */
   removeBlock: async (id: string) => {
     await apiClient.delete(`/api/stylists/me/blocks/${id}/`);
