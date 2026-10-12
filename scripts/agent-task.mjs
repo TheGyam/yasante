@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Hands one task file to Codex or Gemini on this machine.
+// Hands one task file to its implementer (Codex, Gemini, Sonnet or Haiku) on this machine.
 //
 //   node scripts/agent-task.mjs tasks/012-diary-repeat-badge.md
 //   node scripts/agent-task.mjs tasks/012-diary-repeat-badge.md --revise
@@ -16,8 +16,44 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+// Shell commands Sonnet and Haiku may run without asking: the checks tasks list
+// (AGENTS.md) and read-only git. Anything else is refused, since nobody is there to approve it.
+const CHECK_COMMANDS = [
+  'npm ci',
+  'npm test',
+  'npm run lint',
+  'npm run api:types',
+  'npx tsc',
+  'npx jest',
+  'npx prettier',
+  'npx prettier@3',
+  'npx vite build',
+  'python -m pytest',
+  'python manage.py makemigrations',
+  'python manage.py spectacular',
+  'git status',
+  'git diff',
+  'git log',
+].map(c => `Bash(${c}:*)`);
+
+const claude = model => prompt => [
+  'claude',
+  [
+    '-p',
+    prompt,
+    '--model',
+    model,
+    '--permission-mode',
+    'acceptEdits',
+    '--allowedTools',
+    ...CHECK_COMMANDS,
+  ],
+];
+
 const AGENTS = {
   codex: prompt => ['codex', ['exec', '--full-auto', prompt]],
+  sonnet: claude('sonnet'),
+  haiku: claude('haiku'),
   // Antigravity CLI (agy) replaces Gemini CLI and uses your Google AI plan's models;
   // Gemini CLI is the fallback where agy isn't installed. agy may edit files on its own;
   // shell commands follow the allow rules in its /permissions. Pro by default; AGY_MODEL overrides.
@@ -77,7 +113,9 @@ const branch = field('branch');
 const id = field('id');
 const title = (text.match(/^# (.+)$/m) || [])[1] || task;
 
-if (!AGENTS[agent]) fail(`${task} is assigned to "${agent}", not codex or gemini`);
+if (agent === 'opus') fail(`${task} is the lead's own task; Opus does it, nothing to dispatch`);
+if (!AGENTS[agent])
+  fail(`${task} is assigned to "${agent}"; the runner takes ${Object.keys(AGENTS).join(', ')}`);
 if (!revise && field('status') !== 'ready') fail(`${task} is not status: ready`);
 if (!branch || !branch.startsWith(`agent/${agent}/`))
   fail(`branch must start with agent/${agent}/`);
@@ -91,7 +129,7 @@ if (out('git', ['cat-file', '-e', `origin/master:${task}`], { cwd: root }) === n
 const worktree = path.join(path.dirname(root), 'yasante-agents', branch.replace(/\//g, '-'));
 // What the branch had before this run; anything past it is the agent's new work.
 let base = 'origin/master';
-let prompt = `You are an implementer on this repo. Follow AGENTS.md exactly. Your task is ${task}.`;
+let prompt = `You are an implementer on this repo, not the lead. Follow AGENTS.md exactly. Your task is ${task}.`;
 const reviewFile = path.join(worktree, '.agent-review.md');
 
 if (revise) {
@@ -109,7 +147,7 @@ if (revise) {
   writeFileSync(reviewFile, review);
   prompt +=
     ' Claude reviewed your pull request; the PR and its review comments are in .agent-review.md.' +
-    ' Fix every blocking item and the minor ones, within the task scope, then update Notes from the implementer' +
+    ' Fix every blocking item and the minor ones, within the task scope, then update your Report to the lead' +
     ' and keep status: review. Do not commit .agent-review.md.';
 } else {
   if (existsSync(worktree))

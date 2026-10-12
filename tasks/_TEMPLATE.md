@@ -1,7 +1,7 @@
 ---
 id: 000
 slug: short-kebab-name
-assignee: codex # codex | gemini | claude
+assignee: codex # codex | gemini | sonnet | haiku | opus
 status: draft # draft | ready | in-progress | review | blocked | done
 branch: agent/codex/000-short-kebab-name
 depends_on: [] # task ids that must be merged first
@@ -47,6 +47,12 @@ npm run lint
 npx jest --ci
 ```
 
-## Notes from the implementer
+## Report to the lead
 
-_Filled in by the assignee: what changed, open questions, anything skipped._
+_Filled in by the assignee when it sets `status: review` or `blocked`._
+
+- **Changed:**
+- **Checks run:** (each command and its result; "not run" if you didn't)
+- **Unsure about:**
+- **Skipped, and why:**
+- **Question for the lead:** (only if `blocked`)
