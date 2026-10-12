@@ -53,17 +53,17 @@ Out of scope (do not touch):
 - [ ] No path in `docs/README.md` points at something that doesn't exist.
 - [ ] Each "Out of date" mark names what's wrong and the file it was checked against.
 - [ ] No other file is changed besides this task file.
-- [ ] `npx prettier --check docs/README.md` passes.
+- [ ] `npx prettier@3 --check docs/README.md` passes.
 
 ## Checks
 
 ```
-npm ci
-npx prettier --check docs/README.md
+npx prettier@3 --check docs/README.md
 git diff --name-only origin/master
 ```
 
 The last command must list only `docs/README.md` and `tasks/001-docs-index.md`.
+Don't run `npm ci`: this task changes no code, and the network may be slow.
 
 ## Notes from the implementer
 
