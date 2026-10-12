@@ -69,6 +69,7 @@ Don't run `npm ci`: this task changes no code, and the network may be slow.
 
 I have rewritten `docs/README.md` to index all 11 files in the `docs/` folder.
 Stale documents have been marked as **Out of date** with specific reasons:
+
 - `API_INTEGRATION.md`, `API_SERVICES_IMPLEMENTATION.md`, `LOGOUT_IMPLEMENTATION.md`: Checked against `src/features/` and `app/` structures.
 - `BACKEND_API_DOCUMENTATION.md`, `QUICK_REFERENCE.md`: Checked against `openapi.yaml` (versioning).
 - `BACKEND_API_REQUIREMENTS.md`: Checked against project name in root `README.md`.
@@ -77,3 +78,5 @@ Removed broken `src/types/` pointer and "contact the frontend team" line.
 Verified `app.json` facts (package: `com.yasante.app`, scheme: `yasante`).
 Generated typed client paths confirmed as `src/shared/lib/api/` and `web/src/shared/lib/api/`.
 Formatting checked with Prettier 3.
+
+**Lead fixes after review (Claude):** corrected the `QUICK_REFERENCE.md` reason (it never mentions `/api/v1`), marked `BACKEND_BRIEF.md` and `BACKEND_QUICK_REFERENCE.md` with the endpoints they name that aren't in `openapi.yaml`, and added who each doc is for.
