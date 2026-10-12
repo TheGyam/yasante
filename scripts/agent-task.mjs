@@ -11,14 +11,26 @@
 // so your checkout is untouched and Codex and Gemini can run at the same time.
 // When it finishes, its branch is pushed and a draft PR is opened for Claude to review.
 // Codex and Gemini use whatever login their CLI already has (ChatGPT / Google account).
+// For Gemini that's Antigravity CLI (agy) when installed, else Gemini CLI.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const AGENTS = {
   codex: prompt => ['codex', ['exec', '--full-auto', prompt]],
-  gemini: prompt => ['gemini', ['--yolo', '-p', prompt]],
+  // Antigravity CLI (agy) replaces Gemini CLI and uses your Google AI plan's models;
+  // Gemini CLI is the fallback where agy isn't installed. agy may edit files on its own;
+  // shell commands follow the allow rules in its /permissions.
+  gemini: prompt =>
+    has('agy')
+      ? ['agy', ['--mode=accept-edits', '-p', prompt]]
+      : ['gemini', ['--yolo', '-p', prompt]],
 };
+
+function has(cmd) {
+  const windows = process.platform === 'win32';
+  return spawnSync(cmd, ['--version'], { stdio: 'ignore', shell: windows }).status === 0;
+}
 
 function fail(message) {
   console.error(`agent-task: ${message}`);

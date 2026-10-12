@@ -1,7 +1,7 @@
 # Working on Yasante as an agent
 
 This file is read by every coding agent on this repo: OpenAI Codex reads it
-directly, Gemini CLI reads it through `GEMINI.md`, and Claude reads it through
+directly, Gemini (Antigravity CLI or Gemini CLI) reads it through `GEMINI.md`, and Claude reads it through
 `CLAUDE.md`.
 
 ## Who leads
