@@ -361,12 +361,17 @@ class TimeBlockSerializer(serializers.Serializer):
     start = serializers.DateTimeField()
     end = serializers.DateTimeField()
     note = optional(serializers.CharField(help_text="Hers alone: never shown to clients"))
+    repeats = serializers.ListField(
+        child=serializers.IntegerField(),
+        help_text="Weekdays it comes round again (Sunday 0), at the same time; empty is once",
+    )
 
 
 class TimeBlockRequestSerializer(serializers.Serializer):
     start = serializers.DateTimeField()
     end = serializers.DateTimeField()
     note = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    repeats = serializers.ListField(child=serializers.IntegerField(min_value=0, max_value=6), required=False)
 
 
 class ClosedDayRequestSerializer(serializers.Serializer):

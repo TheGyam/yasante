@@ -90,12 +90,27 @@ def held_ranges(profile, exclude_id=None, gap=0, blocks=True):
     """
     ranges = _ranges(holding(Booking.objects.filter(stylist_profile=profile), exclude_id), gap)
     if blocks:
-        pad = timedelta(minutes=gap)
-        ranges += [
-            (b.start - pad, b.end + pad, b)
-            for b in TimeBlock.objects.filter(stylist_profile=profile, end__gt=timezone.now())
-        ]
+        ranges += block_ranges(profile, gap)
     return ranges
+
+
+def block_ranges(profile, gap=0):
+    """Time she's blocked out, repeating ones laid out as far ahead as she's booked."""
+    from apps.common import zones
+    from apps.stylists.slots import last_day, today_for
+
+    pad = timedelta(minutes=gap)
+    now = timezone.now()
+    zone = zones.of(profile)
+    today, last = today_for(profile), last_day(profile)
+    return [
+        (start - pad, end + pad, block)
+        for block in TimeBlock.objects.filter(stylist_profile=profile).filter(
+            Q(end__gt=now) | ~Q(repeats=[])
+        )
+        for start, end in block.occurrences(zone, today, last)
+        if end > now
+    ]
 
 
 def client_ranges(client_id, exclude_id=None):

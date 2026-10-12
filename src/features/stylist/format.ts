@@ -325,3 +325,34 @@ export function replyBy(time: string, now = new Date()) {
   const before = new Date(time).getTime() - 2 * 3_600_000;
   return new Date(before > now.getTime() ? Math.min(lapse, before) : new Date(time).getTime());
 }
+
+const WEEKDAY_NAMES = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+
+/** The ways a block can come round, for a block starting on `weekday` (Sunday 0). */
+export const repeatChoices = (weekday: number) => [
+  { label: 'Just once', days: [] as number[] },
+  { label: 'Every day', days: [0, 1, 2, 3, 4, 5, 6] },
+  { label: 'Weekdays', days: [1, 2, 3, 4, 5] },
+  { label: `Every ${WEEKDAY_NAMES[weekday]}`, days: [weekday] },
+];
+
+/** "Every day", "Weekdays", "Every Friday", "Mon, Wed": when a block comes round. */
+export function repeatLabel(days: number[] = []) {
+  const key = [...days].sort().join(',');
+  if (key === '0,1,2,3,4,5,6') return 'Every day';
+  if (key === '1,2,3,4,5') return 'Weekdays';
+  if (key === '1,2,3,4,5,6') return 'Monday to Saturday';
+  if (days.length === 1) return `Every ${WEEKDAY_NAMES[days[0]]}`;
+  return [1, 2, 3, 4, 5, 6, 0]
+    .filter(d => days.includes(d))
+    .map(d => WEEKDAY_NAMES[d].slice(0, 3))
+    .join(', ');
+}

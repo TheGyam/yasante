@@ -41,6 +41,8 @@ export interface TimeBlock {
   end: string;
   /** Hers alone: never shown to clients. */
   note?: string;
+  /** Weekdays it comes round again (Sunday 0) at the same time; empty is once. */
+  repeats?: number[];
 }
 
 export interface Availability {

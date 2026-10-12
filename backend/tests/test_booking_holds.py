@@ -289,3 +289,39 @@ def test_room_is_how_much_of_the_day_is_left_for_a_job_like_this(api, make_styli
     book(make_user(), profile, time=whole["times"][0])
     later = next(d for d in _slots(api(), profile, cornrows, options="big")["days"] if d["date"] == whole["date"])
     assert len(later["times"]) == 5 and later["room"] == "few"
+
+
+def test_a_block_can_come_round_every_day_or_every_week(api, make_stylist, make_user, book):
+    profile = make_stylist()
+    cornrows = profile.menu_items.get(name="Cornrows")
+    me = api(profile.account)
+    day = _slots(api(), profile, cornrows, options="big")["days"][1]
+    one = _at(day["times"][0]).astimezone(LONDON).replace(hour=13)
+    # Lunch, one to two, Monday to Saturday.
+    lunch = me.post("/api/stylists/me/blocks/", {
+        "start": _iso(one), "end": _iso(one + timedelta(hours=1)), "note": "Lunch", "repeats": [1, 2, 3, 4, 5, 6],
+    })
+    assert lunch.status_code == 201 and lunch.json()["repeats"] == [1, 2, 3, 4, 5, 6]
+    later = _slots(api(), profile, cornrows, options="big", **{
+        "from": (one.date() + timedelta(days=7)).isoformat(), "to": (one.date() + timedelta(days=40)).isoformat(),
+    })
+    for d in later["days"]:
+        starts = [_at(t).astimezone(LONDON) for t in d["times"]]
+        # A two-hour job never runs through one o'clock, weeks on.
+        assert not any(s.hour in (12, 13) or (s.hour == 11 and s.minute == 30) for s in starts), d["date"]
+    asked = _ask(api(make_user()), profile, cornrows, one + timedelta(days=14), {"size": "big"})
+    assert asked.status_code == 409
+
+    # Not over an appointment on any day it would come round.
+    booked = book(make_user(), profile, cornrows, options={"size": "big"}, time=day["times"][0])
+    nine = _at(booked["requestedTimes"][0])
+    weekly = me.post("/api/stylists/me/blocks/", {
+        "start": _iso(nine - timedelta(days=7)), "end": _iso(nine - timedelta(days=7, hours=-1)),
+        "repeats": [(nine.astimezone(LONDON).weekday() + 1) % 7],
+    })
+    assert weekly.status_code == 409 and "request" in weekly.json()["message"]
+    assert me.post("/api/stylists/me/blocks/", {"start": _iso(one), "end": _iso(one + timedelta(hours=1)), "repeats": [7]}).status_code == 400
+    # Still listed while it repeats, and gone with one tap.
+    assert [b["note"] for b in me.get("/api/stylists/me/blocks/").json()] == ["Lunch"]
+    assert me.delete(f"/api/stylists/me/blocks/{lunch.json()['id']}/").status_code == 204
+    assert _ask(api(make_user()), profile, cornrows, one + timedelta(days=14), {"size": "big"}).status_code == 201
