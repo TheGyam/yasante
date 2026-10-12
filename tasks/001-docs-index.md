@@ -2,7 +2,7 @@
 id: 001
 slug: docs-index
 assignee: gemini # codex | gemini | claude
-status: review # draft | ready | in-progress | review | blocked | done
+status: done # draft | ready | in-progress | review | blocked | done
 branch: agent/gemini/001-docs-index
 depends_on: []
 ---
