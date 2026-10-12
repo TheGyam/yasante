@@ -3351,6 +3351,8 @@ export interface components {
             end: string;
             /** @description Hers alone: never shown to clients */
             note?: string;
+            /** @description Weekdays it comes round again (Sunday 0), at the same time; empty is once */
+            repeats: number[];
         };
         TimeBlockRequestRequest: {
             /** Format: date-time */
@@ -3358,6 +3360,7 @@ export interface components {
             /** Format: date-time */
             end: string;
             note?: string;
+            repeats?: number[];
         };
         /**
          * @description * `morning` - morning

@@ -15,6 +15,8 @@ import {
   bookingRulesLabel,
   hoursLabel,
   noticeLabel,
+  repeatChoices,
+  repeatLabel,
   useAddTimeBlock,
   useMyStylistProfile,
   useRemoveTimeBlock,
@@ -424,6 +426,9 @@ function BlockedTime({ timeZone }: { timeZone?: string }) {
   const [from, setFrom] = useState(() => setHours(startOfHour(addDays(new Date(), 1)), 10));
   const [until, setUntil] = useState(() => setHours(startOfHour(addDays(new Date(), 1)), 12));
   const [note, setNote] = useState('');
+  // Once, every day, weekdays, or every week on the day picked.
+  const [repeat, setRepeat] = useState(0);
+  const repeats = repeatChoices(salonTime(from, timeZone).getDay());
   const length = wallMinutes(until, timeZone) - wallMinutes(from, timeZone);
 
   const save = async () => {
@@ -432,10 +437,12 @@ function BlockedTime({ timeZone }: { timeZone?: string }) {
         start: from.toISOString(),
         end: new Date(from.getTime() + length * 60_000).toISOString(),
         note: note.trim() || undefined,
+        repeats: repeats[repeat].days,
       });
       haptics.success();
       setAdding(false);
       setNote('');
+      setRepeat(0);
     } catch (error) {
       haptics.error();
       await notify({
@@ -459,7 +466,7 @@ function BlockedTime({ timeZone }: { timeZone?: string }) {
           {blocks.map(block => (
             <ListRow
               key={block.id}
-              title={`${whenLabel(block.start, timeZone)}–${format(salonTime(block.end, timeZone), 'HH:mm')}`}
+              title={`${block.repeats?.length ? `${repeatLabel(block.repeats)}, ${format(salonTime(block.start, timeZone), 'HH:mm')}` : whenLabel(block.start, timeZone)}–${format(salonTime(block.end, timeZone), 'HH:mm')}`}
               subtitle={block.note || undefined}
               icon={Clock}
               iconTone="neutral"
@@ -506,6 +513,16 @@ function BlockedTime({ timeZone }: { timeZone?: string }) {
               onChange={setUntil}
             />
           </Section>
+          <View style={styles.chips}>
+            {repeats.map((choice, index) => (
+              <Chip
+                key={choice.label}
+                label={choice.label}
+                selected={repeat === index}
+                onPress={() => setRepeat(index)}
+              />
+            ))}
+          </View>
           <Input
             label="Note for you (optional)"
             value={note}

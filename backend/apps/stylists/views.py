@@ -51,7 +51,7 @@ from .serializers import (
     StylistSearchResultSerializer,
     StylistSummarySerializer,
 )
-from .slots import DEFAULT_HOURS, free_times, job_minutes, today_for
+from .slots import DEFAULT_HOURS, free_times, job_minutes, last_day, today_for
 from .style_match import style_for_service
 
 logger = logging.getLogger(__name__)
@@ -918,7 +918,13 @@ class StylistSlotsView(APIView):
 
 
 def _present_block(block):
-    return {"id": str(block.pk), "start": block.start, "end": block.end, "note": block.note}
+    return {
+        "id": str(block.pk),
+        "start": block.start,
+        "end": block.end,
+        "note": block.note,
+        "repeats": list(block.repeats),
+    }
 
 
 def _when_parsed(value):
@@ -948,7 +954,9 @@ class TimeBlockListView(APIView):
         profile = _my_profile(request)
         if profile is None:
             return Response(NO_PROFILE, status=404)
-        blocks = TimeBlock.objects.filter(stylist_profile=profile, end__gt=timezone.now())
+        blocks = TimeBlock.objects.filter(stylist_profile=profile).filter(
+            Q(end__gt=timezone.now()) | ~Q(repeats=[])
+        )
         return Response([_present_block(b) for b in blocks])
 
     def post(self, request):
@@ -961,31 +969,40 @@ class TimeBlockListView(APIView):
         start, end = _when_parsed(request.data.get("start")), _when_parsed(request.data.get("end"))
         if start is None or end is None or end <= start:
             return Response({"message": "Pick when it starts and when it ends"}, status=400)
-        if end <= timezone.now():
+        repeats = request.data.get("repeats") or []
+        if not isinstance(repeats, list) or any(type(d) is not int or not 0 <= d <= 6 for d in repeats):
+            return Response({"message": "Say which days it repeats on"}, status=400)
+        repeats = sorted(set(repeats))
+        if end <= timezone.now() and not repeats:
             return Response({"message": "That time has been and gone"}, status=400)
         if end - start > timedelta(hours=24):
             return Response({"message": "For whole days, add them as days away instead"}, status=400)
+        block = TimeBlock(stylist_profile=profile, start=start, end=end, repeats=repeats)
+        times = block.occurrences(zones.of(profile), today_for(profile), last_day(profile))
         with diary_lock(profile.pk):
-            # Never over someone's appointment, or a time someone's waiting to hear about.
-            for held_from, held_to, booking in held_ranges(profile, blocks=False):
-                if start < held_to and end > held_from:
-                    first = (booking.client_name or "A client").split(" ")[0]
-                    at = held_from.astimezone(zones.of(profile))
-                    asked = booking.status == "requested"
-                    return Response(
-                        {
-                            "message": f"That covers {first}’s {'request' if asked else 'appointment'} "
-                            f"at {at:%H:%M} on {at:%a} {at.day} {at:%b}. "
-                            f"{'Answer it' if asked else 'Move or cancel it'} first."
-                        },
-                        status=409,
-                    )
-            block = TimeBlock.objects.create(
-                stylist_profile=profile,
-                start=start,
-                end=end,
-                note=str(request.data.get("note") or "").strip()[:100],
+            # Never over someone's appointment, or a time someone's waiting to hear about,
+            # on any day it comes round.
+            held = held_ranges(profile, blocks=False)
+            clash = next(
+                ((held_from, booking) for t_from, t_to in times for held_from, held_to, booking in held
+                 if t_from < held_to and t_to > held_from),
+                None,
             )
+            if clash:
+                held_from, booking = clash
+                first = (booking.client_name or "A client").split(" ")[0]
+                at = held_from.astimezone(zones.of(profile))
+                asked = booking.status == "requested"
+                return Response(
+                    {
+                        "message": f"That covers {first}’s {'request' if asked else 'appointment'} "
+                        f"at {at:%H:%M} on {at:%a} {at.day} {at:%b}. "
+                        f"{'Answer it' if asked else 'Move or cancel it'} first."
+                    },
+                    status=409,
+                )
+            block.note = str(request.data.get("note") or "").strip()[:100]
+            block.save()
         return Response(_present_block(block), status=201)
 
 
@@ -1003,11 +1020,15 @@ class TimeBlockDetailView(APIView):
         block = TimeBlock.objects.filter(pk=pk, stylist_profile=profile).first() if profile else None
         if block is None:
             return Response({"message": "Already gone"}, status=404)
-        start = block.start
+        upcoming = [
+            start
+            for start, end in block.occurrences(zones.of(profile), today_for(profile), last_day(profile))
+            if end > timezone.now()
+        ]
         block.delete()
-        if block.end > timezone.now():
-            # Anyone waiting on that day hears it has room again.
-            open_day(profile, max(start, timezone.now()))
+        if upcoming:
+            # Anyone waiting on the next day it took hears that day has room again.
+            open_day(profile, max(upcoming[0], timezone.now()))
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

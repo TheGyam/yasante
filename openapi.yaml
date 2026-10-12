@@ -6150,9 +6150,16 @@ components:
         note:
           type: string
           description: 'Hers alone: never shown to clients'
+        repeats:
+          type: array
+          items:
+            type: integer
+          description: Weekdays it comes round again (Sunday 0), at the same time;
+            empty is once
       required:
       - end
       - id
+      - repeats
       - start
     TimeBlockRequestRequest:
       type: object
@@ -6166,6 +6173,12 @@ components:
         note:
           type: string
           maxLength: 100
+        repeats:
+          type: array
+          items:
+            type: integer
+            maximum: 6
+            minimum: 0
       required:
       - end
       - start

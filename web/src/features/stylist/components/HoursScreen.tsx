@@ -22,6 +22,8 @@ import {
   bookingRulesLabel,
   hoursLabel,
   noticeLabel,
+  repeatChoices,
+  repeatLabel,
 } from '../format';
 import type { Availability, StylistProfile } from '../types';
 import * as styles from './StudioScreens.css';
@@ -336,6 +338,9 @@ function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: st
   const [from, setFrom] = useState('10:00');
   const [until, setUntil] = useState('12:00');
   const [note, setNote] = useState('');
+  // Once, every day, weekdays, or every week on the day picked.
+  const [repeat, setRepeat] = useState(0);
+  const repeats = repeatChoices(day ? new Date(`${day}T12:00:00Z`).getUTCDay() : 1);
   const [today] = useState(() => toSalonInput(new Date(), timeZone).slice(0, 10));
   const backwards = !!from && !!until && until <= from;
 
@@ -372,6 +377,16 @@ function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: st
           onChange={e => setUntil(e.target.value)}
         />
       </div>
+      <div className={styles.chips} role="group" aria-label="Repeats">
+        {repeats.map((choice, index) => (
+          <Chip
+            key={choice.label}
+            label={choice.label}
+            selected={repeat === index}
+            onClick={() => setRepeat(index)}
+          />
+        ))}
+      </div>
       <Input
         label="Note for you (optional)"
         maxLength={100}
@@ -393,8 +408,14 @@ function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: st
                 start: fromSalonInput(`${day}T${from}`, timeZone),
                 end: fromSalonInput(`${day}T${until}`, timeZone),
                 note: note.trim() || undefined,
+                repeats: repeats[repeat].days,
               },
-              { onSuccess: () => setNote('') }
+              {
+                onSuccess: () => {
+                  setNote('');
+                  setRepeat(0);
+                },
+              }
             )
           }
         />
@@ -404,7 +425,11 @@ function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: st
           {blocks.map(block => (
             <Chip
               key={block.id}
-              label={`${whenLabel(block.start, timeZone)}–${toSalonInput(block.end, timeZone).slice(11)}${block.note ? ` · ${block.note}` : ''}`}
+              label={`${
+                block.repeats.length
+                  ? `${repeatLabel(block.repeats)}, ${toSalonInput(block.start, timeZone).slice(11)}`
+                  : whenLabel(block.start, timeZone)
+              }–${toSalonInput(block.end, timeZone).slice(11)}${block.note ? ` · ${block.note}` : ''}`}
               icon={X}
               onClick={() => remove.mutate(block.id)}
             />

@@ -280,6 +280,7 @@ describe('her studio', () => {
     await typist.clear(until);
     await typist.type(until, '13:00');
     await typist.type(screen.getByLabelText('Note for you (optional)'), 'Private client');
+    await typist.click(screen.getByRole('button', { name: 'Every Saturday' }));
     await typist.click(screen.getByRole('button', { name: 'Block it out' }));
     // December in London is UTC.
     await waitFor(() =>
@@ -289,6 +290,7 @@ describe('her studio', () => {
         start: '2026-12-05T11:00:00.000Z',
         end: '2026-12-05T13:00:00.000Z',
         note: 'Private client',
+        repeats: [6],
       })
     );
   });

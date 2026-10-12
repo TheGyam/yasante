@@ -311,9 +311,30 @@ class TimeBlock(models.Model):
     end = models.DateTimeField()
     # Hers alone ("Private client"): never shown to clients.
     note = models.CharField(max_length=100, blank=True, default="")
+    # The weekdays it comes round again (Sunday 0), from its first day on, at the same
+    # time on her clock, until she removes it: a daily lunch, a Friday school run.
+    # Empty is once.
+    repeats = ArrayField(models.PositiveSmallIntegerField(), default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "bookings_time_block"
         ordering = ["start"]
         indexes = [models.Index(fields=["stylist_profile", "end"])]
+
+    def occurrences(self, zone, first, last):
+        """Each (start, end) it takes, on local days `first` to `last`."""
+        if not self.repeats:
+            return [(self.start, self.end)]
+        from datetime import datetime, timedelta
+
+        begins, ends = self.start.astimezone(zone), self.end.astimezone(zone)
+        length = ends - begins
+        day = max(first, begins.date())
+        found = []
+        while day <= last:
+            if (day.weekday() + 1) % 7 in self.repeats:
+                start = datetime.combine(day, begins.time(), tzinfo=zone)
+                found.append((start, start + length))
+            day += timedelta(days=1)
+        return found

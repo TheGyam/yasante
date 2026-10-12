@@ -29,5 +29,7 @@ export {
   noticeLabel,
   hoursOn,
   bookingRulesLabel,
+  repeatChoices,
+  repeatLabel,
 } from './format';
 export type { Availability } from './types';
