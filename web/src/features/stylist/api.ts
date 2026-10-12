@@ -44,6 +44,9 @@ export const addTimeBlock = (block: {
   repeats?: number[];
 }) => api.post<TimeBlock>('/stylists/me/blocks/', block);
 export const removeTimeBlock = (id: string) => api.delete(`/stylists/me/blocks/${id}/`);
+/** One day of a repeating block off, or on again. */
+export const skipTimeBlock = ({ id, date, skip }: { id: string; date: string; skip: boolean }) =>
+  api.post<TimeBlock>(`/stylists/me/blocks/${id}/skip/`, { date, skip });
 
 /** Enough clients that day: no new requests for it (what's booked stays), or open again. */
 export const closeDay = (date: string, closed: boolean) =>

@@ -43,6 +43,8 @@ export interface TimeBlock {
   note?: string;
   /** Weekdays it comes round again (Sunday 0) at the same time; empty is once. */
   repeats?: number[];
+  /** Days still to come it doesn't come round, yyyy-MM-dd. */
+  skips?: string[];
 }
 
 export interface Availability {

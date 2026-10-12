@@ -184,6 +184,7 @@ function useBlockChange<A>(change: (args: A) => Promise<unknown>) {
 
 export const useAddTimeBlock = () => useBlockChange(stylistApi.addBlock);
 export const useRemoveTimeBlock = () => useBlockChange(stylistApi.removeBlock);
+export const useSkipTimeBlock = () => useBlockChange(stylistApi.skipBlock);
 
 /** Puts the page live. The server refuses until the phone is verified. */
 export function usePublishPage() {

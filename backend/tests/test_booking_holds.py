@@ -325,3 +325,30 @@ def test_a_block_can_come_round_every_day_or_every_week(api, make_stylist, make_
     assert [b["note"] for b in me.get("/api/stylists/me/blocks/").json()] == ["Lunch"]
     assert me.delete(f"/api/stylists/me/blocks/{lunch.json()['id']}/").status_code == 204
     assert _ask(api(make_user()), profile, cornrows, one + timedelta(days=14), {"size": "big"}).status_code == 201
+
+
+def test_one_day_of_a_repeating_block_can_be_skipped(api, make_stylist, make_user):
+    profile = make_stylist()
+    cornrows = profile.menu_items.get(name="Cornrows")
+    me = api(profile.account)
+    day = _slots(api(), profile, cornrows, options="big")["days"][1]
+    one = _at(day["times"][0]).astimezone(LONDON).replace(hour=13)
+    lunch = me.post("/api/stylists/me/blocks/", {
+        "start": _iso(one), "end": _iso(one + timedelta(hours=1)), "repeats": [1, 2, 3, 4, 5, 6],
+    }).json()
+    url = f"/api/stylists/me/blocks/{lunch['id']}/skip/"
+    week_on = one + timedelta(days=7)
+    assert _ask(api(make_user()), profile, cornrows, week_on, {"size": "big"}).status_code == 409
+    # Working through lunch that one day: it's free, and the rest of the series stays.
+    skipped = me.post(url, {"date": week_on.date().isoformat()})
+    assert skipped.status_code == 200 and skipped.json()["skips"] == [week_on.date().isoformat()]
+    assert _ask(api(make_user()), profile, cornrows, week_on, {"size": "big"}).status_code == 201
+    assert _ask(api(make_user()), profile, cornrows, one + timedelta(days=14), {"size": "big"}).status_code == 409
+    # It can't come back over what's been booked since, nor be skipped on a day it isn't on.
+    assert me.post(url, {"date": week_on.date().isoformat(), "skip": False}).status_code == 409
+    sunday = one.date() + timedelta(days=(6 - one.weekday()) % 7)
+    assert me.post(url, {"date": sunday.isoformat()}).status_code == 400
+    # Put back on a day still free.
+    later = (one + timedelta(days=21)).date().isoformat()
+    me.post(url, {"date": later})
+    assert me.post(url, {"date": later, "skip": False}).json()["skips"] == [week_on.date().isoformat()]

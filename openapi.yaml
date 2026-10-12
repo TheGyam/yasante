@@ -2371,6 +2371,36 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/stylists/me/blocks/{id}/skip/:
+    post:
+      operationId: stylists_me_blocks_skip_create
+      description: |-
+        POST /api/stylists/me/blocks/:id/skip/ {date, skip} — one day a repeating block
+        doesn't come round (working through lunch next Tuesday), or does again.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeBlockSkipRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeBlock'
+          description: ''
   /api/stylists/me/closed-days/:
     post:
       operationId: stylists_me_closed_days_create
@@ -6156,10 +6186,17 @@ components:
             type: integer
           description: Weekdays it comes round again (Sunday 0), at the same time;
             empty is once
+        skips:
+          type: array
+          items:
+            type: string
+            format: date
+          description: Days still to come it doesn't come round
       required:
       - end
       - id
       - repeats
+      - skips
       - start
     TimeBlockRequestRequest:
       type: object
@@ -6182,6 +6219,17 @@ components:
       required:
       - end
       - start
+    TimeBlockSkipRequestRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        skip:
+          type: boolean
+          default: true
+      required:
+      - date
     TimeOfDayEnum:
       enum:
       - morning

@@ -4,7 +4,7 @@ Stylist views: her page, menu, portfolio, free times, numbers and summary.
 
 import logging
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 
 from apps.bookings.models import Booking, Review
 from apps.common import zones
@@ -34,6 +34,7 @@ from .numbers import numbers_for, timing_label_for
 from .pricing import clean_options
 from .serializers import (
     ClosedDayRequestSerializer,
+    TimeBlockSkipRequestSerializer,
     TimeBlockRequestSerializer,
     TimeBlockSerializer,
     FreeSlotsSerializer,
@@ -924,6 +925,8 @@ def _present_block(block):
         "end": block.end,
         "note": block.note,
         "repeats": list(block.repeats),
+        # Only the ones still to come: the past ones are nobody's business.
+        "skips": [d.isoformat() for d in block.skips if d >= today_for(block.stylist_profile)],
     }
 
 
@@ -1004,6 +1007,54 @@ class TimeBlockListView(APIView):
             block.note = str(request.data.get("note") or "").strip()[:100]
             block.save()
         return Response(_present_block(block), status=201)
+
+
+@extend_schema_view(post=extend_schema(request=TimeBlockSkipRequestSerializer, responses=TimeBlockSerializer))
+class TimeBlockSkipView(APIView):
+    """
+    POST /api/stylists/me/blocks/:id/skip/ {date, skip} — one day a repeating block
+    doesn't come round (working through lunch next Tuesday), or does again.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        from apps.bookings.held import diary_lock, held_ranges, open_day
+        from apps.bookings.models import TimeBlock
+
+        profile = _my_profile(request)
+        block = TimeBlock.objects.filter(pk=pk, stylist_profile=profile).first() if profile else None
+        if block is None:
+            return Response({"message": "That block is gone"}, status=404)
+        day = _day_param(str(request.data.get("date") or ""))
+        zone = zones.of(profile)
+        weekday = (day.weekday() + 1) % 7 if day else None
+        if day is None or weekday not in block.repeats or day < block.start.astimezone(zone).date():
+            return Response({"message": "It doesn’t come round that day"}, status=400)
+        if day < today_for(profile):
+            return Response({"message": "That day has been and gone"}, status=400)
+        skip = request.data.get("skip", True) is not False
+        with diary_lock(profile.pk):
+            block = TimeBlock.objects.get(pk=block.pk)
+            if skip:
+                block.skips = sorted({*block.skips, day})
+            else:
+                # Back on, as long as nothing's been booked into the time meanwhile.
+                block.skips = [d for d in block.skips if d != day]
+                times = block.occurrences(zone, day, day)
+                if any(
+                    s < held_to and e > held_from
+                    for s, e in times
+                    for held_from, held_to, _ in held_ranges(profile, blocks=False)
+                ):
+                    return Response({"message": "That time has been booked since"}, status=409)
+            # Old skips go, so the list never grows.
+            block.skips = [d for d in block.skips if d >= today_for(profile)]
+            block.save(update_fields=["skips"])
+        if skip:
+            # Anyone waiting on that day hears it has room again.
+            open_day(profile, datetime.combine(day, time(12), tzinfo=zone))
+        return Response(_present_block(block))
 
 
 @extend_schema_view(delete=extend_schema(responses={204: None}))

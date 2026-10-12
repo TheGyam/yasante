@@ -365,6 +365,14 @@ class TimeBlockSerializer(serializers.Serializer):
         child=serializers.IntegerField(),
         help_text="Weekdays it comes round again (Sunday 0), at the same time; empty is once",
     )
+    skips = serializers.ListField(
+        child=serializers.DateField(), help_text="Days still to come it doesn't come round"
+    )
+
+
+class TimeBlockSkipRequestSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    skip = serializers.BooleanField(default=True)
 
 
 class TimeBlockRequestSerializer(serializers.Serializer):
