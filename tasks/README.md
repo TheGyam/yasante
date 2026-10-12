@@ -14,5 +14,7 @@ draft -> ready -> in-progress -> review -> done
 - `npm run agent -- tasks/<id>-<slug>.md` hands it to the assignee, which works
   on `agent/<assignee>/<id>-<slug>` and sets `status: review`; the script pushes
   the branch and opens a draft PR titled `[<id>] <title>`.
-- Claude reviews the PR against the task's acceptance criteria. A human merges,
-  and the task is set to `done` in that PR.
+- Claude reviews the PR against the task's acceptance criteria and comments on
+  it. If changes are needed, `npm run agent -- tasks/<id>-<slug>.md --revise`
+  sends the agent back to fix them on the same branch.
+- A human merges, and the task is set to `done` in that PR.

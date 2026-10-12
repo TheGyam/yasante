@@ -2,13 +2,17 @@
 // Hands one task file to Codex or Gemini on this machine.
 //
 //   node scripts/agent-task.mjs tasks/012-diary-repeat-badge.md
+//   node scripts/agent-task.mjs tasks/012-diary-repeat-badge.md --revise
+//
+// --revise sends the agent back to its open PR: it reads the PR's review comments,
+// fixes them on the same branch, and the script pushes to that PR.
 //
 // The agent works in its own git worktree beside this checkout (../yasante-agents/),
 // so your checkout is untouched and Codex and Gemini can run at the same time.
 // When it finishes, its branch is pushed and a draft PR is opened for Claude to review.
 // Codex and Gemini use whatever login their CLI already has (ChatGPT / Google account).
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const AGENTS = {
@@ -36,8 +40,9 @@ function out(cmd, args, opts = {}) {
   return result.status === 0 ? result.stdout.trim() : null;
 }
 
-const task = process.argv[2];
-if (!task) fail('usage: node scripts/agent-task.mjs tasks/<id>-<slug>.md');
+const revise = process.argv.includes('--revise');
+const task = process.argv.slice(2).find(a => !a.startsWith('--'));
+if (!task) fail('usage: node scripts/agent-task.mjs tasks/<id>-<slug>.md [--revise]');
 
 const root = out('git', ['rev-parse', '--show-toplevel']);
 if (!root) fail('run this inside the repo');
@@ -52,7 +57,7 @@ const id = field('id');
 const title = (text.match(/^# (.+)$/m) || [])[1] || task;
 
 if (!AGENTS[agent]) fail(`${task} is assigned to "${agent}", not codex or gemini`);
-if (field('status') !== 'ready') fail(`${task} is not status: ready`);
+if (!revise && field('status') !== 'ready') fail(`${task} is not status: ready`);
 if (!branch || !branch.startsWith(`agent/${agent}/`))
   fail(`branch must start with agent/${agent}/`);
 
@@ -63,29 +68,63 @@ if (out('git', ['cat-file', '-e', `origin/master:${task}`], { cwd: root }) === n
 }
 
 const worktree = path.join(path.dirname(root), 'yasante-agents', branch.replace(/\//g, '-'));
-if (existsSync(worktree))
-  fail(`${worktree} already exists; remove it with "git worktree remove" first`);
-if (!run('git', ['worktree', 'add', '-b', branch, worktree, 'origin/master'], { cwd: root })) {
-  fail('could not create the worktree (does the branch already exist?)');
+// What the branch had before this run; anything past it is the agent's new work.
+let base = 'origin/master';
+let prompt = `You are an implementer on this repo. Follow AGENTS.md exactly. Your task is ${task}.`;
+const reviewFile = path.join(worktree, '.agent-review.md');
+
+if (revise) {
+  if (!run('git', ['fetch', 'origin', branch], { cwd: root }))
+    fail(`no ${branch} on origin to revise`);
+  base = `origin/${branch}`;
+  if (existsSync(worktree)) {
+    if (!run('git', ['merge', '--ff-only', base], { cwd: worktree }))
+      fail(`${worktree} has diverged from ${base}`);
+  } else if (!run('git', ['worktree', 'add', '-B', branch, worktree, base], { cwd: root })) {
+    fail('could not create the worktree');
+  }
+  const review = out('gh', ['pr', 'view', branch, '--comments'], { cwd: worktree });
+  if (!review) fail(`could not read the review on ${branch}'s PR (is gh signed in?)`);
+  writeFileSync(reviewFile, review);
+  prompt +=
+    ' Claude reviewed your pull request; the PR and its review comments are in .agent-review.md.' +
+    ' Fix every blocking item and the minor ones, within the task scope, then update Notes from the implementer' +
+    ' and keep status: review. Do not commit .agent-review.md.';
+} else {
+  if (existsSync(worktree))
+    fail(`${worktree} already exists; remove it with "git worktree remove" first`);
+  if (!run('git', ['worktree', 'add', '-b', branch, worktree, base], { cwd: root })) {
+    fail('could not create the worktree (does the branch already exist?)');
+  }
 }
 
-console.log(`\n${agent} is working on ${task} in ${worktree}\n`);
-const prompt = `You are an implementer on this repo. Follow AGENTS.md exactly. Your task is ${task}.`;
+console.log(`\n${agent} is ${revise ? 'revising' : 'working on'} ${task} in ${worktree}\n`);
 const [cmd, args] = AGENTS[agent](prompt);
 if (!run(cmd, args, { cwd: worktree }))
   console.error(`\n${agent} exited with an error; committing whatever it left.`);
+rmSync(reviewFile, { force: true });
 
 run('git', ['add', '-A'], { cwd: worktree });
 if (out('git', ['diff', '--cached', '--quiet'], { cwd: worktree }) === null) {
-  run('git', ['commit', '-m', `chore(agent): ${agent} works on ${task}`], { cwd: worktree });
+  const message = revise
+    ? `chore(agent): ${agent} addresses review on ${task}`
+    : `chore(agent): ${agent} works on ${task}`;
+  run('git', ['commit', '-m', message], { cwd: worktree });
 }
-if (out('git', ['rev-list', '--count', 'origin/master..HEAD'], { cwd: worktree }) === '0') {
+if (out('git', ['rev-list', '--count', `${base}..HEAD`], { cwd: worktree }) === '0') {
+  if (revise) fail(`${agent} changed nothing in response to the review`);
   // Nothing to keep, so leave nothing behind: a rerun would stop on the worktree.
   run('git', ['worktree', 'remove', '--force', worktree], { cwd: root });
   run('git', ['branch', '-D', branch], { cwd: root });
   fail(`${agent} changed nothing; removed its worktree and branch`);
 }
 if (!run('git', ['push', '-u', 'origin', branch], { cwd: worktree })) fail('push failed');
+if (revise) {
+  console.log(
+    `\nPushed ${agent}'s fixes to ${branch}; its PR is updated and ready for another review.`
+  );
+  process.exit(0);
+}
 
 const body = `Implements \`${task}\`, done by **${agent}**. Waiting on Claude's review against the task's acceptance criteria.`;
 if (

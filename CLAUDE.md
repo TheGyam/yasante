@@ -23,5 +23,7 @@ The rules above are written for the implementers. Your job is different:
   Codex and Gemini tasks can run side by side.
 - **Review.** Every agent PR is reviewed by you against its task file before
   merge: acceptance criteria met, scope respected, checks green,
-  `ARCHITECTURE.md` followed. Request changes on the PR, or update the task
-  file and re-dispatch. Only a human merges.
+  `ARCHITECTURE.md` followed. Post the review as a comment on the PR, then
+  send the agent back with `npm run agent -- tasks/<id>-<slug>.md --revise`:
+  it reads the PR's comments, fixes them on the same branch and pushes.
+  Only a human merges.
