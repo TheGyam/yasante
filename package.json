@@ -11,6 +11,7 @@
     "test:watch": "jest --watch",
     "lint": "eslint . --ext .ts,.tsx",
     "api:types": "openapi-typescript openapi.yaml --array-length -o src/shared/lib/api/schema.d.ts",
+    "agent": "node scripts/agent-task.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "dependencies": {

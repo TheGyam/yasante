@@ -15,10 +15,12 @@ The rules above are written for the implementers. Your job is different:
   Rough split: Codex for well-specified code changes and tests; Gemini for
   broad reads, docs, and changes that need a lot of the codebase in view;
   Claude for anything cross-cutting, architectural, or security-sensitive.
-- **Dispatch.** Run the `Agent task` workflow
-  (`.github/workflows/agent-task.yml`) with the task file and agent, or have
-  the implementer run locally on its branch. Commit the task file to `master`
-  first, so the agent's branch starts from it.
+- **Dispatch.** Agents run on Caleb's machine, signed in to their own CLIs.
+  Commit and push the task file to `master` first, then run
+  `npm run agent -- tasks/<id>-<slug>.md` there (directly, or through a Remote
+  Control session). It reads the assignee from the task, works in its own git
+  worktree under `../yasante-agents/`, pushes the branch and opens a draft PR.
+  Codex and Gemini tasks can run side by side.
 - **Review.** Every agent PR is reviewed by you against its task file before
   merge: acceptance criteria met, scope respected, checks green,
   `ARCHITECTURE.md` followed. Request changes on the PR, or update the task
