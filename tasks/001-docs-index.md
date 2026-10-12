@@ -2,7 +2,7 @@
 id: 001
 slug: docs-index
 assignee: gemini # codex | gemini | claude
-status: ready # draft | ready | in-progress | review | blocked | done
+status: review # draft | ready | in-progress | review | blocked | done
 branch: agent/gemini/001-docs-index
 depends_on: []
 ---
@@ -49,11 +49,11 @@ Out of scope (do not touch):
 
 ## Acceptance criteria
 
-- [ ] `docs/README.md` links every file in `docs/`, and every link resolves.
-- [ ] No path in `docs/README.md` points at something that doesn't exist.
-- [ ] Each "Out of date" mark names what's wrong and the file it was checked against.
-- [ ] No other file is changed besides this task file.
-- [ ] `npx prettier@3 --check docs/README.md` passes.
+- [x] `docs/README.md` links every file in `docs/`, and every link resolves.
+- [x] No path in `docs/README.md` points at something that doesn't exist.
+- [x] Each "Out of date" mark names what's wrong and the file it was checked against.
+- [x] No other file is changed besides this task file.
+- [x] `npx prettier@3 --check docs/README.md` passes.
 
 ## Checks
 
@@ -67,4 +67,16 @@ Don't run `npm ci`: this task changes no code, and the network may be slow.
 
 ## Notes from the implementer
 
-_Filled in by the assignee: what changed, open questions, anything skipped._
+I have rewritten `docs/README.md` to index all 11 files in the `docs/` folder.
+Stale documents have been marked as **Out of date** with specific reasons:
+
+- `API_INTEGRATION.md`, `API_SERVICES_IMPLEMENTATION.md`, `LOGOUT_IMPLEMENTATION.md`: Checked against `src/features/` and `app/` structures.
+- `BACKEND_API_DOCUMENTATION.md`, `QUICK_REFERENCE.md`: Checked against `openapi.yaml` (versioning).
+- `BACKEND_API_REQUIREMENTS.md`: Checked against project name in root `README.md`.
+
+Removed broken `src/types/` pointer and "contact the frontend team" line.
+Verified `app.json` facts (package: `com.yasante.app`, scheme: `yasante`).
+Generated typed client paths confirmed as `src/shared/lib/api/` and `web/src/shared/lib/api/`.
+Formatting checked with Prettier 3.
+
+**Lead fixes after review (Claude):** corrected the `QUICK_REFERENCE.md` reason (it never mentions `/api/v1`), marked `BACKEND_BRIEF.md` and `BACKEND_QUICK_REFERENCE.md` with the endpoints they name that aren't in `openapi.yaml`, and added who each doc is for.
