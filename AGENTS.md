@@ -87,7 +87,18 @@ If you change the backend API, regenerate `openapi.yaml`
 clients (`npm run api:types` in the root and in `web/`). Never edit
 `schema.d.ts` by hand.
 
-## Commits
+## Commits, pull requests and comments
 
-Conventional style, matching the history: `feat(diary): ...`, `fix(web): ...`.
-Say what changes for the person using the app, in plain words.
+Caleb's rule for every AI that works on this repo:
+
+- **No AI authorship.** Commits are authored by Caleb's git identity. Never add
+  `Co-Authored-By`, "Generated with", session links or any other line naming an
+  AI tool or model to a commit, pull request or comment.
+- **Simple, natural English.** Write commit messages, PR titles and
+  descriptions, and review comments so anyone can follow them: short full
+  sentences that say what changes and why, with no jargon, internal ids or tool
+  names.
+
+Commit subjects keep the conventional prefix, matching the history:
+`feat(diary): ...`, `fix(web): ...`. Say what changes for the person using the
+app, in plain words.
