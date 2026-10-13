@@ -32,7 +32,7 @@ const FOR_CLIENTS: Point[] = [
   },
   {
     icon: CalendarCheck,
-    title: 'Book the braider who did it',
+    title: 'Book the stylist who did it',
     body: 'Pick a service, see the price and their free times, and send a request. Follow it from asked to done.',
   },
   {

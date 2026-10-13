@@ -2,7 +2,7 @@
 id: 002
 slug: homepage-copy
 assignee: sonnet # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+status: review # draft | ready | in-progress | review | blocked | done
 branch: agent/sonnet/002-homepage-copy
 depends_on: []
 ---
@@ -93,7 +93,32 @@ npx vite build
 _Filled in by the assignee when it sets `status: review` or `blocked`._
 
 - **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
-- **Unsure about:**
-- **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+  - `Hero.tsx`: removed the circular badge block and the unused `ArrowUpLeft` import;
+    "Meet Ama:" → "Meet Nana Ama:"; the hover line → "Say hi, she's already looking
+    your way."; doc comment "Ama turns to look" → "Nana Ama turns to look".
+  - `Hero.css.ts`: deleted `badge`, `ring`, `ringText`, `arrow`, the `spin` keyframes,
+    and the now-unused `keyframes` import. Kept `eye`, `pupil`, `desktopOnly`.
+  - `SiteFooter.tsx`: added `target="_blank" rel="noopener noreferrer"` to the
+    Instagram and TikTok links.
+  - `LinksScreen.tsx`: added an `external: true` flag to the Instagram and TikTok
+    entries, spread as `target`/`rel` on the anchor only when set.
+  - "braider(s)" → "stylist(s)" in user-facing copy: `AreaScreen.tsx` (title/intro),
+    `Listing.tsx` (`SectionHeader`), `StyleScreen.tsx` (intro), `HomeScreen.tsx`
+    (card title), `LooksScreen.tsx` (description + intro), `StylistScreen.tsx`
+    (not-found body + page description fallback). Left comments in `AreaScreen.tsx`,
+    `Listing.tsx`, `PaymentsScreen.tsx`, `StylistRow.tsx`, `menu.ts` untouched (in
+    scope).
+  - `site.test.tsx`: updated the two "Braiders in {area}" heading assertions to
+    "Stylists in {area}".
+- **Checks run:**
+  - `npm ci` — passed.
+  - `npx tsc --noEmit` — passed, no errors.
+  - `npm run lint` — passed, no errors.
+  - `npm test` — passed, 16 files / 71 tests.
+  - `npx vite build` — passed, built in ~10.5s.
+  - `grep -rn "Move your cursor\|She's looking too\|She’s looking too\|Meet Ama\|hero-badge" web/src` — no matches.
+  - `grep -rni braider web/src/features` — only matches in code comments (as required).
+  - `git diff --name-only origin/master` — only files listed in Scope changed.
+- **Unsure about:** None.
+- **Skipped, and why:** Nothing skipped; all acceptance criteria items addressed.
+- **Question for the lead:** None.

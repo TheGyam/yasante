@@ -91,9 +91,9 @@ describe('the site', () => {
       '/api/looks/': { data: [] },
     });
     renderSite('/areas/peckham');
-    expect(await screen.findByRole('heading', { name: 'Braiders in Peckham' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Stylists in Peckham' })).toBeInTheDocument();
     renderSite('/areas/brixton');
-    expect(await screen.findByRole('heading', { name: 'Braiders in Brixton' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Stylists in Brixton' })).toBeInTheDocument();
 
     mockApi({ '/api/looks/areas/': ['Peckham'], '/api/stylists/': [] });
     renderSite('/areas/free-braids-call-0800-000-000');

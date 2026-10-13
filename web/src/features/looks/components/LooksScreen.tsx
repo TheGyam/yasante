@@ -28,12 +28,12 @@ export function LooksScreen({ filters }: { filters: LookFilters }) {
   return (
     <Page
       title={styleName ? `${styleName} looks` : 'Looks'}
-      description="Real looks on real hair, from braiders near you."
+      description="Real looks on real hair, from stylists near you."
     >
       <div className={styles.intro}>
         <Text variant="display">{styleName ?? 'Looks'}</Text>
         <Text variant="body" tone="secondary">
-          Real work on real hair, posted by the people who wore it and the braiders who did it.
+          Real work on real hair, posted by the people who wore it and the stylists who did it.
         </Text>
       </div>
 
