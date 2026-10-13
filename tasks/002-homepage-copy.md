@@ -1,9 +1,9 @@
 ---
 id: 002
 slug: homepage-copy
-assignee: gemini # codex | gemini | sonnet | haiku | opus
+assignee: sonnet # codex | gemini | sonnet | haiku | opus
 status: ready # draft | ready | in-progress | review | blocked | done
-branch: agent/gemini/002-homepage-copy
+branch: agent/sonnet/002-homepage-copy
 depends_on: []
 ---
 
