@@ -7,11 +7,12 @@ branch: agent/gemini/002-homepage-copy
 depends_on: []
 ---
 
-# Website: name the hero Nana Ama, open socials in a new tab, say "stylist" not "braider"
+# Website: name the hero Nana Ama, drop the spinning badge, open socials in a new tab, say "stylist" not "braider"
 
 ## Why
 
-Caleb wants the hero character named Nana Ama, the cursor gimmick copy toned down,
+Caleb wants the hero character named Nana Ama, the spinning "Move your cursor" badge
+removed, the cursor copy toned down,
 Instagram and TikTok to open in a new tab, and the site to stop reading as if
 Yasante is only for braids. Yasante is for any textured-hair style and any stylist.
 
@@ -20,6 +21,7 @@ Yasante is only for braids. Yasante is for any textured-hair style and any styli
 Files this task may change:
 
 - `web/src/features/home/components/Hero.tsx`
+- `web/src/features/home/components/Hero.css.ts`, only to delete the badge styles (step 1)
 - `web/src/shared/ui/SiteFooter.tsx`
 - `web/src/features/home/components/LinksScreen.tsx`
 - User-facing copy (strings shown on the page, page titles and meta descriptions) in
@@ -29,15 +31,18 @@ Files this task may change:
 
 Out of scope (do not touch):
 
-- The app (`app/`, `src/`), the backend, styles (`*.css.ts`), images and the hero animation.
+- The app (`app/`, `src/`), the backend, other styles (`*.css.ts`), images and the hero animation.
 - Code comments, identifiers and file names (leave "braider" in comments alone).
 - Stylist display names used as sample data, such as "Braids by Ama" (that's a business name).
 
 ## What to do
 
-1. **Hero badge** (`Hero.tsx`, the ring text around the arrow badge): replace
-   `Move your cursor · She’s looking too ·` with her name, so the ring reads
-   `Nana Ama · Nana Ama ·` (keep the trailing separator so the loop joins up).
+1. **Remove the hero badge** (`Hero.tsx`): delete the whole circular badge, the
+   `<div className={styles.badge} aria-hidden>` block with its spinning SVG ring
+   (`Move your cursor · She’s looking too ·`) and the arrow inside it. Remove the
+   `ArrowUpLeft` import if nothing else uses it. In `Hero.css.ts`, delete the styles
+   only the badge used: `badge`, `ring`, `ringText`, `arrow` and the `spin` keyframes.
+   Keep `eye`, `pupil` and `desktopOnly` (the eye still uses them).
 2. **Hero intro** (`Hero.tsx`, the lede paragraph):
    - `Meet Ama:` becomes `Meet Nana Ama:`.
    - Replace the pointer line `Move your cursor: she’s watching.` (the `hoverOnly`
@@ -62,7 +67,8 @@ Out of scope (do not touch):
 
 ## Acceptance criteria
 
-- [ ] The hero badge ring reads "Nana Ama · Nana Ama ·" and no longer mentions the cursor.
+- [ ] The circular badge is gone from the hero, with its now-unused styles and import;
+      `grep -rn "Move your cursor\|She’s looking too" web/src` finds nothing.
 - [ ] The hero lede says "Meet Nana Ama:" and "Say hi, she’s already looking your way."
 - [ ] Instagram and TikTok links in the footer and on the links page have
       `target="_blank"` and `rel="noopener noreferrer"`; internal links don't.
