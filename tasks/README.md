@@ -22,7 +22,7 @@ draft -> ready -> in-progress -> review -> done
 
 ## Gemini tasks: list checks word for word
 
-On Caleb's machine, Antigravity (agy) runs a shell command unattended only when
+On Yaw's machine, Antigravity (agy) runs a shell command unattended only when
 it matches an allow rule exactly, with no extra flags or paths. The rules live
 in `%USERPROFILE%\.gemini\antigravity-cli\settings.json` and cover the checks in
 `AGENTS.md` as written there, plus `git status`, `git status --short`,
