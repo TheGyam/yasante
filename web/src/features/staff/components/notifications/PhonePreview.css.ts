@@ -6,8 +6,8 @@ export const phone = style({
   margin: 0,
   padding: `${space.xl}px ${space.md}px ${space.xxxl}px`,
   borderRadius: 36,
-  background: 'linear-gradient(160deg, #3a2430, #120a0e 70%)',
-  border: '6px solid #1c1418',
+  background: 'linear-gradient(160deg, #33243f, #110b13 70%)',
+  border: '6px solid #1b1420',
   color: '#fff',
 });
 

@@ -24,7 +24,7 @@ const useStyles = makeStyles(t => ({
   },
   plain: { backgroundColor: 'transparent' },
   accent: { backgroundColor: t.colors.accent },
-  overlay: { backgroundColor: 'rgba(12,8,10,0.44)' },
+  overlay: { backgroundColor: 'rgba(12,8,14,0.44)' },
 }));
 
 export function IconButton({

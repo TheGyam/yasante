@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F7F2F4" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0B0709" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F8F3F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#100A0F" media="(prefers-color-scheme: dark)">
 <title>{{ title }}</title>
 <meta name="description" content="{{ description }}">
 {% if noindex %}<meta name="robots" content="noindex">{% else %}<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">{% endif %}
@@ -28,7 +28,7 @@
 {% for href in assets.styles %}<link rel="stylesheet" href="{{ href }}">
 {% endfor %}<script type="module" src="{{ assets.script }}"></script>{% endif %}
 {% if jsonld %}<script type="application/ld+json">{{ jsonld }}</script>{% endif %}
-<style>body{margin:0;background:#F7F2F4;color:#1B0E14}@media (prefers-color-scheme:dark){body{background:#0B0709;color:#F8F1F4}}
+<style>body{margin:0;background:#F8F3F1;color:#1A1220}@media (prefers-color-scheme:dark){body{background:#100A0F;color:#F6F0F5}}
 .ssr{max-width:720px;margin:0 auto;padding:24px 16px 48px;font:16px/1.55 "Instrument Sans",system-ui,sans-serif}
 .ssr a{color:inherit}.ssr img{max-width:100%;height:auto;border-radius:12px}
 .ssr ul.grid{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
