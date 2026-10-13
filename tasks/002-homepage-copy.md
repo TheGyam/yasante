@@ -11,7 +11,7 @@ depends_on: []
 
 ## Why
 
-Caleb wants the hero character named Nana Ama, the spinning "Move your cursor" badge
+Yaw wants the hero character named Nana Ama, the spinning "Move your cursor" badge
 removed, the cursor copy toned down,
 Instagram and TikTok to open in a new tab, and the site to stop reading as if
 Yasante is only for braids. Yasante is for any textured-hair style and any stylist.

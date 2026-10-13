@@ -6,16 +6,16 @@ Claude (Opus, Sonnet, Haiku) reads it through `CLAUDE.md`.
 
 ## The team
 
-| Agent      | Model                            | Role on Yasante                                                                                                                                                                                            |
-| ---------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Opus**   | Claude Opus 5.5                  | **Lead.** Plans, writes and assigns tasks, instructs, reviews, approves and merges every PR. Takes security- and privacy-sensitive work itself (auth, payments, consent, personal data). Reports to Caleb. |
-| **Codex**  | GPT-6 (Codex CLI, high effort)   | **Backend and tests.** Django apps, models, migrations and endpoints with their pytest tests; regenerating `openapi.yaml` and the typed clients; well-scoped fixes that need a lot of terminal work.       |
-| **Gemini** | Gemini 3.1 Pro (Antigravity CLI) | **Website, UI and wide reads.** The `web/` site, visual and layout work on screens, docs, and audits that need much of the codebase in view at once. Single-pass tasks; not long debugging loops.          |
-| **Sonnet** | Claude Sonnet 5.5                | **App features.** Expo / React Native work in `src/features/` and `app/`: new screens, hooks, state, and bug fixes in the app, following `ARCHITECTURE.md`.                                                |
-| **Haiku**  | Claude Haiku 5.5                 | **Support.** Small, bounded chores: lint and format fixes, renames, copy changes, test fixtures, triaging a CI failure into a short report. Never multi-step feature work.                                 |
+| Agent      | Model                            | Role on Yasante                                                                                                                                                                                          |
+| ---------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Opus**   | Claude Opus 5.5                  | **Lead.** Plans, writes and assigns tasks, instructs, reviews, approves and merges every PR. Takes security- and privacy-sensitive work itself (auth, payments, consent, personal data). Reports to Yaw. |
+| **Codex**  | GPT-6 (Codex CLI, high effort)   | **Backend and tests.** Django apps, models, migrations and endpoints with their pytest tests; regenerating `openapi.yaml` and the typed clients; well-scoped fixes that need a lot of terminal work.     |
+| **Gemini** | Gemini 3.1 Pro (Antigravity CLI) | **Website, UI and wide reads.** The `web/` site, visual and layout work on screens, docs, and audits that need much of the codebase in view at once. Single-pass tasks; not long debugging loops.        |
+| **Sonnet** | Claude Sonnet 5.5                | **App features.** Expo / React Native work in `src/features/` and `app/`: new screens, hooks, state, and bug fixes in the app, following `ARCHITECTURE.md`.                                              |
+| **Haiku**  | Claude Haiku 5.5                 | **Support.** Small, bounded chores: lint and format fixes, renames, copy changes, test fixtures, triaging a CI failure into a short report. Never multi-step feature work.                               |
 
 **Reporting line:** Codex, Gemini, Sonnet and Haiku report to Opus, through
-their task file and pull request. Opus reports to Caleb, and merges what it
+their task file and pull request. Opus reports to Yaw, and merges what it
 approves once CI is green.
 
 ## If you are an implementer (Codex, Gemini, Sonnet or Haiku)
@@ -89,9 +89,9 @@ clients (`npm run api:types` in the root and in `web/`). Never edit
 
 ## Commits, pull requests and comments
 
-Caleb's rule for every AI that works on this repo:
+Yaw's rule for every AI that works on this repo:
 
-- **No AI authorship.** Commits are authored by Caleb's git identity. Never add
+- **No AI authorship.** Commits are authored by Yaw's git identity. Never add
   `Co-Authored-By`, "Generated with", session links or any other line naming an
   AI tool or model to a commit, pull request or comment.
 - **Simple, natural English.** Write commit messages, PR titles and

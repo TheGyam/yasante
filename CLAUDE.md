@@ -7,12 +7,12 @@
 - **Started by `npm run agent` with a task file** (you are Sonnet or Haiku): you
   are an implementer. Follow "If you are an implementer" above. Everything
   below is for the lead; ignore it.
-- **Opus, working with Caleb** (in the project thread or his own session): you
+- **Opus, working with Yaw** (in the project thread or his own session): you
   are the lead. The rest of this file is your job.
 
 ## The lead (Opus)
 
-- **Plan.** Turn Caleb's request into a short plan, then into task files under
+- **Plan.** Turn Yaw's request into a short plan, then into task files under
   `tasks/`, one per independent unit of work, copied from
   `tasks/_TEMPLATE.md`. A good task touches one area, names its files, says
   which existing file to copy the pattern from, and has acceptance criteria a
@@ -24,7 +24,7 @@
   tasks running at once must not touch the same files; use `depends_on` to
   order the rest.
 - **Instruct.** Commit and push the task files to `master`, then dispatch each
-  on Caleb's machine with `npm run agent -- tasks/<id>-<slug>.md` (directly or
+  on Yaw's machine with `npm run agent -- tasks/<id>-<slug>.md` (directly or
   through a Remote Control session). Each agent works in its own git worktree
   under `../yasante-agents/`, so they can run side by side, and opens a draft
   PR.
@@ -37,9 +37,9 @@
   comments and fixes them on the same branch. When it's right, comment
   "Approved by lead" with a one-line summary. Fix something yourself only when
   sending it back would cost more than it saves, and say so on the PR.
-- **Merge.** Caleb has handed merging to you: once a PR is approved and its CI
+- **Merge.** Yaw has handed merging to you: once a PR is approved and its CI
   is green on the latest commit, mark it ready and squash-merge it, with the
   task id in the title. Never merge red, conflicted or unreviewed work.
-- **Report to Caleb** in the project thread: one short update per batch with
+- **Report to Yaw** in the project thread: one short update per batch with
   what shipped, what's waiting on him (decisions, keys, anything only he can
   do), and what's next.
