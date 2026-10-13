@@ -4,9 +4,9 @@ import { darkSurface } from '@/shared/theme/vars.css';
 
 /** Wide screens get the full stage; below this it stacks into one column. */
 const stageWide = media.large;
-const SILK = 'linear-gradient(100deg, #E9D7F2 0%, #C79CE3 48%, #F2B35C 100%)';
-const INK = '#F6F0F5';
-const MUTED = 'rgba(246,240,245,0.7)';
+const SILK = 'linear-gradient(100deg, #F8D7DE 0%, #FF8FB8 48%, #F4B860 100%)';
+const INK = '#F8F1F4';
+const MUTED = 'rgba(248,241,244,0.7)';
 
 export const stage = style([
   darkSurface,
@@ -20,11 +20,11 @@ export const stage = style([
     borderRadius: 28,
     overflow: 'hidden',
     color: INK,
-    // Ube, lit: a soft purple glow behind her, falling off to deep purple at the edges.
+    // The plum, lit: a berry glow behind her, falling off to aubergine at the edges.
     background: [
-      'radial-gradient(70% 60% at 52% 42%, rgba(199,156,227,0.20), transparent 70%)',
-      'radial-gradient(45% 40% at 88% 12%, rgba(242,179,92,0.16), transparent 70%)',
-      'radial-gradient(120% 95% at 50% 45%, #5E2F7E 0%, #3A1A52 48%, #160B1C 100%)',
+      'radial-gradient(70% 60% at 52% 42%, rgba(255,143,184,0.20), transparent 70%)',
+      'radial-gradient(45% 40% at 88% 12%, rgba(244,184,96,0.16), transparent 70%)',
+      'radial-gradient(120% 95% at 50% 45%, #7C1A45 0%, #4C0C2A 48%, #22060F 100%)',
     ].join(', '),
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
     '@media': {
@@ -120,8 +120,8 @@ export const tick = style({
   width: 20,
   height: 20,
   borderRadius: '50%',
-  background: '#F2B35C',
-  color: '#2A1238',
+  background: '#F4B860',
+  color: '#2A0716',
 });
 
 export const title = style({
@@ -142,7 +142,7 @@ export const silk = style({
   WebkitBackgroundClip: 'text',
   color: 'transparent',
   // the gradient's own glow, faint, as on the film's stressed words
-  filter: 'drop-shadow(0 0 22px rgba(199,156,227,0.28))',
+  filter: 'drop-shadow(0 0 22px rgba(255,143,184,0.28))',
 });
 
 export const lede = style({
@@ -181,7 +181,7 @@ export const primary = style({
   height: 56,
   padding: '0 26px',
   borderRadius: 999,
-  background: '#120B14',
+  background: '#140A0F',
   border: '1px solid rgba(255,255,255,0.08)',
   color: INK,
   fontSize: 15,
@@ -189,7 +189,7 @@ export const primary = style({
   letterSpacing: '0.03em',
   textTransform: 'uppercase',
   selectors: {
-    '&:hover': { background: '#21142A', transform: 'translateY(-1px)' },
+    '&:hover': { background: '#22121A', transform: 'translateY(-1px)' },
     '&:active': { transform: 'scale(0.97)' },
   },
 });
@@ -204,7 +204,7 @@ export const watch = style({
   borderRadius: 999,
   border: '1px solid rgba(255,255,255,0.18)',
   // dark glass: it sits on her white tee on wide screens
-  background: 'rgba(30,14,42,0.5)',
+  background: 'rgba(34,6,15,0.5)',
   backdropFilter: 'blur(12px)',
   cursor: 'pointer',
   selectors: { '&:hover': { borderColor: 'rgba(255,255,255,0.36)' } },
@@ -216,9 +216,9 @@ export const play = style({
   width: 44,
   height: 44,
   borderRadius: '50%',
-  background: '#F2B35C',
-  color: '#2A1238',
-  boxShadow: '0 6px 18px rgba(242,179,92,0.35)',
+  background: '#F4B860',
+  color: '#2A0716',
+  boxShadow: '0 6px 18px rgba(244,184,96,0.35)',
 });
 
 export const watchLabel = style({
@@ -243,14 +243,14 @@ export const readout = style({
   '@media': { [stageWide]: { display: 'flex' } },
 });
 
-export const dot = style({ width: 7, height: 7, borderRadius: '50%', background: '#F2B35C' });
+export const dot = style({ width: 7, height: 7, borderRadius: '50%', background: '#F4B860' });
 
 export const track = style({
   position: 'relative',
   width: 100,
   height: 1,
   margin: '0 4px',
-  background: 'rgba(246,240,245,0.3)',
+  background: 'rgba(248,241,244,0.3)',
 });
 
 export const knob = style({
@@ -261,7 +261,7 @@ export const knob = style({
   height: 9,
   borderRadius: '50%',
   background: INK,
-  boxShadow: '0 0 0 4px rgba(246,240,245,0.12)',
+  boxShadow: '0 0 0 4px rgba(248,241,244,0.12)',
 });
 
 export const value = style({ minWidth: '9ch', color: INK, fontVariantNumeric: 'tabular-nums' });
@@ -282,7 +282,7 @@ export const eye = style({
   width: 46,
   height: 46,
   borderRadius: '50%',
-  border: '1.5px solid rgba(246,240,245,0.75)',
+  border: '1.5px solid rgba(248,241,244,0.75)',
 });
 
 export const pupil = style({
@@ -321,7 +321,7 @@ globalStyle(`${avatars} > li`, {
   marginLeft: -10,
   borderRadius: '50%',
   overflow: 'hidden',
-  border: '2px solid #3A1A52',
+  border: '2px solid #4C0C2A',
 });
 globalStyle(`${avatars} > li:first-child`, { marginLeft: 0 });
 globalStyle(`${avatars} img`, { width: '100%', height: '100%', objectFit: 'cover' });
@@ -329,8 +329,8 @@ globalStyle(`${avatars} img`, { width: '100%', height: '100%', objectFit: 'cover
 export const you = style({
   display: 'grid',
   placeItems: 'center',
-  background: '#F2B35C',
-  color: '#2A1238',
+  background: '#F4B860',
+  color: '#2A0716',
   fontSize: 11,
   fontWeight: weight.bold,
 });
@@ -379,7 +379,7 @@ export const card = style({
   background: 'linear-gradient(160deg, rgba(255,255,255,0.16), rgba(255,255,255,0.04) 60%)',
   border: '1px solid rgba(255,255,255,0.14)',
   borderTopColor: 'rgba(255,255,255,0.28)',
-  boxShadow: '0 18px 40px rgba(16,6,22,0.35)',
+  boxShadow: '0 18px 40px rgba(20,4,12,0.35)',
   backdropFilter: 'blur(14px) saturate(1.3)',
   transition: `transform 250ms ${EASE_OUT}`,
   selectors: { '&:hover': { transform: 'translateY(-4px)' } },
@@ -426,7 +426,7 @@ export const go = style({
   padding: '0 12px',
   borderRadius: 999,
   background: INK,
-  color: '#160B1C',
+  color: '#22060F',
   fontSize: 11,
   fontWeight: weight.bold,
   letterSpacing: '0.06em',
