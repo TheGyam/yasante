@@ -18,12 +18,14 @@ const LINKS = [
     detail: '@yasantebeauty',
     href: 'https://www.instagram.com/yasantebeauty/',
     icon: <SocialIcon platform="instagram" />,
+    external: true,
   },
   {
     label: 'TikTok',
     detail: '@yasante_beauty',
     href: 'https://www.tiktok.com/@yasante_beauty',
     icon: <SocialIcon platform="tiktok" />,
+    external: true,
   },
 ];
 
@@ -46,7 +48,12 @@ export function LinksScreen() {
           </header>
           <nav className={styles.links} aria-label="Find Yasante">
             {LINKS.map(link => (
-              <a key={link.href} href={link.href} className={styles.link}>
+              <a
+                key={link.href}
+                href={link.href}
+                className={styles.link}
+                {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              >
                 <Glass className={styles.card}>
                   <span className={styles.icon}>{link.icon}</span>
                   <span className={styles.label}>

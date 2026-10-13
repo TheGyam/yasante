@@ -19,6 +19,8 @@ export function SiteFooter({ links }: SiteFooterProps) {
             className={styles.socialLink}
             href="https://www.instagram.com/yasantebeauty/"
             aria-label="Yasante on Instagram"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             <SocialIcon platform="instagram" />
           </a>
@@ -26,6 +28,8 @@ export function SiteFooter({ links }: SiteFooterProps) {
             className={styles.socialLink}
             href="https://www.tiktok.com/@yasante_beauty"
             aria-label="Yasante on TikTok"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             <SocialIcon platform="tiktok" />
           </a>

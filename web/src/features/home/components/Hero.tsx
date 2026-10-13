@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { ArrowRight, ArrowUpLeft, Check, Play } from 'lucide-react';
+import { ArrowRight, Check, Play } from 'lucide-react';
 import { useReducedMotion } from '@/shared/theme/useReducedMotion';
 import { Link } from '@/shared/ui/Link';
 import { describeAngle, startGaze } from '../gaze';
@@ -32,7 +32,7 @@ const CARDS = [
 const TURN = { chin: 0.63, collar: 0.77, pivot: 0.5, amount: 0.09 };
 
 /**
- * The landing page's first screen. Ama turns to look wherever the pointer goes (on a phone
+ * The landing page's first screen. Nana Ama turns to look wherever the pointer goes (on a phone
  * she looks around by herself until touched); see ../gaze.ts and ../turn.ts. The painting
  * shows at once as a plain image; the turning canvas takes over once it's ready.
  */
@@ -118,8 +118,8 @@ export function Hero({ onWatch }: { onWatch: () => void }) {
           <span className={styles.silk}>Wear it.</span>
         </h1>
         <p className={styles.lede}>
-          Meet Ama: two braids, a middle part, and opinions about your edges.{' '}
-          <span className={styles.hoverOnly}>Move your cursor: she’s watching.</span>
+          Meet Nana Ama: two braids, a middle part, and opinions about your edges.{' '}
+          <span className={styles.hoverOnly}>Say hi, she’s already looking your way.</span>
           <span className={styles.touchOnly}>Drag across her: she’ll follow.</span> Yasante shows
           you styles on hair like yours, the stylist who did them, and what they used.
         </p>
@@ -152,20 +152,6 @@ export function Hero({ onWatch }: { onWatch: () => void }) {
             </span>
           </p>
         </div>
-      </div>
-
-      <div className={styles.badge} aria-hidden>
-        <svg viewBox="0 0 120 120" className={styles.ring}>
-          <defs>
-            <path id="hero-badge-path" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0" />
-          </defs>
-          <text className={styles.ringText}>
-            <textPath href="#hero-badge-path">Move your cursor · She’s looking too ·</textPath>
-          </text>
-        </svg>
-        <span className={styles.arrow}>
-          <ArrowUpLeft size={18} strokeWidth={2} />
-        </span>
       </div>
 
       <div className={styles.crowd}>

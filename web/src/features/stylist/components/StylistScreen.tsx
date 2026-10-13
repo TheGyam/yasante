@@ -57,7 +57,7 @@ export function StylistScreen({ handle }: { handle: string }) {
           title={isNotFound(error) ? 'No page here' : 'Couldn’t load this page'}
           body={
             isNotFound(error)
-              ? `Nobody on Yasante goes by @${handle}. Check the spelling, or look through the braiders’ work instead.`
+              ? `Nobody on Yasante goes by @${handle}. Check the spelling, or look through the stylists’ work instead.`
               : errorMessage(error, 'Please try again in a moment.')
           }
           action={
@@ -87,7 +87,7 @@ function Stylist({ page }: { page: StylistPage }) {
   return (
     <Page
       title={`${profile.displayName} (@${profile.handle})`}
-      description={`${profile.bio?.slice(0, 150) || 'Braider'} · ${profile.baseArea}`}
+      description={`${profile.bio?.slice(0, 150) || 'Stylist'} · ${profile.baseArea}`}
     >
       <div className={styles.layout}>
         <aside className={styles.aside}>
