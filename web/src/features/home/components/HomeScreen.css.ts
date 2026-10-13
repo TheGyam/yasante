@@ -6,8 +6,8 @@ import { HEADER_HEIGHT } from '@/shared/ui/SiteHeader.css';
 /** Petal to amber: the dark theme's own pastels, the light theme's deeper pair on white. */
 const SILK = `linear-gradient(100deg, ${vars.color.accent} 10%, ${vars.color.gold} 100%)`;
 const PLUM = [
-  'radial-gradient(70% 80% at 85% 0%, rgba(244,184,96,0.14), transparent 70%)',
-  'radial-gradient(110% 100% at 20% 100%, #6E1740 0%, #3E0A22 55%, #1E0610 100%)',
+  'radial-gradient(70% 80% at 85% 0%, rgba(242,179,92,0.14), transparent 70%)',
+  'radial-gradient(110% 100% at 20% 100%, #5A2C78 0%, #341848 55%, #140A1A 100%)',
 ].join(', ');
 
 export const block = style({
@@ -78,8 +78,8 @@ export const pill = style({
 export const light = style({
   ...pillBase,
   justifySelf: 'start',
-  background: '#F8F1F4',
-  color: '#22060F',
+  background: '#F6F0F5',
+  color: '#160B1C',
 });
 
 export const sides = style({
@@ -96,7 +96,7 @@ export const panel = style([
     gap: space.xl,
     padding: space.xxl,
     borderRadius: 28,
-    color: '#F8F1F4',
+    color: '#F6F0F5',
     background: PLUM,
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
     '@media': { [media.wide]: { padding: 36 } },
@@ -105,7 +105,7 @@ export const panel = style([
 
 export const panelKicker = style({
   margin: 0,
-  color: '#F4B860',
+  color: '#F2B35C',
   fontSize: 12,
   fontWeight: weight.bold,
   letterSpacing: '0.1em',
@@ -133,8 +133,8 @@ export const icon = style({
   width: 40,
   height: 40,
   borderRadius: '50%',
-  background: 'rgba(255,143,184,0.16)',
-  color: '#FF8FB8',
+  background: 'rgba(199,156,227,0.16)',
+  color: '#C79CE3',
 });
 
 export const pointText = style({ display: 'grid', gap: 4 });
@@ -143,7 +143,7 @@ export const pointTitle = style({
   fontWeight: weight.bold,
   letterSpacing: '-0.015em',
 });
-export const pointBody = style({ color: 'rgba(248,241,244,0.7)', fontSize: 14, lineHeight: 1.5 });
+export const pointBody = style({ color: 'rgba(246,240,245,0.7)', fontSize: 14, lineHeight: 1.5 });
 
 export const join = style([
   darkSurface,
@@ -153,7 +153,7 @@ export const join = style([
     marginTop: space.huge,
     padding: space.xxl,
     borderRadius: 32,
-    color: '#F8F1F4',
+    color: '#F6F0F5',
     background: PLUM,
     scrollMarginTop: HEADER_HEIGHT + space.xxl,
     '@media': {
@@ -167,7 +167,7 @@ export const joinText = style({ display: 'grid', gap: space.sm });
 export const joinBody = style({
   maxWidth: '40ch',
   margin: `${space.md}px 0 0`,
-  color: 'rgba(248,241,244,0.72)',
+  color: 'rgba(246,240,245,0.72)',
 });
 
 export const form = style({
