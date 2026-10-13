@@ -2,7 +2,7 @@
 id: 002
 slug: homepage-copy
 assignee: sonnet # codex | gemini | sonnet | haiku | opus
-status: review # draft | ready | in-progress | review | blocked | done
+status: done # draft | ready | in-progress | review | blocked | done
 branch: agent/sonnet/002-homepage-copy
 depends_on: []
 ---
