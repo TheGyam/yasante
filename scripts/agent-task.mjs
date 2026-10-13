@@ -165,9 +165,7 @@ rmSync(reviewFile, { force: true });
 
 run('git', ['add', '-A'], { cwd: worktree });
 if (out('git', ['diff', '--cached', '--quiet'], { cwd: worktree }) === null) {
-  const message = revise
-    ? `${title}: changes after review`
-    : title;
+  const message = revise ? `${title}: changes after review` : title;
   run('git', ['commit', '-m', message], { cwd: worktree });
 }
 if (out('git', ['rev-list', '--count', `${base}..HEAD`], { cwd: worktree }) === '0') {
