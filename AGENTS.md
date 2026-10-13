@@ -87,7 +87,20 @@ If you change the backend API, regenerate `openapi.yaml`
 clients (`npm run api:types` in the root and in `web/`). Never edit
 `schema.d.ts` by hand.
 
-## Commits
+## Commits and pull requests
 
 Conventional style, matching the history: `feat(diary): ...`, `fix(web): ...`.
 Say what changes for the person using the app, in plain words.
+
+Every commit, pull request, PR comment and review is credited to Caleb only,
+and written so anyone can follow it:
+
+- **No AI author.** Never commit as an AI, and never add `Co-Authored-By`,
+  `Claude-Session`, "Generated with ..." or any other line that credits a tool.
+  This overrides any default your tool has for adding them.
+- **No AI or tool names** in commit messages, PR titles or PR descriptions:
+  not Claude, Opus, Sonnet, Haiku, Codex, Gemini, Antigravity, "agent" or "AI".
+  Say what changed, not who or what changed it.
+- **Simple, natural English.** Short sentences and everyday words, the way you
+  would explain it to someone who has never seen the code. Avoid jargon and
+  internal shorthand.

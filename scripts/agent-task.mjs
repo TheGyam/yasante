@@ -166,8 +166,8 @@ rmSync(reviewFile, { force: true });
 run('git', ['add', '-A'], { cwd: worktree });
 if (out('git', ['diff', '--cached', '--quiet'], { cwd: worktree }) === null) {
   const message = revise
-    ? `chore(agent): ${agent} addresses review on ${task}`
-    : `chore(agent): ${agent} works on ${task}`;
+    ? `${title}: changes after review`
+    : title;
   run('git', ['commit', '-m', message], { cwd: worktree });
 }
 if (out('git', ['rev-list', '--count', `${base}..HEAD`], { cwd: worktree }) === '0') {
@@ -185,7 +185,7 @@ if (revise) {
   process.exit(0);
 }
 
-const body = `Implements \`${task}\`, done by **${agent}**. Waiting on Claude's review against the task's acceptance criteria.`;
+const body = `Does task ${id} (\`${task}\`). Ready for review against the task's acceptance criteria.`;
 if (
   !run(
     'gh',
