@@ -11,8 +11,8 @@ from django.core.mail import EmailMultiAlternatives
 
 logger = logging.getLogger(__name__)
 
-PINK = "#C79CE3"
-INK = "#100A0F"
+PINK = "#FF8FB8"
+INK = "#0B0709"
 SOFT = "#6E5C65"
 PAPER = "#FFF7FA"
 # The app icon, hosted with the site (web/public/email-icon.png): mail apps need a full address.

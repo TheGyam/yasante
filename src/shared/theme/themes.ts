@@ -5,8 +5,8 @@ import type { BlurTint } from 'expo-blur';
  * exact references, so anything keyed on the theme (styles, memoised values) is
  * stable until the colour scheme actually changes.
  *
- * Palette: Ube, a warm creamy purple with amber beside it, named after the purple
- * yam. Glass is a translucent fill with a lighter top edge;
+ * Palette: an aubergine ground carrying warm rose and amber glows — the Yasante
+ * plum, lit rather than flat. Glass is a translucent fill with a lighter top edge;
  * real blur is reserved for chrome (tab bar, headers, sheets).
  */
 export interface Theme {
@@ -53,32 +53,32 @@ export const darkTheme: Theme = {
   statusBar: 'light',
   blurTint: 'systemThinMaterialDark',
   colors: {
-    bg: '#100A0F',
+    bg: '#0B0709',
     glass: {
       fill: 'rgba(255,255,255,0.06)',
       fillStrong: 'rgba(255,255,255,0.12)',
       border: 'rgba(255,255,255,0.09)',
       highlight: 'rgba(255,255,255,0.18)',
-      chromeTint: 'rgba(20,12,19,0.35)',
-      chromeSolid: 'rgba(26,17,25,0.94)',
+      chromeTint: 'rgba(18,10,14,0.35)',
+      chromeSolid: 'rgba(24,15,20,0.94)',
     },
     text: {
-      primary: '#F6F0F5',
-      secondary: 'rgba(246,240,245,0.66)',
-      tertiary: 'rgba(246,240,245,0.42)',
-      onAccent: '#1D0F28',
+      primary: '#F8F1F4',
+      secondary: 'rgba(248,241,244,0.66)',
+      tertiary: 'rgba(248,241,244,0.42)',
+      onAccent: '#1C0912',
     },
-    accent: '#C79CE3',
-    accentSoft: 'rgba(199,156,227,0.16)',
-    gold: '#F2B35C',
+    accent: '#FF8FB8',
+    accentSoft: 'rgba(255,143,184,0.16)',
+    gold: '#F4B860',
     success: '#5ED6A2',
     successSoft: 'rgba(94,214,162,0.14)',
-    warning: '#F2B35C',
-    warningSoft: 'rgba(242,179,92,0.14)',
+    warning: '#F4B860',
+    warningSoft: 'rgba(244,184,96,0.14)',
     danger: '#FF6B7A',
     dangerSoft: 'rgba(255,107,122,0.14)',
     separator: 'rgba(255,255,255,0.07)',
-    scrim: 'rgba(6,3,6,0.62)',
+    scrim: 'rgba(5,3,4,0.62)',
   },
 };
 
@@ -87,23 +87,23 @@ export const lightTheme: Theme = {
   statusBar: 'dark',
   blurTint: 'systemThinMaterialLight',
   colors: {
-    bg: '#F8F3F1',
+    bg: '#F7F2F4',
     glass: {
       fill: 'rgba(255,255,255,0.62)',
       fillStrong: 'rgba(255,255,255,0.9)',
-      border: 'rgba(38,20,48,0.07)',
+      border: 'rgba(40,16,26,0.07)',
       highlight: 'rgba(255,255,255,0.95)',
       chromeTint: 'rgba(255,255,255,0.45)',
       chromeSolid: 'rgba(255,255,255,0.96)',
     },
     text: {
-      primary: '#1A1220',
-      secondary: 'rgba(26,18,32,0.62)',
-      tertiary: 'rgba(26,18,32,0.42)',
+      primary: '#1B0E14',
+      secondary: 'rgba(27,14,20,0.62)',
+      tertiary: 'rgba(27,14,20,0.42)',
       onAccent: '#FFFFFF',
     },
-    accent: '#7A3E9F',
-    accentSoft: 'rgba(122,62,159,0.10)',
+    accent: '#B8336A',
+    accentSoft: 'rgba(184,51,106,0.10)',
     gold: '#A86C12',
     success: '#1F8F62',
     successSoft: 'rgba(31,143,98,0.10)',
@@ -111,7 +111,7 @@ export const lightTheme: Theme = {
     warningSoft: 'rgba(168,108,18,0.10)',
     danger: '#C7303F',
     dangerSoft: 'rgba(199,48,63,0.09)',
-    separator: 'rgba(26,18,32,0.07)',
-    scrim: 'rgba(26,18,32,0.42)',
+    separator: 'rgba(27,14,20,0.07)',
+    scrim: 'rgba(27,14,20,0.42)',
   },
 };
