@@ -10,13 +10,6 @@ python web/scripts/hero/paint.py /tmp/ama.png "<prompt>"
 python web/scripts/hero/ama.py /tmp/ama.png --model depth-anything-v2-small.onnx --ffmpeg ffmpeg
 ```
 
-Then clean the old background out of the flyaways around her braids, which `ama.py` keeps
-where her curls close it in:
-
-```bash
-python web/scripts/hero/fringe.py
-```
-
 The prompt she was painted from is in `ama-prompt.txt`. Paint her on one flat background
 colour, head and braids clear of the edges, so `ama.py` can cut her out. The depth model
 is [Depth Anything V2 Small](https://huggingface.co/onnx-community/depth-anything-v2-small)

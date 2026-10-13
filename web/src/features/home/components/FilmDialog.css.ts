@@ -12,11 +12,11 @@ export const dialog = style({
   border: 0,
   borderRadius: 24,
   overflow: 'visible',
-  background: '#100A0F',
+  background: '#0B0709',
   boxShadow: '0 30px 80px rgba(0,0,0,0.6)',
   selectors: {
     '&[open]': { animation: `${enter} 300ms ${EASE_OUT}` },
-    '&::backdrop': { background: 'rgba(6,3,6,0.78)', backdropFilter: 'blur(6px)' },
+    '&::backdrop': { background: 'rgba(5,3,4,0.78)', backdropFilter: 'blur(6px)' },
   },
   '@media': { [media.reducedMotion]: { selectors: { '&[open]': { animation: 'none' } } } },
 });
@@ -27,7 +27,7 @@ export const video = style({
   height: 'auto',
   aspectRatio: '1',
   borderRadius: 24,
-  background: '#100A0F',
+  background: '#0B0709',
 });
 
 export const close = style({
@@ -40,7 +40,7 @@ export const close = style({
   height: 40,
   borderRadius: '50%',
   border: '1px solid rgba(255,255,255,0.2)',
-  background: '#1A1220',
-  color: '#F6F0F5',
+  background: '#1C0F16',
+  color: '#F8F1F4',
   cursor: 'pointer',
 });
