@@ -1,4 +1,4 @@
-import { globalStyle, keyframes, style } from '@vanilla-extract/css';
+import { globalStyle, style } from '@vanilla-extract/css';
 import { EASE_OUT, media, weight } from '@/shared/theme/tokens';
 import { darkSurface } from '@/shared/theme/vars.css';
 
@@ -266,7 +266,7 @@ export const knob = style({
 
 export const value = style({ minWidth: '9ch', color: INK, fontVariantNumeric: 'tabular-nums' });
 
-// ---------------------------------------------------------------- the eye, the badge
+// ---------------------------------------------------------------- the eye
 const desktopOnly = {
   display: 'none',
   '@media': { [`${stageWide} and (hover: hover)`]: { display: 'grid' } },
@@ -291,51 +291,6 @@ export const pupil = style({
   borderRadius: '50%',
   background: INK,
   transform: 'translateX(calc(var(--gaze, 0) * 11px))',
-});
-
-const spin = keyframes({ to: { transform: 'rotate(360deg)' } });
-
-export const badge = style({
-  ...desktopOnly,
-  position: 'absolute',
-  zIndex: 2,
-  left: '37%',
-  bottom: 30,
-  placeItems: 'center',
-  width: 116,
-  height: 116,
-  borderRadius: '50%',
-  // dark glass, like the button beside it, over her shoulder
-  background: 'rgba(34,6,15,0.5)',
-  backdropFilter: 'blur(12px)',
-});
-
-export const ring = style({
-  position: 'absolute',
-  inset: 0,
-  width: '100%',
-  height: '100%',
-  overflow: 'visible',
-  animation: `${spin} 22s linear infinite`,
-  '@media': { [media.reducedMotion]: { animation: 'none' } },
-});
-
-export const ringText = style({
-  fill: 'rgba(248,241,244,0.82)',
-  fontSize: 9.5,
-  fontWeight: weight.bold,
-  letterSpacing: '0.24em',
-  textTransform: 'uppercase',
-});
-
-export const arrow = style({
-  display: 'grid',
-  placeItems: 'center',
-  width: 40,
-  height: 40,
-  borderRadius: '50%',
-  border: '1px solid rgba(248,241,244,0.4)',
-  transform: 'rotate(calc(45deg + var(--gaze, 0) * -70deg))',
 });
 
 // ---------------------------------------------------------------- right: the crowd, the cards

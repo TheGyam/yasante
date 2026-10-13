@@ -30,8 +30,8 @@ export function AreaScreen({ slug }: { slug: string }) {
 
   return (
     <Listing
-      title={`Braiders in ${name}`}
-      intro={`Braiders based in ${name}, and their work.`}
+      title={`Stylists in ${name}`}
+      intro={`Stylists based in ${name}, and their work.`}
       looks={{ area: name }}
       stylists={{ area: name }}
     />

@@ -20,7 +20,7 @@ export function StyleScreen({ slug }: { slug: string }) {
   return (
     <Listing
       title={`${style.name} in London`}
-      intro={`${style.name} by braiders on Yasante, on real hair.`}
+      intro={`${style.name} by stylists on Yasante, on real hair.`}
       looks={{ style: slug }}
       stylists={{ style: slug }}
     />

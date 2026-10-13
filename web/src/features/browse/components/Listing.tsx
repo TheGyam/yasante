@@ -33,7 +33,7 @@ export function Listing({ title, intro, looks, stylists }: ListingProps) {
 
       {!!found?.length && (
         <>
-          <SectionHeader title="Braiders" />
+          <SectionHeader title="Stylists" />
           <Glass radius="lg" style={{ overflow: 'hidden' }}>
             {found.slice(0, 20).map(stylist => (
               <StylistRow key={stylist.accountId} stylist={stylist} />
