@@ -9,12 +9,13 @@ The query keys in `seeds` are the ones the site's features read with (web/src/fe
 """
 
 from django.conf import settings
+from django.db.models import Prefetch
 from django.http import Http404, HttpResponse, JsonResponse
 from django.urls import reverse
 from django.utils.text import slugify
 from django.views.decorators.cache import cache_control
 
-from apps.looks.models import Look, Style
+from apps.looks.models import Look, LookPhoto, Style
 from apps.looks.serializers import present_looks, with_viewer_flags
 from apps.profiles.models import PolicyDocument
 from apps.profiles.views import present_policy
@@ -93,7 +94,9 @@ def stylist(request, handle):
 
 @public
 def look(request, pk):
-    item = with_viewer_flags(Look.objects.prefetch_related("styles", "products"), None).filter(
+    item = with_viewer_flags(Look.objects.prefetch_related(
+        "styles", "products", Prefetch("photos", queryset=LookPhoto.objects.order_by("position"))
+    ), None).filter(
         pk=pk, **LIVE_LOOKS
     ).first()
     if item is None:

@@ -4464,6 +4464,10 @@ components:
     Look:
       type: object
       properties:
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/LookPhoto'
         id:
           type: string
         authorId:
@@ -4536,6 +4540,7 @@ components:
       - liked
       - mine
       - photoUri
+      - photos
       - products
       - saveCount
       - saved
@@ -4547,6 +4552,12 @@ components:
         photoUri:
           type: string
           minLength: 1
+        photoUris:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: One to five upload addresses, in display order
         thumbUri:
           type: string
           minLength: 1
@@ -4583,8 +4594,22 @@ components:
           type: string
           minLength: 1
       required:
-      - photoUri
       - styles
+    LookPhoto:
+      type: object
+      properties:
+        uri:
+          type: string
+        thumbUri:
+          type: string
+        feedUri:
+          type: string
+        aspect:
+          type: number
+          format: double
+      required:
+      - aspect
+      - uri
     LookStylist:
       type: object
       properties:

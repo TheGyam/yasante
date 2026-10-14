@@ -2638,6 +2638,7 @@ export interface components {
             refreshToken?: string;
         };
         Look: {
+            photos: components["schemas"]["LookPhoto"][];
             id: string;
             authorId: string;
             authorName: string;
@@ -2670,7 +2671,9 @@ export interface components {
             mine: boolean;
         };
         LookCreateRequestRequest: {
-            photoUri: string;
+            photoUri?: string;
+            /** @description One to five upload addresses, in display order */
+            photoUris?: string[];
             thumbUri?: string;
             feedUri?: string;
             /** Format: double */
@@ -2684,6 +2687,13 @@ export interface components {
             productIds?: string[];
             visibility?: components["schemas"]["VisibilityEnum"];
             hairTexture?: string;
+        };
+        LookPhoto: {
+            uri: string;
+            thumbUri?: string;
+            feedUri?: string;
+            /** Format: double */
+            aspect: number;
         };
         LookStylist: {
             id: string;

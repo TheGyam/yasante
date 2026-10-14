@@ -7,7 +7,7 @@ and the reports on it are answered.
 from django.contrib import admin, messages
 from django.utils import timezone
 
-from .models import Appeal, Block, Look, LookComment, LookLike, ModerationAction, Report, Style
+from .models import Appeal, Block, Look, LookComment, LookLike, LookPhoto, ModerationAction, Report, Style
 from .moderation import moderate
 
 
@@ -28,8 +28,19 @@ class StyleAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
 
+class LookPhotoInline(admin.TabularInline):
+    model = LookPhoto
+    extra = 0
+    can_delete = False
+    readonly_fields = ("position", "photo_uri", "thumb_uri", "feed_uri", "aspect", "created_at")
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Look)
 class LookAdmin(admin.ModelAdmin):
+    inlines = [LookPhotoInline]
     list_display = ("author", "caption", "status", "visibility", "like_count", "comment_count", "created_at")
     list_filter = ("status", "visibility", "type")
     search_fields = ("author__name", "caption")
@@ -50,6 +61,7 @@ class LookAdmin(admin.ModelAdmin):
 
 @admin.register(LookComment)
 class LookCommentAdmin(LookAdmin):
+    inlines = []
     list_display = ("author", "look", "body", "status", "like_count", "created_at")
     list_filter = ("status",)
     search_fields = ("body", "author__name")

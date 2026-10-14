@@ -245,6 +245,15 @@ def look(item, data):
     }
     return content, graph(
         image,
+        *[
+            {
+                **image,
+                "@id": absolute(path) + f"#image-{position}",
+                "contentUrl": photo["uri"],
+                "thumbnailUrl": photo["thumb_uri"] or photo["feed_uri"] or photo["uri"],
+            }
+            for position, photo in enumerate(data["photos"][1:], start=2)
+        ],
         breadcrumbs(("Yasante", "/"), ("Looks", "/looks"), (content["title"], path)),
     )
 

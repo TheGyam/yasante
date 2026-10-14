@@ -63,6 +63,9 @@ def preview(request, queue, obj):
             "url": f"{workspace_url(obj._meta.label_lower)}/{obj.pk}"}
     if queue == "reports":
         data.update(title=obj.get_reason_display(), text=obj.note, content=content(request, obj.content_object))
+        target = obj.content_object
+        if target is not None and target._meta.label_lower == "looks.look" and "url" in data["content"]:
+            data["images"] = [image(request, photo) for photo in target.photos.all()] or [image(request, target)]
         times = type(obj).objects.filter(content_type=obj.content_type, object_id=obj.object_id).count()
         data["facts"] = [f"Reported by {obj.reporter.name}", "First report" if times == 1 else f"Reported {times} times"]
     elif queue == "review-reports":
