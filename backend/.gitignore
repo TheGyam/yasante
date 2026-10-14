@@ -50,3 +50,8 @@ Thumbs.db
 
 # The website's build (npm run build in web/): made in CI and on deploy, never committed.
 apps/web/static/site/
+
+# Temporary folders and result files that test runs can leave behind.
+.pytest-*/
+.test-*/
+.test-results*.txt
