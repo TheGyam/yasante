@@ -223,9 +223,7 @@ def look(item, data):
         "price": money(item.price, item.from_price) if item.price else "",
         "posted": item.created_at,
     }
-    photos = [photo["feed_uri"] or photo["uri"] for photo in data["photos"]]
     image = {
-        "image": photos if len(photos) > 1 else photos[0],
         "@type": "ImageObject",
         "@id": absolute(path) + "#image",
         "contentUrl": item.photo_uri,
@@ -247,6 +245,15 @@ def look(item, data):
     }
     return content, graph(
         image,
+        *[
+            {
+                **image,
+                "@id": absolute(path) + f"#image-{position}",
+                "contentUrl": photo["uri"],
+                "thumbnailUrl": photo["thumb_uri"] or photo["feed_uri"] or photo["uri"],
+            }
+            for position, photo in enumerate(data["photos"][1:], start=2)
+        ],
         breadcrumbs(("Yasante", "/"), ("Looks", "/looks"), (content["title"], path)),
     )
 

@@ -435,18 +435,45 @@ def test_moderation_sees_all_photos_safely(make_user, make_look):
 @pytest.mark.parametrize("count", [0, 1, 3])
 def test_seo_lists_photos_and_keeps_cover(make_user, make_look, count):
     from apps.looks.models import LookPhoto
-    from apps.looks.serializers import present_looks
-    from apps.web import seo
+    from .test_seo import html, jsonld, root
 
-    look = make_look(make_user())
+    look = make_look(make_user(name="Efua Mensah"), caption="My braids",
+                     thumb_uri="https://example.com/thumb.jpg", feed_uri="https://example.com/feed.jpg")
     for i in reversed(range(count)):
-        LookPhoto.objects.create(look=look, position=i, photo_uri=f"https://example.com/{i}.jpg",
-                                 feed_uri=f"https://example.com/feed{i}.jpg" if i else "")
-    content, graph = seo.look(look, present_looks([look], None)[0])
-    expected = ["https://example.com/0.jpg"] + [f"https://example.com/feed{i}.jpg" for i in range(1, count)]
-    assert content["image"] == look.photo_uri
-    image = next(item for item in graph[0]["@graph"] if item["@type"] == "ImageObject")
-    assert image["image"] == (expected if count > 1 else expected[0] if count else look.photo_uri)
+        LookPhoto.objects.create(
+            look=look, position=i, photo_uri=f"https://example.com/{i}.jpg" if i else look.photo_uri,
+            thumb_uri=look.thumb_uri if i == 0 else "",
+            feed_uri=f"https://example.com/feed{i}.jpg" if i == 1 else "",
+        )
+    body = html(f"/looks/{look.pk}")
+    assert f'src="{look.feed_uri}"' in root(body)
+    assert f'<meta property="og:image" content="{look.feed_uri}">' in body
+    images = [item for item in jsonld(body) if item["@type"] == "ImageObject"]
+    cover = {
+        "@type": "ImageObject",
+        "@id": f"https://yasante.com/looks/{look.pk}#image",
+        "contentUrl": look.photo_uri,
+        "thumbnailUrl": look.thumb_uri,
+        "name": "Knotless braids",
+        "description": look.caption,
+        "uploadDate": look.created_at.isoformat(),
+        "keywords": "Knotless braids",
+        "creator": {"@type": "Person", "name": "Efua"},
+        "creditText": "Yasante",
+        "copyrightNotice": "Yasante",
+        "acquireLicensePage": "https://yasante.com/terms",
+        "license": "https://yasante.com/terms",
+        "isPartOf": {"@id": "https://yasante.com/#website"},
+    }
+    assert images == [cover] + [
+        {
+            **cover,
+            "@id": f"https://yasante.com/looks/{look.pk}#image-{i + 1}",
+            "contentUrl": f"https://example.com/{i}.jpg",
+            "thumbnailUrl": f"https://example.com/feed{i}.jpg" if i == 1 else f"https://example.com/{i}.jpg",
+        }
+        for i in range(1, count)
+    ]
 
 
 @pytest.mark.django_db(transaction=True)
