@@ -1,9 +1,9 @@
 ---
 id: 003
 slug: look-photos-backend
-assignee: sonnet # codex | gemini | sonnet | haiku | opus
+assignee: codex # codex | gemini | sonnet | haiku | opus
 status: ready # draft | ready | in-progress | review | blocked | done
-branch: agent/sonnet/003-look-photos-backend
+branch: agent/codex/003-look-photos-backend
 depends_on: []
 ---
 

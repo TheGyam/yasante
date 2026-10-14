@@ -1,9 +1,9 @@
 ---
 id: 006
 slug: feature-switches-backend
-assignee: sonnet # codex | gemini | sonnet | haiku | opus
+assignee: codex # codex | gemini | sonnet | haiku | opus
 status: ready # draft | ready | in-progress | review | blocked | done
-branch: agent/sonnet/006-feature-switches-backend
+branch: agent/codex/006-feature-switches-backend
 depends_on: [003]
 ---
 
