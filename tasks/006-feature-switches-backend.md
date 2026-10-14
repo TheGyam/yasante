@@ -2,7 +2,7 @@
 id: 006
 slug: feature-switches-backend
 assignee: codex # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+status: blocked # draft | ready | in-progress | review | blocked | done
 branch: agent/codex/006-feature-switches-backend
 depends_on: [003]
 ---
@@ -101,10 +101,27 @@ npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts
 
 ## Report to the lead
 
-_Filled in by the assignee when it sets `status: review` or `blocked`._
-
-- **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
-- **Unsure about:**
-- **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+- **Changed:** Only this task's status and report. Read the task, AGENTS.md,
+  ARCHITECTURE.md and the affected code; confirmed the assigned branch and a
+  clean starting worktree. No feature code was written.
+- **Checks run:** On the unchanged code:
+  - `pip install -r requirements-dev.txt`: failed; no matching distribution
+    for `pytest-cov>=6.0,<7`. The active Python environment has no pytest-cov,
+    and `PIP_NO_INDEX` is configured.
+  - `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run`:
+    passed, "No changes detected" (environment variable set with PowerShell).
+  - `python -m pytest -q -p no:cacheprovider --create-db`: failed with 33
+    setup errors: access denied to `C:/Users/yawop/AppData/Local/Temp/pytest-of-yawop`.
+  - `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`:
+    passed (commands sequenced conditionally in PowerShell). Generation made
+    no content changes; the generated file was restored to its original bytes.
+- **Unsure about:** Whether a prepared Python environment is available for this
+  worktree. The current Python and pip resolve to `Kalon/backend/venv`.
+- **Skipped, and why:** Implementation and schema regeneration for the new
+  endpoint were not started because the required environment checks failed.
+  Git also cannot create `Kalon/.git/worktrees/agent-codex-006-feature-switches-backend/index.lock`
+  (permission denied), so the required report commit is blocked by workspace
+  permissions. No dependencies, shared fixtures or permission settings changed.
+- **Question for the lead:** Please provide an environment with the required
+  development dependencies and writable test temporary storage, and allow Git
+  to write this worktree's metadata, then return this task to ready.
