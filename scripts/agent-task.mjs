@@ -51,7 +51,7 @@ const claude = model => prompt => [
 ];
 
 const AGENTS = {
-  codex: prompt => ['codex', ['exec', '--full-auto', prompt]],
+  codex: prompt => ['codex', ['exec', '-s', 'workspace-write', prompt]],
   sonnet: claude('sonnet'),
   haiku: claude('haiku'),
   // Antigravity CLI (agy) replaces Gemini CLI and uses your Google AI plan's models;
