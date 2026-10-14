@@ -1,5 +1,5 @@
 import { apiClient } from '@/shared/lib/api/client';
-import { uploadImage } from '@/shared/lib/imageService';
+import { uploadImage, type UploadedPhoto } from '@/shared/lib/imageService';
 import type {
   CommentsPage,
   Look,
@@ -10,6 +10,71 @@ import type {
   ReportReason,
   Style,
 } from './types';
+
+/** Uploads this many of a look's photos at once. */
+const MAX_CONCURRENT_UPLOADS = 3;
+
+export interface UploadProgress {
+  done: number;
+  total: number;
+}
+
+/** Local uri -> where it ended up, kept by the composer across a retry. */
+export type UploadCache = Map<string, UploadedPhoto>;
+
+/** Thrown when a photo can't be uploaded, after one retry. Names which one. */
+export class PhotoUploadError extends Error {
+  constructor(public readonly photoIndex: number) {
+    super(`Photo ${photoIndex + 1} couldn’t be uploaded.`);
+  }
+}
+
+/**
+ * Uploads a draft's local photos, at most {@link MAX_CONCURRENT_UPLOADS} at a
+ * time, keeping their order. Anything already in `cache` (by local uri) is
+ * reused rather than sent again, so calling this again after a failure only
+ * re-sends the photos that didn't make it. A photo that fails twice (one retry)
+ * stops the whole upload — nothing is posted with photos missing.
+ */
+async function uploadLookPhotos(
+  uris: string[],
+  cache: UploadCache,
+  onProgress?: (progress: UploadProgress) => void
+): Promise<UploadedPhoto[]> {
+  const total = uris.length;
+  const results: (UploadedPhoto | undefined)[] = uris.map(uri => cache.get(uri));
+  let done = results.filter(Boolean).length;
+  let next = 0;
+  let failedAt = -1;
+  onProgress?.({ done, total });
+
+  const worker = async () => {
+    while (failedAt === -1) {
+      const i = next++;
+      if (i >= total) return;
+      if (results[i]) continue;
+      const uri = uris[i];
+      try {
+        let uploaded: UploadedPhoto;
+        try {
+          uploaded = await uploadImage(uri, 'look');
+        } catch {
+          uploaded = await uploadImage(uri, 'look'); // one retry
+        }
+        cache.set(uri, uploaded);
+        results[i] = uploaded;
+        done++;
+        onProgress?.({ done, total });
+      } catch {
+        failedAt = i;
+      }
+    }
+  };
+
+  await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT_UPLOADS, total) }, worker));
+  if (failedAt !== -1) throw new PhotoUploadError(failedAt);
+  return results as UploadedPhoto[];
+}
 
 export const looksApi = {
   /** GET /api/looks/?cursor=&limit=&hair=&style=&area= — newest first, minus anyone you've blocked. */
@@ -27,16 +92,20 @@ export const looksApi = {
   get: async (id: string) => (await apiClient.get<Look>(`/api/looks/${id}/`)).data,
 
   /** POST /api/looks/ — the server fills in the author, the stylist and the tagged service. */
-  create: async (draft: LookDraft) => {
-    // The photo goes up first; the look points at where it now lives.
-    const photo = await uploadImage(draft.photoUri, 'look');
+  create: async (
+    draft: LookDraft,
+    options: { cache?: UploadCache; onProgress?: (progress: UploadProgress) => void } = {}
+  ) => {
+    // The photos go up first, in order; the look points at where they now live.
+    const uploaded = await uploadLookPhotos(
+      draft.photoUris,
+      options.cache ?? new Map(),
+      options.onProgress
+    );
     return (
       await apiClient.post<Look>('/api/looks/', {
         ...draft,
-        photoUri: photo.uri,
-        thumbUri: photo.thumbUri,
-        feedUri: photo.feedUri,
-        photoAspect: photo.photoAspect,
+        photoUris: uploaded.map(photo => photo.uri),
       })
     ).data;
   },

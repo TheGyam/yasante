@@ -1,7 +1,6 @@
 import { memo, useCallback, useRef, useState, type RefObject } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { GestureDetector } from 'react-native-gesture-handler';
 import {
   Bookmark,
   BookmarkPlus,
@@ -17,13 +16,12 @@ import { HIT_TARGET, makeStyles, radius, space, useTheme } from '@/shared/theme'
 import { Avatar } from '@/shared/ui/Avatar';
 import { IconButton } from '@/shared/ui/IconButton';
 import { PressableScale } from '@/shared/ui/PressableScale';
-import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
 import { bookable, postedLabel } from '../format';
 import { openWithHero } from '../heroTransition';
-import type { Look } from '../types';
+import { lookPhotos, type Look } from '../types';
 import { LikeButton } from './LikeButton';
-import { usePhotoTaps } from './usePhotoTaps';
+import { frameAspect, LookPhotos } from './LookPhotos';
 
 /** "Coily hair", "Kinky (4C) hair"; a label already ending in coils keeps it. */
 const hairLabel = (label: string) => (/coils$/i.test(label) ? label : `${label} hair`);
@@ -59,6 +57,8 @@ export interface LookCardProps {
    * the photo flies in. What goes below the photo fades in once this turns true.
    */
   details?: boolean;
+  /** On the look's own page: which photo to open already swiped to. */
+  initialPhotoIndex?: number;
 }
 
 const useStyles = makeStyles(t => ({
@@ -132,6 +132,7 @@ export const LookCard = memo(function LookCard({
   onPhotoLayout,
   photoStyle,
   details = true,
+  initialPhotoIndex,
 }: LookCardProps) {
   const styles = useStyles();
   const theme = useTheme();
@@ -143,17 +144,14 @@ export const LookCard = memo(function LookCard({
   const ownPhoto = useRef<View>(null);
   const media = photoRef ?? ownPhoto;
   const openFromHere = useCallback(
-    (l: Look) =>
-      onOpen &&
-      openWithHero(media.current, { lookId: l.id, uri: l.thumbUri ?? l.photoUri }, () => onOpen(l)),
+    (l: Look, photoIndex: number) => {
+      if (!onOpen) return;
+      const photo = lookPhotos(l)[photoIndex] ?? lookPhotos(l)[0];
+      openWithHero(media.current, { lookId: l.id, uri: photo.thumbUri ?? photo.uri, photoIndex }, () =>
+        onOpen(l)
+      );
+    },
     [onOpen, media]
-  );
-  const { gesture: photoGesture, heart } = usePhotoTaps(
-    look,
-    onOpen && openFromHere,
-    onLike,
-    96,
-    look.styles.length ? onFindStylists : undefined
   );
   const open = () => onOpen?.(look);
 
@@ -336,29 +334,21 @@ export const LookCard = memo(function LookCard({
       {/* The measured box stays a plain view (every platform can measure it); the
           animated hide wraps it. */}
       <Animated.View style={photoStyle}>
-        <View ref={media} style={styles.media} onLayout={onPhotoLayout}>
+        <View
+          ref={media}
+          style={[styles.media, { aspectRatio: frameAspect(lookPhotos(look)[0]?.aspect) }]}
+          onLayout={onPhotoLayout}
+        >
           {/* Only the photo takes the taps: the buttons over it are siblings, so pressing
             one can never open or like the look as well. */}
-          <GestureDetector gesture={photoGesture}>
-            <View
-              style={StyleSheet.absoluteFill}
-              accessible
-              accessibilityRole={detail ? 'image' : 'button'}
-              accessibilityLabel={look.caption ?? look.serviceName ?? 'A look'}
-              accessibilityHint={detail ? 'Double tap to like' : 'Opens the look'}
-            >
-              <RemoteImage
-                // A feed doesn't need the full-size photo; the look's own page does.
-                uri={(detail ? undefined : look.feedUri) ?? look.photoUri}
-                style={StyleSheet.absoluteFill}
-                recyclingKey={look.id}
-                // The grid's copy while the full photo loads: no flash when the
-                // opening animation hands over to this image.
-                placeholderUri={look.thumbUri}
-              />
-              {heart}
-            </View>
-          </GestureDetector>
+          <LookPhotos
+            look={look}
+            detail={detail}
+            onOpen={onOpen && openFromHere}
+            onLike={onLike}
+            onFindStylists={look.styles.length ? onFindStylists : undefined}
+            initialIndex={initialPhotoIndex}
+          />
           {onSave && (
             <IconButton
               icon={look.saved ? Bookmark : BookmarkPlus}

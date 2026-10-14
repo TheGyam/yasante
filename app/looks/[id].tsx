@@ -298,6 +298,7 @@ export default function LookScreen() {
               onPhotoLayout={onPhotoLayout}
               // Hidden under the moving copy, so there's only ever one photo on screen.
               photoStyle={photoStyle}
+              initialPhotoIndex={hero?.photoIndex}
             />
           </Screen>
         ) : (
@@ -488,6 +489,7 @@ function LookThread({
   photoRef,
   onPhotoLayout,
   photoStyle,
+  initialPhotoIndex,
 }: {
   id: string;
   /** False while the page is still arriving: comments wait until it has. */
@@ -495,6 +497,7 @@ function LookThread({
   photoRef: RefObject<View | null>;
   onPhotoLayout: () => void;
   photoStyle: StyleProp<ViewStyle>;
+  initialPhotoIndex?: number;
 }) {
   const styles = useStyles();
   const insets = useContentInsets();
@@ -580,6 +583,7 @@ function LookThread({
               onPhotoLayout={onPhotoLayout}
               photoStyle={photoStyle}
               details={stage >= 1}
+              initialPhotoIndex={initialPhotoIndex}
             />
             {stage >= 2 && !!look.styles[0] && (
               <WhoDoesThis

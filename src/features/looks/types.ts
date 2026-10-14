@@ -19,6 +19,8 @@ export interface Look {
   feedUri?: string;
   /** Width over height, from the server's media record, when it has one. */
   photoAspect?: number;
+  /** Up to 5 photos, in the order the author chose. Use `lookPhotos()` to read these. */
+  photos: LookPhoto[];
   caption?: string;
   /** Who did the hair: the author when a stylist posts, the one she tagged when a client does. */
   stylist?: { id: string; name: string; handle?: string };
@@ -50,7 +52,8 @@ export interface Look {
 }
 
 export interface LookDraft {
-  photoUri: string;
+  /** 1 to 5 local photo uris, in the order she wants them shown. */
+  photoUris: string[];
   caption?: string;
   /** A stylist tags her own service. */
   serviceId?: string;
@@ -64,6 +67,30 @@ export interface LookDraft {
 }
 
 export type LookVisibility = 'public' | 'private';
+
+export interface LookPhoto {
+  uri: string;
+  thumbUri?: string;
+  feedUri?: string;
+  aspect?: number;
+}
+
+/**
+ * A look's photos, in order. Older looks, and anything cached from before this
+ * feature, carry no `photos` array — this falls back to the single cover photo
+ * so they still render.
+ */
+export function lookPhotos(look: Look): LookPhoto[] {
+  if (look.photos?.length) return look.photos;
+  return [
+    {
+      uri: look.photoUri,
+      thumbUri: look.thumbUri,
+      feedUri: look.feedUri,
+      aspect: look.photoAspect,
+    },
+  ];
+}
 
 export interface TaggedProduct {
   id: string;
