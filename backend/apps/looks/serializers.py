@@ -69,6 +69,20 @@ def present_looks(looks, viewer):
                 "thumb_uri": look.thumb_uri or None,
                 "feed_uri": look.feed_uri or None,
                 "photo_aspect": look.photo_aspect or None,
+                "photos": [
+                    {
+                        "uri": photo.photo_uri,
+                        "thumb_uri": photo.thumb_uri or None,
+                        "feed_uri": photo.feed_uri or None,
+                        "aspect": photo.aspect,
+                    }
+                    for photo in look.photos.all()
+                ] or [{
+                    "uri": look.photo_uri,
+                    "thumb_uri": look.thumb_uri or None,
+                    "feed_uri": look.feed_uri or None,
+                    "aspect": look.photo_aspect,
+                }],
                 "caption": look.caption,
                 "stylist": (
                     {"id": str(stylist_id), "name": stylist["name"], "handle": stylist["handle"]}
@@ -190,7 +204,15 @@ class TaggedProductSerializer(serializers.Serializer):
     name = serializers.CharField()
 
 
+class LookPhotoSerializer(serializers.Serializer):
+    uri = serializers.CharField()
+    thumb_uri = optional(serializers.CharField())
+    feed_uri = optional(serializers.CharField())
+    aspect = serializers.FloatField()
+
+
 class LookSerializer(serializers.Serializer):
+    photos = LookPhotoSerializer(many=True)
     id = serializers.CharField()
     author_id = serializers.CharField()
     author_name = serializers.CharField()
@@ -260,7 +282,12 @@ class BlockSerializer(serializers.Serializer):
 
 # ── Request shapes ───────────────────────────────────────────────────────────────
 class LookCreateRequestSerializer(serializers.Serializer):
-    photo_uri = serializers.CharField()
+    photo_uri = serializers.CharField(required=False)
+    # shortcut: array bounds generate incorrect tuples in openapi-typescript 7.13; restore after upgrading it.
+    photo_uris = serializers.ListField(
+        child=serializers.CharField(), required=False,
+        help_text="One to five upload addresses, in display order",
+    )
     thumb_uri = serializers.CharField(required=False)
     feed_uri = serializers.CharField(required=False)
     photo_aspect = serializers.FloatField(required=False)

@@ -92,6 +92,24 @@ class Look(TimeStampedModel):
         return f"Look by {self.author.name}"
 
 
+class LookPhoto(models.Model):
+    look = models.ForeignKey(Look, on_delete=models.CASCADE, related_name="photos")
+    position = models.PositiveSmallIntegerField()
+    photo_uri = models.URLField(max_length=500)
+    thumb_uri = models.URLField(max_length=500, blank=True, default="")
+    feed_uri = models.URLField(max_length=500, blank=True, default="")
+    aspect = models.FloatField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "looks_look_photo"
+        ordering = ["position"]
+        constraints = [
+            models.UniqueConstraint(fields=["look", "position"], name="unique_look_photo_position"),
+            models.CheckConstraint(condition=models.Q(position__lte=4), name="look_photo_position_max"),
+        ]
+
+
 class LookLike(models.Model):
     """Unique like per user+look. Idempotent."""
 

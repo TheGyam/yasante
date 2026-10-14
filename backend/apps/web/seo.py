@@ -223,7 +223,9 @@ def look(item, data):
         "price": money(item.price, item.from_price) if item.price else "",
         "posted": item.created_at,
     }
+    photos = [photo["feed_uri"] or photo["uri"] for photo in data["photos"]]
     image = {
+        "image": photos if len(photos) > 1 else photos[0],
         "@type": "ImageObject",
         "@id": absolute(path) + "#image",
         "contentUrl": item.photo_uri,

@@ -29,6 +29,7 @@ from django.db.models import (
     F,
     FloatField,
     OuterRef,
+    Prefetch,
     Q,
     Value,
     When,
@@ -47,6 +48,7 @@ from .models import (
     Look,
     LookComment,
     LookLike,
+    LookPhoto,
     ModerationAction,
     Report,
     Style,
@@ -86,7 +88,9 @@ def _viewer(request):
 
 def _looks(viewer):
     return with_viewer_flags(
-        Look.objects.prefetch_related("styles", "products"), viewer
+        Look.objects.prefetch_related(
+            "styles", "products", Prefetch("photos", queryset=LookPhoto.objects.order_by("position"))
+        ), viewer
     )
 
 
@@ -174,9 +178,20 @@ def create_look(request):
     """
     user = request.user
     body = request.data
-    photo = own_media(user, body.get("photo_uri"))
-    if photo is None:
+    uris = body.get("photo_uris", [body.get("photo_uri")] if body.get("photo_uri") else [])
+    if not isinstance(uris, list) or not uris:
         return Response({"message": "A look needs a photo"}, status=400)
+    if len(uris) > 5:
+        return Response({"message": "Up to 5 photos in a look"}, status=400)
+    photos = []
+    for uri in uris:
+        photo = own_media(user, uri) if isinstance(uri, str) else None
+        if photo is None:
+            return Response({"message": "That photo isn't one of yours"}, status=400)
+        if any(other.pk == photo.pk for other in photos):
+            return Response({"message": "That photo is in this look twice"}, status=400)
+        photos.append(photo)
+    photo = photos[0]
 
     wanted = body.get("styles") if isinstance(body.get("styles"), list) else []
     styles = list(Style.objects.filter(slug__in=[str(s) for s in wanted][:3]))
@@ -231,6 +246,16 @@ def create_look(request):
             from_price=service.from_price if service else False,
             area=stylist_profile.base_area if stylist_profile else "",
         )
+        LookPhoto.objects.bulk_create([
+            LookPhoto(
+                look=look, position=position,
+                photo_uri=media_url(request, photo, photo.full_path),
+                thumb_uri=media_url(request, photo, photo.thumb_path) if photo.thumb_path else "",
+                feed_uri=media_url(request, photo, photo.feed_path) if photo.feed_path else "",
+                aspect=round(photo.width / photo.height, 4) if photo.height else 1,
+            )
+            for position, photo in enumerate(photos)
+        ])
         look.styles.set(styles)
         if products:
             look.products.set(products)

@@ -7,7 +7,7 @@ deleted Media row deletes its files.)
 from urllib.parse import urlparse
 
 from django.core.files.storage import default_storage
-from django.db.models.signals import post_delete
+from django.db.models.signals import post_delete, pre_delete
 from django.dispatch import receiver
 
 
@@ -33,6 +33,17 @@ def delete_media_files(sender, instance, **kwargs):
             default_storage.delete(path)
         except OSError:
             pass  # Already gone: the row going is what matters.
+
+
+@receiver(pre_delete, sender="looks.LookPhoto")
+def remember_photo_author(sender, instance, **kwargs):
+    # All parents still exist before the collector starts deleting a cascade.
+    instance._author_id = instance.look.author_id
+
+
+@receiver(post_delete, sender="looks.LookPhoto")
+def delete_look_photo_media(sender, instance, **kwargs):
+    delete_media_for(instance.photo_uri, instance._author_id)
 
 
 @receiver(post_delete, sender="looks.Look")
