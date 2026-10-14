@@ -13,7 +13,7 @@
 // Codex and Gemini use whatever login their CLI already has (ChatGPT / Google account).
 // For Gemini that's Antigravity CLI (agy) when installed, else Gemini CLI.
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 // Shell commands Sonnet and Haiku may run without asking: the checks tasks list
@@ -158,8 +158,24 @@ if (revise) {
 }
 
 console.log(`\n${agent} is ${revise ? 'revising' : 'working on'} ${task} in ${worktree}\n`);
+// The backend's settings and Python packages aren't in git, so the worktree borrows this
+// checkout's: its .env (gitignored, so it's never committed) and its venv first on PATH,
+// which lets `python -m pytest` and `python manage.py ...` run there.
+const envFile = path.join(root, 'backend', '.env');
+if (existsSync(envFile)) copyFileSync(envFile, path.join(worktree, 'backend', '.env'));
+const venvBin = path.join(
+  root,
+  'backend',
+  'venv',
+  process.platform === 'win32' ? 'Scripts' : 'bin'
+);
+const pathKey = Object.keys(process.env).find(k => k.toUpperCase() === 'PATH') || 'PATH';
+const env = existsSync(venvBin)
+  ? { ...process.env, [pathKey]: `${venvBin}${path.delimiter}${process.env[pathKey]}` }
+  : process.env;
+
 const [cmd, args] = AGENTS[agent](prompt);
-if (!run(cmd, args, { cwd: worktree }))
+if (!run(cmd, args, { cwd: worktree, env }))
   console.error(`\n${agent} exited with an error; committing whatever it left.`);
 rmSync(reviewFile, { force: true });
 
