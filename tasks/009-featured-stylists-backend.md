@@ -2,7 +2,7 @@
 id: 009
 slug: featured-stylists-backend
 assignee: codex # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+status: blocked # draft | ready | in-progress | review | blocked | done
 branch: agent/codex/009-featured-stylists-backend
 depends_on: []
 ---
@@ -329,11 +329,17 @@ reused database).
 
 ## Report to the lead
 
-_Filled in by the assignee when it sets `status: review` or `blocked`._
-
-- **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
-- **Every `published=True` use and booking entry point, and what you did with each:**
-- **Unsure about:**
-- **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+- **Changed:** Set this task to blocked and recorded the questions below. No application code changed. Pulled master with `git pull --ff-only origin master` (already up to date) in a separate worktree, then created the assigned branch. The original checkout has unrelated local changes and was left alone.
+- **Checks run:**
+  - `git pull --ff-only origin master`: passed; already up to date.
+  - `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run`: not run; stopped before implementation.
+  - `python -m pytest -q -p no:cacheprovider --create-db`: not run; stopped before implementation.
+  - `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: not run; no API changes.
+  - `python manage.py spectacular --file ../openapi.yaml`: not run; no API changes.
+  - `npm run api:types` in `web/`: not run; no API changes.
+- **Every `published=True` use and booking entry point, and what you did with each:** Not audited; stopped at the scope conflict before implementation. No entry points changed.
+- **Unsure about:** Where to register the new API route within the allowed scope, and which response leaving the waitlist should return.
+- **Skipped, and why:** Implementation, tests, schema generation, push and draft pull request. The brief requires a blocked report, a commit and a stop when scope or requirements conflict.
+- **Question for the lead:**
+  - Step 6 requires `GET` and `POST /api/featured/claim/<code>/`. `backend/config/urls.py` mounts `apps.stylists.urls` at `/api/stylists/` and contains the other top-level API routes, but that file is outside Scope. Changes to `apps/web/urls.py` are limited to step 13, which describes website shell routes. May this task also change `backend/config/urls.py` solely to register the two required API endpoints?
+  - Step 4 says leaving the waitlist when absent is HTTP 204, and also says both operations answer `{"joined": true|false}`. HTTP 204 cannot carry a response body. Should `DELETE` return HTTP 200 with `{"joined": false}` every time, or HTTP 204 with no body every time?
