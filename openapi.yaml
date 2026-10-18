@@ -5356,6 +5356,11 @@ components:
           type: string
           format: uuid
           readOnly: true
+        lookPhotos:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkLookPhoto'
+          readOnly: true
         createdAt:
           type: string
           format: date-time
@@ -6659,6 +6664,15 @@ components:
       description: |-
         * `no_show` - no_show
         * `timing` - timing
+    WorkLookPhoto:
+      type: object
+      properties:
+        uri:
+          type: string
+        thumbUri:
+          type: string
+      required:
+      - uri
   securitySchemes:
     cookieAuth:
       type: apiKey

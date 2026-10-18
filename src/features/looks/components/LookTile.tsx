@@ -1,7 +1,8 @@
 import { memo, useCallback, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import { Bookmark, BookmarkPlus, Images } from 'lucide-react-native';
+import { Bookmark, BookmarkPlus } from 'lucide-react-native';
+import { PhotoCount } from '@/shared/ui/PhotoCount';
 import { formatMoney } from '@/shared/lib/format';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
@@ -54,14 +55,6 @@ const useStyles = makeStyles(t => ({
   },
   priceText: { color: '#FFFFFF' },
   save: { position: 'absolute', right: space.sm, bottom: space.sm },
-  stack: {
-    position: 'absolute',
-    top: space.xs,
-    right: space.xs,
-    padding: 5,
-    borderRadius: radius.sm,
-    backgroundColor: 'rgba(12,8,10,0.55)',
-  },
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -136,11 +129,7 @@ export const LookTile = memo(function LookTile({
             </Text>
           </View>
         )}
-        {lookPhotos(look).length > 1 && (
-          <View style={styles.stack} pointerEvents="none">
-            <Images size={14} color="#FFFFFF" strokeWidth={2.2} />
-          </View>
-        )}
+        {lookPhotos(look).length > 1 && <PhotoCount count={lookPhotos(look).length} />}
         {onSave && (
           <IconButton
             icon={look.saved ? Bookmark : BookmarkPlus}

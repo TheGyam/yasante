@@ -79,15 +79,56 @@ class MenuItemDraftSerializer(serializers.Serializer):
     )
 
 
+class WorkLookPhotoSerializer(serializers.Serializer):
+    uri = serializers.CharField()
+    thumb_uri = optional(serializers.CharField())
+
+
+class LookPhotosField(serializers.ListField):
+    """Every photo of the look it's from, in order, when that look has more than one."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**{"child": WorkLookPhotoSerializer(), "read_only": True, **kwargs})
+
+    def get_attribute(self, instance):
+        return self.parent.photos_of_looks().get(instance.look_id)
+
+    def to_representation(self, value):
+        return value
+
+
 class PortfolioPhotoSerializer(BlankIsOptional, serializers.ModelSerializer):
     service_id = serializers.UUIDField(
         source="service.id", read_only=True, allow_null=True
     )
+    look_photos = optional(LookPhotosField())
 
     class Meta:
         model = PortfolioPhoto
-        fields = ["id", "uri", "thumb_uri", "service_id", "look_id", "created_at"]
+        fields = ["id", "uri", "thumb_uri", "service_id", "look_id", "look_photos", "created_at"]
         read_only_fields = ["id", "thumb_uri", "look_id", "created_at"]
+
+    def photos_of_looks(self):
+        """
+        The photos of every live look these come from, read once for the whole list:
+        a look posted as several photos swipes through all of them on her page.
+        """
+        root = self.parent if isinstance(self.parent, serializers.ListSerializer) else None
+        holder = root or self
+        if not hasattr(holder, "_look_photos"):
+            from apps.looks.models import LookPhoto
+
+            items = root.instance if root is not None else [self.instance]
+            ids = {p.look_id for p in items if p.look_id}
+            found = {}
+            for photo in LookPhoto.objects.filter(
+                look_id__in=ids, look__status="live", look__visibility="public"
+            ).order_by("look_id", "position"):
+                found.setdefault(photo.look_id, []).append(
+                    {"uri": photo.photo_uri, "thumb_uri": photo.thumb_uri or None}
+                )
+            holder._look_photos = {k: v for k, v in found.items() if len(v) > 1}
+        return holder._look_photos
 
 
 DAY_HOURS = {

@@ -3029,6 +3029,7 @@ export interface components {
             readonly serviceId?: string;
             /** Format: uuid */
             readonly lookId?: string;
+            readonly lookPhotos?: components["schemas"]["WorkLookPhoto"][];
             /** Format: date-time */
             readonly createdAt: string;
         };
@@ -3600,6 +3601,10 @@ export interface components {
          * @enum {string}
          */
         WhatEnum: "no_show" | "timing";
+        WorkLookPhoto: {
+            uri: string;
+            thumbUri?: string;
+        };
     };
     responses: never;
     parameters: never;

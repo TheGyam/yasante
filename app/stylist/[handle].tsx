@@ -35,6 +35,7 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
 import { PressableScale } from '@/shared/ui/PressableScale';
+import { PhotoCount } from '@/shared/ui/PhotoCount';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
@@ -257,8 +258,12 @@ export default function StylistPageScreen() {
                     accessibilityLabel={[
                       menu.find(item => item.id === photo.serviceId)?.name ?? 'Their work',
                       `photo ${index + 1} of ${photos.length}`,
-                    ].join(', ')}
+                      photo.lookPhotos ? `${photo.lookPhotos.length} photos` : '',
+                    ]
+                      .filter(Boolean)
+                      .join(', ')}
                   />
+                  {!!photo.lookPhotos && <PhotoCount count={photo.lookPhotos.length} />}
                 </PressableScale>
               ))}
             </View>

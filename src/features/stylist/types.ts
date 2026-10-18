@@ -151,6 +151,8 @@ export interface PortfolioPhoto {
   serviceId?: string;
   /** The look it was shared as, when she posted it to Looks while adding it. */
   lookId?: string;
+  /** Every photo of that look, in order, when it has more than one. */
+  lookPhotos?: { uri: string; thumbUri?: string }[];
   createdAt: string;
 }
 
