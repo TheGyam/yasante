@@ -2,7 +2,7 @@
 id: 007
 slug: feature-switches-app
 assignee: sonnet # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+status: review # draft | ready | in-progress | review | blocked | done
 branch: agent/sonnet/007-feature-switches-app
 depends_on: [004, 006]
 ---
@@ -74,10 +74,20 @@ npx jest --ci
 
 ## Report to the lead
 
-_Filled in by the assignee when it sets `status: review` or `blocked`._
-
 - **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
+  - `src/shared/config/features.ts` (new): `FeatureKey`, `featuresQuery` (key `['features']`, `staleTime` 60s, `gcTime` 7 days, `refetchOnWindowFocus: true`), and `useFeature`, which is `false` until the query has succeeded and the key isn't `true` in the response. Imports only `@tanstack/react-query` and the shared `apiClient` — nothing from `src/features/`.
+  - `src/shared/config/__tests__/features.test.ts` (new): `useFeature` is false before load, true/false by server answer, false for an unknown key, and false on a request error.
+  - `app/_layout.tsx`: prefetches `featuresQuery` once at startup, and invalidates it whenever the signed-in account's id changes (covers both sign-in and sign-out catching a fresh answer; sign-out already clears the whole cache in `features/auth`).
+  - `app/looks/new.tsx`: the photo limit is `useFeature('multi_photo_looks') ? 5 : 1`. At 1, the screen shows the old single square photo (no strip, no drag-reorder, no running count), and the button reads "Choose a photo" / "Choose a different photo" as it did before task 004. Tapping a different portfolio photo swaps the one slot instead of being blocked. If the switch turns off while several photos are chosen, an effect trims to the first and tells her: "Posting several photos isn't open yet. So we kept your first one."
+  - `app/looks/__tests__/new.test.tsx` (new): renders the composer with every feature hook mocked and `useFeature` controlled directly, and checks the limit follows it — one photo and "Choose a different photo" when off, up to 5 with a "x/5" strip when on.
+  - Also touched `src/shared/utils/cachePersistence.ts`, which isn't in this task's listed scope: `persistOptions` (named in step 2) is assembled there, and its `KEPT` set is the actual allow-list that decides what survives a cold start. Adding `['features']` to the file list without adding `'features'` to that set would leave the switches unpersisted, so I added it — one line, no other change to that file.
+- **Checks run:**
+  - `npx tsc --noEmit` — passed, no errors.
+  - `npm run lint` — passed, 0 errors (107 pre-existing warnings elsewhere, none in files this task touched).
+  - `npx jest --ci` — passed, 47 suites / 231 tests, including the two new suites.
 - **Unsure about:**
+  - Whether invalidating `['features']` on `user?.id` change in `app/_layout.tsx` is the right spot versus doing it from `features/auth`. I kept it here because `src/shared/config/` can't import the auth feature (rule 2) and `app/_layout.tsx` already has both `useAuth` and `queryClient`; sign-out separately clears the whole query cache already in `AuthContext.logout`, so this effect mainly covers sign-in.
+  - The portfolio thumbnail still shows a numbered badge ("1") on the chosen photo when the limit is 1, rather than the old checkmark icon. Didn't restore the checkmark — a cosmetic difference, not mentioned in the acceptance criteria.
 - **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+  - Didn't restore the exact old `Check` icon tick for a single chosen portfolio photo (see above) — kept the existing numbered badge since the acceptance criteria don't call for pixel parity there.
+- **Question for the lead:** (not blocked, but flagging) `app/looks/__tests__/new.test.tsx` and the `cachePersistence.ts` edit are both outside the literal file list in Scope. I made them anyway because the acceptance criteria ("composer limit follows the switch", "survives a cold start offline") can't be met without them. Happy to move the test or split it out if you'd rather it lived elsewhere.

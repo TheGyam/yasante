@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -28,6 +28,7 @@ import {
   type HairTexture,
 } from '@/features/profile';
 import { formatPrice, useActiveMode, useMenu, usePortfolio } from '@/features/stylist';
+import { useFeature } from '@/shared/config/features';
 import { useImagePicker } from '@/shared/hooks/useImagePicker';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
@@ -45,7 +46,6 @@ import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Text } from '@/shared/ui/Text';
 
 const MAX_STYLES = 3;
-const MAX_PHOTOS = 5;
 const VISIBILITY = [
   { value: 'public', label: 'Everyone' },
   { value: 'private', label: 'Just me' },
@@ -60,6 +60,9 @@ const SLOT_WIDTH = THUMB_WIDTH + THUMB_GAP;
 
 const useStyles = makeStyles(t => ({
   body: { gap: space.xl },
+  // The switch off: one photo, square, no strip — exactly how this screen looked
+  // before several photos were possible.
+  chosen: { aspectRatio: 0.8, borderRadius: radius.lg, overflow: 'hidden' },
   strip: { flexDirection: 'row', gap: THUMB_GAP, paddingVertical: space.xs },
   thumb: { width: THUMB_WIDTH, aspectRatio: 0.8, borderRadius: radius.sm },
   picked: { borderWidth: 2, borderColor: t.colors.accent },
@@ -112,6 +115,9 @@ export default function ComposeLookScreen() {
   // Lives for the composer's whole life, so a retry after a failed upload only
   // re-sends the photos that didn't make it, not the ones that already did.
   const uploadCache = useRef<UploadCache>(new Map()).current;
+  // Several photos in one look is a switch Yaw can turn off; off, this screen is
+  // exactly the one-photo composer it was before that feature existed.
+  const photoLimit = useFeature('multi_photo_looks') ? 5 : 1;
 
   const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [progress, setProgress] = useState<{ done: number; total: number }>();
@@ -150,6 +156,19 @@ export default function ComposeLookScreen() {
   // isn't necessarily at that index any more.
   useEffect(() => setFailedPhotoIndex(undefined), [photoUris]);
 
+  // The switch turned off under her, mid-draft: say so, and keep only the cover photo.
+  useEffect(() => {
+    if (photoLimit === 1 && photoUris.length > 1) {
+      setPhotoUris(current => current.slice(0, 1));
+      notify({
+        title: 'Posting several photos isn’t open yet',
+        message: 'So we kept your first one.',
+      });
+    }
+    // Only when the limit itself drops, not on every photo change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoLimit]);
+
   useEffect(() => {
     if (pickError) {
       notify({
@@ -160,10 +179,11 @@ export default function ComposeLookScreen() {
   }, [pickError]);
 
   // A portfolio photo tapped a second time comes back off; tapping it on tags its service.
+  // With one slot, tapping a different photo swaps it rather than being blocked.
   const togglePortfolio = (uri: string, taggedWith?: string) => {
     if (photoUris.includes(uri)) return setPhotoUris(current => current.filter(u => u !== uri));
-    if (photoUris.length >= MAX_PHOTOS) return;
-    setPhotoUris(current => [...current, uri]);
+    if (photoLimit > 1 && photoUris.length >= photoLimit) return;
+    setPhotoUris(current => (photoLimit === 1 ? [uri] : [...current, uri]));
     if (taggedWith) tagService(taggedWith);
   };
 
@@ -200,8 +220,12 @@ export default function ComposeLookScreen() {
   };
 
   const addFromLibrary = async () => {
-    const added = await pickManyFromLibrary(MAX_PHOTOS - photoUris.length);
-    if (added.length) setPhotoUris(current => [...current, ...added].slice(0, MAX_PHOTOS));
+    const remaining = photoLimit === 1 ? 1 : photoLimit - photoUris.length;
+    const added = await pickManyFromLibrary(remaining);
+    if (!added.length) return;
+    setPhotoUris(current =>
+      photoLimit === 1 ? added.slice(0, 1) : [...current, ...added].slice(0, photoLimit)
+    );
   };
 
   const share = async () => {
@@ -246,24 +270,32 @@ export default function ComposeLookScreen() {
         {photoUris.length === 0 && (
           <Text variant="subhead" tone="secondary">
             {asStylist
-              ? 'Pick up to 5 photos of work you did. Clients see them with your name on it.'
+              ? photoLimit === 1
+                ? 'Pick a photo of work you did. Clients see it with your name on it.'
+                : 'Pick up to 5 photos of work you did. Clients see them with your name on it.'
               : 'Show off your hair. Tag who did it, and people can book the same look.'}
           </Text>
         )}
 
-        {photoUris.length > 0 && (
-          <View style={styles.group}>
-            <Text variant="footnote" tone="secondary" style={styles.stripCount}>
-              {photoUris.length}/{MAX_PHOTOS}
-            </Text>
-            <ChosenStrip
-              uris={photoUris}
-              onRemove={removeUri}
-              onReorder={reorder}
-              failedIndex={failedPhotoIndex}
-            />
-          </View>
-        )}
+        {photoLimit === 1
+          ? photoUris[0] && (
+              <View style={styles.chosen}>
+                <RemoteImage uri={photoUris[0]} style={StyleSheet.absoluteFill} />
+              </View>
+            )
+          : photoUris.length > 0 && (
+              <View style={styles.group}>
+                <Text variant="footnote" tone="secondary" style={styles.stripCount}>
+                  {photoUris.length}/{photoLimit}
+                </Text>
+                <ChosenStrip
+                  uris={photoUris}
+                  onRemove={removeUri}
+                  onReorder={reorder}
+                  failedIndex={failedPhotoIndex}
+                />
+              </View>
+            )}
 
         {asStylist && portfolio.length > 0 && (
           <View style={styles.group}>
@@ -278,7 +310,7 @@ export default function ComposeLookScreen() {
                     <PressableScale
                       key={photo.id}
                       onPress={() => togglePortfolio(photo.uri, photo.serviceId)}
-                      disabled={order < 0 && photoUris.length >= MAX_PHOTOS}
+                      disabled={order < 0 && photoLimit > 1 && photoUris.length >= photoLimit}
                       accessibilityLabel={`Portfolio photo ${index + 1}${order >= 0 ? `, chosen as number ${order + 1}` : ''}`}
                     >
                       <View>
@@ -306,15 +338,19 @@ export default function ComposeLookScreen() {
         <Button
           label={
             photoUris.length === 0
-              ? 'Choose photos'
-              : photoUris.length >= MAX_PHOTOS
-                ? '5 of 5'
-                : 'Add more photos'
+              ? photoLimit === 1
+                ? 'Choose a photo'
+                : 'Choose photos'
+              : photoLimit === 1
+                ? 'Choose a different photo'
+                : photoUris.length >= photoLimit
+                  ? `${photoLimit} of ${photoLimit}`
+                  : 'Add more photos'
           }
           icon={photoUris.length === 0 ? Camera : ImagePlus}
           variant="secondary"
           onPress={addFromLibrary}
-          disabled={photoUris.length >= MAX_PHOTOS}
+          disabled={photoLimit > 1 && photoUris.length >= photoLimit}
           fullWidth
           testID="look-pick"
         />
