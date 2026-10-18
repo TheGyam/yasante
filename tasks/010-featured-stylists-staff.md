@@ -30,9 +30,10 @@ Files this task may change:
 - `web/src/features/staff/api.ts`, `hooks.ts`, `types.ts`, `index.ts`, `nav.ts` (additions only)
 - `web/src/staff/routes.tsx`, `web/src/staff/routes/featured.tsx` (new)
 - `web/src/test/__tests__/staff-featured.test.tsx` (new)
+- `backend/apps/staff/views/featured.py`: only adding `agreed_at` to the page detail (and summary) response, with a test in `backend/tests/test_featured.py`
 - `tasks/010-featured-stylists-staff.md` (`status` and the report only)
 
-Out of scope (do not touch): `backend/`, the public website outside
+Out of scope (do not touch): the rest of `backend/`, the public website outside
 `features/staff` and `staff/`, the app.
 
 ## What to do
@@ -78,7 +79,8 @@ UI pieces (`ui.css.ts`, `controls.css.ts`, `ConfirmDialog`, `FileField`,
       after saving, cleared, so adding the next look is one step.
    3. **Their yes.** "Where and when did they say yes?" One line of text, an
       optional screenshot, and **They said yes**. Once recorded it shows the
-      note, the date and who recorded it.
+      note and the date ("Said yes on {date}: {note}"). The note says who
+      they said yes to, so there is no separate recorder.
    4. **Their link.** **Make a new link** shows the link once, with **Copy
       their link** and the words "This link works once and runs out on
       {date}. Making a new one stops this one working." After leaving the
@@ -95,7 +97,9 @@ UI pieces (`ui.css.ts`, `controls.css.ts`, `ConfirmDialog`, `FileField`,
 
 5. **Speed.** Read the list and a page with React Query through the existing
    staff hooks. After a write, update the cache from the response rather than
-   re-reading everything. Upload photos in parallel, at most 3 at a time.
+   re-reading everything. A look's photos go up in one ordered multipart
+   request (`files`, cover first), as the server takes them; show "Saving…"
+   on the button while it runs.
    Lazy-load the section (`lazy()` in `features/staff/index.ts`, as
    `Broadcasts` is) so it costs nothing until opened.
 
