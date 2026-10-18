@@ -27,7 +27,9 @@ Files this task may change:
 
 - `backend/apps/stylists/` (`models.py`, `featured.py` (new), `views.py`, `urls.py`, `serializers.py`, `admin.py`, `tasks.py`, `migrations/`)
 - `backend/apps/looks/` (`serializers.py` for `present_looks`, `views.py` for `LookDetailView.patch` and the shared visibility rule in step 4, `urls.py` only if needed)
-- `backend/apps/bookings/views.py`: only the refusals in step 9
+- `backend/apps/bookings/views.py`: only the refusals in step 9, and routing `_public_look` through the shared look visibility filter (step 4)
+- `backend/apps/planner/views.py`: only routing its look lookups (saving a look) through the shared look visibility filter (step 4)
+- Any other file where a public look lookup bypasses the shared filter: route it through, change nothing else there, and list it in your report. You don't need to ask first for these.
 - `backend/apps/accounts/views.py`, `backend/apps/accounts/serializers.py`: only the stand-in refusals in step 3
 - `backend/apps/common/uploads.py`: only the refactor in step 5
 - `backend/apps/common/identifier_policy.json`: add `claim` and `finish` to `routes`
