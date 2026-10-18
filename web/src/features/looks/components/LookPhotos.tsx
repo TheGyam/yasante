@@ -31,7 +31,9 @@ export function LookPhotos({
       entries => {
         const visible = entries.filter(entry => entry.isIntersecting);
         if (!visible.length) return;
-        const closest = visible.reduce((a, b) => (b.intersectionRatio > a.intersectionRatio ? b : a));
+        const closest = visible.reduce((a, b) =>
+          b.intersectionRatio > a.intersectionRatio ? b : a
+        );
         const index = slideRefs.current.indexOf(closest.target as HTMLDivElement);
         if (index !== -1) setCurrent(index);
       },
@@ -94,10 +96,20 @@ export function LookPhotos({
           </div>
         ))}
       </div>
-      <button type="button" className={styles.prev} aria-label="Previous photo" onClick={() => goTo(current - 1)}>
+      <button
+        type="button"
+        className={styles.prev}
+        aria-label="Previous photo"
+        onClick={() => goTo(current - 1)}
+      >
         <ChevronLeft aria-hidden />
       </button>
-      <button type="button" className={styles.next} aria-label="Next photo" onClick={() => goTo(current + 1)}>
+      <button
+        type="button"
+        className={styles.next}
+        aria-label="Next photo"
+        onClick={() => goTo(current + 1)}
+      >
         <ChevronRight aria-hidden />
       </button>
       <div className={styles.dots}>

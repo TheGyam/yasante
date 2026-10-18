@@ -19,6 +19,7 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { useContentInsets } from '@/shared/ui/layout';
 import { ListRow } from '@/shared/ui/ListRow';
 import { PressableScale } from '@/shared/ui/PressableScale';
+import { PhotoCount } from '@/shared/ui/PhotoCount';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Screen, ScreenTitle, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
@@ -119,7 +120,7 @@ function PortfolioGrid() {
             <PressableScale
               onPress={() => router.push(`/work/me?mine=1&index=${index}`)}
               onLongPress={() => setTagging(item)}
-              accessibilityLabel={`Photo ${index + 1}, ${nameOf(item.serviceId) ?? 'no service'}`}
+              accessibilityLabel={`Photo ${index + 1}, ${nameOf(item.serviceId) ?? 'no service'}${item.lookPhotos ? `, ${item.lookPhotos.length} photos` : ''}`}
               accessibilityHint="Opens it full screen. Press and hold to tag or remove it"
             >
               {/* Sized box, filling picture: sized on the image, Android drew it 0px tall. */}
@@ -129,6 +130,7 @@ function PortfolioGrid() {
                   style={StyleSheet.absoluteFill}
                   recyclingKey={item.id}
                 />
+                {!!item.lookPhotos && <PhotoCount count={item.lookPhotos.length} />}
               </View>
             </PressableScale>
             <Text variant="caption" tone="tertiary" numberOfLines={1}>

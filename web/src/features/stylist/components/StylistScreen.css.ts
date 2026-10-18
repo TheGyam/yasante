@@ -56,6 +56,7 @@ export const work = style({
 });
 
 export const workLink = style({
+  position: 'relative',
   display: 'block',
   transition: `opacity ${vars.time.state} ${EASE_OUT}`,
   ':hover': { opacity: 0.88 },

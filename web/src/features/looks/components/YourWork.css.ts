@@ -23,6 +23,9 @@ export const grid = style({
 
 export const tile = style({ position: 'relative', borderRadius: 12, overflow: 'hidden' });
 
+/** "More photos" sits top left here: the remove button has the other corner. */
+export const count = style({ selectors: { '&&': { right: 'auto', left: 6 } } });
+
 /** Over a photo, whatever the theme: a dark disc with a white icon. */
 export const remove = style({
   position: 'absolute',

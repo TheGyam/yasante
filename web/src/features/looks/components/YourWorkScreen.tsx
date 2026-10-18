@@ -8,6 +8,7 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
 import { Link } from '@/shared/ui/Link';
 import { Page } from '@/shared/ui/Page';
+import { PhotoCount } from '@/shared/ui/PhotoCount';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -72,6 +73,9 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
                   alt={lookAlt(look)}
                   aspect={4 / 5}
                 />
+                {look.photos.length > 1 && (
+                  <PhotoCount count={look.photos.length} className={styles.count} />
+                )}
               </Link>
               <button
                 type="button"
@@ -108,6 +112,9 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
                 alt={`Your work, photo ${index + 1}`}
                 aspect={1}
               />
+              {!!photo.lookPhotos && (
+                <PhotoCount count={photo.lookPhotos.length} className={styles.count} />
+              )}
               <button
                 type="button"
                 className={styles.remove}

@@ -117,7 +117,11 @@ export function PostWorkScreen({ accountId }: { accountId: string }) {
   const chooseMode = (next: PostMode) => {
     if (next === 'together' && activeMode !== 'together') {
       const first = picks[0];
-      setTogether({ style: first?.style ?? '', serviceId: first?.serviceId, caption: first?.caption ?? '' });
+      setTogether({
+        style: first?.style ?? '',
+        serviceId: first?.serviceId,
+        caption: first?.caption ?? '',
+      });
     }
     setTogetherError(undefined);
     setMode(next);
@@ -313,7 +317,9 @@ export function PostWorkScreen({ accountId }: { accountId: string }) {
                       ? 'Shows its name and price with the look'
                       : 'Add services in Menu to link one'
                   }
-                  onChange={e => setTogether(t => ({ ...t, serviceId: e.target.value || undefined }))}
+                  onChange={e =>
+                    setTogether(t => ({ ...t, serviceId: e.target.value || undefined }))
+                  }
                 >
                   <option value="">None</option>
                   {menu.map(item => (
@@ -472,7 +478,9 @@ export function PostWorkScreen({ accountId }: { accountId: string }) {
               />
             </div>
             <Text variant="footnote" tone="secondary">
-              {posting ? `Uploading ${togetherProgress.done} of ${togetherProgress.total}…` : 'Posting…'}
+              {posting
+                ? `Uploading ${togetherProgress.done} of ${togetherProgress.total}…`
+                : 'Posting…'}
             </Text>
           </div>
         )}

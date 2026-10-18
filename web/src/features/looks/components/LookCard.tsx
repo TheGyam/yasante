@@ -1,5 +1,6 @@
-import { Heart, Images } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { Link } from '@/shared/ui/Link';
+import { PhotoCount } from '@/shared/ui/PhotoCount';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { usePrefetchLook } from '../hooks';
 import { lookAlt, lookTitle } from '../format';
@@ -20,11 +21,7 @@ export function LookCard({ look, priority }: { look: Look; priority?: boolean })
         priority={priority}
         className={styles.photo}
       />
-      {look.photos.length > 1 && (
-        <span className={styles.stacked} aria-label="Several photos">
-          <Images size={14} strokeWidth={2.4} />
-        </span>
-      )}
+      {look.photos.length > 1 && <PhotoCount count={look.photos.length} />}
       <span className={styles.shade} aria-hidden>
         <span className={styles.title}>{lookTitle(look)}</span>
         <span className={styles.meta}>

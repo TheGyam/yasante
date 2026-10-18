@@ -19,6 +19,7 @@ import { Glass } from '@/shared/ui/Glass';
 import { Link } from '@/shared/ui/Link';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Page } from '@/shared/ui/Page';
+import { PhotoCount } from '@/shared/ui/PhotoCount';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Rise } from '@/shared/ui/Rise';
 import { Section } from '@/shared/ui/Section';
@@ -186,7 +187,10 @@ function Stylist({ page }: { page: StylistPage }) {
                     `photo ${index + 1} of ${photos.length}`,
                   ].join(', ');
                   const image = (
-                    <RemoteImage src={photo.thumbUri ?? photo.uri} alt={label} aspect={1} />
+                    <>
+                      <RemoteImage src={photo.thumbUri ?? photo.uri} alt={label} aspect={1} />
+                      {!!photo.lookPhotos && <PhotoCount count={photo.lookPhotos.length} />}
+                    </>
                   );
                   return photo.lookId ? (
                     <Link key={photo.id} to={`/looks/${photo.lookId}`} className={styles.workLink}>
