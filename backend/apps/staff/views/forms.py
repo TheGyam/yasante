@@ -61,6 +61,9 @@ def send_initial_values(request, ma, object_id):
 @csrf_protect
 @sensitive_post_parameters()
 @require_http_methods(["GET", "POST"])
+# One transaction for the whole save: the record is read with a lock (so two people
+# can't overwrite each other) before the admin's own save begins.
+@transaction.atomic
 def record_form(request, app_label, model_name, object_id=None):
     validate_parameters(request)
     ma = model_admin(request, app_label, model_name)
