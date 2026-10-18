@@ -1,5 +1,5 @@
 import { memo, useCallback, useRef, useState, type RefObject } from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import {
   Bookmark,
@@ -21,7 +21,7 @@ import { bookable, postedLabel } from '../format';
 import { openWithHero } from '../heroTransition';
 import { lookPhotos, type Look } from '../types';
 import { LikeButton } from './LikeButton';
-import { frameAspect, LookPhotos } from './LookPhotos';
+import { LookPhotos } from './LookPhotos';
 
 /** "Coily hair", "Kinky (4C) hair"; a label already ending in coils keeps it. */
 const hairLabel = (label: string) => (/coils$/i.test(label) ? label : `${label} hair`);
@@ -334,11 +334,7 @@ export const LookCard = memo(function LookCard({
       {/* The measured box stays a plain view (every platform can measure it); the
           animated hide wraps it. */}
       <Animated.View style={photoStyle}>
-        <View
-          ref={media}
-          style={[styles.media, { aspectRatio: frameAspect(lookPhotos(look)[0]?.aspect) }]}
-          onLayout={onPhotoLayout}
-        >
+        <View ref={media} style={styles.media} onLayout={onPhotoLayout}>
           {/* Only the photo takes the taps: the buttons over it are siblings, so pressing
             one can never open or like the look as well. */}
           <LookPhotos

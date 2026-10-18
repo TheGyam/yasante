@@ -20,7 +20,7 @@ export interface Look {
   /** Width over height, from the server's media record, when it has one. */
   photoAspect?: number;
   /** Up to 5 photos, in the order the author chose. Use `lookPhotos()` to read these. */
-  photos: LookPhoto[];
+  photos?: LookPhoto[];
   caption?: string;
   /** Who did the hair: the author when a stylist posts, the one she tagged when a client does. */
   stylist?: { id: string; name: string; handle?: string };

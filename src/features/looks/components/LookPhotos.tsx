@@ -19,16 +19,6 @@ import { usePhotoTaps } from './usePhotoTaps';
 /** How long the "2/5" counter stays up after the last swipe. */
 const COUNTER_FADE_MS = 1500;
 
-// The same clamp a grid tile uses, so a look's frame is never a sliver or a square stretched thin.
-const MIN_ASPECT = 1 / 1.6;
-const MAX_ASPECT = 1 / 0.9;
-
-/** Width ÷ height for the box every one of a look's photos shares. */
-export function frameAspect(aspect?: number) {
-  if (!aspect) return 0.8;
-  return Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, aspect));
-}
-
 export interface LookPhotosProps {
   look: Look;
   /** On the look's own page: the full photo, and a tap does nothing but like. */
@@ -87,7 +77,9 @@ function Photo({
           accessibilityLabel={
             accessible ? look.caption ?? look.serviceName ?? 'A look' : undefined
           }
-          accessibilityHint={accessible && detail ? 'Double tap to like' : undefined}
+          accessibilityHint={
+            accessible ? (detail ? 'Double tap to like' : 'Opens the look') : undefined
+          }
         >
           <RemoteImage
             uri={(detail ? undefined : photo.feedUri) ?? photo.uri}
@@ -213,12 +205,16 @@ function Swiper({
       onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}
       accessible
       accessibilityRole="adjustable"
-      accessibilityLabel={`Photo ${index + 1} of ${total}`}
+      accessibilityLabel={`${look.caption ?? look.serviceName ?? 'A look'}, photo ${index + 1} of ${total}`}
+      accessibilityHint={detail ? 'Double tap to like' : 'Opens the look'}
       accessibilityValue={{ min: 1, max: total, now: index + 1 }}
-      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-      onAccessibilityAction={event =>
-        goTo(index + (event.nativeEvent.actionName === 'increment' ? 1 : -1))
-      }
+      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }, { name: 'activate' }]}
+      onAccessibilityAction={event => {
+        const action = event.nativeEvent.actionName;
+        if (action === 'increment') return goTo(index + 1);
+        if (action === 'decrement') return goTo(index - 1);
+        if (action === 'activate') return onOpen ? onOpen(look, index) : onLike(look, !look.liked);
+      }}
     >
       {width > 0 && (
         <FlatList
@@ -259,8 +255,8 @@ function Swiper({
 /**
  * A look's photos. One photo renders exactly as a single image always has — no
  * list, no dots. More than one adds a horizontal, paging swiper: dots and a
- * fading counter, every photo cropped to the first one's frame so the card
- * never changes height as she swipes through it.
+ * fading counter, every photo cropped to the card's frame so it never changes
+ * height as she swipes through it.
  */
 export const LookPhotos = memo(function LookPhotos({
   look,

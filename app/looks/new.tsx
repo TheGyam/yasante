@@ -52,8 +52,9 @@ const VISIBILITY = [
 ] as const;
 const TEXTURES = Object.keys(TEXTURE_LABELS) as HairTexture[];
 
-/** A chosen thumbnail's width, plus the gap after it — a drag moves in units of this. */
-const THUMB_WIDTH = 72;
+/** A chosen thumbnail's width, plus the gap after it — a drag moves in units of this.
+ * 5 of these plus their gaps must fit the narrowest phone we support (375pt). */
+const THUMB_WIDTH = 60;
 const THUMB_GAP = space.sm;
 const SLOT_WIDTH = THUMB_WIDTH + THUMB_GAP;
 
@@ -98,7 +99,7 @@ export default function ComposeLookScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ bookingId?: string }>();
   const asStylist = useActiveMode() === 'stylist';
-  const { pickManyFromLibrary } = useImagePicker();
+  const { pickManyFromLibrary, error: pickError } = useImagePicker();
   const { data: portfolio = [] } = usePortfolio();
   const { data: services = [] } = useMenu();
   const { data: done = [] } = useBookings('client', ['completed']);
@@ -144,6 +145,19 @@ export default function ComposeLookScreen() {
     // Only once the booking and the taxonomy are both in.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done.length, taxonomy.length]);
+
+  // The list changed under it (removed, reordered, added to) — whatever failed before
+  // isn't necessarily at that index any more.
+  useEffect(() => setFailedPhotoIndex(undefined), [photoUris]);
+
+  useEffect(() => {
+    if (pickError) {
+      notify({
+        title: 'No access to your photos',
+        message: 'Allow access in Settings to post a look.',
+      });
+    }
+  }, [pickError]);
 
   // A portfolio photo tapped a second time comes back off; tapping it on tags its service.
   const togglePortfolio = (uri: string, taggedWith?: string) => {
