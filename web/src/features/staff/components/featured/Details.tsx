@@ -20,6 +20,7 @@ export function Details({ csrf, page }: { csrf: string; page?: FeaturedDetail })
   const navigate = useNavigate();
   const write = useFeaturedWrite(csrf);
   const [error, setError] = useState('');
+  const [handle, setHandle] = useState(page?.instagram_handle ?? '');
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (write.isPending) return;
@@ -43,47 +44,70 @@ export function Details({ csrf, page }: { csrf: string; page?: FeaturedDetail })
       setError(staffMessage(failure));
     }
   };
+  const cleaned = instagramHandle(handle);
   return (
     <form onSubmit={event => void save(event)}>
       <fieldset className={s.fields} disabled={write.isPending || !!page?.claimed_at}>
         <Input
-          label="Name"
-          name="display_name"
-          defaultValue={page?.display_name}
-          required
-          maxLength={150}
-        />
-        <Input
           label="Instagram handle"
           name="instagram_handle"
-          defaultValue={page?.instagram_handle}
+          value={handle}
+          onChange={event => setHandle(event.target.value)}
           disabled={page?.live}
           required={!page?.live}
           maxLength={200}
+          placeholder="@theirhandle or instagram.com/theirhandle"
           error={!page ? error : undefined}
           hint={
-            page?.live ? 'Locked while the page is live' : 'Paste @handle or an instagram.com link.'
+            page?.live
+              ? 'Locked while the page is live'
+              : cleaned && cleaned !== handle.trim()
+                ? `Saved as @${cleaned}, which is also their Yasante address.`
+                : 'Paste @handle or an instagram.com link.'
           }
         />
-        <Input
-          label="Area"
-          name="base_area"
-          defaultValue={page?.base_area}
-          required
-          maxLength={100}
-        />
-        <TextArea label="Bio (optional)" name="bio" defaultValue={page?.bio} maxLength={1000} />
+        <div className={s.twoUp}>
+          <Input
+            label="Name"
+            name="display_name"
+            defaultValue={page?.display_name}
+            required
+            maxLength={150}
+            placeholder="As it is on their Instagram"
+          />
+          <Input
+            label="Area"
+            name="base_area"
+            defaultValue={page?.base_area}
+            required
+            maxLength={100}
+            placeholder="Peckham"
+          />
+        </div>
         <FileField
           field={{ name: 'avatar', label: 'Photo (optional)', kind: 'file', value: '', errors: [] }}
           common={{ name: 'avatar', label: 'Photo (optional)' }}
         />
-        {page && error && <InlineAlert message={error} />}
-        <Button
-          label={write.isPending ? 'Saving…' : page ? 'Save details' : 'Add a featured stylist'}
-          type="submit"
-          loading={write.isPending}
+        <TextArea
+          label="Bio (optional)"
+          name="bio"
+          defaultValue={page?.bio}
+          maxLength={1000}
+          hint="Their own words from their Instagram bio, if they have one."
         />
-        {write.isSuccess && page && <Text role="status">Details saved.</Text>}
+        {page && error && <InlineAlert message={error} />}
+        <div className={s.composerFooter}>
+          {write.isSuccess && page && (
+            <Text role="status" tone="secondary">
+              Details saved.
+            </Text>
+          )}
+          <Button
+            label={write.isPending ? 'Saving…' : page ? 'Save details' : 'Add a featured stylist'}
+            type="submit"
+            loading={write.isPending}
+          />
+        </div>
       </fieldset>
     </form>
   );

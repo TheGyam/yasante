@@ -101,6 +101,23 @@ def _summary(page):
     }
 
 
+def _with_covers(items, pages, per=3):
+    """A few of each stylist's covers, newest first, for the list: one query a page."""
+    covers = {}
+    owners = {str(page.profile.account_id): str(page.pk) for page in pages}
+    for author, thumb, photo in (
+        Look.objects.filter(author_id__in=owners)
+        .order_by("-created_at")
+        .values_list("author_id", "thumb_uri", "photo_uri")
+    ):
+        shown = covers.setdefault(owners[str(author)], [])
+        if len(shown) < per:
+            shown.append(thumb or photo)
+    for item in items:
+        item["covers"] = covers.get(item["id"], [])
+    return items
+
+
 def _summaries():
     """One annotated query per page of records, without multiplying counts."""
     looks = (
@@ -195,7 +212,7 @@ def pages(request):
         except (EmptyPage, ValueError):
             raise BadRequest("That page could not be found")
         return {
-            "items": [_summary(p) for p in current],
+            "items": _with_covers([_summary(p) for p in current], current),
             "count": paginator.count,
             "page": current.number,
             "pages": paginator.num_pages,
