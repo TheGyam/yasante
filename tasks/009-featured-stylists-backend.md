@@ -342,18 +342,23 @@ reused database).
 
 ## Report to the lead
 
-- **Changed:** Pulled master into the assigned branch with `git pull --no-rebase origin master`. The merge completed without conflicts. Master's clarification permits new path entries in `backend/config/urls.py` and requires HTTP 200 with a joined boolean for both waitlist operations. Set status to in-progress, then back to blocked after reading the existing look and preview paths. No application code changed.
+- **Changed:** Pulled master into the assigned branch with `git pull --no-rebase origin master`; the clarification merged without conflicts. The earlier questions about routes, waitlist responses, hiding draft looks and preview photos are resolved. Set status to in-progress, audited the look queries across `backend/apps`, then set status to blocked for the remaining caller scope gap below. No application code changed.
 - **Checks run:**
-  - `git pull --no-rebase origin master`: passed; merged master's task clarification without conflicts.
+  - `git pull --no-rebase origin master`: passed; merged without conflicts.
   - `git diff --check`: passed for this report.
   - `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run`: not run; stopped before implementation.
   - `python -m pytest -q -p no:cacheprovider --create-db`: not run; stopped before implementation.
   - `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: not run; no API changes.
   - `python manage.py spectacular --file ../openapi.yaml`: not run; no API changes.
   - `npm run api:types` in `web/`: not run; no API changes.
-- **Every `published=True` use and booking entry point, and what you did with each:** Not fully audited; stopped at the publishing and preview conflicts below. No entry points changed.
-- **Unsure about:** How draft looks stay private until staff put the page live, and how the private preview obtains its photos.
-- **Skipped, and why:** Implementation, tests, schema generation, push and draft pull request. The brief requires a blocked report, a commit and a stop when the plan and task disagree or work cannot be done within scope.
-- **Question for the lead:**
-  - The plan says staff preview privately before putting the page live, at which point its looks appear publicly. Step 2 requires `add_look` to create public looks. Existing `FeedView.get` selects public, live looks without checking the author's profile's `published` flag; `_visible_look` likewise does not check that flag. A new `Look` defaults to `status="live"`. Following step 2 literally therefore exposes draft photos through the feed and look-detail API before staff put the page live. Scope allows only `LookDetailView.patch` changes in that file. Should Scope also allow the public look read paths to exclude looks belonging to a page that is not live? Alternatively, should draft looks use a different existing visibility/status until `put_live` changes them? Please specify which behavior; `hidden` currently means moderation, and `private` would differ from step 2.
-  - The plan requires the private link to show the page as it will look before it is live. Step 6 specifies only `{display_name, handle, avatar_uri, look_count, live, waiting}` for `GET /api/featured/claim/<code>/`, while step 4 keeps the normal page a 404 before it is live. Task 011 explicitly needs a preview strip of look photos from this link, and its scope forbids server changes. May the link response also include preview photos (please specify the response shape), or should there be another authorized preview endpoint? No public draft access should be needed to render this preview.
+- **Every `published=True` use and booking entry point, and what you did with each:** Not yet fully audited. No entry points changed.
+- **Public look read audit:**
+  - In `apps/looks/views.py`, the feed uses `_looks`; look detail uses `_visible_look` and `_looks`; likes, comment reads/creation, replies and comment likes use `_visible_look`. The area list queries `Look.objects` directly. These can share the new filter within the clarified scope.
+  - Website look detail, style and area pages, sitemap look entries, and the SEO home/style/looks-index queries use `Look.objects` directly in `apps/web/views.py` and `apps/web/seo.py`. They will need to call the same shared visibility helper.
+  - Stylist style-search matching and style-result photos query `Look.objects` directly in `apps/stylists/views.py`. These will need the same helper as well.
+  - Saving a look in `CollectionItemListCreateView.post` (`apps/planner/views.py`, current line 205) reads the photo and caption directly from `Look.objects`. It checks private visibility and blocking, but never goes through `_looks` or `_visible_look`.
+  - `_public_look` (`apps/bookings/views.py`, current line 64) reads `Look.objects` directly and checks only public visibility and live moderation status. This helper can still return a draft look as the source of a booking with another stylist.
+  - Staff queries must remain unfiltered. No global model-manager changes were made or proposed.
+- **Unsure about:** Scope for routing the two last callers through the shared visibility helper.
+- **Skipped, and why:** Implementation, tests, schema generation, push and draft pull request. Step 4 requires all public paths, explicitly including saves, to hide draft looks, but two required caller changes are outside Scope. The brief requires a blocked report, commit and stop in that case.
+- **Question for the lead:** May Scope also allow (1) `backend/apps/planner/views.py`, solely to route the look lookup in `CollectionItemListCreateView.post` through the shared visibility helper, and (2) `_public_look` in `backend/apps/bookings/views.py`, solely to use that same helper? Scope currently omits the planner file entirely and restricts booking changes to step 9's refusals. The actual code has no existing shared queryset used by these callers, so adding the filter only in `apps/looks/views.py` leaves those paths able to read draft photos. The filter itself will still be defined once; these are only caller wiring changes.
