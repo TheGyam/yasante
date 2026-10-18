@@ -1,5 +1,6 @@
 """Staff-built stylist pages, their private links and the handover to an account."""
 
+import re
 import secrets
 from datetime import date, timedelta
 from hashlib import sha256
@@ -21,8 +22,10 @@ from .models import FeaturedPage, PageWaitlist, PortfolioPhoto, StylistProfile
 from .slots import day_hours
 
 STAND_IN_DOMAIN = "yasante.invalid"
-LINK_GONE = "This link has already been used or has run out. Message @yasantebeauty on Instagram for a new one."
-ALREADY_HAS_PAGE = "You already have a page on Yasante. Message @yasantebeauty on Instagram and we'll put the two together."
+# Yasante's own accounts, where stylists message us (as in the site's footer).
+CONTACT = "@yasantebeauty on Instagram or @yasante_beauty on TikTok"
+LINK_GONE = f"This link has already been used or has run out. Message {CONTACT} for a new one."
+ALREADY_HAS_PAGE = f"You already have a page on Yasante. Message {CONTACT} and we'll put the two together."
 # Creating a user creates no related rows automatically in this codebase.
 SAFE_AUTOMATIC_RELATIONS = frozenset()
 
@@ -32,17 +35,51 @@ def is_stand_in(user) -> bool:
     return user.email.lower().endswith(f"@{STAND_IN_DOMAIN}")
 
 
-@transaction.atomic
-def create_page(
-    *, display_name, instagram_handle, base_area, avatar_media=None, bio="", added_by
-):
-    """Create a draft page owned by an account that can never sign in."""
+_SOCIAL = re.compile(r"^[a-z0-9._]{1,30}$")
+_SOCIAL_ADDRESS = re.compile(
+    r"^(?:https?://)?(?:www\.|m\.)?(?:instagram\.com|tiktok\.com)/@?([^/?#]+)", re.I
+)
+
+
+def social_handle(value):
+    """An Instagram or TikTok handle from what staff paste: @name, name or its address."""
+    text = str(value or "").strip()
+    match = _SOCIAL_ADDRESS.match(text)
+    handle = (match.group(1) if match else text).lstrip("@").lower()
+    if handle and not _SOCIAL.match(handle):
+        raise ValueError("That doesn't look like an Instagram or TikTok handle")
+    return handle
+
+
+def _yasante_handle(instagram, tiktok, current=None):
+    """Their address on Yasante: the Instagram handle, or the TikTok one if that's all."""
     from apps.accounts.usernames import name_in_use
 
-    handle = normalise(instagram_handle)
+    handle = normalise(instagram or tiktok)
+    if handle == current:
+        return handle
     problem = identifier_problem(handle, max_length=POLICY["handle_max"])
     if problem or name_in_use(handle):
         raise ValueError(problem or UNAVAILABLE)
+    return handle
+
+
+@transaction.atomic
+def create_page(
+    *,
+    display_name,
+    base_area,
+    added_by,
+    instagram_handle="",
+    tiktok_handle="",
+    avatar_media=None,
+    bio="",
+):
+    """Create a draft page owned by an account that can never sign in."""
+    instagram, tiktok = social_handle(instagram_handle), social_handle(tiktok_handle)
+    if not (instagram or tiktok):
+        raise ValueError("Add their Instagram or TikTok")
+    handle = _yasante_handle(instagram, tiktok)
     if not str(display_name).strip() or not str(base_area).strip():
         raise ValueError("Add a name and an area")
     user = get_user_model().objects.create_user(
@@ -59,7 +96,8 @@ def create_page(
             account=user,
             display_name=display_name,
             handle=handle,
-            instagram_handle=handle,
+            instagram_handle=instagram,
+            tiktok_handle=tiktok,
             base_area=base_area,
             bio=bio,
             avatar_uri=avatar,
@@ -69,8 +107,28 @@ def create_page(
     except IntegrityError as error:
         raise ValueError(UNAVAILABLE) from error
     return FeaturedPage.objects.create(
-        profile=profile, instagram_handle=handle, added_by=added_by
+        profile=profile, instagram_handle=instagram, tiktok_handle=tiktok, added_by=added_by
     )
+
+
+def set_socials(page, *, instagram_handle, tiktok_handle):
+    """Change where they are before the page is live; their Yasante address follows."""
+    instagram, tiktok = social_handle(instagram_handle), social_handle(tiktok_handle)
+    if (instagram, tiktok) == (page.instagram_handle, page.tiktok_handle):
+        return
+    if page.profile.published:
+        raise ValueError("Locked while the page is live")
+    if not (instagram or tiktok):
+        raise ValueError("Add their Instagram or TikTok")
+    profile = page.profile
+    handle = _yasante_handle(instagram, tiktok, current=profile.handle)
+    page.instagram_handle, page.tiktok_handle = instagram, tiktok
+    page.save(update_fields=["instagram_handle", "tiktok_handle", "updated_at"])
+    profile.instagram_handle, profile.tiktok_handle = instagram, tiktok
+    if handle != profile.handle:
+        profile.handle = handle
+        # Her looks carry the handle for their links, so they move with it.
+        Look.objects.filter(stylist_id=str(profile.account_id)).update(stylist_handle=handle)
 
 
 def _lock_editable(page):
@@ -280,7 +338,7 @@ def claim(page, user):
             ).count()
         ):
             raise ValueError(
-                "We couldn't move everything safely. Message @yasantebeauty on Instagram for help."
+                f"We couldn't move everything safely. Message {CONTACT} for help."
             )
     stand_in.delete()
     security_event(None, "featured_page_claimed", user=user)

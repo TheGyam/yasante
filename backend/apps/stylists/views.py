@@ -422,6 +422,7 @@ class StylistCreateView(APIView):
                     time_zone=data.get("time_zone", ""),
                     travel_radius_miles=data.get("travel_radius_miles"),
                     instagram_handle=data.get("instagram_handle", ""),
+                    tiktok_handle=data.get("tiktok_handle", ""),
                     notice_hours=policies.get("notice_hours", 24),
                     deposit_type=policies.get("deposit_type", "none"),
                     deposit_amount=policies.get("deposit_amount"),
@@ -476,6 +477,7 @@ class StylistMeView(APIView):
             "base_area",
             "address",
             "instagram_handle",
+            "tiktok_handle",
             "proof_photo_uri",
         ):
             if field in data:

@@ -207,6 +207,7 @@ class StylistProfileSerializer(BlankIsOptional, serializers.ModelSerializer):
             "travel_radius_miles",
             "time_zone",
             "instagram_handle",
+            "tiktok_handle",
             "policies",
             "availability",
             "payment_methods",
@@ -242,6 +243,9 @@ class StylistProfileDraftSerializer(serializers.Serializer):
         return value if is_zone(value) else ""
     travel_radius_miles = serializers.FloatField(required=False, allow_null=True)
     instagram_handle = serializers.CharField(
+        max_length=50, required=False, allow_blank=True, default=""
+    )
+    tiktok_handle = serializers.CharField(
         max_length=50, required=False, allow_blank=True, default=""
     )
     policies = PoliciesSerializer(required=False)

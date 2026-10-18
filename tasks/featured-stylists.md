@@ -65,7 +65,9 @@ message.
 
 ## Words we use
 
-Yasante's Instagram account is **@yasantebeauty** (`https://www.instagram.com/yasantebeauty/`, as in the site footer). Every "Message @yasantebeauty" line links there.
+Yasante is **@yasantebeauty** on Instagram (`https://www.instagram.com/yasantebeauty/`) and **@yasante_beauty** on TikTok (`https://www.tiktok.com/@yasante_beauty`), as in the site footer.
+
+**Instagram, TikTok or both.** A stylist may be on either or both (`instagramHandle`, `tiktokHandle`; at least one on a featured page). Their Yasante address is the Instagram handle, else the TikTok one. The book button is **Book on Instagram**, or **Book on TikTok** when they're only on TikTok; with both, Instagram leads and an **Also on TikTok** link sits beside it. The claim note names the app(s) they're on: "Message @yasantebeauty on Instagram from @{instagram}, or @yasante_beauty on TikTok from @{tiktok}, and we'll send you a link to make this page yours." Server messages say "Message @yasantebeauty on Instagram or @yasante_beauty on TikTok".
 
 Use exactly these words in every screen, button, message and error. Plain,
 friendly, short. Never use the words placeholder, unclaimed, claim token,

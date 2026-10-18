@@ -61,7 +61,7 @@ const linkClosing = (expires: string) =>
   'Open it to see how it looks, and make it yours whenever you like. ' +
   `The link works once and runs out on ${formatDate(expires)}.`;
 
-/** The text staff paste into the Instagram chat, with her link in it. */
+/** The text staff paste into the chat with them, with their link in it. */
 export function linkMessage(url: string, expires: string) {
   return `${LINK_GREETING}
 ${url}
@@ -165,7 +165,7 @@ function PageContent({ page, csrf }: { page: FeaturedDetail; csrf: string }) {
     : !page.look_count
       ? {
           title: 'Add their first look',
-          body: 'Save a few of their best posts from Instagram and add them here.',
+          body: 'Save a few of their best posts and add them here.',
           action: <Button label="Add their first look" icon={ImagePlus} onClick={openComposer} />,
         }
       : !page.agreed
@@ -193,7 +193,7 @@ function PageContent({ page, csrf }: { page: FeaturedDetail; csrf: string }) {
           : !linkLive && !link
             ? {
                 title: 'Send them their link',
-                body: 'Make their private link and send it in your Instagram chat.',
+                body: 'Make their private link and send it in your chat with them.',
                 action: (
                   <Button
                     label="Make their link"
@@ -221,14 +221,29 @@ function PageContent({ page, csrf }: { page: FeaturedDetail; csrf: string }) {
             <div className={`${ui.stack} ${ui.grow}`}>
               <h1 className={s.title}>{page.display_name}</h1>
               <div className={s.sub}>
-                <a
-                  className={s.handleLink}
-                  href={`https://www.instagram.com/${encodeURIComponent(page.instagram_handle)}/`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  @{page.handle} <ExternalLink size={12} aria-hidden />
-                </a>{' '}
+                {page.instagram_handle && (
+                  <a
+                    className={s.handleLink}
+                    href={`https://www.instagram.com/${encodeURIComponent(page.instagram_handle)}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Their Instagram"
+                  >
+                    Instagram @{page.instagram_handle} <ExternalLink size={12} aria-hidden />
+                  </a>
+                )}
+                {page.instagram_handle && page.tiktok_handle && ' · '}
+                {page.tiktok_handle && (
+                  <a
+                    className={s.handleLink}
+                    href={`https://www.tiktok.com/@${encodeURIComponent(page.tiktok_handle)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Their TikTok"
+                  >
+                    TikTok @{page.tiktok_handle} <ExternalLink size={12} aria-hidden />
+                  </a>
+                )}{' '}
                 · {page.base_area} · {featuredStatus(page)}
               </div>
               <Progress page={page} />
@@ -330,7 +345,7 @@ function PageContent({ page, csrf }: { page: FeaturedDetail; csrf: string }) {
                       name="note"
                       required
                       maxLength={300}
-                      placeholder="Said yes in our Instagram chat, to Akua"
+                      placeholder="Said yes in our TikTok chat, to Akua"
                       hint="Include who the yes was sent to."
                     />
                     <FileField
@@ -390,7 +405,7 @@ function PageContent({ page, csrf }: { page: FeaturedDetail; csrf: string }) {
               <Text>The link has been used.</Text>
             ) : link ? (
               <div className={s.linkBox}>
-                <span className={s.label}>Paste this into your Instagram chat with them</span>
+                <span className={s.label}>Paste this into your chat with them</span>
                 <p className={s.message}>
                   {LINK_GREETING}
                   <br />
@@ -428,7 +443,7 @@ function PageContent({ page, csrf }: { page: FeaturedDetail; csrf: string }) {
               <Text tone="secondary">
                 {page.link_expires_at
                   ? `${linkLive ? 'Link live' : 'Link has run out'} · ${formatDateTime(page.link_expires_at)}`
-                  : 'Their private link opens the page and lets them make it theirs. It only ever goes to their Instagram chat.'}
+                  : 'Their private link opens the page and lets them make it theirs. It only ever goes to them, in your chat.'}
               </Text>
             )}
             {!claimed && (

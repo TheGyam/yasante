@@ -3050,6 +3050,8 @@ export interface components {
             travelRadiusMiles?: number | null;
             /** @default  */
             instagramHandle: string;
+            /** @default  */
+            tiktokHandle: string;
             policies?: components["schemas"]["PoliciesRequest"];
             proofPhotoUri?: string;
             availability?: {
@@ -3196,6 +3198,7 @@ export interface components {
             travelRadiusMiles?: number;
             timeZone?: string;
             instagramHandle?: string;
+            tiktokHandle?: string;
             readonly policies: components["schemas"]["Policies"];
             readonly availability?: components["schemas"]["Availability"];
             readonly verificationTier: components["schemas"]["VerificationTierEnum"];
@@ -3452,6 +3455,7 @@ export interface components {
             travelRadiusMiles?: number;
             timeZone?: string;
             instagramHandle?: string;
+            tiktokHandle?: string;
             readonly policies: components["schemas"]["Policies"];
             readonly availability?: components["schemas"]["Availability"];
             readonly paymentMethods: components["schemas"]["PaymentMethod"][];
@@ -3478,6 +3482,8 @@ export interface components {
             travelRadiusMiles?: number | null;
             /** @default  */
             instagramHandle: string;
+            /** @default  */
+            tiktokHandle: string;
             policies?: components["schemas"]["PoliciesRequest"];
             proofPhotoUri?: string;
             availability?: {

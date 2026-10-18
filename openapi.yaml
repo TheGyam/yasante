@@ -5403,6 +5403,10 @@ components:
           type: string
           default: ''
           maxLength: 50
+        tiktokHandle:
+          type: string
+          default: ''
+          maxLength: 50
         policies:
           $ref: '#/components/schemas/PoliciesRequest'
         proofPhotoUri:
@@ -5731,6 +5735,9 @@ components:
           type: string
           maxLength: 64
         instagramHandle:
+          type: string
+          maxLength: 50
+        tiktokHandle:
           type: string
           maxLength: 50
         policies:
@@ -6311,6 +6318,9 @@ components:
         instagramHandle:
           type: string
           maxLength: 50
+        tiktokHandle:
+          type: string
+          maxLength: 50
         policies:
           allOf:
           - $ref: '#/components/schemas/Policies'
@@ -6394,6 +6404,10 @@ components:
           format: double
           nullable: true
         instagramHandle:
+          type: string
+          default: ''
+          maxLength: 50
+        tiktokHandle:
           type: string
           default: ''
           maxLength: 50
