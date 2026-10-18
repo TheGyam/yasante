@@ -330,17 +330,18 @@ reused database).
 
 ## Report to the lead
 
-- **Changed:** Set this task to blocked and recorded the questions below. No application code changed. Pulled master with `git pull --ff-only origin master` (already up to date) in a separate worktree, then created the assigned branch. The original checkout has unrelated local changes and was left alone.
+- **Changed:** Pulled master into the assigned branch with `git pull --no-rebase origin master`. The merge completed without conflicts. Master's clarification permits new path entries in `backend/config/urls.py` and requires HTTP 200 with a joined boolean for both waitlist operations. Set status to in-progress, then back to blocked after reading the existing look and preview paths. No application code changed.
 - **Checks run:**
-  - `git pull --ff-only origin master`: passed; already up to date.
+  - `git pull --no-rebase origin master`: passed; merged master's task clarification without conflicts.
+  - `git diff --check`: passed for this report.
   - `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run`: not run; stopped before implementation.
   - `python -m pytest -q -p no:cacheprovider --create-db`: not run; stopped before implementation.
   - `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: not run; no API changes.
   - `python manage.py spectacular --file ../openapi.yaml`: not run; no API changes.
   - `npm run api:types` in `web/`: not run; no API changes.
-- **Every `published=True` use and booking entry point, and what you did with each:** Not audited; stopped at the scope conflict before implementation. No entry points changed.
-- **Unsure about:** Where to register the new API route within the allowed scope, and which response leaving the waitlist should return.
-- **Skipped, and why:** Implementation, tests, schema generation, push and draft pull request. The brief requires a blocked report, a commit and a stop when scope or requirements conflict.
+- **Every `published=True` use and booking entry point, and what you did with each:** Not fully audited; stopped at the publishing and preview conflicts below. No entry points changed.
+- **Unsure about:** How draft looks stay private until staff put the page live, and how the private preview obtains its photos.
+- **Skipped, and why:** Implementation, tests, schema generation, push and draft pull request. The brief requires a blocked report, a commit and a stop when the plan and task disagree or work cannot be done within scope.
 - **Question for the lead:**
-  - Step 6 requires `GET` and `POST /api/featured/claim/<code>/`. `backend/config/urls.py` mounts `apps.stylists.urls` at `/api/stylists/` and contains the other top-level API routes, but that file is outside Scope. Changes to `apps/web/urls.py` are limited to step 13, which describes website shell routes. May this task also change `backend/config/urls.py` solely to register the two required API endpoints?
-  - Step 4 says leaving the waitlist when absent is HTTP 204, and also says both operations answer `{"joined": true|false}`. HTTP 204 cannot carry a response body. Should `DELETE` return HTTP 200 with `{"joined": false}` every time, or HTTP 204 with no body every time?
+  - The plan says staff preview privately before putting the page live, at which point its looks appear publicly. Step 2 requires `add_look` to create public looks. Existing `FeedView.get` selects public, live looks without checking the author's profile's `published` flag; `_visible_look` likewise does not check that flag. A new `Look` defaults to `status="live"`. Following step 2 literally therefore exposes draft photos through the feed and look-detail API before staff put the page live. Scope allows only `LookDetailView.patch` changes in that file. Should Scope also allow the public look read paths to exclude looks belonging to a page that is not live? Alternatively, should draft looks use a different existing visibility/status until `put_live` changes them? Please specify which behavior; `hidden` currently means moderation, and `private` would differ from step 2.
+  - The plan requires the private link to show the page as it will look before it is live. Step 6 specifies only `{display_name, handle, avatar_uri, look_count, live, waiting}` for `GET /api/featured/claim/<code>/`, while step 4 keeps the normal page a 404 before it is live. Task 011 explicitly needs a preview strip of look photos from this link, and its scope forbids server changes. May the link response also include preview photos (please specify the response shape), or should there be another authorized preview endpoint? No public draft access should be needed to render this preview.
