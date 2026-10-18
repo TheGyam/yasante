@@ -1457,6 +1457,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description GET /api/stylists/by-handle/:handle/ — her public page. */
         get: operations["stylists_by_handle_retrieve"];
         put?: never;
         post?: never;
@@ -3423,7 +3424,7 @@ export interface components {
             name: string;
         };
         StylistPageResponse: {
-            waitlistJoined: boolean | null;
+            waitlistJoined?: boolean;
             profile: components["schemas"]["PublicProfile"];
             menu: components["schemas"]["MenuItem"][];
             photos: components["schemas"]["PortfolioPhoto"][];

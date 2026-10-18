@@ -155,8 +155,7 @@ def record_yes(page, *, note, proof_media=None):
     """Record when and how the stylist agreed to appear on Yasante."""
     _lock_editable(page)
     if proof_media and (
-        proof_media.owner_id != page.profile.account_id
-        or proof_media.visibility != "private"
+        not proof_media.owner.is_staff or proof_media.visibility != "private"
     ):
         raise ValueError("Upload a private photo of the yes first")
     page.agreed_at, page.agreed_note, page.agreed_proof = (
@@ -199,6 +198,8 @@ def take_down(page):
     _lock_editable(page)
     if page.claimed_at or not is_stand_in(page.profile.account):
         raise ValueError("This page already belongs to its stylist")
+    if page.agreed_proof_id:
+        page.agreed_proof.delete()
     page.profile.account.delete()
 
 
@@ -242,8 +243,9 @@ def claim(page, user):
     Look.objects.filter(author=stand_in).update(author=user)
     Look.objects.filter(stylist_id=str(stand_in.pk)).update(stylist_id=str(user.pk))
     Media.objects.filter(owner=stand_in).update(owner=user)
-    StylistProfile.objects.filter(pk=profile.pk).update(account=user)
+    StylistProfile.objects.filter(pk=profile.pk).update(account=user, published=True)
     profile.account = user
+    profile.published = True
     PageWaitlist.objects.filter(stylist=profile, client=user).delete()
     user.roles = list(dict.fromkeys([*(user.roles or []), "stylist"]))
     user.save(update_fields=["roles", "updated_at"])
@@ -308,22 +310,24 @@ def takes_bookings(profile) -> bool:
     )
 
 
-@transaction.atomic
 def open_if_ready(profile):
     """Open a ready page once and tell its waitlist only after commit."""
+    if not profile.featured:
+        return
     from .tasks import tell_waitlist
 
-    # Menu and hours saves can arrive together; read the latest row after the lock.
-    profile.refresh_from_db(
-        from_queryset=StylistProfile.objects.select_for_update(no_key=True)
-    )
-    if profile.featured and takes_bookings(profile):
-        changed = StylistProfile.objects.filter(pk=profile.pk, featured=True).update(
-            featured=False
+    with transaction.atomic():
+        # Menu and hours saves can arrive together; read the latest row after the lock.
+        profile.refresh_from_db(
+            from_queryset=StylistProfile.objects.select_for_update(no_key=True)
         )
-        profile.featured = False
-        if changed:
-            transaction.on_commit(lambda: tell_waitlist.delay(profile.pk))
+        if profile.featured and takes_bookings(profile):
+            changed = StylistProfile.objects.filter(
+                pk=profile.pk, featured=True
+            ).update(featured=False)
+            profile.featured = False
+            if changed:
+                transaction.on_commit(lambda: tell_waitlist.delay(profile.pk))
 
 
 def finish_state(profile):

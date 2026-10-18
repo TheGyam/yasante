@@ -318,7 +318,9 @@ class LookDetailView(APIView):
             return Response({"message": "Only the style and hair type can be changed"}, status=400)
         if "styles" in request.data:
             wanted = request.data["styles"] if isinstance(request.data["styles"], list) else []
-            styles = list(Style.objects.filter(slug__in=[str(s) for s in wanted][:3]))
+            if len(wanted) > 3:
+                return Response({"message": "Pick up to 3 styles"}, status=400)
+            styles = list(Style.objects.filter(slug__in=[str(s) for s in wanted]))
             if look.type == "look" and not styles:
                 return Response({"message": "Tag the style"}, status=400)
             look.styles.set(styles)

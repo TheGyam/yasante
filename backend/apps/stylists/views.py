@@ -8,7 +8,6 @@ from datetime import date, datetime, time, timedelta
 
 from apps.accounts.serializers import UserResponseSerializer, UserSerializer
 from apps.bookings.models import Booking, Review
-from apps.common.renderers import CamelCaseJSONRenderer
 from apps.common import zones
 from apps.common.identifiers import POLICY, UNAVAILABLE, identifier_problem, normalise
 from apps.common.blocks import blocked_account_ids, is_blocked
@@ -462,8 +461,6 @@ class StylistMeView(APIView):
         if profile is None:
             return Response(NO_PROFILE, status=404)
         data = request.data
-        if profile.featured and "instagram_handle" in data and data["instagram_handle"] != profile.instagram_handle:
-            return Response({"message": "Message @yasante on Instagram to change the Instagram account on this page"}, status=400)
         update_fields = []
 
         # A new photo is her own upload (see own_media); the proof photo is a private one.
@@ -574,14 +571,8 @@ class StylistPublishView(APIView):
 
 
 
-class StylistPageJSONRenderer(CamelCaseJSONRenderer):
-    """Keep the signed-out waitlist value on the page and its inlined copy."""
-    preserve_null = ("waitlist_joined",)
-
-
 @extend_schema_view(get=extend_schema(responses=StylistPageResponseSerializer))
 class StylistByHandleView(APIView):
-    renderer_classes = [StylistPageJSONRenderer]
     """GET /api/stylists/by-handle/:handle/ — her public page."""
 
     permission_classes = [permissions.AllowAny]
@@ -638,7 +629,7 @@ def stylist_page(profile, viewer=None):
 
     return {
         "profile": data,
-        "waitlist_joined": profile.waitlist.filter(client=viewer).exists() if viewer else None,
+        **({"waitlist_joined": profile.waitlist.filter(client=viewer).exists()} if viewer else {}),
         "menu": MenuItemSerializer(profile.menu_items.all(), many=True).data,
         "photos": PortfolioPhotoSerializer(profile.portfolio_photos.all(), many=True).data,
         "confirmed_styles": profile.confirmed_styles_count,

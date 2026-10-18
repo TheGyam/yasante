@@ -2274,6 +2274,7 @@ paths:
   /api/stylists/by-handle/{handle}/:
     get:
       operationId: stylists_by_handle_retrieve
+      description: GET /api/stylists/by-handle/:handle/ — her public page.
       parameters:
       - in: path
         name: handle
@@ -6232,8 +6233,6 @@ components:
       properties:
         waitlistJoined:
           type: boolean
-          nullable: true
-          x-preserve-null: true
         profile:
           $ref: '#/components/schemas/PublicProfile'
         menu:
@@ -6265,7 +6264,6 @@ components:
       - photos
       - profile
       - reviews
-      - waitlistJoined
     StylistProfile:
       type: object
       description: Full profile for the stylist herself.

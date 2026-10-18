@@ -4,7 +4,6 @@ from datetime import timedelta
 from apps.common import zones
 
 from celery import shared_task
-from django.db import transaction
 from django.utils import timezone
 
 from apps.common.notifications import notify
@@ -52,20 +51,25 @@ def monthly_recap(now=None):
 
 
 @shared_task
-@transaction.atomic
 def tell_waitlist(profile_id):
     """Tell each waiting client once, then remove only the rows processed."""
     from apps.common.notifications import notify_once
     from .featured import takes_bookings
     from .models import PageWaitlist
 
-    profile = StylistProfile.objects.select_for_update().select_related("account").filter(pk=profile_id).first()
+    profile = StylistProfile.objects.select_related("account").filter(pk=profile_id).first()
     if profile is None or not takes_bookings(profile):
         return
+    processed = []
     for waiting in PageWaitlist.objects.filter(stylist=profile).order_by("pk").iterator(chunk_size=500):
         notify_once(f"page-open:{profile.pk}:{waiting.client_id}", waiting.client_id, {
             "category": "waitlist", "title": f"{profile.display_name} is taking bookings.",
             "body": f"You joined the waitlist for {profile.display_name}. Book now on Yasante.",
             "url": f"/{profile.handle}", "mode": "client",
         })
-        waiting.delete()
+        processed.append(waiting.pk)
+        if len(processed) == 500:
+            PageWaitlist.objects.filter(pk__in=processed).delete()
+            processed.clear()
+    if processed:
+        PageWaitlist.objects.filter(pk__in=processed).delete()

@@ -386,7 +386,7 @@ def test_claim_moves_everything_and_keeps_client_data(page, work, make_user):
     for kind in ("avatar", "proof"):
         media, error = store_image(
             image_file(),
-            owner=page.profile.account,
+            owner=page.added_by if kind == "proof" else page.profile.account,
             kind=kind,
             source="instagram",
             private=kind == "proof",
@@ -414,7 +414,11 @@ def test_claim_moves_everything_and_keeps_client_data(page, work, make_user):
     assert look.author_id == user.pk and look.stylist_id == str(user.pk)
     assert credited.stylist_id == str(user.pk)
     assert PortfolioPhoto.objects.get(look_id=look.pk).stylist.account_id == user.pk
-    assert not Media.objects.exclude(owner=user).exists()
+    assert (
+        not Media.objects.exclude(owner=user).exclude(pk=page.agreed_proof_id).exists()
+    )
+    assert page.agreed_proof.owner_id == page.added_by_id
+    assert page.agreed_proof.visibility == "private"
     assert not User.objects.filter(pk=old_id).exists()
     assert HairProfile.objects.get(pk=hair.pk).user_id == user.pk
     assert Collection.objects.get(pk=collection.pk).user_id == user.pk
@@ -519,7 +523,7 @@ def test_waitlist_and_public_page_state(page, work, make_user, make_stylist):
         and data["waitlist_joined"]
     )
     assert "waiting" not in data and "waiting" not in data["profile"]
-    assert signed().get(url.removesuffix("waitlist/")).json()["waitlistJoined"] is None
+    assert "waitlistJoined" not in signed().get(url.removesuffix("waitlist/")).json()
     for _ in range(2):
         response = client.delete(url)
         assert response.status_code == 200 and response.data == {"joined": False}
@@ -811,6 +815,7 @@ def test_featured_noindex_and_link_shell(page, work):
     response = client.get("/claim/private-code")
     assert response.status_code == 200 and b"noindex" in response.content
     assert response["Referrer-Policy"] == "no-referrer"
+    assert response["Cache-Control"] == "no-store"
     assert b"ama.braids" not in response.content
     assert client.get("/finish").status_code == 200
 
@@ -1006,10 +1011,12 @@ def test_create_page_uses_existing_handle_validation(page, handle):
     assert User.objects.filter(email__endswith="@yasante.invalid").count() == 1
 
 
-def test_owner_can_fix_tags_before_page_is_live(page, work, make_user):
+def test_owner_can_fix_tags_after_unpublishing(page, work, make_user):
     look = work()
     owner = make_user(email_verified=True)
     claim_page(page, owner)
+    page.profile.published = False
+    page.profile.save(update_fields=["published"])
     response = signed(owner).patch(
         f"/api/looks/{look.pk}/", {"styles": ["cornrows"]}, format="json"
     )
@@ -1049,3 +1056,197 @@ def test_hidden_related_data_also_prevents_deleting_the_stand_in(
     page.refresh_from_db()
     assert page.claimed_at is None and page.profile.account_id == old.pk
     assert User.objects.filter(pk=old.pk).exists()
+
+
+def test_claiming_a_draft_publishes_it(page, work, make_user):
+    look = work()
+    assert not page.profile.published and page.agreed_at is None
+    owner = make_user(email_verified=True)
+    claim_page(page, owner)
+    assert page.profile.published and page.profile.featured
+    assert (
+        signed().get(f"/api/stylists/by-handle/{page.profile.handle}/").status_code
+        == 200
+    )
+    assert signed().get(f"/api/looks/{look.pk}/").status_code == 200
+
+
+def test_staff_can_correct_a_draft_handle_but_not_a_live_one(page, work, make_user):
+    client, _ = staff_client(make_user, superuser=True)
+    item = f"/data/featured/{page.pk}/"
+
+    def change(handle):
+        return client.patch(
+            item, {"instagram_handle": handle}, content_type="application/json"
+        )
+
+    for invalid in ("admin", "bad handle"):
+        assert change(invalid).status_code == 400
+        page.refresh_from_db()
+        assert (
+            page.instagram_handle
+            == page.profile.handle
+            == page.profile.instagram_handle
+            == "ama.braids"
+        )
+    featured.create_page(
+        display_name="Other",
+        instagram_handle="taken",
+        base_area="Peckham",
+        added_by=page.added_by,
+    )
+    assert change("taken").status_code == 400
+    assert change("@Ama.Corrected").status_code == 200
+    page.refresh_from_db()
+    assert (
+        page.instagram_handle
+        == page.profile.handle
+        == page.profile.instagram_handle
+        == "ama.corrected"
+    )
+    live(page, work)
+    response = change("another.handle")
+    assert response.status_code == 400
+    assert response.json()["message"] == "Locked while the page is live"
+    page.refresh_from_db()
+    assert (
+        page.instagram_handle
+        == page.profile.handle
+        == page.profile.instagram_handle
+        == "ama.corrected"
+    )
+
+
+def test_claimed_stylist_can_edit_instagram(page, make_user):
+    owner = make_user(email_verified=True)
+    claim_page(page, owner)
+    response = signed(owner).patch("/api/stylists/me/", {"instagram_handle": "ama.new"})
+    assert response.status_code == 200, response.data
+    page.profile.refresh_from_db()
+    assert page.profile.instagram_handle == "ama.new"
+
+
+def test_waitlist_deletes_in_batches_without_profile_locks(page, make_user):
+    owner = make_user(email_verified=True)
+    claim_page(page, owner)
+    page.profile.availability = WEEK_9_TO_6
+    page.profile.save()
+    MenuItem.objects.create(stylist=page.profile, name="Braids", price=50)
+    users = User.objects.bulk_create(
+        [User(email=f"waiting{i}@test.dev") for i in range(1001)]
+    )
+    PageWaitlist.objects.bulk_create(
+        [PageWaitlist(stylist=page.profile, client=user) for user in users]
+    )
+    with (
+        patch("apps.common.notifications.notify_once") as notify,
+        CaptureQueriesContext(connection) as queries,
+    ):
+        tell_waitlist(page.profile.pk)
+        tell_waitlist(page.profile.pk)
+    assert notify.call_count == 1001
+    sql = [q["sql"] for q in queries]
+    assert not any("FOR UPDATE" in q or "FOR NO KEY UPDATE" in q for q in sql)
+    deletes = [
+        q for q in sql if q.startswith("DELETE") and "stylists_pagewaitlist" in q
+    ]
+    assert len(deletes) == 3
+    assert not PageWaitlist.objects.exists()
+
+
+def test_public_waitlist_state_is_only_sent_to_signed_in_viewers(page, work, make_user):
+    live(page, work)
+    path = f"/api/stylists/by-handle/{page.profile.handle}/"
+    assert "waitlistJoined" not in signed().get(path).json()
+    viewer = make_user()
+    assert signed(viewer).get(path).json()["waitlistJoined"] is False
+    PageWaitlist.objects.create(stylist=page.profile, client=viewer)
+    assert signed(viewer).get(path).json()["waitlistJoined"] is True
+    html = Client().get(f"/{page.profile.handle}").content.decode()
+    assert "waitlistJoined" not in html
+
+
+def test_jest_website_exclusion_is_rooted_and_portable():
+    import subprocess
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    script = r"""
+    const assert = require('node:assert/strict');
+    const fs = require('node:fs');
+    const vm = require('node:vm');
+    const source = fs.readFileSync('./jest.config.js', 'utf8');
+    for (const root of ['/work/web/yasante', String.raw`C:\work\web\.codex\yasante`]) {
+      const context = { __dirname: root, module: { exports: {} } };
+      vm.runInNewContext(source, context);
+      const pattern = context.module.exports.testPathIgnorePatterns[1];
+      const re = new RegExp(pattern);
+      for (const slash of ['/', '\\']) {
+        assert(re.test(root + slash + 'web' + slash + 'example.test.ts'));
+        assert(!re.test(root + slash + 'src' + slash + 'example.test.ts'));
+      }
+    }
+    """
+    subprocess.run(
+        ["node", "-e", script], cwd=root, check=True, capture_output=True, text=True
+    )
+
+
+def test_normal_stylist_readiness_does_not_lock_or_query(
+    make_stylist, django_assert_num_queries
+):
+    profile = make_stylist()
+    assert not profile.featured
+    with (
+        django_assert_num_queries(0),
+        patch("apps.stylists.tasks.tell_waitlist.delay") as queued,
+    ):
+        featured.open_if_ready(profile)
+    queued.assert_not_called()
+
+
+def test_too_many_styles_are_refused_without_changes(page, work, make_user):
+    client, _ = staff_client(make_user, superuser=True)
+    wanted = ["knotless", "cornrows", "twists", "locs"]
+    before = Media.objects.count()
+    response = client.post(
+        f"/data/featured/{page.pk}/looks/", {"styles": wanted, "files": image_file()}
+    )
+    assert response.status_code == 400
+    assert response.json()["message"] == "Pick up to 3 styles"
+    assert Media.objects.count() == before and not Look.objects.exists()
+    look = work()
+    owner = make_user(email_verified=True)
+    claim_page(page, owner)
+    response = signed(owner).patch(
+        f"/api/looks/{look.pk}/", {"styles": wanted, "hair_texture": "4c"}
+    )
+    assert response.status_code == 400
+    assert response.data["message"] == "Pick up to 3 styles"
+    look.refresh_from_db()
+    assert list(look.styles.values_list("slug", flat=True)) == ["knotless"]
+    assert look.hair_texture == ""
+
+
+def test_yes_record_belongs_to_uploader_and_is_deleted_on_take_down(
+    page, make_user, settings, tmp_path
+):
+    from django.core.files.storage import default_storage
+
+    settings.MEDIA_ROOT = tmp_path
+    client, uploader = staff_client(make_user, superuser=True)
+    assert uploader.pk != page.added_by_id
+    item = f"/data/featured/{page.pk}/"
+    assert client.post(item + "yes/", {"proof": image_file()}).status_code == 200
+    page.refresh_from_db()
+    proof = page.agreed_proof
+    assert proof.owner_id == uploader.pk and proof.visibility == "private"
+    paths = proof.paths()
+    assert all(default_storage.exists(path) for path in paths)
+    assert (
+        client.post(item + "take-down/", {"handle": page.profile.handle}).status_code
+        == 200
+    )
+    assert not Media.objects.filter(pk=proof.pk).exists()
+    assert all(not default_storage.exists(path) for path in paths)
+    assert User.objects.filter(pk=uploader.pk).exists()

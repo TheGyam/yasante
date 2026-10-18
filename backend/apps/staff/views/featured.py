@@ -135,10 +135,10 @@ def _summaries():
     )
 
 
-def _upload(file, page, kind, private=False):
+def _upload(file, owner, kind, private=False):
     """Staff use the same image checks and copies as the upload API."""
     media, error = store_image(
-        file, owner=page.profile.account, kind=kind, source="instagram", private=private
+        file, owner=owner, kind=kind, source="instagram", private=private
     )
     if error:
         raise ValueError(error)
@@ -174,7 +174,8 @@ def _write(view):
 
 
 def _file(request, file, page, kind, private=False):
-    media = _upload(file, page, kind, private)
+    owner = request.user if kind == "proof" else page.profile.account
+    media = _upload(file, owner, kind, private)
     request.featured_uploads.append(media)
     return media
 
@@ -254,12 +255,27 @@ def detail(request, pk):
 def _edit(request, pk):
     page = _page(pk, lock=True)
     body, files = _payload(request)
-    if "instagram_handle" in body and body["instagram_handle"] != page.instagram_handle:
-        raise ValueError(
-            "Message @yasante on Instagram to change the Instagram account on this page"
-        )
     serializer = PageDraftSerializer(data=body, partial=True)
     serializer.is_valid(raise_exception=True)
+    if "instagram_handle" in serializer.validated_data:
+        from apps.accounts.usernames import name_in_use
+        from apps.common.identifiers import (
+            POLICY,
+            UNAVAILABLE,
+            identifier_problem,
+            normalise,
+        )
+
+        handle = normalise(serializer.validated_data["instagram_handle"])
+        if handle != page.instagram_handle:
+            if page.profile.published:
+                raise ValueError("Locked while the page is live")
+            problem = identifier_problem(handle, max_length=POLICY["handle_max"])
+            if problem or name_in_use(handle):
+                raise ValueError(problem or UNAVAILABLE)
+            page.instagram_handle = handle
+            page.save(update_fields=["instagram_handle", "updated_at"])
+            page.profile.handle = page.profile.instagram_handle = handle
     for key in ("display_name", "bio", "base_area"):
         if key in serializer.validated_data:
             setattr(page.profile, key, serializer.validated_data[key])
@@ -284,10 +300,10 @@ def looks(request, pk):
     wanted = (
         body.getlist("styles") if hasattr(body, "getlist") else body.get("styles", [])
     )
+    if isinstance(wanted, list) and len(wanted) > 3:
+        raise ValueError("Pick up to 3 styles")
     styles = (
-        list(Style.objects.filter(slug__in=wanted[:3]))
-        if isinstance(wanted, list)
-        else []
+        list(Style.objects.filter(slug__in=wanted)) if isinstance(wanted, list) else []
     )
     if not styles:
         raise ValueError("Tag the style")

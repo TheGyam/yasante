@@ -21,7 +21,7 @@ from apps.looks.serializers import present_looks, with_viewer_flags
 from apps.profiles.models import PolicyDocument
 from apps.profiles.views import present_policy
 from apps.stylists.models import PageView, StylistProfile
-from apps.stylists.views import StylistPageJSONRenderer, stylist_page
+from apps.stylists.views import stylist_page
 
 from . import seo
 from .site import page
@@ -86,7 +86,6 @@ def stylist(request, handle):
         description=f"{(profile.bio or 'Braider')[:150]} · {profile.base_area}",
         image=photos[0].uri if photos else (profile.avatar_uri or ""),
         seeds=[(["stylist", profile.handle.lower()], data)],
-        seed_renderer=StylistPageJSONRenderer,
         content_template="web/content/stylist.html",
         content=content,
         jsonld=jsonld,
@@ -460,7 +459,6 @@ def apple_app_site_association(request):
     )
 
 
-@public
 def claim_page(request, code):
     response = page(request, title="Make it yours", noindex=True)
     response["Referrer-Policy"] = "no-referrer"

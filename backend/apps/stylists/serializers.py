@@ -361,13 +361,8 @@ class TimingLabelSerializer(serializers.Serializer):
     sample = serializers.IntegerField()
 
 
-@extend_schema_field({"type": "boolean", "nullable": True, "x-preserve-null": True})
-class WaitlistJoinedField(serializers.BooleanField):
-    pass
-
-
 class StylistPageResponseSerializer(serializers.Serializer):
-    waitlist_joined = WaitlistJoinedField(allow_null=True)
+    waitlist_joined = optional(serializers.BooleanField())
     profile = PublicProfileSerializer()
     menu = MenuItemSerializer(many=True)
     photos = PortfolioPhotoSerializer(many=True)
