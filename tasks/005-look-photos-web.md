@@ -1,9 +1,9 @@
 ---
 id: 005
 slug: look-photos-web
-assignee: gemini # codex | gemini | sonnet | haiku | opus
+assignee: sonnet # codex | gemini | sonnet | haiku | opus
 status: ready # draft | ready | in-progress | review | blocked | done
-branch: agent/gemini/005-look-photos-web
+branch: agent/sonnet/005-look-photos-web
 depends_on: [003]
 ---
 

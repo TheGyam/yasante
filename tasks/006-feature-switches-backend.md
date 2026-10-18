@@ -1,9 +1,9 @@
 ---
 id: 006
 slug: feature-switches-backend
-assignee: codex # codex | gemini | sonnet | haiku | opus
+assignee: sonnet # codex | gemini | sonnet | haiku | opus
 status: ready # draft | ready | in-progress | review | blocked | done
-branch: agent/codex/006-feature-switches-backend
+branch: agent/sonnet/006-feature-switches-backend
 depends_on: [003]
 ---
 
@@ -88,7 +88,6 @@ Out of scope (do not touch): the app and website code, video, anything else in `
 From `backend/`:
 
 ```
-pip install -r requirements-dev.txt
 DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run
 python -m pytest -q -p no:cacheprovider --create-db
 ```
