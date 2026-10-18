@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   BadgeCheck,
   CalendarPlus,
@@ -30,7 +31,7 @@ import { Rise } from '@/shared/ui/Rise';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
-import { useStylistPage, useTogglePageWaitlist } from '../hooks';
+import { stylistKeys, useStylistPage, useTogglePageWaitlist } from '../hooks';
 import {
   VERIFICATION_LABELS,
   depositLabel,
@@ -108,8 +109,13 @@ function Stylist({ page }: { page: StylistPage }) {
                   {profile.featured && <Pill tone="neutral">Featured</Pill>}
                 </div>
                 <Text variant="subhead" tone="secondary">
-                  {profile.featured ? 'Not taking bookings on Yasante yet' : `@${profile.handle}`}
+                  @{profile.handle}
                 </Text>
+                {profile.featured && (
+                  <Text variant="footnote" tone="secondary">
+                    Not taking bookings on Yasante yet
+                  </Text>
+                )}
               </div>
               {!profile.featured && rating && (
                 <span className={styles.average}>
@@ -149,7 +155,7 @@ function Stylist({ page }: { page: StylistPage }) {
               icon={MapPin}
               iconTone="neutral"
               title={profile.baseArea}
-              subtitle={whereLabel(profile)}
+              subtitle={profile.featured ? undefined : whereLabel(profile)}
             />
             {!profile.featured && (
               <ListRow
@@ -163,8 +169,12 @@ function Stylist({ page }: { page: StylistPage }) {
                 }
               />
             )}
-            {!profile.featured && hours && <ListRow icon={Clock} iconTone="neutral" title={hours} />}
-            {!profile.featured && reply && <ListRow icon={MessageCircleReply} iconTone="neutral" title={reply} />}
+            {!profile.featured && hours && (
+              <ListRow icon={Clock} iconTone="neutral" title={hours} />
+            )}
+            {!profile.featured && reply && (
+              <ListRow icon={MessageCircleReply} iconTone="neutral" title={reply} />
+            )}
             {!profile.featured && timing && (
               <ListRow
                 icon={Timer}
@@ -301,14 +311,15 @@ function Stylist({ page }: { page: StylistPage }) {
             <Text variant="footnote" tone="secondary" className={styles.claimNote}>
               Message{' '}
               <a
-                href="https://www.instagram.com/yasante/"
+                href="https://www.instagram.com/yasantebeauty/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.inlineInstagramLink}
               >
-                @yasante
+                @yasantebeauty
               </a>{' '}
-              on Instagram from @{profile.instagramHandle ?? profile.handle} and we'll send you a link to make this page yours.
+              on Instagram from @{profile.instagramHandle ?? profile.handle} and we'll send you a
+              link to make this page yours.
             </Text>
           ) : (
             <button
@@ -329,35 +340,39 @@ function FeaturedButtons({ page }: { page: StylistPage }) {
   const { profile } = page;
   const session = useSession();
   const navigate = useNavigate();
+  const client = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const toggleWaitlist = useTogglePageWaitlist(profile.handle);
   const [error, setError] = useState<string>();
   const autoJoinRef = useRef(false);
 
+  const signedIn = !!session;
   const joined = page.waitlistJoined === true;
-  const signedIn = page.waitlistJoined !== undefined;
-
+  // The page the site inlines is the signed-out copy, so for someone signed in it
+  // doesn't say yet whether they're waiting: read it once more as them.
+  const known = page.waitlistJoined !== undefined;
   useEffect(() => {
-    if (
-      session &&
-      searchParams.get('waitlist') === '1' &&
-      !page.waitlistJoined &&
-      !autoJoinRef.current
-    ) {
-      autoJoinRef.current = true;
+    if (signedIn && !known)
+      void client.invalidateQueries({ queryKey: stylistKeys.page(profile.handle) });
+  }, [signedIn, known, client, profile.handle]);
+
+  // Back from signing in to join: join without a second tap.
+  useEffect(() => {
+    if (!signedIn || !known || searchParams.get('waitlist') !== '1' || autoJoinRef.current) return;
+    autoJoinRef.current = true;
+    if (!joined)
       toggleWaitlist.mutate(true, {
-        onError: err => setError(errorMessage(err, "Couldn't join the waitlist")),
+        onError: err => setError(errorMessage(err, 'Couldn’t join the waitlist')),
       });
-      setSearchParams(
-        prev => {
-          const next = new URLSearchParams(prev);
-          next.delete('waitlist');
-          return next;
-        },
-        { replace: true }
-      );
-    }
-  }, [session, searchParams, page.waitlistJoined, setSearchParams, toggleWaitlist]);
+    setSearchParams(
+      prev => {
+        const next = new URLSearchParams(prev);
+        next.delete('waitlist');
+        return next;
+      },
+      { replace: true }
+    );
+  }, [signedIn, known, joined, searchParams, setSearchParams, toggleWaitlist]);
 
   return (
     <div className={styles.featuredButtons}>
@@ -368,23 +383,23 @@ function FeaturedButtons({ page }: { page: StylistPage }) {
         rel="noopener noreferrer"
         fullWidth
       />
-      {signedIn && session ? (
+      {signedIn ? (
         <Button
           label={joined ? 'On the waitlist' : 'Join the waitlist'}
           icon={joined ? Check : undefined}
           variant="secondary"
-          loading={toggleWaitlist.isPending}
+          disabled={!known || toggleWaitlist.isPending}
           onClick={() => {
             setError(undefined);
             toggleWaitlist.mutate(!joined, {
-              onError: err => setError(errorMessage(err, "Couldn't update waitlist")),
+              onError: err => setError(errorMessage(err, 'Couldn’t update the waitlist')),
             });
           }}
           fullWidth
         />
       ) : (
         <Button
-          label="Join the waitlist"
+          label="Sign in to join the waitlist"
           variant="secondary"
           onClick={() => navigate(withNext('/auth/login', `/${profile.handle}?waitlist=1`))}
           fullWidth

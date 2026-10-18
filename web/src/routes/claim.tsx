@@ -3,9 +3,7 @@ import { useParams } from 'react-router';
 import { Page } from '@/shared/ui/Page';
 import { Skeleton } from '@/shared/ui/Skeleton';
 
-const ClaimScreen = lazy(() =>
-  import('@/features/claim').then(m => ({ default: m.ClaimScreen }))
-);
+const ClaimScreen = lazy(() => import('@/features/claim').then(m => ({ default: m.ClaimScreen })));
 
 export default function ClaimRoute() {
   const { code = '' } = useParams();

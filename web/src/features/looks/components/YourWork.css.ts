@@ -49,6 +49,13 @@ export const editButton = style({
   position: 'absolute',
   bottom: space.xs,
   right: space.xs,
+  maxWidth: `calc(100% - ${space.xs * 2}px)`,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 4,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
   padding: '4px 8px',
   borderRadius: 999,
   border: 0,
@@ -60,6 +67,8 @@ export const editButton = style({
   transition: `opacity ${vars.time.state} ${EASE_OUT}`,
   ':hover': { opacity: 1 },
 });
+
+export const editorBody = style({ display: 'grid', gap: space.md });
 
 export const tagEditor = style({
   gridColumn: '1 / -1',
@@ -109,4 +118,3 @@ export const editorActions = style({
   gap: space.sm,
   marginTop: space.sm,
 });
-

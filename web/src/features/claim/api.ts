@@ -17,5 +17,4 @@ export const saveFinishPrice = (data: FinishPriceRequest) =>
   api.post<Finish>('/stylists/me/finish/price/', data);
 
 /** Confirm the tags on her photos are right. */
-export const checkFinishTags = () =>
-  api.post<Finish>('/stylists/me/finish/tags-checked/');
+export const checkFinishTags = () => api.post<Finish>('/stylists/me/finish/tags-checked/');

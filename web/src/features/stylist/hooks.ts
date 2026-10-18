@@ -222,26 +222,27 @@ export function useSummary(accountId: string) {
   });
 }
 
-/** Toggles whether the signed-in visitor is on a featured stylist's waitlist. */
+/**
+ * Joins or leaves a featured stylist's waitlist, showing the change at once. The
+ * answer sets the button; the page isn't read again, since every read of her page
+ * counts as a visit in her numbers.
+ */
 export function useTogglePageWaitlist(handle: string) {
   const client = useQueryClient();
+  const key = stylistKeys.page(handle);
+  const set = (joined: boolean) =>
+    client.setQueryData<StylistPage>(key, old => (old ? { ...old, waitlistJoined: joined } : old));
   return useMutation({
-    mutationFn: async (join: boolean) => (join ? joinPageWaitlist(handle) : leavePageWaitlist(handle)),
+    mutationFn: (join: boolean) => (join ? joinPageWaitlist(handle) : leavePageWaitlist(handle)),
     onMutate: async (join: boolean) => {
-      const key = stylistKeys.page(handle);
       await client.cancelQueries({ queryKey: key });
-      const previous = client.getQueryData<StylistPage>(key);
-      client.setQueryData<StylistPage>(key, old => (old ? { ...old, waitlistJoined: join } : old));
+      const previous = client.getQueryData<StylistPage>(key)?.waitlistJoined;
+      set(join);
       return { previous };
     },
-    onError: (_err, _join, context) => {
-      if (context?.previous) {
-        client.setQueryData(stylistKeys.page(handle), context.previous);
-      }
-    },
-    onSettled: () => {
-      client.invalidateQueries({ queryKey: stylistKeys.page(handle) });
+    onSuccess: answer => set(answer.joined),
+    onError: (_error, _join, context) => {
+      if (context) set(context.previous === true);
     },
   });
 }
-

@@ -65,4 +65,3 @@ export const featuredBadge = style({
   backdropFilter: 'blur(8px)',
   zIndex: 1,
 });
-

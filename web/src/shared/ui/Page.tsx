@@ -28,18 +28,23 @@ export function Page({ title, description, width = 'content', noIndex, children 
     document
       .querySelector('meta[name="description"]')
       ?.setAttribute('content', description ?? DEFAULT_DESCRIPTION);
-    let robots = document.querySelector('meta[name="robots"]');
-    if (noIndex) {
-      if (!robots) {
-        robots = document.createElement('meta');
-        robots.setAttribute('name', 'robots');
-        document.head.appendChild(robots);
-      }
-      robots.setAttribute('content', 'noindex');
-    } else if (robots) {
-      robots.removeAttribute('content');
-    }
-  }, [title, description, noIndex]);
+  }, [title, description]);
+
+  // The server picks each page's robots tag. A page that mustn't be indexed (a draft,
+  // a private link) says so here too, and puts the server's tag back when it goes.
+  useEffect(() => {
+    if (!noIndex) return;
+    const added = !document.querySelector('meta[name="robots"]');
+    const robots = document.querySelector('meta[name="robots"]') ?? document.createElement('meta');
+    const before = robots.getAttribute('content');
+    robots.setAttribute('name', 'robots');
+    robots.setAttribute('content', 'noindex');
+    if (added) document.head.appendChild(robots);
+    return () => {
+      if (added) robots.remove();
+      else if (before !== null) robots.setAttribute('content', before);
+    };
+  }, [noIndex]);
 
   return (
     <div className={`${styles.page} ${width === 'reading' ? styles.reading : ''}`}>{children}</div>

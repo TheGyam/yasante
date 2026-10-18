@@ -91,8 +91,8 @@ from the generated `schema.d.ts`.
      this page loads with the code in the URL).
 
 4. **Finish your page** (`/finish`, signed-in stylists only, using the
-     existing account guard). Reads `GET /api/stylists/me/finish/`. A short
-     checklist with progress ("2 of 3 done"):
+   existing account guard). Reads `GET /api/stylists/me/finish/`. A short
+   checklist with progress ("2 of 3 done"):
    - **Price your styles.** One card per style, biggest first: "{count} of
      your photos are {style}. What do you charge?" with a price field, a
      "From" switch (the price is a starting price), and an optional length of
@@ -120,17 +120,17 @@ from the generated `schema.d.ts`.
 
 ## Acceptance criteria
 
-- [x] A featured page shows Featured, Book on Instagram and Join the waitlist, and no prices, booking or reviews (test).
-- [x] Join the waitlist toggles at once, rolls back on an error, and signed out goes to sign-in and joins on return (tests).
-- [x] "Is this you?" appears only when `claimable`, and opens the note in place (test).
-- [x] A look by a featured stylist shows Featured and no booking link (test).
-- [x] The claim screen shows the waiting count only when more than 0, with the right singular and plural (test).
-- [x] Signed out, both buttons bring her back to `/claim/:code`; signed in, Make it yours claims once and lands on `/finish` (tests).
-- [x] A used or expired link shows only the plan's words (test).
-- [x] Pricing a style ticks it off; the checklist counts progress; done shows the final message (tests).
-- [x] Today shows the Finish your page card until done (test).
-- [x] Every word on these screens matches the plan's table.
-- [x] No new dependencies.
+- [ ] A featured page shows Featured, Book on Instagram and Join the waitlist, and no prices, booking or reviews (test).
+- [ ] Join the waitlist toggles at once, rolls back on an error, and signed out goes to sign-in and joins on return (tests).
+- [ ] "Is this you?" appears only when `claimable`, and opens the note in place (test).
+- [ ] A look by a featured stylist shows Featured and no booking link (test).
+- [ ] The claim screen shows the waiting count only when more than 0, with the right singular and plural (test).
+- [ ] Signed out, both buttons bring her back to `/claim/:code`; signed in, Make it yours claims once and lands on `/finish` (tests).
+- [ ] A used or expired link shows only the plan's words (test).
+- [ ] Pricing a style ticks it off; the checklist counts progress; done shows the final message (tests).
+- [ ] Today shows the Finish your page card until done (test).
+- [ ] Every word on these screens matches the plan's table.
+- [ ] No new dependencies.
 
 ## Checks
 
@@ -142,28 +142,26 @@ npm ci && npx tsc --noEmit && npm run lint && npm test && npx vite build
 
 ## Report to the lead
 
-_Filled in by the assignee when it sets `status: review` or `blocked`._
-
-- **Changed:**
-  - `web/src/features/stylist/`: Added `useTogglePageWaitlist` hook supporting optimistic toggle with rollback on error, `StylistScreen.css.ts` and `StylistScreen.tsx` (featured badge, waitlist toggle with signed-out redirect and auto-join on return, "Book on Instagram" external link, suppression of prices/reviews/booking for featured profiles, and toggleable in-place "Is this you? Make this page yours." note linking to Instagram).
-  - `web/src/features/looks/`: Added `updateLook` with snake_case `hair_texture` mapping, `useUpdateLook`, `LookCard.tsx` (featured badge replacing price), `LookScreen.tsx` (suppresses booking link and displays Featured in Done by), `YourWorkScreen.tsx` and `YourWork.css.ts` (tags check banner, inline look tags editor for styles 1–3 and hair type with "These look right" and "Save tags").
-  - `web/src/features/claim/`: Created `types.ts`, `api.ts`, `hooks.ts`, `components/ClaimScreen.css.ts`, `components/ClaimScreen.tsx`, `components/FinishScreen.css.ts`, `components/FinishScreen.tsx`, and `index.ts`.
-  - `web/src/features/studio/components/TodayScreen.tsx`: Added "Finish your page · {n} of 3 done" card linking to `/finish` when not done, hidden once done.
-  - `web/src/routes/`: Created `claim.tsx`, `finish.tsx`, and registered `/claim/:code` and `/finish` before `/:handle` in `web/src/routes/index.tsx`.
-  - `web/src/test/__tests__/featured.test.tsx`: Implemented 11 acceptance criterion tests covering featured stylist profile display, waitlist toggle, optimistic rollback, signed-out join on return, claimable note toggle, look card badge, look screen booking suppression, claim preview waiting count singular/plural, signed-out and signed-in claim flows, 410 expired link, finish checklist progress, style pricing, tags checking, and today finish card visibility.
-  - Changes made outside scope under standing rule:
-    - `web/src/features/auth/index.ts`: Exported `updateUser` and `withNext` to comply with module boundary lint rules.
-    - `web/src/features/looks/components/LookScreen.tsx`: Suppresses booking link and displays Featured in Done by when stylist is featured.
-    - `web/src/shared/lib/api/client.ts`: Added `PUT` method and typed return `delete<T = void>` to API client.
-    - `web/src/shared/ui/Button.tsx`: Added `target` and `rel` forwarding for anchor buttons.
-    - `web/src/shared/ui/Page.tsx`: Added `noIndex?: boolean` prop for robots meta tag.
-- **Checks run:**
-  - `npm ci`: not run (dependencies already installed and package-lock.json intact).
-  - `npx tsc --noEmit`: passed (0 errors).
-  - `npm run lint`: passed (0 errors).
-  - `npm test`: passed (18 test files passed, 94 tests passed).
-  - `npx vite build`: passed (production build built in 8.61s).
-- **Unsure about:**
-  - None.
-- **Skipped, and why:**
-  - None.
+- **Changed:** Built first by Gemini, then reviewed and finished by the lead (the
+  review is on the pull request). The lead's round fixed: the robots tag (`Page.tsx`
+  now sets `noindex` only for a page that needs it and puts the server's tag back),
+  Yasante's Instagram (@yasantebeauty) on the stylist page note and the used-link
+  screen, waitlist taps no longer re-reading her page (each read counted as a visit),
+  signed-in visitors read the page once more instead of being sent to sign in, the
+  signed-out label ("Sign in to join the waitlist"), her @handle kept under her name,
+  one Featured label per feed card with the area kept, the Today card ("1 of 3 done",
+  Continue) with its styles in `.css.ts`, "1 of your photos is…", style names on each
+  tile while tags are being checked, clearing a look's hair type, no address line on a
+  featured page, the claim screen's photo strip, Prettier on every changed file, and
+  the brief put back as written.
+- **Outside the listed scope, and why:** `shared/ui/Page.tsx` (the noindex prop),
+  `shared/ui/Button.tsx` (`target` and `rel` on links), `shared/lib/api/client.ts`
+  (`put`, and a typed `delete`), `features/auth/index.ts` (exports `updateUser`),
+  `features/looks/components/LookScreen.tsx` (no booking on a featured look's page),
+  `features/stylist/format.ts` (`serviceModels` may be missing),
+  `features/studio/components/Studio.css.ts` (the Today card's style).
+- **Checks run:** `npm ci`, `npx tsc --noEmit`, `npm run lint`, `npm test` and
+  `npx vite build`, all passed (see the pull request for the run). The whole journey
+  was also tried by hand against the real server on a phone-sized screen.
+- **Unsure about:** nothing open.
+- **Skipped, and why:** nothing.

@@ -50,12 +50,12 @@ export function ClaimScreen({ code }: { code: string }) {
             <Text variant="subhead">
               This link has already been used or has run out. Message{' '}
               <a
-                href="https://www.instagram.com/yasante/"
+                href="https://www.instagram.com/yasantebeauty/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.inlineInstagramLink}
               >
-                @yasante
+                @yasantebeauty
               </a>{' '}
               on Instagram for a new one.
             </Text>
@@ -101,7 +101,9 @@ export function ClaimScreen({ code }: { code: string }) {
   };
 
   const waitingLabel =
-    data.waiting === 1 ? '1 person is waiting to book you' : `${data.waiting} people are waiting to book you`;
+    data.waiting === 1
+      ? '1 person is waiting to book you'
+      : `${data.waiting} people are waiting to book you`;
 
   return (
     <Page title={`This is your page, ${data.displayName}`} noIndex>
@@ -157,11 +159,7 @@ export function ClaimScreen({ code }: { code: string }) {
               <Text variant="subhead" tone="secondary">
                 Sign up or sign in, then this page is yours.
               </Text>
-              <Button
-                label="Sign up"
-                to={withNext('/auth/signup', `/claim/${code}`)}
-                fullWidth
-              />
+              <Button label="Sign up" to={withNext('/auth/signup', `/claim/${code}`)} fullWidth />
               <Button
                 label="Sign in"
                 variant="secondary"

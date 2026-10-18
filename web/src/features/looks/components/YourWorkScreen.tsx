@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { useLocation } from 'react-router';
-import { ImagePlus, Trash2 } from 'lucide-react';
+import { ImagePlus, PenLine, Trash2 } from 'lucide-react';
 import { useCheckFinishTags, useFinishState } from '@/features/claim';
 import { usePortfolio, useRemovePortfolioPhoto } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
@@ -39,6 +39,12 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
   const [editError, setEditError] = useState<string | undefined>(undefined);
 
   const live = (looks.data ?? []).filter(l => l.visibility === 'public');
+  const checking = !!finish.data && !finish.data.tagsChecked;
+  const styleNames = (look: Look) =>
+    (look.styles ?? [])
+      .map(slug => styleList.find(s => s.id === slug)?.name)
+      .filter(Boolean)
+      .join(', ');
   const photos = portfolio.data ?? [];
 
   return (
@@ -124,7 +130,9 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
                     }
                   }}
                 >
-                  Edit tags
+                  <PenLine size={12} aria-hidden />
+                  {/* While she's checking our tags, each photo says what it's tagged. */}
+                  {checking ? styleNames(look) || 'No style' : 'Edit tags'}
                 </button>
                 <button
                   type="button"
@@ -134,7 +142,9 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
                     if (window.confirm('Remove this look from the feed? It goes for good.')) {
                       deleteLook.mutate(look.id);
                       // Its photo on her page goes with it: that photo linked here.
-                      photos.filter(p => p.lookId === look.id).forEach(p => removePhoto.mutate(p.id));
+                      photos
+                        .filter(p => p.lookId === look.id)
+                        .forEach(p => removePhoto.mutate(p.id));
                     }
                   }}
                 >
@@ -144,7 +154,7 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
               {editingLookId === look.id && (
                 <li className={styles.tagEditor}>
                   <Glass padded radius="lg">
-                    <div style={{ display: 'grid', gap: 12 }}>
+                    <div className={styles.editorBody}>
                       <div>
                         <Text variant="title3">Style (pick up to 3)</Text>
                         <Text variant="caption" tone="secondary">
@@ -209,7 +219,7 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
                             try {
                               await updateLook.mutateAsync({
                                 id: look.id,
-                                patch: { styles: editStyles, hairTexture: editHair },
+                                patch: { styles: editStyles, hairTexture: editHair ?? null },
                               });
                               setEditingLookId(null);
                             } catch (err) {

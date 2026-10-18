@@ -100,4 +100,3 @@ export const joinPageWaitlist = (handle: string) =>
 
 export const leavePageWaitlist = (handle: string) =>
   api.delete<{ joined: boolean }>(`/stylists/by-handle/${encodeURIComponent(handle)}/waitlist/`);
-

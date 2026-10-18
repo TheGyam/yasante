@@ -85,8 +85,12 @@ export function TodayScreen({ accountId }: { accountId: string }) {
   const days = [...new Set(later.map(b => dayOf(new Date(b.scheduledFor!))))];
   const closed = new Set(profile.availability?.closed ?? []);
 
-  const allPriced = finish ? finish.styles.length === 0 || finish.styles.every(s => s.priced) : false;
-  const finishDoneCount = finish ? [allPriced, finish.hoursSet, finish.tagsChecked].filter(Boolean).length : 0;
+  const allPriced = finish
+    ? finish.styles.length === 0 || finish.styles.every(s => s.priced)
+    : false;
+  const finishDoneCount = finish
+    ? [allPriced, finish.hoursSet, finish.tagsChecked].filter(Boolean).length
+    : 0;
 
   return (
     <Page title="Today">
@@ -97,16 +101,14 @@ export function TodayScreen({ accountId }: { accountId: string }) {
         </Text>
       </div>
       {finish && !finish.done && (
-        <Glass padded radius="xl" className={styles.card} style={{ marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-            <div>
-              <Text variant="title3">Finish your page</Text>
-              <Text variant="subhead" tone="secondary">
-                Finish your page · {finishDoneCount} of 3 done
-              </Text>
-            </div>
-            <Button label="Finish your page" variant="secondary" size="md" to="/finish" />
+        <Glass padded radius="xl" className={styles.finish}>
+          <div>
+            <Text variant="title3">Finish your page</Text>
+            <Text variant="subhead" tone="secondary">
+              {finishDoneCount} of 3 done
+            </Text>
           </div>
+          <Button label="Continue" variant="secondary" size="md" to="/finish" />
         </Glass>
       )}
       <div className={styles.columns}>

@@ -26,10 +26,10 @@ export function LookCard({ look, priority }: { look: Look; priority?: boolean })
       <span className={styles.shade} aria-hidden>
         <span className={styles.title}>{lookTitle(look)}</span>
         <span className={styles.meta}>
-          {look.stylistFeatured ? 'Featured' : look.area}
+          {look.area}
           {look.likeCount > 0 && (
             <>
-              {(look.stylistFeatured || look.area) && ' · '}
+              {look.area && ' · '}
               <Heart size={12} strokeWidth={2.4} />
               {look.likeCount}
             </>

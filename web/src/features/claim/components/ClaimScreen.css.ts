@@ -18,7 +18,9 @@ export const card = style({
 
 export const photoStrip = style({
   display: 'grid',
-  gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+  // As many columns as there are photos (up to six), so a few fill the width too.
+  gridAutoFlow: 'column',
+  gridAutoColumns: 'minmax(0, 1fr)',
   gap: space.xs,
   width: '100%',
   borderRadius: radius.md,

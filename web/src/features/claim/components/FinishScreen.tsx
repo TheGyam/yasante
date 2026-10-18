@@ -188,7 +188,8 @@ function StylePricingCard({ item }: { item: FinishStyle }) {
   return (
     <form className={styles.priceForm} onSubmit={submit} noValidate>
       <Text variant="callout">
-        {item.photoCount} of your photos are {item.name}. What do you charge?
+        {item.photoCount} of your photos {item.photoCount === 1 ? 'is' : 'are'} {item.name}. What do
+        you charge?
       </Text>
 
       {error && <InlineAlert message={error} />}

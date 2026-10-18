@@ -50,46 +50,83 @@ describe('featured stylists', () => {
     expect(await screen.findByRole('heading', { name: 'Ama Braids' })).toBeInTheDocument();
     expect(screen.getByText('Featured')).toBeInTheDocument();
     expect(screen.getByText('Not taking bookings on Yasante yet')).toBeInTheDocument();
+    // Her handle stays: the line is added, not swapped in.
+    expect(screen.getByText('@amabraids')).toBeInTheDocument();
+    // There's no booking to come with an address.
+    expect(
+      screen.queryByText(/the address comes with a confirmed booking/)
+    ).not.toBeInTheDocument();
 
     const instaLink = screen.getByRole('link', { name: 'Book on Instagram' });
     expect(instaLink).toHaveAttribute('href', 'https://www.instagram.com/amabraids_ig/');
 
-    expect(screen.getByRole('button', { name: 'Join the waitlist' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Sign in to join the waitlist' })
+    ).toBeInTheDocument();
     expect(screen.queryByText(/Book an appointment/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Reviews/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Policies/i)).not.toBeInTheDocument();
   });
 
-  it('toggles waitlist optimistically and rolls back on error', async () => {
+  it('toggles the waitlist at once, from the answer, without reading the page again', async () => {
     startSession({ user, accessToken: 'tok', refreshToken: 'ref', expiresAt: 0 });
-    let waitlistJoined = false;
-
-    mockApi({
-      '/api/stylists/by-handle/amabraids/': () => ({
-        ...featuredStylist,
-        waitlistJoined,
-      }),
+    const calls = mockApi({
+      '/api/stylists/by-handle/amabraids/': { ...featuredStylist, waitlistJoined: false },
       '/api/stylists/by-handle/amabraids/portfolio/': [],
-      'PUT /api/stylists/by-handle/amabraids/waitlist/': () => {
-        waitlistJoined = true;
-        return { joined: true, count: 1 };
-      },
-      'DELETE /api/stylists/by-handle/amabraids/waitlist/': () => {
-        waitlistJoined = false;
-        return { joined: false, count: 0 };
+      'PUT /api/stylists/by-handle/amabraids/waitlist/': { joined: true },
+      'DELETE /api/stylists/by-handle/amabraids/waitlist/': { joined: false },
+    });
+    const pageReads = () =>
+      calls.filter(c => c.method === 'GET' && c.url.endsWith('/stylists/by-handle/amabraids/'))
+        .length;
+
+    renderSite('/amabraids');
+    const userEv = userEvent.setup();
+    await userEv.click(await screen.findByRole('button', { name: 'Join the waitlist' }));
+    expect(await screen.findByRole('button', { name: 'On the waitlist' })).toBeInTheDocument();
+    await userEv.click(screen.getByRole('button', { name: 'On the waitlist' }));
+    expect(await screen.findByRole('button', { name: 'Join the waitlist' })).toBeInTheDocument();
+    // Every read of her page counts as a visit, so taps never re-read it.
+    expect(pageReads()).toBe(1);
+  });
+
+  it('puts the waitlist button back when joining fails', async () => {
+    startSession({ user, accessToken: 'tok', refreshToken: 'ref', expiresAt: 0 });
+    mockApi({
+      '/api/stylists/by-handle/amabraids/': { ...featuredStylist, waitlistJoined: false },
+      '/api/stylists/by-handle/amabraids/portfolio/': [],
+      'PUT /api/stylists/by-handle/amabraids/waitlist/': {
+        status: 400,
+        body: { message: 'Ama Braids already takes bookings. Book now.' },
       },
     });
 
     renderSite('/amabraids');
     const userEv = userEvent.setup();
+    await userEv.click(await screen.findByRole('button', { name: 'Join the waitlist' }));
+    expect(
+      await screen.findByText('Ama Braids already takes bookings. Book now.')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Join the waitlist' })).toBeInTheDocument();
+  });
 
-    const joinBtn = await screen.findByRole('button', { name: 'Join the waitlist' });
-    await userEv.click(joinBtn);
+  it('reads the page again once when signed in and the copy it has is the signed-out one', async () => {
+    startSession({ user, accessToken: 'tok', refreshToken: 'ref', expiresAt: 0 });
+    let reads = 0;
+    mockApi({
+      // The first answer is like the site's inlined, signed-out copy: no waitlistJoined.
+      '/api/stylists/by-handle/amabraids/': () =>
+        ++reads === 1 ? featuredStylist : { ...featuredStylist, waitlistJoined: true },
+      '/api/stylists/by-handle/amabraids/portfolio/': [],
+    });
 
+    renderSite('/amabraids');
+    // Signed in, so never sent to sign in; and their real state arrives.
     expect(await screen.findByRole('button', { name: 'On the waitlist' })).toBeInTheDocument();
-
-    await userEv.click(screen.getByRole('button', { name: 'On the waitlist' }));
-    expect(await screen.findByRole('button', { name: 'Join the waitlist' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Sign in to join the waitlist' })
+    ).not.toBeInTheDocument();
+    expect(reads).toBe(2);
   });
 
   it('redirects signed out visitor to sign-in on waitlist tap and joins on return', async () => {
@@ -102,7 +139,7 @@ describe('featured stylists', () => {
     const { router } = renderSite('/amabraids');
     const userEv = userEvent.setup();
 
-    const joinBtn = await screen.findByRole('button', { name: 'Join the waitlist' });
+    const joinBtn = await screen.findByRole('button', { name: 'Sign in to join the waitlist' });
     await userEv.click(joinBtn);
 
     await waitFor(() => {
@@ -114,7 +151,7 @@ describe('featured stylists', () => {
     startSession({ user, accessToken: 'tok', refreshToken: 'ref', expiresAt: 0 });
     let putCalled = false;
     mockApi({
-      '/api/stylists/by-handle/amabraids/': featuredStylist,
+      '/api/stylists/by-handle/amabraids/': { ...featuredStylist, waitlistJoined: false },
       '/api/stylists/by-handle/amabraids/portfolio/': [],
       'PUT /api/stylists/by-handle/amabraids/waitlist/': () => {
         putCalled = true;
@@ -150,14 +187,20 @@ describe('featured stylists', () => {
     renderSite('/amabraids');
     const userEv = userEvent.setup();
 
-    const trigger = await screen.findByRole('button', { name: /Is this you\? Make this page yours\./ });
+    const trigger = await screen.findByRole('button', {
+      name: /Is this you\? Make this page yours\./,
+    });
     expect(trigger).toBeInTheDocument();
 
     await userEv.click(trigger);
     const note = screen.getByText(/and we'll send you a link to make this page yours\./);
     expect(note).toBeInTheDocument();
     expect(note.closest('span')).toHaveTextContent(
-      "Message @yasante on Instagram from @amabraids_ig and we'll send you a link to make this page yours."
+      "Message @yasantebeauty on Instagram from @amabraids_ig and we'll send you a link to make this page yours."
+    );
+    expect(screen.getByRole('link', { name: '@yasantebeauty' })).toHaveAttribute(
+      'href',
+      'https://www.instagram.com/yasantebeauty/'
     );
   });
 
@@ -210,7 +253,9 @@ describe('featured stylists', () => {
     });
 
     const s0 = renderSite('/claim/code-zero');
-    expect(await screen.findByRole('heading', { name: 'This is your page, Ama Braids' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'This is your page, Ama Braids' })
+    ).toBeInTheDocument();
     expect(screen.queryByText(/waiting to book you/)).not.toBeInTheDocument();
     s0.unmount();
 
@@ -318,6 +363,10 @@ describe('featured stylists', () => {
     expect(
       await screen.findByText(/This link has already been used or has run out\. Message/i)
     ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '@yasantebeauty' })).toHaveAttribute(
+      'href',
+      'https://www.instagram.com/yasantebeauty/'
+    );
     expect(screen.queryByRole('button', { name: 'Make it yours' })).not.toBeInTheDocument();
   });
 
@@ -326,7 +375,10 @@ describe('featured stylists', () => {
 
     let finishState = {
       done: false,
-      styles: [{ slug: 'knotless', name: 'Knotless braids', photoCount: 4, priced: false }],
+      styles: [
+        { slug: 'knotless', name: 'Knotless braids', photoCount: 4, priced: false },
+        { slug: 'twists', name: 'Twists', photoCount: 1, priced: true },
+      ],
       hoursSet: false,
       tagsChecked: false,
     };
@@ -336,7 +388,7 @@ describe('featured stylists', () => {
       'POST /api/stylists/me/finish/price/': () => {
         finishState = {
           ...finishState,
-          styles: [{ slug: 'knotless', name: 'Knotless braids', photoCount: 4, priced: true }],
+          styles: finishState.styles.map(style => ({ ...style, priced: true })),
         };
         return finishState;
       },
@@ -356,7 +408,9 @@ describe('featured stylists', () => {
     const userEv = userEvent.setup();
 
     expect(await screen.findByText('0 of 3 done')).toBeInTheDocument();
-    expect(screen.getByText('4 of your photos are Knotless braids. What do you charge?')).toBeInTheDocument();
+    expect(
+      screen.getByText('4 of your photos are Knotless braids. What do you charge?')
+    ).toBeInTheDocument();
 
     const priceInput = screen.getByLabelText('Price (£)');
     await userEv.type(priceInput, '120');
@@ -366,6 +420,8 @@ describe('featured stylists', () => {
 
     expect(await screen.findByText('1 of 3 done')).toBeInTheDocument();
     expect(screen.getByText(/Knotless braids · 4 photos/)).toBeInTheDocument();
+
+    expect(screen.getByText(/Twists · 1 photo$/)).toBeInTheDocument();
 
     // When all done
     finishState = {
@@ -417,7 +473,8 @@ describe('featured stylists', () => {
     });
 
     const s1 = renderSite('/today');
-    expect(await screen.findByText('Finish your page · 1 of 3 done')).toBeInTheDocument();
+    expect(await screen.findByText('1 of 3 done')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Continue' })).toHaveAttribute('href', '/finish');
     s1.unmount();
 
     // Now done
@@ -438,6 +495,7 @@ describe('featured stylists', () => {
 
     let tagsChecked = false;
     let lookUpdated = false;
+    let sent: unknown;
 
     const myLook = {
       id: 'look-1',
@@ -485,6 +543,7 @@ describe('featured stylists', () => {
       ],
       'PATCH /api/looks/look-1/': (call: { body?: unknown }) => {
         lookUpdated = true;
+        sent = call.body;
         return { ...myLook, ...(call.body as object) };
       },
     });
@@ -493,7 +552,13 @@ describe('featured stylists', () => {
     const userEv = userEvent.setup();
 
     expect(await screen.findByText('Check your tags')).toBeInTheDocument();
-    expect(screen.getByText('We tagged your photos for you. Fix any we got wrong.')).toBeInTheDocument();
+    expect(
+      screen.getByText('We tagged your photos for you. Fix any we got wrong.')
+    ).toBeInTheDocument();
+    // While she checks, each photo says what it's tagged, without opening it.
+    expect(screen.getByRole('button', { name: /Edit tags for/ })).toHaveTextContent(
+      'Knotless braids'
+    );
 
     const rightBtn = screen.getByRole('button', { name: 'These look right' });
     await userEv.click(rightBtn);
@@ -510,8 +575,79 @@ describe('featured stylists', () => {
     expect(screen.getByRole('button', { name: 'Twists' })).toBeInTheDocument();
 
     await userEv.click(screen.getByRole('button', { name: 'Twists' }));
+    // Unpicking the hair type clears it.
+    await userEv.click(screen.getByRole('button', { name: 'Curly' }));
     await userEv.click(screen.getByRole('button', { name: 'Save tags' }));
 
     await waitFor(() => expect(lookUpdated).toBe(true));
+    expect(sent).toEqual({ styles: ['knotless', 'twists'], hair_texture: '' });
+  });
+
+  it('a featured look in the feed says Featured once and keeps its area', async () => {
+    const look = {
+      id: 'l2',
+      stylistFeatured: true,
+      photoUri: 'https://example.com/look.jpg',
+      photos: [{ uri: 'https://example.com/look.jpg', aspect: 1 }],
+      authorId: 'a1',
+      authorName: 'Ama Braids',
+      stylist: { id: 'a1', name: 'Ama Braids', handle: 'amabraids' },
+      styles: ['knotless'],
+      products: [],
+      visibility: 'public',
+      area: 'Peckham',
+      likeCount: 2,
+      liked: false,
+      commentCount: 0,
+      saveCount: 0,
+      saved: false,
+      createdAt: '2026-01-01T00:00:00Z',
+      mine: false,
+    };
+    mockApi({ '/api/looks/': { data: [look] }, '/api/styles/': [], '/api/looks/areas/': [] });
+
+    renderSite('/looks');
+    expect(await screen.findAllByText('Featured')).toHaveLength(1);
+    expect(screen.getByText(/Peckham/)).toBeInTheDocument();
+  });
+
+  it('keeps the server’s robots tag, and only a page that mustn’t be indexed changes it', async () => {
+    const robots = document.createElement('meta');
+    robots.setAttribute('name', 'robots');
+    robots.setAttribute('content', 'index, follow, max-image-preview:large, max-snippet:-1');
+    document.head.appendChild(robots);
+    mockApi({
+      '/api/stylists/by-handle/amabraids/': featuredStylist,
+      '/api/stylists/by-handle/amabraids/portfolio/': [],
+      '/api/stylists/by-handle/ordinary/': {
+        ...featuredStylist,
+        profile: {
+          ...featuredStylist.profile,
+          handle: 'ordinary',
+          featured: false,
+          claimable: false,
+          policies: { noticeHours: 24, depositType: 'none', rescheduleFreeOnce: true },
+          verificationTier: 0,
+        },
+      },
+      '/api/stylists/by-handle/ordinary/portfolio/': [],
+    });
+
+    const site = renderSite('/ordinary');
+    await screen.findByRole('heading', { name: 'Ama Braids' });
+    expect(robots.getAttribute('content')).toBe(
+      'index, follow, max-image-preview:large, max-snippet:-1'
+    );
+    site.unmount();
+
+    const featuredSite = renderSite('/amabraids');
+    await screen.findByText('Featured');
+    expect(robots.getAttribute('content')).toBe('noindex');
+    featuredSite.unmount();
+    // Leaving it puts the server's tag back.
+    expect(robots.getAttribute('content')).toBe(
+      'index, follow, max-image-preview:large, max-snippet:-1'
+    );
+    robots.remove();
   });
 });
