@@ -2,7 +2,7 @@
 id: 008
 slug: look-photos-web-posting
 assignee: sonnet # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+status: review # draft | ready | in-progress | review | blocked | done
 branch: agent/sonnet/008-look-photos-web-posting
 depends_on: [005, 006]
 ---
@@ -119,10 +119,58 @@ git diff --name-only origin/master
 
 ## Report to the lead
 
-_Filled in by the assignee when it sets `status: review` or `blocked`._
-
 - **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
-- **Unsure about:**
-- **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+  - `web/src/shared/lib/features.ts` (new): `useFeature(key)` reads `GET /api/features/`
+    through the shared `api` client, React Query, `staleTime` 60s. The query key carries
+    the signed-in account id, read straight from session storage (the same
+    `yasante.session` key the auth feature writes) rather than importing the auth
+    feature, so `shared/` still imports nothing from `features/`. Fails closed: `false`
+    while loading, on any error, or for a key the server didn't send.
+  - `web/src/shared/lib/__tests__/features.test.ts` (new): the four fail-closed cases,
+    using `renderHook` with a `QueryClientProvider` wrapper.
+  - `web/src/features/looks/hooks.ts`: added `usePostLookPhotos`, `PhotoUploadError`,
+    and a local `uploadLookPhotos` helper, copied from the app's own
+    `src/features/looks/api.ts` (same `MAX_CONCURRENT_UPLOADS = 3`, same one-retry,
+    same "stop on the first failure that survives a retry" logic), adapted to the
+    website's `uploadPhoto(file, 'look')`. One `postLook` call once every photo is up;
+    only the cover goes to the portfolio. Uploaded results are cached in a `Map` kept in
+    a ref, so calling `post` again after a failure only re-sends what didn't make it.
+  - `web/src/features/looks/components/PostWorkScreen.tsx`: with `multi_photo_looks` on
+    and 2+ photos chosen, a `Tabs` choice appears above the photos ("Each photo as its
+    own look" / "One look with these photos"). The "together" mode replaces the
+    per-photo Style/Service/Caption with one shared set (seeded from the first photo's
+    values on switching in), labels the first photo "Cover", and gives every other
+    photo "Move earlier"/"Move later" icon buttons (swapping it with its neighbour).
+    Over 5 photos in that mode shows the note and disables Post without dropping any
+    photo. A derived `activeMode` (not raw state) falls back to `separate` whenever the
+    switch is off or there's only one photo, so there's no effect-based `setState` and
+    no way to get stuck showing the together UI with the choice hidden.
+  - `web/src/test/__tests__/studio.test.tsx`: four new tests — switch off (no choice
+    shown, 3 separate `postLook` calls as before), switch on (one `postLook` call whose
+    `photoUris` follow a "Move earlier" reorder, cover-only portfolio add), the 6-photo
+    note/disabled-Post case, and the upload concurrency cap (a hand-rolled `fetch` stub
+    holding upload responses so the test can see at most 3 in flight at once, then 2
+    more starting as slots free up).
+- **Checks run:**
+  - `npm ci` — passed.
+  - `npx tsc --noEmit` — passed, no errors.
+  - `npm run lint` — passed, no errors (one `react-hooks/set-state-in-effect` error
+    along the way, fixed by deriving `activeMode` instead of a `useEffect`+`setState`).
+  - `npm test` — passed, 82/82 tests (17 files), including the new ones.
+  - `npx vite build` — passed.
+  - `git diff --name-only origin/master` — only
+    `web/src/features/looks/components/PostWorkScreen.tsx`,
+    `web/src/features/looks/hooks.ts`, `web/src/test/__tests__/studio.test.tsx`, plus
+    the task file, and the two new files (`features.ts`, `features.test.ts`, shown as
+    untracked rather than in the diff). `backend/tests/test_staff_security.py` also
+    shows in that diff, but it's a file this branch never had and I never touched —
+    it exists on `origin/master` only; not part of this change.
+- **Unsure about:** The task names the UI pattern as "the existing `SegmentedControl` or
+  radio pattern in `web/src/shared/ui`, whichever the site already uses" — there's no
+  `SegmentedControl`; the site's own equivalent is `Tabs` (used for every other
+  two/three-way choice on staff screens), so I used that.
+- **Skipped, and why:** Nothing from the task's scope. I didn't touch
+  `web/src/features/looks/index.ts` — `PostWorkScreen.tsx` already imports `usePostWork`
+  etc. straight from `../hooks` (a relative import within the same feature), so the new
+  `usePostLookPhotos`/`PhotoUploadError` didn't need exporting through the feature's
+  public surface, and that file isn't listed in Scope.
