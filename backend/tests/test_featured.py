@@ -352,7 +352,10 @@ def test_link_hash_rotation_expiry_and_preview(
     page, work, make_user, django_assert_max_num_queries
 ):
     covers = [work() for _ in range(7)]
-    first = featured.new_link(page).rsplit("/", 1)[-1]
+    url = featured.new_link(page)
+    # The whole address, ready to paste into a message, whatever the API's own address.
+    assert url.startswith("https://yasante.com/claim/")
+    first = url.rsplit("/", 1)[-1]
     assert len(first) == 32 and page.code_hash == sha256(first.encode()).hexdigest()
     assert abs(page.code_expires_at - timezone.now() - timedelta(days=7)) < timedelta(
         seconds=2
@@ -1254,3 +1257,16 @@ def test_yes_record_belongs_to_uploader_and_is_deleted_on_take_down(
     assert not Media.objects.filter(pk=proof.pk).exists()
     assert all(not default_storage.exists(path) for path in paths)
     assert User.objects.filter(pk=uploader.pk).exists()
+
+
+def test_staff_page_responses_include_the_recorded_yes_date(page, make_user):
+    client, _ = staff_client(make_user, superuser=True)
+    root = "/data/featured/"
+    item = f"{root}{page.pk}/"
+    assert client.get(item).json()["agreed_at"] is None
+    assert client.get(root).json()["items"][0]["agreed_at"] is None
+    assert client.post(item + "yes/", {"note": "Said yes to Akua on Instagram"}).status_code == 200
+    page.refresh_from_db()
+    expected = page.agreed_at.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    assert client.get(item).json()["agreed_at"] == expected
+    assert client.get(root).json()["items"][0]["agreed_at"] == expected

@@ -5,7 +5,6 @@ from datetime import date, timedelta
 from hashlib import sha256
 from uuid import uuid4
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.db.models import CharField, Count, Q
@@ -22,8 +21,8 @@ from .models import FeaturedPage, PageWaitlist, PortfolioPhoto, StylistProfile
 from .slots import day_hours
 
 STAND_IN_DOMAIN = "yasante.invalid"
-LINK_GONE = "This link has already been used or has run out. Message @yasante on Instagram for a new one."
-ALREADY_HAS_PAGE = "You already have a page on Yasante. Message @yasante on Instagram and we'll put the two together."
+LINK_GONE = "This link has already been used or has run out. Message @yasantebeauty on Instagram for a new one."
+ALREADY_HAS_PAGE = "You already have a page on Yasante. Message @yasantebeauty on Instagram and we'll put the two together."
 # Creating a user creates no related rows automatically in this codebase.
 SAFE_AUTOMATIC_RELATIONS = frozenset()
 
@@ -189,7 +188,9 @@ def new_link(page) -> str:
     page.code_hash = sha256(code.encode()).hexdigest()
     page.code_expires_at = timezone.now() + timedelta(days=7)
     page.save(update_fields=["code_hash", "code_expires_at", "updated_at"])
-    return f"{settings.PUBLIC_BASE_URL.rstrip('/')}/claim/{code}"
+    # Always the site's address: it's pasted into an Instagram message, and the API's
+    # address (PUBLIC_BASE_URL, or nothing locally) isn't where the page lives.
+    return f"https://yasante.com/claim/{code}"
 
 
 @transaction.atomic
@@ -279,7 +280,7 @@ def claim(page, user):
             ).count()
         ):
             raise ValueError(
-                "We couldn't move everything safely. Message @yasante on Instagram for help."
+                "We couldn't move everything safely. Message @yasantebeauty on Instagram for help."
             )
     stand_in.delete()
     security_event(None, "featured_page_claimed", user=user)

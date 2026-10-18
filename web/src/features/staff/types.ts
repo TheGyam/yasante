@@ -384,3 +384,37 @@ export interface Broadcasts {
   canSend: boolean;
   newsTooSoon: boolean;
 }
+
+export interface FeaturedSummary {
+  id: string;
+  display_name: string;
+  handle: string;
+  instagram_handle: string;
+  avatar_uri: string;
+  base_area: string;
+  live: boolean;
+  agreed: boolean;
+  agreed_at: string | null;
+  look_count: number;
+  waiting: number;
+  link_expires_at: string | null;
+  claimed_at: string | null;
+}
+export interface FeaturedLook {
+  id: string;
+  photos: { uri: string; thumb_uri: string }[];
+  styles: string[];
+  hair_texture: string;
+  caption: string;
+}
+export interface FeaturedDetail extends FeaturedSummary {
+  bio: string;
+  agreed_note: string;
+  looks: FeaturedLook[];
+}
+export interface FeaturedList {
+  items: FeaturedSummary[];
+  count: number;
+  page: number;
+  pages: number;
+}
