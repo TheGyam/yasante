@@ -1,10 +1,16 @@
-# FIXES-01: Rechecking TheGyam's fixes (F1, F2, F4, F6–F10) and the open F11, F12
+# FIXES-01: Rechecking TheGyam's fixes (F1, F2, F4, F6–F10, F30–F32) and F11, F12
 
 **Device: emulators only**: `client` (emulator-5554, **on New York time**), `stylist`
 (emulator-5556), `client2` (emulator-5558). One agent drives all three **in turn**.
 **Covers:** the fixes in upstream commit `2922dcb` ("bugs from the ck/quality-check QA
-runs"), plus F11 (deleting an account) and F12 (policy screens), which aren't fixed yet.
-**Time:** about 75 minutes.
+runs"), plus F11 (deleting an account) and F12 (policy screens), and (part U, added
+19-10-2026) the fixes for F30, F31 and F32 that closed issues #16–#18.
+**Time:** about 90 minutes.
+**Status:** written 28-09-2026, not run yet. **Revised 19-10-2026** after the 18-10 merge:
+choosing and moving a time now go through the new picker (part F rewritten; a move can only
+pick a time she's free, so F7 is now "a Monday or 07:00 is never offered"), and part U
+added. Part F's picker steps were dry-run by Claude (`SETUP-dry-1018`); its New York
+labels weren't.
 
 Read `qa/AGENTS.md` first (again, since it changed). Its rules override anything here.
 `qadb step` opens each step's section in the report; fill it in before the next step.
@@ -74,48 +80,84 @@ If one shows `Check your email`, mark S3 **FAIL** (F2 is back), get the code wit
 
 ## F: A booking across time zones (F4) and moving it (F7)
 
+The booking screen's picker (since 18-10): after a service, ideas come first
+(`Soonest: <day>, <HH:MM>`, `A weekend: …`), then a month of days labelled
+`<Weekday> <d> <Month>, <how much room>`, then the chosen day's timeline with its times
+labelled `<Weekday> <d> <Month>, <HH:MM>, until <HH:MM>`. Tapping an idea chooses its time.
+`swipe up`/`swipe down` until what you need is on screen; `tapon` needs it visible.
+
 **F1: Times on the booking screen.** `C: link "yasante:///book/braidedbybisi"`, wait 4 s.
 `C: tapon "Take down and wash" --exact`, wait 3 s, `C: swipe up`, `C: step F1`.
-**Record, word for word,** the day headings, the first day's times and any line saying
-which time zone they're in. **Expect** the times marked as `UK time` (the stylist's
-clock), because this phone is on New York time. No mark at all is a **FAIL**.
+**Record, word for word,** the ideas and any line saying which time zone the times are in.
+**Expect** the times marked as `UK time` (the stylist's clock), because this phone is on
+New York time. No mark at all is a **FAIL**.
 
-**F2: Send.** Pick the **first time on the first day**, call its label **T**. Tick the
-terms, `C: tapon booking-send`, wait 4 s, `C: step F2`. Server: `POST /api/bookings/`
-**201**. `qa/bin/bookings naomi.grant@yasante.dev` → the newest ID is **B1**.
-**Views:** paste `qa/bin/bookings naomi.grant@yasante.dev <B1>`.
+**F2: Send.** `C: swipe down` until `Soonest:` shows, `C: tapon "Soonest:"`, wait 2 s,
+`C: swipe up`, `C: step F2`. **Record** the line `You’d be there … to …` and call the
+chosen time **T**. Tick the terms, `C: tapon booking-send`, wait 4 s, `C: step F2b`.
+Server: `POST /api/bookings/` **201**. `qa/bin/bookings naomi.grant@yasante.dev` → the
+newest ID is **B1**. **Views:** paste `qa/bin/bookings naomi.grant@yasante.dev <B1>`.
 
 **F3: The stylist reads it (F4).** `S: link "yasante:///requests/<B1>"`, wait 3 s,
 `S: step F3`, `S: swipe up`, `S: step F3b`. **Record, word for word:** `She asked for …`
-(or `They asked for …`), `Answer by …`, and the `Start at` value.
-**F4 is fixed if** the asked-for time and `Start at` show the **same** clock time, the
-same as T without its `UK time` mark (this phone is on UK time, so no mark here).
-If they differ, mark **FAIL** and quote both.
+(or `They asked for …`), `Answer by …` (or the deadline line), and any start time.
+**F4 is fixed if** every time Yaa sees is T's clock time without the `UK time` mark (this
+phone is on UK time). If they differ, mark **FAIL** and quote both.
 
 **F4: Confirm it with no deposit.** On the stylist, swipe to `Deposit to confirm`,
 `S: tapon "Deposit to confirm"`, `S: clearfield`, `S: tapon request-accept`, wait 4 s,
-`S: step F4`. **Views:** `status: "confirmed"`, `deposit: null`.
+`S: step F4`. **Views:** `status: "confirmed"`, `deposit: null`. **Record** what the screen
+says if it no longer offers a deposit field (the step's point is a confirmed booking).
 `C: link "yasante:///bookings/<B1>"`, wait 3 s, `C: step F4b`. **Record** the time
 shown on Naomi's booking. **Expect** T's time with `UK time`.
 
-**F5: Move to a Monday (F7).** `C: tapon booking-move`, wait 2 s, `C: step F5`.
-**Record** the labels (`Day`, and whether `Start at` says `UK time`). Tap `Day`; in the
-calendar that opens, pick the **Monday of next week** (the column headed `M`), `OK`.
-Leave `Start at` as it is. `C: tapon move-send`, wait 3 s, `C: step F5b`.
-**F7 is fixed if** it is refused with `The stylist doesn’t work that day. Pick another`
-and the server shows `POST /api/bookings/<B1>/move/` **400**. If it's accepted
-(`You asked to move it to …`, `200`), mark **FAIL**.
+**F5: Moving it only offers her days (F7).** `C: tapon booking-move` (or `Ask to move it`),
+wait 3 s, `C: step F5`. Expect `Move it` and the same kind of picker. **Record** the month's
+day labels for next week. **F7 is fixed if** next week's **Monday and Sunday** read
+`no times` (Bisi doesn't work them) and no time offered on any day starts before her hours
+(**Record** her hours from the timeline line, `HH:MM–HH:MM · …`). A time on a day off or
+outside her hours is a **FAIL**: quote it.
 
-**F6: Outside her hours (F7).** Tap `Day`, pick the **Wednesday of next week**, `OK`.
-Tap `Start at` and set **07:00** (the clock opens inside the app; if there's a keyboard
-icon, use it to type the hour and minute; **record** how you set it), `OK`.
-`C: tapon move-send`, wait 3 s, `C: step F6`. **Expect** `That’s outside the stylist’s
-hours. Pick another time` and a **400**.
+**F6: The move goes through.** Tap the **Wednesday of next week** by its label, wait 2 s,
+`C: swipe up`, tap its first time, `C: step F6`. `C: tapon move-send`, wait 3 s,
+`C: step F6b`. Expect `You asked to move it to …` and `POST /api/bookings/<B1>/move/`
+**200**. **Record** the sentence. **Views:** `move_request` with `by: "client"`; paste its
+`scheduled_for`. Leave it unanswered.
 
-**F7: A move that's allowed.** Same Wednesday, `Start at` **10:00**, `C: tapon move-send`,
-wait 3 s, `C: step F7`. Expect `You asked to move it to …` and **200**. **Record** the
-sentence. **Views:** `move_request` with `by: "client"`; paste its `scheduled_for`.
-Leave it unanswered.
+---
+
+## U: Fixed since: F30, F31, F32 (Naomi, still on `client`)
+
+Upstream closed issues #16 (F31), #17 (F32) and #18 (F30) on 07–10-10. Read those three
+rows in `qa/findings.md` first.
+
+**U1: No deposit, no deposit in the terms (F30).** `C: link "yasante:///book/adwoabraids"`,
+wait 4 s, tap the first service (`C: find "£"` lists them; tap the first by its name),
+wait 3 s, `C: swipe up` until the terms tick box shows, `C: step U1`. **Record** the terms
+sentence word for word. Adwoa takes **no deposit**: **F30 is fixed if** it says nothing
+about a deposit. Send nothing; `C: key BACK`.
+
+**U2: A saved look looks saved (F31).** `C: link
+"yasante:///looks/16a11507-16d3-50eb-a72e-3109af839968"` (Funmi's, in Naomi's `Saved`),
+wait 4 s, `C: step U2`. `C: link "yasante:///looks/b65bc8f7-3d16-5a87-87bd-71b9944dd6ff"`
+(Ruth's, not saved), wait 4 s, `C: step U2b`. **Record** from both `screen.png`s how the
+bookmark on the photo and the one in the row under it are drawn, and paste
+`grep -oE 'content-desc="(Save to a collection|Saved by[^"]*|[^"]*[Ss]aved[^"]*)"'
+qa/runs/<RUN>/steps/*-U2*/ui.xml`. **F31 is fixed if** the two looks are told apart at a
+glance and in their labels (SAVE-01 B–A2 had them identical).
+
+**U3: Saving shows at once (F31).** On Ruth's look, `C: tapon "Save to a collection"
+--exact`, wait 2 s, `C: tapon save-to-e0a1fbe2-6099-52e4-aaac-9527fbaac975`, wait 3 s,
+`C: step U3`. Server: `POST /api/collections/e0a1fbe2…/items/` **201**. **Expect** both
+bookmarks to show saved **without** a pull-down; **Record** both.
+
+**U4: A booking that isn't hers (F32).** `C: link
+"yasante:///bookings/b90da4f1-1f35-56ec-9b32-82dae96c778a"` (Efua's), wait **15 s**,
+`C: step U4`. **F32 is fixed if** the screen says it can't be opened (any message, a way
+back) instead of the grey loading placeholder. Server: the `GET` is `403` or `404`, and
+**Record** how many times it was asked
+(`grep -c 'GET /api/bookings/b90da4f1' qa/runs/<RUN>/server.log`). Nothing of Efua's
+showing is a security **FAIL**. `C: key BACK`.
 
 ---
 

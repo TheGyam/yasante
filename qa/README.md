@@ -49,7 +49,11 @@ qa/
 | LOOKS-01 | feed, area filter, search, a look (like, comment, reply), collections, saved, posting public/private, what others see, report, block, take down | written (2 emulators) |
 | PROFILE-01 | edit profile, username, hair profile and quiz, planner, care plans, shelf, learn | written (1 emulator) |
 | SETTINGS-01 | settings, notifications, privacy, data download, FAQs, policies, reports and appeals, sign-out (F1), delete account | written (1 emulator) |
-| FIXES-01, NEW-01, NEW-02 | rechecks of upstream's fixes; new booking and discovery features | written (emulators) |
+| FIXES-01, NEW-01, NEW-02 | rechecks of upstream's fixes (FIXES-01 now also F30–F32); new booking and discovery features | written (emulators); FIXES-01 and NEW-01 revised 19-10 for the new picker |
+| FEATURED-01 | featured stylists: staff build, yes, link, live; waitlist; a claim refused, a claim made; Finish your page; bookable and the waitlist told; take-down; a moderator kept out; what today's app shows | written (browser + 1 emulator), dry-run by Claude |
+| LOOKS-02 | several photos in one look in the app and on the web, the `multi_photo_looks` switch turned in the workspace, swiping, the marker on grids | written (2 emulators + browser), app part dry-run |
+| DIARY-01 | notice, how far ahead, time between clients, blocked-out time (once, repeating, skipped), and the picker clients see; clashes, two waiting requests, one chair per client, a full day's waitlist | written (2 emulators + browser) |
+| WEBBOOK-01 | booking on yasante.com with no app: request, Come to me, the stylist's answers by email, move, cancel, signing out | written (browser + 1 emulator) |
 | STAFF-01 | staff workspace: sign-in, two-factor, recovery codes, Today, search, people records and hidden details, export, quick edit, errors, push notifications, a moderator's limits, sign-in limits | written (browser), dry-run by Claude |
 | PHONE-01 | the phone-only checks: links at someone else's data, session and sign-out, Samsung Pass, camera, F3 on real hardware, background, feel; tablet layout | run and audited (`PHONE-01-20261006-0153`): security held; F32 new; `qadb recover` fixed |
 | SAVE-01 | F31 on the phone: a saved look next to an unsaved one, saving one and coming back, refresh, saving twice | run and audited (`SAVE-01-20261006-0320`): F31 confirmed |

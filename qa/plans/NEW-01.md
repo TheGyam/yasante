@@ -5,6 +5,8 @@ One agent drives both **in turn**.
 **Covers:** upstream's `0fc5a2d` (book again, add to calendar, balance due) and `99e383d`
 (a stylist who travels gets the client's address: street held back until confirmed).
 **Time:** about 60 minutes.
+**Revised 19-10-2026** for the picker that came with the 18-10 merge (A2 now chooses the
+`Soonest` idea; no other step picks a time).
 
 Read `qa/AGENTS.md` first (again, since it changed). Its rules override anything here.
 `qadb step` opens each step's section in the report; fill it in before the next step.
@@ -87,8 +89,9 @@ one is selected.
 **A2: Come to me, no address yet.** `C: tapon "Come to me"`, wait 2 s, `C: step A2`.
 Expect `Your house number and street` and `Your postcode`, and under them
 `They see your postcode area first (they travel up to 5 miles from Peckham), and your
-street once they confirm.` Pick the **first time on the first day** (call it **T**),
-`C: swipe up`, tick the terms, `C: step A2b`. **Expect** the send button to stay off,
+street once they confirm.` Choose a time with the picker's first idea: `C: swipe up`
+until `Soonest:` shows, `C: tapon "Soonest:"` (it chooses that time; call it **T**, from
+the `You’d be there …` line), `C: swipe up`, tick the terms, `C: step A2b`. **Expect** the send button to stay off,
 with `Add your street and postcode so they can get to you.` under it. **Record** it.
 **A3: With the address.** `C: tapon booking-street`, type `4 Choumert Grove`,
 `C: tapon booking-postcode`, type `SE15 4RB`, then (new 04-10: long notes now show in

@@ -187,6 +187,9 @@ there, but the rest does: one agent, only the tools in section 3, evidence for e
   `qaweb click "<words>"`; add `--exact` when the words are part of a longer label
   (`Name` also matches `Username`), `--role=button` (or `link`, `tab`, `menuitem`,
   `checkbox`…) to say what kind of element, and `--nth=N` when several remain.
+  **`qaweb --nth` counts from 1**, as `qaweb find` numbers its list; `qadb --nth` counts
+  from 0. A button behind an open dialog still matches, and clicking it times out: pick
+  the dialog's own copy (it comes after the page's in the list).
   `qaweb fill "<label>" "<text>"` empties a field, types and reads it back; a
   `TYPE_MISMATCH` means don't submit, fill again. Prefer `qaweb open <path>` with the
   paths a plan gives over clicking through the sidebar.

@@ -291,6 +291,9 @@ def pick(page, needle, flags, roles):
     if nth is None and len(found) > 1:
         listing = "\n".join(describe(el, i + 1) for i, el in enumerate(found[:15]))
         raise Refused(f"{len(found)} elements match '{needle}'; say which with --nth=N:\n{listing}")
+    # qaweb counts from 1 (as `find` lists); qadb counts from 0. --nth=0 used to mean 1 here.
+    if nth == 0:
+        raise Refused("qaweb's --nth counts from 1, as `qaweb find` lists them (qadb's counts from 0)")
     n = nth or 1
     if not 1 <= n <= len(found):
         raise Refused(f"--nth={n} but only {len(found)} match")
