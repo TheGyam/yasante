@@ -5,7 +5,6 @@ from datetime import date, timedelta
 from hashlib import sha256
 from uuid import uuid4
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.db.models import CharField, Count, Q
@@ -189,7 +188,9 @@ def new_link(page) -> str:
     page.code_hash = sha256(code.encode()).hexdigest()
     page.code_expires_at = timezone.now() + timedelta(days=7)
     page.save(update_fields=["code_hash", "code_expires_at", "updated_at"])
-    return f"{settings.PUBLIC_BASE_URL.rstrip('/')}/claim/{code}"
+    # Always the site's address: it's pasted into an Instagram message, and the API's
+    # address (PUBLIC_BASE_URL, or nothing locally) isn't where the page lives.
+    return f"https://yasante.com/claim/{code}"
 
 
 @transaction.atomic
