@@ -35,6 +35,7 @@ Files this task may change:
 - `backend/apps/staff/views/featured.py` (new), `backend/apps/staff/urls.py` (new paths only), `backend/apps/staff/names.py` (one entry)
 - `backend/apps/web/views.py`, `backend/apps/web/seo.py`, `backend/apps/web/urls.py`: only step 13
 - `backend/config/settings/base.py`: new throttle scopes only
+- `backend/config/urls.py`: new `path` entries only, to register the new endpoints
 - `backend/tests/test_featured.py` (new), and the existing test files only where an existing test must change because of this task (say which and why in your report)
 - `openapi.yaml`, `src/shared/lib/api/schema.d.ts`, `web/src/shared/lib/api/schema.d.ts` (regenerated, never hand-edited)
 - `tasks/009-featured-stylists-backend.md` (`status` and the report only)
@@ -130,7 +131,7 @@ every write.
    - `PUT /api/stylists/by-handle/<handle>/waitlist/` joins, `DELETE` leaves.
      Signed in only. Throttle scope `waitlist` (exists). Joining twice is
      fine and changes nothing (`get_or_create` on the unique pair). Leaving
-     when not on it is a 204 too.
+     when not on it changes nothing either. Both answer 200, never 204.
    - Only for a page with a `FeaturedPage` that does not take bookings yet.
      Otherwise 400 "{name} already takes bookings. Book now." The stylist
      can't join her own page's waitlist (400 "This is your page").
