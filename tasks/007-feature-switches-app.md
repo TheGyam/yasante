@@ -74,6 +74,10 @@ npx jest --ci
 
 ## Report to the lead
 
+- **Changed since the first review:**
+  - `src/shared/config/features.ts`: `useFeature` now reads `data?.[key] === true` directly, instead of gating on `isSuccess`. A failed refetch (coming back with a weak signal) leaves React Query's status as `error` but keeps the last good `data` in place, so gating on `isSuccess` was dropping the answer to false on exactly that failure — which would have trimmed a draft's photos away under her. Reading `data` alone still fails closed (it's `undefined` until the first success, and an unknown key is never `true` in it).
+  - Fixed the comment above `featuresQuery`: it used to say the answer doesn't depend on who's signed in, which is wrong — staff, listed accounts and percentages are all per account, which is exactly why `app/_layout.tsx` refetches on an account change. Reworded to say so.
+  - `src/shared/config/__tests__/features.test.ts`: added a test that loads the switch as on, then fails a refetch, and checks `useFeature` stays true.
 - **Changed:**
   - `src/shared/config/features.ts` (new): `FeatureKey`, `featuresQuery` (key `['features']`, `staleTime` 60s, `gcTime` 7 days, `refetchOnWindowFocus: true`), and `useFeature`, which is `false` until the query has succeeded and the key isn't `true` in the response. Imports only `@tanstack/react-query` and the shared `apiClient` — nothing from `src/features/`.
   - `src/shared/config/__tests__/features.test.ts` (new): `useFeature` is false before load, true/false by server answer, false for an unknown key, and false on a request error.
@@ -84,7 +88,7 @@ npx jest --ci
 - **Checks run:**
   - `npx tsc --noEmit` — passed, no errors.
   - `npm run lint` — passed, 0 errors (107 pre-existing warnings elsewhere, none in files this task touched).
-  - `npx jest --ci` — passed, 47 suites / 231 tests, including the two new suites.
+  - `npx jest --ci` — passed, 47 suites / 232 tests (231 plus the new refetch-failure test), including the two new suites.
 - **Unsure about:**
   - Whether invalidating `['features']` on `user?.id` change in `app/_layout.tsx` is the right spot versus doing it from `features/auth`. I kept it here because `src/shared/config/` can't import the auth feature (rule 2) and `app/_layout.tsx` already has both `useAuth` and `queryClient`; sign-out separately clears the whole query cache already in `AuthContext.logout`, so this effect mainly covers sign-in.
   - The portfolio thumbnail still shows a numbered badge ("1") on the chosen photo when the limit is 1, rather than the old checkmark icon. Didn't restore the checkmark — a cosmetic difference, not mentioned in the acceptance criteria.

@@ -6,8 +6,10 @@ export type FeatureKey = 'multi_photo_looks' | 'video_posts';
 type FeaturesResponse = { features: Record<string, boolean> };
 
 /**
- * Which switches Yaw has turned on. Open to everyone — the answer doesn't
- * depend on who's signed in — so this stays free of the auth feature.
+ * Which switches Yaw has turned on. Per signed-in account — staff, listed
+ * accounts and percentages all depend on who's asking — so `app/_layout.tsx`
+ * refetches this when the account changes. Stays free of the auth feature
+ * (rule 2 in ARCHITECTURE.md) by taking no part in deciding when to refetch.
  */
 export const featuresQuery = {
   queryKey: ['features'] as const,
@@ -20,8 +22,15 @@ export const featuresQuery = {
   refetchOnWindowFocus: true,
 };
 
-/** `true` only once the server has said so. Fails closed: off until loaded, and on error. */
+/**
+ * `true` when the last known answer says so — the latest successful fetch,
+ * not necessarily the most recent one. A failed refetch (coming back with a
+ * weak signal) must not drop this back to false while an earlier answer is
+ * still in `data`; that would, for example, trim a draft's photos away under
+ * her. Fails closed: off until something has ever loaded, and off for an
+ * unknown key.
+ */
 export function useFeature(key: FeatureKey): boolean {
-  const { data, isSuccess } = useQuery(featuresQuery);
-  return isSuccess && data?.[key] === true;
+  const { data } = useQuery(featuresQuery);
+  return data?.[key] === true;
 }

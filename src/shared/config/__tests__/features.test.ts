@@ -50,4 +50,18 @@ describe('useFeature', () => {
     await waitFor(() => expect(get).toHaveBeenCalled());
     expect(result.current).toBe(false);
   });
+
+  it('stays true when a later refetch fails', async () => {
+    get.mockResolvedValue({ data: { features: { multi_photo_looks: true } } });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = renderHook(() => useFeature('multi_photo_looks'), {
+      wrapper: ({ children }) => React.createElement(QueryClientProvider, { client }, children),
+    });
+    await waitFor(() => expect(result.current).toBe(true));
+
+    get.mockRejectedValue(new Error('offline'));
+    await client.refetchQueries({ queryKey: ['features'] });
+
+    expect(result.current).toBe(true);
+  });
 });
