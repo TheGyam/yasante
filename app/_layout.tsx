@@ -22,6 +22,7 @@ import { ModeSwitchOverlay, useActiveMode, useModeStore } from '@/features/styli
 import { useNotifications } from '@/shared/hooks/useNotifications';
 import { registerPush } from '@/shared/lib/push';
 import { useConsentSync } from '@/shared/config/consentSync';
+import { featuresQuery } from '@/shared/config/features';
 import { startAnalytics, track } from '@/shared/lib/analytics';
 import { reportError, startCrashReports } from '@/shared/lib/crashReport';
 import { syncTimeZone } from '@/shared/lib/timeZone';
@@ -152,6 +153,20 @@ function RootNavigator() {
   // consent choices, which are recorded on the device first.
   useHairProfileSync();
   useConsentSync(isAuthenticated);
+
+  // Fetched once up front, so a screen that gates on a switch never waits for it.
+  useEffect(() => {
+    queryClient.prefetchQuery(featuresQuery);
+  }, []);
+  // Which switches apply can depend on who's asking (see /api/features/), so a
+  // sign-in or sign-out needs a fresh answer rather than the signed-out one.
+  const previousUserId = useRef(user?.id);
+  useEffect(() => {
+    if (previousUserId.current !== user?.id) {
+      queryClient.invalidateQueries({ queryKey: featuresQuery.queryKey });
+    }
+    previousUserId.current = user?.id;
+  }, [user?.id]);
 
   // Where the server sends her notifications: this phone, once she's signed in.
   useEffect(() => {

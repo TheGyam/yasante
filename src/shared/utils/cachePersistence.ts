@@ -13,6 +13,7 @@ const CACHE_VERSION = 1;
  * only right at the moment they're asked (free slots, a username check, search).
  */
 const KEPT = new Set([
+  'features',
   'looks',
   'planner',
   'bookings',
