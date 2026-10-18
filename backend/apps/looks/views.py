@@ -17,6 +17,7 @@ from apps.common.people import person
 from apps.common.permissions import IsAuthenticatedOrReadOnly
 from apps.common.throttling import CommentThrottle, PostingThrottle, ReportThrottle
 from apps.common.uploads import media_url, own_media
+from apps.features.switches import is_on
 from apps.shelf.models import Product
 from apps.stylists.models import StylistProfile
 from django.contrib.contenttypes.models import ContentType
@@ -181,6 +182,10 @@ def create_look(request):
     uris = body.get("photo_uris", [body.get("photo_uri")] if body.get("photo_uri") else [])
     if not isinstance(uris, list) or not uris:
         return Response({"message": "A look needs a photo"}, status=400)
+    if len(uris) > 1 and not is_on("multi_photo_looks", user):
+        return Response(
+            {"message": "Posting several photos in one look isn't open yet"}, status=400
+        )
     if len(uris) > 5:
         return Response({"message": "Up to 5 photos in a look"}, status=400)
     photos = []

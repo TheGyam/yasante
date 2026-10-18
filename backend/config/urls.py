@@ -46,6 +46,7 @@ urlpatterns = API_DOCS + [
     path("api/auth/", include("apps.accounts.urls")),
     path("api/invites/<str:code>/", InviteDetailView.as_view(), name="invite-detail"),
     path("api/invites/<str:code>/redeem/", InviteRedeemView.as_view(), name="invite-redeem"),
+    path("api/features/", include("apps.features.urls")),
     path("api/users/", include("apps.profiles.urls")),
     path("api/consents/", ConsentBatchView.as_view(), name="consents"),
     path("api/events/", EventBatchView.as_view(), name="events"),
