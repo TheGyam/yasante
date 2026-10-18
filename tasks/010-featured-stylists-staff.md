@@ -2,7 +2,7 @@
 id: 010
 slug: featured-stylists-staff
 assignee: codex # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+status: blocked # draft | ready | in-progress | review | blocked | done
 branch: agent/codex/010-featured-stylists-staff
 depends_on: [009]
 ---
@@ -124,10 +124,10 @@ npm ci && npx tsc --noEmit && npm run lint && npm test && npx vite build
 
 ## Report to the lead
 
-_Filled in by the assignee when it sets `status: review` or `blocked`._
-
-- **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
-- **Unsure about:**
-- **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+- **Changed:** Read the instructions, architecture, plan, staff endpoint brief, merged staff endpoint implementation and this task in the requested order. Created `agent/codex/010-featured-stylists-staff` from the latest `origin/master` in the clean managed worktree. No UI or server code changed. The unrelated working changes in the main checkout were left alone. Updating local master directly was refused because it has diverged; it was not reset or overwritten.
+- **Checks run:** `npm ci`: not run. `npx tsc --noEmit`: not run. `npm run lint`: not run. `npm test`: not run. `npx vite build`: not run. Implementation stopped at the required server-contract check, before any code changes.
+- **Unsure about:** The server cannot currently supply two requirements below. No missing values were invented and no client behavior was substituted for the required server behavior.
+- **Skipped, and why:** UI implementation and acceptance tests are not started because the brief explicitly requires stopping when an endpoint does not provide what the staff section needs. No dependencies, backend files, public website files or app files changed.
+- **Question for the lead:**
+  1. Step 4.3 requires the saved yes to show its note, date and who recorded it. `GET /data/featured/<id>/` returns `agreed` and `agreed_note`, but no `agreed_at` or recorder identity. `POST .../yes/` returns only `{done: true}`. The audit entry has an actor and time, but is not included in this response or reliably available to every user with the model permission. Please have the server return the recorded date and recorder identity, including after reloading the page, or revise this display requirement. The creator is not necessarily the recorder, and the optional screenshot cannot supply that information reliably.
+  2. Step 5 requires uploading photos in parallel, at most three at a time. `POST /data/featured/<id>/looks/` accepts all 1–5 files in a single multipart request and stores them sequentially before creating one look. There is no staff upload-and-attach contract for uploading those files separately while keeping one look and its chosen cover/order. Should the staff UI submit one ordered multipart request with a busy state, or will the server provide the separate upload contract needed for the requested parallel uploads?
