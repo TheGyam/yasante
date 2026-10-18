@@ -2,7 +2,7 @@
 id: 009
 slug: featured-stylists-backend
 assignee: codex # codex | gemini | sonnet | haiku | opus
-status: review # draft | ready | in-progress | review | blocked | done
+status: done # draft | ready | in-progress | review | blocked | done
 branch: agent/codex/009-featured-stylists-backend
 depends_on: []
 ---
