@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { HAIR_TEXTURES } from '@/features/looks';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import { Button } from '@/shared/ui/Button';
@@ -128,23 +129,37 @@ export function LookForm({ id, csrf }: { id: string; csrf: string }) {
               >
                 <Preview file={file} />
                 <Text variant="caption">{index === 0 ? 'Cover' : `Photo ${index + 1}`}</Text>
-                <div className={ui.stack}>
+                <div className={s.photoControls}>
+                  {index > 0 && (
+                    <Button
+                      label=""
+                      icon={ArrowLeft}
+                      aria-label={`Move photo ${index + 1} earlier`}
+                      title={`Move photo ${index + 1} earlier`}
+                      className={s.photoControl}
+                      size="sm"
+                      variant="quiet"
+                      onClick={() => move(index, index - 1)}
+                    />
+                  )}
+                  {index < photos.length - 1 && (
+                    <Button
+                      label=""
+                      icon={ArrowRight}
+                      aria-label={`Move photo ${index + 1} later`}
+                      title={`Move photo ${index + 1} later`}
+                      className={s.photoControl}
+                      size="sm"
+                      variant="quiet"
+                      onClick={() => move(index, index + 1)}
+                    />
+                  )}
                   <Button
-                    label={`Move photo ${index + 1} earlier`}
-                    size="sm"
-                    variant="quiet"
-                    disabled={index === 0}
-                    onClick={() => move(index, index - 1)}
-                  />
-                  <Button
-                    label={`Move photo ${index + 1} later`}
-                    size="sm"
-                    variant="quiet"
-                    disabled={index === photos.length - 1}
-                    onClick={() => move(index, index + 1)}
-                  />
-                  <Button
-                    label={`Remove photo ${index + 1}`}
+                    label=""
+                    icon={X}
+                    aria-label={`Remove photo ${index + 1}`}
+                    title={`Remove photo ${index + 1}`}
+                    className={s.photoControl}
                     size="sm"
                     variant="quiet"
                     onClick={() => setPhotos(photos.filter((_, i) => i !== index))}
@@ -162,17 +177,20 @@ export function LookForm({ id, csrf }: { id: string; csrf: string }) {
             setTerm(event.target.value);
             setPage(1);
           }}
-          hint="Pick up to 3 styles."
+          hint={selected.length ? `${selected.length} of 3 picked` : 'Pick up to 3 styles'}
         />
-        <div className={ui.actions}>
+        <div className={ui.actions} role="group" aria-label="Chosen styles">
           {selected.map(style => (
-            <Button
+            <button
               key={style.slug}
-              label={`Remove ${style.name}`}
-              variant="secondary"
-              size="sm"
+              type="button"
+              className={s.chip}
+              aria-label={`Remove ${style.name}`}
+              title={`Remove ${style.name}`}
               onClick={() => setSelected(selected.filter(item => item.slug !== style.slug))}
-            />
+            >
+              {style.name} <X size={12} aria-hidden />
+            </button>
           ))}
         </div>
         {styles.isError ? (

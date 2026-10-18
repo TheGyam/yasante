@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { Check } from 'lucide-react';
+import { HAIR_TEXTURES } from '@/features/looks';
 import { Button } from '@/shared/ui/Button';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
 import { Input } from '@/shared/ui/Input';
@@ -9,7 +10,12 @@ import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { formatDateTime } from '../../format';
-import { staffMessage, useFeaturedDetail, useFeaturedWrite } from '../../hooks';
+import {
+  staffMessage,
+  useFeaturedDetail,
+  useFeaturedStyleNames,
+  useFeaturedWrite,
+} from '../../hooks';
 import type { FeaturedDetail, FeaturedLook } from '../../types';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { FileField } from '../fields/FileField';
@@ -36,6 +42,7 @@ export function StylistPage({ id, csrf }: { id: string; csrf: string }) {
 }
 
 function PageContent({ page, csrf }: { page: FeaturedDetail; csrf: string }) {
+  const styleNames = useFeaturedStyleNames(page.looks.flatMap(look => look.styles));
   const navigate = useNavigate();
   const write = useFeaturedWrite(csrf);
   const [adding, setAdding] = useState(false);
@@ -114,6 +121,7 @@ function PageContent({ page, csrf }: { page: FeaturedDetail; csrf: string }) {
       </section>
       <section className={ui.card}>
         <Step title="Their looks" done={page.look_count > 0} />
+        {styleNames.isError && <InlineAlert message={staffMessage(styleNames.error)} />}
         <div className={s.grid}>
           {page.looks.map((look, index) => (
             <article key={look.id} className={ui.card}>
@@ -128,8 +136,19 @@ function PageContent({ page, csrf }: { page: FeaturedDetail; csrf: string }) {
                   />
                 ))}
               </div>
-              <Text>{look.styles.join(', ')}</Text>
-              <Text tone="secondary">{look.hair_texture || 'Hair type not set'}</Text>
+              <Text>
+                {look.styles
+                  .map(
+                    slug =>
+                      styleNames.data?.[slug] ??
+                      (styleNames.isPending ? 'Loading style name…' : 'Style name unavailable')
+                  )
+                  .join(', ')}
+              </Text>
+              <Text tone="secondary">
+                {HAIR_TEXTURES.find(hair => hair.id === look.hair_texture)?.name ??
+                  (look.hair_texture ? 'Hair type name unavailable' : 'Hair type not set')}
+              </Text>
               {look.caption && <Text>{look.caption}</Text>}
               {!claimed && (
                 <Button
@@ -146,7 +165,7 @@ function PageContent({ page, csrf }: { page: FeaturedDetail; csrf: string }) {
         {!page.looks.length && <Text>Add a look to show {page.display_name}'s work.</Text>}
         {!claimed && (
           <Button
-            label={adding ? 'Close add a look' : 'Add a look'}
+            label={adding ? 'Cancel' : 'Add a look'}
             disabled={busy}
             onClick={() => setAdding(!adding)}
           />
@@ -212,11 +231,13 @@ function PageContent({ page, csrf }: { page: FeaturedDetail; csrf: string }) {
         )}
         {!claimed && (
           <>
-            <Text>
-              {page.link_expires_at
-                ? `${linkLive ? 'Link live' : 'Link has run out'} · ${formatDateTime(page.link_expires_at)}`
-                : 'No live link. Make a new link to share with the saved Instagram account.'}
-            </Text>
+            {!link && (
+              <Text>
+                {page.link_expires_at
+                  ? `${linkLive ? 'Link live' : 'Link has run out'} · ${formatDateTime(page.link_expires_at)}`
+                  : 'No live link. Make a new link to share with the saved Instagram account.'}
+              </Text>
+            )}
             <Button label="Make a new link" loading={busy} onClick={() => void request('link')} />
           </>
         )}

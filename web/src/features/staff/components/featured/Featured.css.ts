@@ -46,3 +46,27 @@ export const danger = style({
   background: vars.color.dangerSoft,
 });
 export const link = style({ overflowWrap: 'anywhere' });
+
+export const photoControls = style({ display: 'flex', justifyContent: 'center', gap: space.xs });
+export const photoControl = style({
+  padding: 0,
+  width: 28,
+  minWidth: 28,
+  height: 28,
+  minHeight: 28,
+});
+// The same removable choice pattern as the notification composer's people chips.
+export const chip = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: space.xs,
+  minHeight: 28,
+  padding: `0 ${space.sm}px 0 ${space.md}px`,
+  borderRadius: radius.pill,
+  border: 0,
+  background: vars.color.accentSoft,
+  color: vars.color.text.primary,
+  font: 'inherit',
+  fontSize: 12,
+  cursor: 'pointer',
+});

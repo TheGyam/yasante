@@ -129,7 +129,7 @@ npm ci && npx tsc --noEmit && npm run lint && npm test && npx vite build
 ## Report to the lead
 
 - **Changed:**
-  - Added the lazy-loaded Featured stylists section under People, with paged rows, all five next-step statuses, a name/handle filter, and the requested empty state. The filter explicitly says it applies to the current server page; the existing endpoint does not implement global search.
+  - Added the lazy-loaded Featured stylists section under People, with paged rows, all five next-step statuses, a name/handle filter, and the requested empty state. The filter applies to the current server page; the existing endpoint does not implement global search.
   - Added creation and editing with Instagram handle/link normalisation, optional avatar, the live-handle lock and server errors. Staff writes keep same-origin cookies and CSRF through `writeStaff`.
   - Added the look grid, confirmed removal, searchable and paged style choices from the existing staff style catalogue, hair type and caption. Choosing/dropping 1–5 photos previews them before upload; drag and keyboard buttons reorder them. One multipart request sends the cover first. The button says Saving… and cannot be pressed again while saving; a successful save clears the still-open panel.
   - Added the yes note/screenshot and the exact saved-date line, a private link kept only on the mounted screen, copying and expiry status, the guarded publishing button, and typed-handle take-down with real look/photo counts. Claiming hides the destructive and handover actions. Existing staff UI pieces, tokens and dialogs are reused.
@@ -137,7 +137,7 @@ npm ci && npx tsc --noEmit && npm run lint && npm test && npx vite build
   - Added 18 staff tests covering navigation, all statuses, empty state, both handle formats, refused handles, look validation/order/dragging/previews/clearing/busy state, publishing reasons, the yes date and live handle lock, private-link lifetime/copying/expiry, typed take-down, claimed state, removal, CSRF for every write and the lazy export. All existing tests and their timeouts remain unchanged.
   - Supporting change: `web/src/features/staff/api.ts` accepts an optional POST/PATCH/DELETE method, defaulting to POST, so the new staff endpoints use the existing writer without duplicating its CSRF/error handling. Existing callers keep their behavior. Other listed staff files contain additions for this section only.
   - Writes update cached detail/list rows without reloading the workspace. Create/edit, links, publication and removal use the returned data and confirmed action. Adding a look and recording the yes return only an id/done flag, so those two actions read just the affected detail to obtain authoritative media addresses or the saved date, then update its cached list row. Link codes are not put in query data or browser storage.
-- **Checks run:**
+- **Initial implementation checks (before review):**
   - Website `npm ci`: passed, 309 packages installed from the existing lockfile. npm reported one existing high-severity audit finding; no dependency or lockfile changed.
   - Website `npx tsc --noEmit`: passed. Early errors were limited to the new test typings and were corrected.
   - Website `npm run lint`: passed, zero errors or warnings. The first run caught an impure expiry calculation during render; it now uses state and an expiry timer.
@@ -151,3 +151,29 @@ npm ci && npx tsc --noEmit && npm run lint && npm test && npx vite build
   - `git diff --check`: passed. Dependency lockfile diff check: passed, no changes.
 - **Unsure about:** No unanswered implementation questions. Style choices use the existing staff catalogue and its existing model permissions. The current-page search and the two targeted detail reads are described above so their limits are explicit.
 - **Skipped, and why:** No acceptance test skipped or weakened. Manual browser/device testing and the unrelated app test suite were not run; the staff interactions were exercised through the complete routed component tests. No changes to the public website, app, other backend behavior, dependencies or lockfiles.
+
+
+### Review fixes for pull request #52
+
+Merged master, including the full-link server fix in `ea8ddff`, before making these changes. Status remains `review`.
+
+1. Look cards now show the catalogue's style names and the existing hair type labels. One shared, deduplicated catalogue lookup supplies all cards; it follows further catalogue pages when needed. Tests prove three cards use one read, codes are not displayed, and names on a second catalogue page are resolved.
+2. Photo order/removal controls are small arrow/remove icon buttons, using the existing Button. Each retains its full accessible name and matching tooltip. Impossible earlier/later moves are absent at the ends. Tests check icons, names, tooltips, hidden end controls, keyboard/button reordering and removal; the existing drag test still passes.
+3. Chosen styles use removable chips above the scrollable choices, matching the notification composer's chip pattern. The hint changes from `Pick up to 3 styles` to the picked count. A test filters the choices, keeps both chosen chips visible, removes one and checks the count and remaining checkbox.
+4. The add-look panel closes with `Cancel`. A test checks that closing restores `Add a look`, removes the panel and sends no write.
+5. Removed the search hint and hid search when the list is empty. Existing populated-list filtering assertions remain; new assertions check both the absent hint and the absent empty-list search box.
+6. While the private link is visible, only its full explanatory expiry sentence is shown. After leaving and returning, only the saved status and expiry are shown. The link-lifetime test now requires one date occurrence in each state and verifies the other message is absent.
+7. Added a dedicated regression that shows the full `https://yasante.com/claim/...` address returned by the server, rejects a path-only display and copies the full address. The existing full-address/lifetime test remains.
+
+Review checks:
+
+- Website `npm ci`: passed; 309 locked packages installed. The existing audit still reports one high-severity finding. Neither lockfile changed and no dependency was added.
+- Website `npx tsc --noEmit`: passed.
+- Website `npm run lint`: passed, zero errors or warnings.
+- Website `npm test`: passed on the first review run, all 18 files and 107 tests, including all 24 staff cases. Six tests were added, and the existing search and link tests gained assertions. No tests or workers were skipped, no assertions were removed, and no timeouts changed.
+- Website `npx vite build`: passed; the Featured section remains a separate lazy chunk.
+- `git diff --check`: passed. Dependency lockfile diff check: passed.
+- Verified `ea8ddff` is an ancestor of this branch after pulling master.
+- Backend tests, app tests, schema/client generation and manual browser/device testing: not run in this review round. The new changes are confined to the staff UI, its query hook, its tests and this report; the server fix was merged unchanged from master. The earlier implementation checks above are historical results, not new runs.
+
+Status remains `review`. No unresolved questions or skipped review points.

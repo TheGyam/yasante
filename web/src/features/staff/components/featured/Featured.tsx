@@ -54,13 +54,14 @@ function FeaturedPages() {
         <Text variant="title1">Featured stylists</Text>
         <Button label="Add a featured stylist" icon={Plus} size="sm" to="/featured/new" />
       </header>
-      <Input
-        type="search"
-        label="Search by name or handle"
-        hint="Filters the current page."
-        value={term}
-        onChange={event => setTerm(event.target.value)}
-      />
+      {!!data?.count && (
+        <Input
+          type="search"
+          label="Search by name or handle"
+          value={term}
+          onChange={event => setTerm(event.target.value)}
+        />
+      )}
       {query.isError ? (
         <InlineAlert message={staffMessage(query.error)} />
       ) : !data ? (

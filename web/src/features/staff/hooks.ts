@@ -8,6 +8,7 @@ import type {
   FeaturedSummary,
   FeaturedDetail,
   FeaturedList,
+  Records,
   PushHealth,
   ErrorDetail,
   FormSchema,
@@ -328,6 +329,33 @@ export function useFeaturedWrite(csrf: string) {
           pages: Math.max(1, Math.ceil(count / 25)),
         };
       });
+    },
+  });
+}
+
+/** Read the names used by the page's looks together, including additional catalogue pages. */
+export function useFeaturedStyleNames(slugs: string[]) {
+  const wanted = [...new Set(slugs)].sort().join(',');
+  const path = `records/looks/style/?slug__in=${encodeURIComponent(wanted)}`;
+  return useQuery({
+    queryKey: keys.read(path),
+    enabled: !!wanted,
+    queryFn: async ({ signal }) => {
+      const names: Record<string, string> = {};
+      let page = 1;
+      let pages = 1;
+      do {
+        const data = await readStaff<Records>(`${path}&p=${page}`, signal);
+        const nameIndex = data.columns.findIndex(column => column.key === 'name');
+        const slugIndex = data.columns.findIndex(column => column.key === 'slug');
+        for (const row of data.rows) {
+          const slug = row.values[slugIndex];
+          if (slug && row.values[nameIndex]) names[slug] = row.values[nameIndex];
+        }
+        pages = data.pages;
+        page += 1;
+      } while (page <= pages);
+      return names;
     },
   });
 }

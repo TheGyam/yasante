@@ -139,6 +139,7 @@ it('opens Featured stylists from People and filters the list with the five next 
   const nav = screen.getByRole('link', { name: 'Featured stylists' });
   expect(nav).toHaveAttribute('href', '/featured');
   expect(nav.parentElement).toHaveTextContent('People');
+  expect(screen.queryByText('Filters the current page.')).not.toBeInTheDocument();
   await user.type(screen.getByRole('searchbox', { name: 'Search by name or handle' }), 'Efua');
   expect(screen.getByText('Efua')).toBeInTheDocument();
   expect(screen.queryByText('Akosua')).not.toBeInTheDocument();
@@ -149,6 +150,9 @@ it('shows the real empty state and an obvious next step', async () => {
   renderStaff();
   expect(await screen.findByText('No featured stylists yet.')).toBeInTheDocument();
   expect(screen.getByText("Add one once they've said yes.")).toBeInTheDocument();
+  expect(
+    screen.queryByRole('searchbox', { name: 'Search by name or handle' })
+  ).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Add a featured stylist' })).toHaveAttribute(
     'href',
     '/featured/new'
@@ -333,6 +337,8 @@ it('shows and copies a link once and keeps only its expiry after leaving', async
       /This link works once and runs out on .*Making a new one stops this one working./
     )
   ).toBeInTheDocument();
+  expect(screen.queryByText(/^Link live ·/)).not.toBeInTheDocument();
+  expect(screen.getAllByText(/25 Oct 2099/)).toHaveLength(1);
   await user.click(screen.getByRole('button', { name: 'Copy their link' }));
   expect(clipboard).toHaveBeenCalledWith('https://yasante.com/claim/secret-code');
   await user.click(screen.getAllByRole('link', { name: 'Featured stylists' }).at(-1)!);
@@ -341,6 +347,8 @@ it('shows and copies a link once and keeps only its expiry after leaving', async
   expect(screen.queryByText('https://yasante.com/claim/secret-code')).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Copy their link' })).not.toBeInTheDocument();
   expect(screen.getByText(/Link live/)).toBeInTheDocument();
+  expect(screen.queryByText(/This link works once/)).not.toBeInTheDocument();
+  expect(screen.getAllByText(/25 Oct 2099/)).toHaveLength(1);
   expect(
     JSON.stringify(
       view.client
@@ -446,4 +454,154 @@ it('shows when an existing link has run out without exposing its code', async ()
   expect(await screen.findByText(/Link has run out/)).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Make a new link' })).toBeEnabled();
   expect(screen.queryByRole('button', { name: 'Copy their link' })).not.toBeInTheDocument();
+});
+
+it('shows the picked style and hair labels on every card with one shared catalogue read', async () => {
+  const calls = setup({
+    '/data/featured/ama/': {
+      ...page,
+      look_count: 3,
+      looks: [look, { ...look, id: 'look-2' }, { ...look, id: 'look-3' }],
+    },
+  });
+  renderStaff('/featured/ama');
+  await screen.findAllByText('Knotless braids');
+  const cards = screen.getAllByRole('article');
+  expect(cards).toHaveLength(3);
+  for (const card of cards) {
+    expect(within(card).getByText('Knotless braids')).toBeInTheDocument();
+    expect(within(card).getByText('Coily')).toBeInTheDocument();
+    expect(within(card).queryByText('knotless')).not.toBeInTheDocument();
+    expect(within(card).queryByText('coily')).not.toBeInTheDocument();
+  }
+  const reads = calls.filter(call => call.url.startsWith('/data/records/looks/style/'));
+  expect(reads).toHaveLength(1);
+  expect(new URL(reads[0].url, 'https://admin.localhost').searchParams.get('slug__in')).toBe(
+    'knotless'
+  );
+});
+
+it('resolves style names beyond the first catalogue page', async () => {
+  const calls = setup({
+    '/data/featured/ama/': {
+      ...page,
+      look_count: 1,
+      looks: [{ ...look, styles: ['knotless', 'cornrows'] }],
+    },
+    '/data/records/looks/style/': (call: { url: string }) => ({
+      ...styles,
+      pages: 2,
+      page: call.url.includes('&p=2') ? 2 : 1,
+      rows: [styles.rows[call.url.includes('&p=2') ? 1 : 0]],
+    }),
+  });
+  renderStaff('/featured/ama');
+  expect(await screen.findByText('Knotless braids, Cornrows')).toBeInTheDocument();
+  expect(calls.filter(call => call.url.startsWith('/data/records/looks/style/'))).toHaveLength(2);
+});
+
+it('uses compact icon controls with accessible names and tooltips and hides impossible moves', async () => {
+  const user = userEvent.setup();
+  setup();
+  renderStaff('/featured/ama');
+  await user.click(await screen.findByRole('button', { name: 'Add a look' }));
+  const form = screen.getByRole('form', { name: 'Add a look' });
+  await user.upload(within(form).getByLabelText('Choose photos'), [
+    photo('one.jpg'),
+    photo('two.jpg'),
+    photo('three.jpg'),
+  ]);
+  await within(form).findByAltText('three.jpg');
+  expect(
+    within(form).queryByRole('button', { name: 'Move photo 1 earlier' })
+  ).not.toBeInTheDocument();
+  expect(
+    within(form).queryByRole('button', { name: 'Move photo 3 later' })
+  ).not.toBeInTheDocument();
+  const buttons = within(form).getAllByRole('button', { name: /^(Move photo|Remove photo)/ });
+  expect(buttons).toHaveLength(7);
+  for (const button of buttons) {
+    expect(button).toHaveAttribute('title', button.getAttribute('aria-label'));
+    expect(button.textContent).toBe('');
+    expect(button.querySelector('svg')).not.toBeNull();
+    expect(button).toBeEnabled();
+  }
+  await user.click(within(form).getByRole('button', { name: 'Move photo 2 earlier' }));
+  expect(
+    within(form)
+      .getAllByRole('img')
+      .map(img => img.getAttribute('alt'))
+  ).toEqual(['two.jpg', 'one.jpg', 'three.jpg']);
+  await user.click(within(form).getByRole('button', { name: 'Remove photo 2' }));
+  expect(within(form).queryByAltText('one.jpg')).not.toBeInTheDocument();
+});
+
+it('keeps chosen style chips above filtered choices and updates the picked count on removal', async () => {
+  const user = userEvent.setup();
+  const calls = setup({
+    '/data/records/looks/style/': (call: { url: string }) => ({
+      ...styles,
+      rows: call.url.includes('name__icontains=corn') ? [styles.rows[1]] : styles.rows,
+    }),
+  });
+  renderStaff('/featured/ama');
+  await user.click(await screen.findByRole('button', { name: 'Add a look' }));
+  const form = screen.getByRole('form', { name: 'Add a look' });
+  expect(within(form).getByLabelText('Find a style')).toHaveAccessibleDescription(
+    'Pick up to 3 styles'
+  );
+  await user.click(await within(form).findByRole('checkbox', { name: 'Knotless braids' }));
+  await user.click(within(form).getByRole('checkbox', { name: 'Cornrows' }));
+  expect(within(form).getByLabelText('Find a style')).toHaveAccessibleDescription('2 of 3 picked');
+  await user.type(within(form).getByLabelText('Find a style'), 'corn');
+  await waitFor(() =>
+    expect(calls.some(call => call.url.includes('name__icontains=corn'))).toBe(true)
+  );
+  await waitFor(() =>
+    expect(
+      within(form).queryByRole('checkbox', { name: 'Knotless braids' })
+    ).not.toBeInTheDocument()
+  );
+  const chosen = within(form).getByRole('group', { name: 'Chosen styles' });
+  expect(within(chosen).getByRole('button', { name: 'Remove Knotless braids' })).toHaveTextContent(
+    'Knotless braids'
+  );
+  expect(within(chosen).getByRole('button', { name: 'Remove Cornrows' })).toHaveTextContent(
+    'Cornrows'
+  );
+  expect(
+    chosen.compareDocumentPosition(within(form).getByRole('checkbox', { name: 'Cornrows' })) &
+      Node.DOCUMENT_POSITION_FOLLOWING
+  ).toBeTruthy();
+  await user.click(within(chosen).getByRole('button', { name: 'Remove Knotless braids' }));
+  expect(
+    within(chosen).queryByRole('button', { name: 'Remove Knotless braids' })
+  ).not.toBeInTheDocument();
+  expect(within(form).getByLabelText('Find a style')).toHaveAccessibleDescription('1 of 3 picked');
+  expect(within(form).getByRole('checkbox', { name: 'Cornrows' })).toBeChecked();
+});
+
+it('cancels the add-look panel without uploading', async () => {
+  const user = userEvent.setup();
+  const calls = setup();
+  renderStaff('/featured/ama');
+  await user.click(await screen.findByRole('button', { name: 'Add a look' }));
+  expect(screen.queryByRole('button', { name: 'Close add a look' })).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(screen.queryByRole('form', { name: 'Add a look' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Add a look' })).toBeInTheDocument();
+  expect(calls.some(call => call.method !== 'GET')).toBe(false);
+});
+
+it('shows and copies the full https Yasante address returned by the server', async () => {
+  const user = userEvent.setup();
+  const clipboard = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
+  const url = 'https://yasante.com/claim/full-link-code';
+  setup({ 'POST /data/featured/ama/link/': { url, expires_at: '2099-10-25T10:00:00Z' } });
+  renderStaff('/featured/ama');
+  await user.click(await screen.findByRole('button', { name: 'Make a new link' }));
+  expect(await screen.findByText(url, { exact: true })).toBeVisible();
+  expect(screen.queryByText('/claim/full-link-code', { exact: true })).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Copy their link' }));
+  expect(clipboard).toHaveBeenCalledWith(url);
 });
