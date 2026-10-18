@@ -37,6 +37,8 @@ Files this task may change:
 - `backend/apps/staff/views/featured.py` (new), `backend/apps/staff/urls.py` (new paths only), `backend/apps/staff/names.py` (one entry)
 - `backend/apps/web/views.py`, `backend/apps/web/seo.py`, `backend/apps/web/urls.py`: only step 13
 - `backend/config/settings/base.py`: new throttle scopes only
+- `backend/apps/profiles/serializers.py`: only the reserved-domain guard in `UserUpdateSerializer.validate_email` (step 3)
+- **Standing rule:** when a step here plainly requires a small change in a file not listed (like the guards in step 3 or the refusals in step 9), make only that change, and list the file and why in your report. You don't need to ask first. Stop only for questions about what to build.
 - `backend/config/urls.py`: new `path` entries only, to register the new endpoints
 - `backend/tests/test_featured.py` (new), and the existing test files only where an existing test must change because of this task (say which and why in your report)
 - `openapi.yaml`, `src/shared/lib/api/schema.d.ts`, `web/src/shared/lib/api/schema.d.ts` (regenerated, never hand-edited)
