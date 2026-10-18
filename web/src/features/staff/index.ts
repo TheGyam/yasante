@@ -30,3 +30,7 @@ export const Broadcasts = lazy(() =>
 export const Composer = lazy(() =>
   import('./components/notifications/Composer').then(m => ({ default: m.Composer }))
 );
+
+export const Featured = lazy(() =>
+  import('./components/featured/Featured').then(m => ({ default: m.Featured }))
+);

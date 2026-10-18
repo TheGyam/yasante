@@ -22,7 +22,10 @@ export interface NavSection {
 /** Sections by job, in the order the team works: what needs me, then who, then what. */
 const ORDER = ['People', 'Messages', 'Bookings', 'Content', 'Insights', 'System'];
 // Tools with a page of their own rather than a list of records.
-const PAGES: Record<string, string> = { 'staff.broadcast': '/notifications' };
+const PAGES: Record<string, string> = {
+  'staff.broadcast': '/notifications',
+  'stylists.featuredpage': '/featured',
+};
 
 export function navigation(data: Overview): NavSection[] {
   const today: NavSection = {

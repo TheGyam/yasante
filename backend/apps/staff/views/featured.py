@@ -93,6 +93,7 @@ def _summary(page):
         "base_area": profile.base_area,
         "live": profile.published,
         "agreed": bool(page.agreed_at),
+        "agreed_at": page.agreed_at,
         "look_count": page.look_count,
         "waiting": page.waiting,
         "link_expires_at": page.code_expires_at,
