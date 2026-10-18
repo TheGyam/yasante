@@ -2,7 +2,7 @@
 id: 009
 slug: featured-stylists-backend
 assignee: codex # codex | gemini | sonnet | haiku | opus
-status: blocked # draft | ready | in-progress | review | blocked | done
+status: review # draft | ready | in-progress | review | blocked | done
 branch: agent/codex/009-featured-stylists-backend
 depends_on: []
 ---
@@ -347,35 +347,58 @@ reused database).
 ## Report to the lead
 
 - **Changed:**
-  - Pulled master into the assigned branch; the new visibility-caller scope merged without conflicts. Set status to in-progress, then blocked when the separate email-change scope gap below was found.
-  - Partial implementation only: added the page and waitlist models; page/link/claim/finish-state logic; waitlist, claiming and finish API views and shapes; menu/hours opening hooks; booking refusals; the shared draft-look filter and its public callers; look tag editing and the Featured flag; shared upload handling; notification fan-out; metrics/insights/digest exclusions; admin registration and website shell/SEO changes.
-  - This work is incomplete and not ready for review. Staff endpoints and their routes, the model migration, acceptance tests and generated schemas remain to be implemented. The latest code has not been tested.
-  - No dependencies were added to repository requirements. Installed the existing development requirements into the existing backend virtual environment. Started a separate temporary PostgreSQL cluster on local port 55439 for testing; no existing database was changed.
+  - Added the stylist flag, staff facts, client waitlist and one migration. Staff can build a page with 1–5-photo looks, record permission, put it live, replace its seven-day private link and take it down. Writes use staff sign-in, the model permission, CSRF and audit events.
+  - Added locked, single-use claiming. Only a hash is stored. Ownership moves with bulk updates; unexpected reverse relations roll the transaction back before deleting the stand-in. Existing client photos and data stay separate from staff views and style pricing.
+  - Added Finish your page, style pricing, tag editing and readiness hooks after menu creation/import, hours updates, publishing and claiming. Readiness refreshes the locked profile so nearby menu and hours saves use current data. The waitlist task runs after commit, rechecks readiness, iterates in batches of 500 and uses unique notification keys.
+  - Refused the reserved domain at signup, social sign-in, email-code start and profile email changes. Password sign-in fails; forgot-password sends nothing and matches an unknown address.
+  - Added the shared indexed draft-look exclusion, the batched look flag, search ordering, Featured booking refusals, noindex/private-link headers, sitemap/area exclusions and honest metrics/insights/digests.
+  - Regenerated openapi.yaml and both schema.d.ts files with the existing generators. Added acceptance tests in backend/tests/test_featured.py. No existing tests were changed, weakened or skipped. No dependencies were added.
+
 - **Checks run:**
-  - `git pull --no-rebase origin master`: passed; merged without conflicts.
-  - `pip install -r requirements-dev.txt`: passed using the existing backend virtual environment.
-  - `python manage.py check` with test settings and the isolated database URL: passed at an intermediate implementation state, before the latest endpoint/task/SEO edits. Not a validation of the final committed code.
-  - `git diff --check`: passed before writing this report; checked again before commit.
-  - `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run`: not run; migration not generated yet.
-  - `python -m pytest -q -p no:cacheprovider --create-db`: not run; acceptance tests not written yet.
-  - `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: not run; API implementation incomplete.
-  - `python manage.py spectacular --file ../openapi.yaml`: not run; API implementation incomplete.
-  - `npm run api:types` in `web/`: not run; API implementation incomplete.
-- **Every `published=True` use and booking entry point, and what you did with each:**
-  - Booking creation and slot-interest creation in `apps/bookings/views.py`, plus `StylistSlotsView.get` in `apps/stylists/views.py`: added the required Featured refusal before service/time processing. Not tested yet.
-  - `apps/common/metrics.py` activation and response metrics, and both published-page jobs in `apps/stylists/tasks.py`: exclude Featured pages.
-  - `apps/staff/insights.py` stylist growth, area supply and top-stylist rows: exclude Featured pages.
-  - Website sitemap profiles/areas and the generated text listings in `apps/web/views.py`, plus SEO home/area/style lists in `apps/web/seo.py`: exclude Featured profiles. Public stylist-page lookups keep published Featured profiles visible; their pages get noindex.
-  - Stylist search keeps published Featured profiles, ordered after other profiles. `_for_style` and style search use the shared draft-look filter.
-  - The published-profile lookup for normal look creation remains unchanged: the stand-in cannot sign in, and public reads use the draft filter. A full final audit remains to be completed.
-- **Public look read audit and wiring so far:**
-  - `public_looks` in `apps/looks/views.py` defines the one filter, excluding author ids selected by indexed Featured/draft profile flags.
-  - API feed and look detail, likes, comment reads/creation, replies, comment likes, area list and look reporting: use the shared helper directly or through `_looks`/`_visible_look`.
-  - `apps/planner/views.py`: only the look lookup while saving was routed through the helper.
-  - `apps/bookings/views.py`: `_public_look` was routed through the helper, in addition to the two separately authorized booking refusals.
-  - `apps/web/views.py`: look detail, style/area cover queries, area looks and sitemap look entries use the helper. `apps/web/seo.py`: home, style and look-index queries use it.
-  - `apps/stylists/views.py`: style search and result-photo queries use it.
-  - Staff preview and page-edit logic retain unfiltered reads. No model manager was changed. These caller changes are not tested yet; the required feed/detail/style tests and final audit remain outstanding.
-- **Unsure about:** Permission to add the required reserved-domain guard to the profile email-change serializer.
-- **Skipped, and why:** Further implementation, acceptance tests, migration/schema generation, full checks, push and draft pull request. The brief requires a blocked report, commit and stop for scope gaps other than public-look caller wiring.
-- **Question for the lead:** Step 3 requires every email change to refuse `@yasante.invalid`, but the profile email-change path is implemented by `UserUpdateSerializer.validate_email` in `backend/apps/profiles/serializers.py` (used by `PATCH /api/users/<id>/`). This serializer does not delegate email validation to the allowed account serializers and currently accepts that domain. May Scope also allow this one method to refuse the reserved domain, with no other changes to the file? Otherwise a real account can adopt a stand-in email through the profile endpoint despite the guards added to signup, social sign-in and email-code start.
+  - `pip install -r requirements-dev.txt`: passed in the existing backend virtual environment.
+  - `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run`: passed; no changes detected. PowerShell supplied the settings and isolated local PostgreSQL URL through environment variables.
+  - `python -m pytest -q -p no:cacheprovider --create-db`: passed for the entire backend, 519 tests including the new acceptance cases. Every full run used --create-db.
+  - Focused runs of `python -m pytest -q -p no:cacheprovider --create-db tests/test_featured.py`: used while implementing. Early failures in upload URLs/fixtures, schema annotations and the bulk pricing query were corrected; the final whole-suite run passes all acceptance cases, including concurrent claims, hidden reverse relations, private client-data preservation and current readiness state.
+  - `python manage.py spectacular --file ../openapi.yaml`: passed; seven warnings, zero errors.
+  - Root `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: passed after staging the generated files and rerunning the generator; no additional drift.
+  - Website `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: passed with the same regeneration check.
+  - Root `npm ci`, `npx tsc --noEmit` and `npm run lint`: passed. Lint reports 108 warnings and zero errors in the existing code.
+  - Root `npx jest --ci`: the first run failed with a shared temporary-cache EPERM error and incorrectly included website Vitest files. After the portable exclusion fix, `npx jest --ci --cacheDirectory <task temporary cache>` passed: 47 suites, 232 tests, exit 0. It still reports a worker open-handle warning. An intermediate serial run passed its assertions but stayed alive on open handles; that completed runner was stopped after the successful normal-worker run.
+  - Website `npm ci`, `npx tsc --noEmit` and `npm run lint`: passed.
+  - Website `npm test`: the first concurrent run had two timing failures. `npm test -- --maxWorkers=1` then passed every test: 17 files, 83 tests, unchanged assertions and timeouts.
+  - Website `npx vite build`: passed.
+  - `python -m ruff check apps/stylists/featured.py apps/staff/views/featured.py tests/test_featured.py`: passed. Only the three new Python files were formatted.
+  - `git diff --check`: passed.
+  - Existing lockfile audit output from npm ci: the app reported 90 vulnerabilities (one critical); the website reported one high-severity vulnerability. No dependencies or lockfiles were changed and no automatic audit fixes were applied.
+
+- **Every published=True use on StylistProfile and booking entry point:**
+  - apps/stylists/views.py: StylistCreateView.get keeps live Featured pages and orders them after other pages (including the later style/distance sort). StylistByHandleView.get keeps them visible with the new flags and private waitlist state. StylistSlotsView.get keeps the published lookup, then returns the required Featured refusal. PageWaitlistView keeps the published lookup and rejects joining once the page takes bookings.
+  - apps/bookings/views.py: BookingListCreateView.post and SlotInterestListCreateView.post keep the published lookup, then refuse Featured profiles before services or times are processed. These and StylistSlotsView.get are the three booking/free-times/slot-interest entry points changed.
+  - apps/looks/views.py: create_look's existing published-profile lookup still credits the owner; stand-ins cannot sign in and all public reads use the draft exclusion.
+  - apps/common/throttling.py: PostingThrottle's published-profile lookup stays unchanged. This is a posting allowance for a signed-in stylist, not a business count; stand-ins cannot sign in.
+  - apps/common/metrics.py: activated_stylists and response_median exclude Featured profiles.
+  - apps/stylists/tasks.py: nightly_stats and monthly_recap exclude Featured profiles.
+  - apps/staff/insights.py: area supply excludes Featured profiles. Stylist growth and top-stylist results also exclude them.
+  - apps/web/views.py: the normal stylist lookup still serves published Featured pages with noindex. The area stylist list, sitemap profiles/areas and _llms_sections exclude Featured profiles.
+  - apps/web/seo.py: the home stylist list, home area list and style-page stylist list exclude Featured profiles.
+  - Other published=True hits in the audit belong to content and policy models, not StylistProfile, and were left alone.
+
+- **Public look reads confirmed through the shared filter:**
+  - apps/looks/views.py: feed/search and ordinary look reads through _looks; look detail, likes, comments, replies and comment likes through _visible_look; area listing and look/comment reporting through the same filter.
+  - apps/planner/views.py: the lookup while saving a look. Nothing else in that file changed beyond the supporting import.
+  - apps/bookings/views.py: the actual helper is named _bookable_look; its lookup now uses the filter.
+  - apps/stylists/views.py: style-search matches and result photos. apps/stylists/serializers.py: portfolio look-photo expansion uses look ids from the filter.
+  - apps/web/views.py: look detail and its inlined data, style/area cover queries, area looks and sitemap look entries. apps/web/seo.py: home, style and look-index queries.
+  - Owner-only writes and their private responses, claiming, pricing and staff previews retain scoped owner/staff queries. A tag edit can return its result to the owner before publication without exposing that look through public GET.
+
+- **Small supporting changes under the standing rule:**
+  - apps/common/renderers.py: an opt-in way to keep the required signed-out waitlist null; other responses retain the existing defaults.
+  - apps/common/schema.py: preserve that field's nullable schema so the generated client describes the real response.
+  - apps/web/site.py: let the stylist page use the same renderer for inlined data as its API. The existing website/API parity test passes.
+  - apps/common/uploads.py: the shared URL helper accepts a request-free call from the new page-building functions; the existing upload endpoint still uses its request.
+  - apps/profiles/serializers.py: only the now-authorized reserved-domain guard. The regression test covers the profile PATCH endpoint.
+  - config/urls.py: one new claim path and its supporting import; existing paths are unchanged.
+  - jest.config.js: replaced the existing website exclusion with its portable form. On Windows the old root-path expression failed to exclude Vitest files from Jest. All 47 app suites and all 17 website suites were run under their intended runners; no assertions or test timeouts changed.
+
+- **Unsure about:** No unanswered implementation questions. As specified, claiming before publication keeps the page a draft; the owner can use the existing publish endpoint. Schema generation reports seven choice-name/operation-name warnings and zero errors.
+- **Skipped, and why:** No acceptance tests skipped. Staff UI, website UI and app UI remain for their separate tasks; only their generated schemas changed. No test was found that requires the backend route reservations to equal the app's NOT_HANDLES list; the app source was not edited.

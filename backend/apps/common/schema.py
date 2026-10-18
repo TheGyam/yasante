@@ -25,7 +25,7 @@ def _walk(node, response):
     if isinstance(node, dict):
         props = node.get("properties")
         if isinstance(props, dict):
-            optional = {k for k, v in props.items() if isinstance(v, dict) and v.get("nullable")}
+            optional = {k for k, v in props.items() if isinstance(v, dict) and v.get("nullable") and not v.get("x-preserve-null")}
             if response:
                 # The renderer drops None, so a response field is never null: it's absent.
                 for key in optional:

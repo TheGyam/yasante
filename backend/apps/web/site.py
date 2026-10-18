@@ -49,7 +49,7 @@ def assets():
     return _read_assets() if settings.DEBUG else _cached_assets()
 
 
-def page_data(seeds):
+def page_data(seeds, renderer=CamelCaseJSONRenderer):
     """
     The page's API responses as the site's query cache reads them: [{key, data}], each
     rendered exactly as the API would send it. Escaped so nothing in it can close the
@@ -57,7 +57,7 @@ def page_data(seeds):
     """
     if not seeds:
         return ""
-    body = CamelCaseJSONRenderer().render([{"key": key, "data": data} for key, data in seeds])
+    body = renderer().render([{"key": key, "data": data} for key, data in seeds])
     text = body.decode().replace("<", "\\u003c").replace("\u2028", "\\u2028").replace("\u2029", "\\u2029")
     return mark_safe(text)
 
@@ -77,6 +77,7 @@ def page(
     description=None,
     image="",
     seeds=(),
+    seed_renderer=CamelCaseJSONRenderer,
     status=200,
     noindex=False,
     content_template=None,
@@ -102,7 +103,7 @@ def page(
             # One address per page: the path, never the query string or a trailing variant.
             "canonical": f"https://yasante.com{request.path}",
             "assets": assets(),
-            "page_data": page_data(seeds),
+            "page_data": page_data(seeds, seed_renderer),
             "noindex": noindex or status >= 400,
             "content_template": content_template,
             "content": content or {},

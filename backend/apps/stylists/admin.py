@@ -7,6 +7,7 @@ from apps.common.admin_access import SuperusersOnly
 from django.utils import timezone
 
 from .models import (
+    FeaturedPage,
     MenuItem,
     PageView,
     PaymentMethod,
@@ -144,7 +145,6 @@ class VerificationAdmin(admin.ModelAdmin):
         recompute_tier(obj.account_id)
 
 
-from .models import FeaturedPage
 
 
 @admin.register(FeaturedPage)

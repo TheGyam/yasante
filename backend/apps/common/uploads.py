@@ -122,7 +122,7 @@ def media_url(request, media, path):
     """
     relative = f"/api/media/{media.pk}/" if media.visibility == "private" else default_storage.url(path)
     base = settings.PUBLIC_BASE_URL.rstrip("/")
-    return f"{base}{relative}" if base else request.build_absolute_uri(relative)
+    return f"{base}{relative}" if base else request.build_absolute_uri(relative) if request else relative
 
 
 class UploadRequestSerializer(serializers.Serializer):

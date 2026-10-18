@@ -6,7 +6,9 @@ import logging
 import uuid
 from datetime import date, datetime, time, timedelta
 
+from apps.accounts.serializers import UserResponseSerializer, UserSerializer
 from apps.bookings.models import Booking, Review
+from apps.common.renderers import CamelCaseJSONRenderer
 from apps.common import zones
 from apps.common.identifiers import POLICY, UNAVAILABLE, identifier_problem, normalise
 from apps.common.blocks import blocked_account_ids, is_blocked
@@ -20,9 +22,13 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.throttling import ScopedRateThrottle
 
+from . import featured
 from .featured import open_if_ready, not_booking_message
 from .models import (
+    FeaturedPage,
+    PageWaitlist,
     held_checks,
     record_check,
     MenuItem,
@@ -34,6 +40,10 @@ from .models import (
 from .numbers import numbers_for, timing_label_for
 from .pricing import clean_options
 from .serializers import (
+    ClaimPreviewSerializer,
+    FinishPriceSerializer,
+    FinishSerializer,
+    PageWaitlistSerializer,
     ClosedDayRequestSerializer,
     TimeBlockSkipRequestSerializer,
     TimeBlockRequestSerializer,
@@ -562,8 +572,16 @@ class StylistPublishView(APIView):
         return Response(StylistProfileSerializer(profile).data)
 
 
+
+
+class StylistPageJSONRenderer(CamelCaseJSONRenderer):
+    """Keep the signed-out waitlist value on the page and its inlined copy."""
+    preserve_null = ("waitlist_joined",)
+
+
 @extend_schema_view(get=extend_schema(responses=StylistPageResponseSerializer))
 class StylistByHandleView(APIView):
+    renderer_classes = [StylistPageJSONRenderer]
     """GET /api/stylists/by-handle/:handle/ — her public page."""
 
     permission_classes = [permissions.AllowAny]
@@ -1173,11 +1191,6 @@ class StylistSummaryView(APIView):
         )
 
 
-from rest_framework.throttling import ScopedRateThrottle
-from apps.accounts.serializers import UserSerializer
-from . import featured
-from .models import FeaturedPage, PageWaitlist
-from .serializers import ClaimPreviewSerializer, FinishPriceSerializer, FinishSerializer, PageWaitlistSerializer
 
 
 @extend_schema_view(put=extend_schema(request=None, responses=PageWaitlistSerializer),
@@ -1210,7 +1223,7 @@ class PageWaitlistView(APIView):
 
 
 @extend_schema_view(get=extend_schema(responses={200: ClaimPreviewSerializer}),
-                    post=extend_schema(request=None, responses=UserSerializer))
+                    post=extend_schema(request=None, responses=UserResponseSerializer))
 class FeaturedClaimView(APIView):
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "claim"
@@ -1272,8 +1285,6 @@ class FinishPriceView(APIView):
     @transaction.atomic
     def post(self, request):
         from apps.looks.models import Look, Style
-        from django.db.models.functions import Cast
-        from django.db.models import CharField
 
         profile = _claimed_profile(request)
         if profile is None:
@@ -1290,7 +1301,8 @@ class FinishPriceView(APIView):
         draft, error = _menu_draft({**data, "name": style.name})
         if error:
             return Response({"message": error}, status=400)
-        looks = Look.objects.filter(author_id=profile.account_id, styles=style, service_id="")
+        looks = Look.objects.filter(author_id=profile.account_id, styles=style, service_id="",
+                                    pk__in=profile.portfolio_photos.filter(service=None).values("look_id"))
         if not looks.exists():
             return Response(featured.finish_state(profile))
         service = MenuItem.objects.create(stylist=profile, styles=[style.slug], **draft)

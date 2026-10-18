@@ -1,4 +1,3 @@
-from apps.looks.views import public_looks
 """
 The public site at yasante.com: the pages a shared link opens when the app isn't
 installed (her page, a look), browsing looks, the waitlist, policies, and the files
@@ -17,11 +16,12 @@ from django.utils.text import slugify
 from django.views.decorators.cache import cache_control
 
 from apps.looks.models import Look, LookPhoto, Style
+from apps.looks.views import public_looks
 from apps.looks.serializers import present_looks, with_viewer_flags
 from apps.profiles.models import PolicyDocument
 from apps.profiles.views import present_policy
 from apps.stylists.models import PageView, StylistProfile
-from apps.stylists.views import stylist_page
+from apps.stylists.views import StylistPageJSONRenderer, stylist_page
 
 from . import seo
 from .site import page
@@ -86,6 +86,7 @@ def stylist(request, handle):
         description=f"{(profile.bio or 'Braider')[:150]} · {profile.base_area}",
         image=photos[0].uri if photos else (profile.avatar_uri or ""),
         seeds=[(["stylist", profile.handle.lower()], data)],
+        seed_renderer=StylistPageJSONRenderer,
         content_template="web/content/stylist.html",
         content=content,
         jsonld=jsonld,
@@ -142,7 +143,7 @@ def style(request, slug):
 @public
 def area(request, slug):
     name = slug.replace("-", " ")
-    stylists = StylistProfile.objects.filter(published=True, base_area__iexact=name)
+    stylists = StylistProfile.objects.filter(published=True, featured=False, base_area__iexact=name)
     area_looks = public_looks().filter(area__iexact=name, **LIVE_LOOKS)
     if not stylists.exists() and not area_looks.exists():
         return page(request, title="Not found", status=404)
@@ -467,6 +468,4 @@ def claim_page(request, code):
     return response
 
 
-@public
-def finish_page(request):
-    return page(request, title="Finish your page", noindex=True)
+finish_page = account_page("Finish your page")

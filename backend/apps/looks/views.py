@@ -288,6 +288,11 @@ class MyLooksView(APIView):
         return Response(present_looks(looks, request.user))
 
 
+class LookTagsRequestSerializer(serializers.Serializer):
+    styles = serializers.ListField(child=serializers.CharField(), required=False)
+    hair_texture = serializers.CharField(required=False, allow_blank=True)
+
+
 class LookDetailView(APIView):
     """GET / DELETE /api/looks/:id/"""
 
@@ -301,10 +306,7 @@ class LookDetailView(APIView):
         look = _looks(viewer).get(pk=pk)
         return Response(present_looks([look], viewer)[0])
 
-    @extend_schema(request={"type": "object", "properties": {
-        "styles": {"type": "array", "items": {"type": "string"}},
-        "hair_texture": {"type": "string"},
-    }}, responses=LookSerializer)
+    @extend_schema(request=LookTagsRequestSerializer, responses=LookSerializer)
     @transaction.atomic
     def patch(self, request, pk):
         look = Look.objects.select_for_update().filter(pk=pk).first()
@@ -323,7 +325,11 @@ class LookDetailView(APIView):
         if "hair_texture" in request.data:
             look.hair_texture = str(request.data.get("hair_texture") or "")[:20]
             look.save(update_fields=["hair_texture", "updated_at"])
-        look = _looks(request.user).get(pk=look.pk)
+        # This response is private to the author, including work on a draft page.
+        look = with_viewer_flags(
+            Look.objects.filter(pk=look.pk, author=request.user).prefetch_related("styles", "products", "photos"),
+            request.user,
+        ).get()
         return Response(present_looks([look], request.user)[0])
 
     @extend_schema(responses={204: None})
@@ -650,7 +656,7 @@ class CommentReportView(APIView):
 
     @extend_schema(request=ReportRequestSerializer, responses={201: None})
     def post(self, request, pk):
-        if not LookComment.objects.filter(pk=pk).exists():
+        if not LookComment.objects.filter(pk=pk, look_id__in=public_looks().values("pk")).exists():
             return Response({"message": "That comment is already gone"}, status=404)
         # A comment can't be stolen work.
         return _report(request, LookComment, pk, COMMENT_REPORT_REASONS)

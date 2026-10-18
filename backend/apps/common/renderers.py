@@ -16,21 +16,23 @@ def _snake_to_camel(name: str) -> str:
     return components[0] + "".join(x.title() for x in components[1:])
 
 
-def _camelize(data):
+def _camelize(data, preserve_null=()):
     """Recursively convert dict keys to camelCase, dropping empty values."""
     if isinstance(data, dict):
         return {
-            _snake_to_camel(str(k)): _camelize(v)
+            _snake_to_camel(str(k)): _camelize(v, preserve_null)
             for k, v in data.items()
-            if v is not None and v != ""
+            if (v is not None and v != "") or k in preserve_null
         }
     if isinstance(data, (list, tuple)):
-        return [_camelize(item) for item in data]
+        return [_camelize(item, preserve_null) for item in data]
     return data
 
 
 class CamelCaseJSONRenderer(JSONRenderer):
     """Render JSON with camelCase keys."""
 
+    preserve_null = ()
+
     def render(self, data, accepted_media_type=None, renderer_context=None):
-        return super().render(_camelize(data), accepted_media_type, renderer_context)
+        return super().render(_camelize(data, self.preserve_null), accepted_media_type, renderer_context)

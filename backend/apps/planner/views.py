@@ -1,4 +1,3 @@
-from apps.looks.views import public_looks
 """
 Planner: collections (what she's saving) and care plans (how she looks after it).
 """
@@ -7,6 +6,7 @@ import logging
 
 from apps.common.timeparse import local_parts
 from apps.looks.models import Look
+from apps.looks.views import public_looks
 from django.db import transaction
 from django.db.models import Count, Prefetch
 from django.utils import timezone

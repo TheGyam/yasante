@@ -117,12 +117,13 @@ class PortfolioPhotoSerializer(BlankIsOptional, serializers.ModelSerializer):
         holder = root or self
         if not hasattr(holder, "_look_photos"):
             from apps.looks.models import LookPhoto
+            from apps.looks.views import public_looks
 
             items = root.instance if root is not None else [self.instance]
             ids = {p.look_id for p in items if p.look_id}
             found = {}
             for photo in LookPhoto.objects.filter(
-                look_id__in=ids, look__status="live", look__visibility="public"
+                look_id__in=public_looks().filter(pk__in=ids).values("pk"), look__status="live", look__visibility="public"
             ).order_by("look_id", "position"):
                 found.setdefault(photo.look_id, []).append(
                     {"uri": photo.photo_uri, "thumb_uri": photo.thumb_uri or None}
@@ -360,8 +361,13 @@ class TimingLabelSerializer(serializers.Serializer):
     sample = serializers.IntegerField()
 
 
+@extend_schema_field({"type": "boolean", "nullable": True, "x-preserve-null": True})
+class WaitlistJoinedField(serializers.BooleanField):
+    pass
+
+
 class StylistPageResponseSerializer(serializers.Serializer):
-    waitlist_joined = serializers.BooleanField(allow_null=True)
+    waitlist_joined = WaitlistJoinedField(allow_null=True)
     profile = PublicProfileSerializer()
     menu = MenuItemSerializer(many=True)
     photos = PortfolioPhotoSerializer(many=True)
@@ -490,7 +496,7 @@ class ClaimPhotoSerializer(serializers.Serializer):
 class ClaimPreviewSerializer(serializers.Serializer):
     display_name = serializers.CharField()
     handle = serializers.CharField()
-    avatar_uri = serializers.CharField()
+    avatar_uri = optional(serializers.CharField())
     look_count = serializers.IntegerField()
     live = serializers.BooleanField()
     waiting = serializers.IntegerField()

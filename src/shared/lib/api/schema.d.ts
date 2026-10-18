@@ -909,6 +909,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/featured/claim/{code}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["featured_claim_retrieve"];
+        put?: never;
+        post: operations["featured_claim_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/features/": {
         parameters: {
             query?: never;
@@ -1054,7 +1070,8 @@ export interface paths {
         delete: operations["looks_destroy"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** @description GET / DELETE /api/looks/:id/ */
+        patch: operations["looks_partial_update"];
         trace?: never;
     };
     "/api/looks/{id}/like/": {
@@ -1440,7 +1457,6 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description GET /api/stylists/by-handle/:handle/ — her public page. */
         get: operations["stylists_by_handle_retrieve"];
         put?: never;
         post?: never;
@@ -1466,6 +1482,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/by-handle/{handle}/waitlist/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["stylists_by_handle_waitlist_update"];
+        post?: never;
+        delete: operations["stylists_by_handle_waitlist_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1582,6 +1614,54 @@ export interface paths {
          *     opens it again.
          */
         post: operations["stylists_me_closed_days_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/me/finish/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stylists_me_finish_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/me/finish/price/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["stylists_me_finish_price_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/me/finish/tags-checked/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["stylists_me_finish_tags_checked_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2181,6 +2261,19 @@ export interface components {
          * @enum {string}
          */
         ChemicalsEnum: "relaxer" | "texturiser" | "colour" | "bleach" | "keratin";
+        ClaimPhoto: {
+            uri: string;
+            thumbUri: string;
+        };
+        ClaimPreview: {
+            displayName: string;
+            handle: string;
+            avatarUri?: string;
+            lookCount: number;
+            live: boolean;
+            waiting: number;
+            photos: components["schemas"]["ClaimPhoto"][];
+        };
         /**
          * @description * `crash` - crash
          *     * `stall` - stall
@@ -2431,6 +2524,26 @@ export interface components {
                 [key: string]: boolean;
             };
         };
+        Finish: {
+            styles: components["schemas"]["FinishStyle"][];
+            hoursSet: boolean;
+            tagsChecked: boolean;
+            done: boolean;
+        };
+        FinishPriceRequest: {
+            style: string;
+            /** Format: double */
+            price: number;
+            /** @default false */
+            fromPrice: boolean;
+            durationMinutes?: number | null;
+        };
+        FinishStyle: {
+            slug: string;
+            name: string;
+            photoCount: number;
+            priced: boolean;
+        };
         /** @description POST /api/auth/forgot-password/ */
         ForgotPasswordRequest: {
             /** Format: email */
@@ -2660,6 +2773,7 @@ export interface components {
             refreshToken?: string;
         };
         Look: {
+            stylistFeatured: boolean;
             photos: components["schemas"]["LookPhoto"][];
             id: string;
             authorId: string;
@@ -2858,6 +2972,9 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        PageWaitlist: {
+            joined: boolean;
+        };
         PatchedCarePlanRequestRequest: {
             name?: string;
             frequency?: components["schemas"]["FrequencyEnum"];
@@ -2889,6 +3006,10 @@ export interface components {
             lengthCm?: number | null;
             /** Format: date-time */
             completedAt?: string | null;
+        };
+        PatchedLookTagsRequestRequest: {
+            styles?: string[];
+            hairTexture?: string;
         };
         /** @description For creating/updating menu items. */
         PatchedMenuItemDraftRequest: {
@@ -3077,11 +3198,13 @@ export interface components {
             readonly policies: components["schemas"]["Policies"];
             readonly availability?: components["schemas"]["Availability"];
             readonly verificationTier: components["schemas"]["VerificationTierEnum"];
+            readonly featured: boolean;
             published: boolean;
             /** Format: date-time */
             readonly createdAt: string;
             /** @description phone, work, met_in_person, met_on_video, insurance */
             checks: string[];
+            claimable: boolean;
         };
         Rating: {
             /** Format: double */
@@ -3300,6 +3423,7 @@ export interface components {
             name: string;
         };
         StylistPageResponse: {
+            waitlistJoined: boolean | null;
             profile: components["schemas"]["PublicProfile"];
             menu: components["schemas"]["MenuItem"][];
             photos: components["schemas"]["PortfolioPhoto"][];
@@ -3332,6 +3456,7 @@ export interface components {
             readonly paymentMethods: components["schemas"]["PaymentMethod"][];
             proofPhotoUri?: string;
             readonly verificationTier: components["schemas"]["VerificationTierEnum"];
+            readonly featured: boolean;
             published: boolean;
             /** Format: date-time */
             readonly createdAt: string;
@@ -5022,6 +5147,48 @@ export interface operations {
             };
         };
     };
+    featured_claim_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimPreview"];
+                };
+            };
+        };
+    };
+    featured_claim_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
     features_retrieve: {
         parameters: {
             query?: never;
@@ -5270,6 +5437,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    looks_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedLookTagsRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Look"];
+                };
             };
         };
     };
@@ -5915,6 +6107,47 @@ export interface operations {
             };
         };
     };
+    stylists_by_handle_waitlist_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handle: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageWaitlist"];
+                };
+            };
+        };
+    };
+    stylists_by_handle_waitlist_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handle: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     stylists_handle_available_retrieve: {
         parameters: {
             query?: never;
@@ -6082,6 +6315,67 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StylistProfile"];
+                };
+            };
+        };
+    };
+    stylists_me_finish_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Finish"];
+                };
+            };
+        };
+    };
+    stylists_me_finish_price_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinishPriceRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Finish"];
+                };
+            };
+        };
+    };
+    stylists_me_finish_tags_checked_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Finish"];
                 };
             };
         };

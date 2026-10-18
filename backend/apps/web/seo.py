@@ -1,4 +1,3 @@
-from apps.looks.views import public_looks
 """
 What search engines and AI assistants read on yasante.com.
 
@@ -17,6 +16,7 @@ from django.utils.text import slugify
 
 from apps.bookings.models import Review
 from apps.looks.models import Look, Style
+from apps.looks.views import public_looks
 from apps.stylists.models import StylistProfile
 
 SITE = "https://yasante.com"
