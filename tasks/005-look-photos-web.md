@@ -2,7 +2,7 @@
 id: 005
 slug: look-photos-web
 assignee: sonnet # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+status: review # draft | ready | in-progress | review | blocked | done
 branch: agent/sonnet/005-look-photos-web
 depends_on: [003]
 ---
@@ -92,10 +92,44 @@ git diff --name-only origin/master
 
 ## Report to the lead
 
-_Filled in by the assignee when it sets `status: review` or `blocked`._
-
 - **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
-- **Unsure about:**
-- **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+  - Added `LookPhotos.tsx` / `LookPhotos.css.ts`: one photo renders exactly the old
+    single `RemoteImage`; several render a CSS scroll-snap row (hidden scrollbar,
+    `scroll-snap-type: x mandatory`, each slide `flex: 0 0 100%` / `scroll-snap-align:
+    center`), with previous/next buttons (shown only under `(hover: hover)`), dots, a
+    "n / total" counter, left/right arrow-key support on the focused row, and the
+    current slide tracked with an `IntersectionObserver` (guarded for environments
+    without one, e.g. jsdom). Only the first slide gets `priority`; the rest lazy-load.
+    `prefers-reduced-motion` turns off smooth scrolling via CSS. Colours reuse
+    `vars.color.scrim` and the same literal white/`rgba(12,6,9,…)` the sibling
+    `LookCard` shade already uses — no new colours.
+  - `LookScreen.tsx`: replaced the single `RemoteImage` with `LookPhotos`, passing
+    `look.photos`, or (when empty) a single synthetic photo built from
+    `photoUri`/`thumbUri`/`feedUri`/`photoAspect`, exactly as before.
+  - `LookCard.tsx` / `.css.ts`: a small stacked-photos icon (`Images` from
+    `lucide-react`, `aria-label="Several photos"`) in the top-right corner when
+    `look.photos.length > 1`.
+  - `ReviewDetail.tsx` / `.css.ts`: added a `data-grid` flag for more than two images,
+    giving a 3-column grid; the one- and two-image layouts are untouched.
+  - Tests: `site.test.tsx` adds a 3-photo look test (counter, region, 3 `img`s, working
+    next/previous buttons) and a 1-photo look test (no region, no buttons).
+    `staff.test.tsx` adds a report-preview test with 5 images, asserting all 5 render
+    inside the detail `<article>`.
+- **Checks run** (all from `web/`, then the repo-root diff check):
+  - `npm ci` — passed.
+  - `npx tsc --noEmit` — passed, no errors.
+  - `npm run lint` — passed, no warnings or errors.
+  - `npm test` — passed, 16 files / 74 tests.
+  - `npx vite build` — passed (built to `../backend/apps/web/static/site`, not
+    committed/tracked).
+  - `git diff --name-only origin/master` (from the repo root) — only the files listed
+    above, plus the new `LookPhotos.*` files and this task file; nothing outside scope.
+- **Unsure about:** jsdom has no `Element.prototype.scrollIntoView`, so the
+  prev/next/dot handlers call it as `?.scrollIntoView?.(...)` (optional on the method
+  too, not just the ref) so clicking still updates state under test; this is purely a
+  jsdom gap, real browsers always have the method.
+- **Skipped, and why:** did not disable the previous/next buttons at the first/last
+  slide — the task didn't ask for it, and `goTo` already clamps the index, so clicking
+  past either end is a harmless no-op. Did not add a dedicated `LookCard` test for the
+  stacked icon; the task's test list only named the `site.test.tsx` and
+  `staff.test.tsx` cases above, and the condition is a one-line, trivial boolean.

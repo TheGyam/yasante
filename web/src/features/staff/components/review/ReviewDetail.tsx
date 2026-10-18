@@ -103,7 +103,11 @@ export function ReviewDetail({
         </section>
       )}
       {images.length > 0 && (
-        <div className={s.images} data-pair={images.length === 2}>
+        <div
+          className={s.images}
+          data-pair={images.length === 2}
+          data-grid={images.length > 2}
+        >
           {images.map((src, index) => (
             <figure key={src + index} className={s.figure}>
               <img src={src} alt="" className={s.image} loading="lazy" />

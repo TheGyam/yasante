@@ -16,6 +16,20 @@ export const card = style({
 
 export const photo = style({ width: '100%' });
 
+export const stacked = style({
+  position: 'absolute',
+  top: space.sm,
+  right: space.sm,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 24,
+  height: 24,
+  borderRadius: radius.pill,
+  background: 'rgba(12, 6, 9, 0.5)',
+  color: '#fff',
+});
+
 /** Over a photo, whatever the theme: a dark fade with white text. */
 export const shade = style({
   position: 'absolute',
