@@ -1074,6 +1074,7 @@ def test_claiming_a_draft_publishes_it(page, work, make_user):
 def test_staff_can_correct_a_draft_handle_but_not_a_live_one(page, work, make_user):
     client, _ = staff_client(make_user, superuser=True)
     item = f"/data/featured/{page.pk}/"
+    work()
 
     def change(handle):
         return client.patch(
@@ -1104,6 +1105,9 @@ def test_staff_can_correct_a_draft_handle_but_not_a_live_one(page, work, make_us
         == page.profile.instagram_handle
         == "ama.corrected"
     )
+    assert set(
+        Look.objects.filter(stylist_id=str(page.profile.account_id)).values_list("stylist_handle", flat=True)
+    ) == {"ama.corrected"}
     live(page, work)
     response = change("another.handle")
     assert response.status_code == 400

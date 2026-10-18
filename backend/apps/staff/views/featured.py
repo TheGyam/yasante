@@ -276,6 +276,8 @@ def _edit(request, pk):
             page.instagram_handle = handle
             page.save(update_fields=["instagram_handle", "updated_at"])
             page.profile.handle = page.profile.instagram_handle = handle
+            # Her looks carry the handle for their links, so they move with it.
+            Look.objects.filter(stylist_id=str(page.profile.account_id)).update(stylist_handle=handle)
     for key in ("display_name", "bio", "base_area"):
         if key in serializer.validated_data:
             setattr(page.profile, key, serializer.validated_data[key])
