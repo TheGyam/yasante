@@ -26,7 +26,7 @@ reviewed against (intuitive, ingenious, fast, secure, honest).
 Files this task may change:
 
 - `backend/apps/stylists/` (`models.py`, `featured.py` (new), `views.py`, `urls.py`, `serializers.py`, `admin.py`, `tasks.py`, `migrations/`)
-- `backend/apps/looks/` (`serializers.py` for `present_looks`, `views.py` for `LookDetailView.patch` and nothing else, `urls.py` only if needed)
+- `backend/apps/looks/` (`serializers.py` for `present_looks`, `views.py` for `LookDetailView.patch` and the shared visibility rule in step 4, `urls.py` only if needed)
 - `backend/apps/bookings/views.py`: only the refusals in step 9
 - `backend/apps/accounts/views.py`, `backend/apps/accounts/serializers.py`: only the stand-in refusals in step 3
 - `backend/apps/common/uploads.py`: only the refactor in step 5
@@ -144,6 +144,16 @@ every write.
      website's inlined copy (`apps/web/views.py`) working with `None`.
    - A featured page that isn't live (`published=False`) stays a 404 to
      everyone, as today.
+   - **Its looks are hidden too.** Until staff put a featured page live, its
+     looks must not appear anywhere public: the feed, a look's own page,
+     style and area pages, search, comments, likes, saves and the website's
+     inlined data. Add the rule once, in the shared queryset every public
+     look read already goes through (`_looks` / `_visible_look` in
+     `apps/looks/views.py`, or wherever they really live), as one indexed
+     filter: exclude looks whose author's profile has `featured=True` and
+     `published=False`. No per-look checks. List every public look read you
+     confirmed goes through it in your report, and test the feed, a look's
+     page and a style page. Staff endpoints still see them.
 
 5. **One upload pipeline.** Move the body of `UploadView.post` in
    `apps/common/uploads.py` (size and pixel checks, re-encode, the three
@@ -180,8 +190,10 @@ every write.
      `open_if_ready(profile)`.
    - Endpoints, throttle scope `claim` (new, `"10/min"` in `base.py`):
      - `GET /api/featured/claim/<code>/` (anyone): 200 with
-       `{display_name, handle, avatar_uri, look_count, live, waiting}` where
-       `waiting` is the waitlist count; 410 with the plan's "Link used or
+       `{display_name, handle, avatar_uri, look_count, live, waiting, photos}` where
+       `waiting` is the waitlist count and `photos` is up to 6 look covers,
+       newest first, each `{uri, thumb_uri}`, so she sees her page before it
+       is live (one query, no extra per photo); 410 with the plan's "Link used or
        expired" words when there's no such live link.
      - `POST /api/featured/claim/<code>/` (signed in): claims, answers with
        the user exactly as `InviteRedeemView` does (`UserSerializer`), so the
