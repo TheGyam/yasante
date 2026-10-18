@@ -253,6 +253,16 @@ function Setup({
                     set({ instagramHandle: event.target.value.replace(/[^\w.]/g, '') })
                   }
                 />
+                <Input
+                  label="TikTok"
+                  value={draft.tiktokHandle ?? ''}
+                  placeholder="braidsbyama"
+                  autoCapitalize="none"
+                  hint="Optional. Shown on your page too"
+                  onChange={event =>
+                    set({ tiktokHandle: event.target.value.replace(/[^\w.]/g, '') })
+                  }
+                />
               </>
             )}
 

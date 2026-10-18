@@ -9,26 +9,44 @@ import type { FeaturedDetail } from '../../types';
 import { FileField } from '../fields/FileField';
 import * as s from './Featured.css';
 
-/** Accept the Instagram address staff paste, retaining only its handle. */
-export function instagramHandle(input: string) {
+/** Accept the Instagram or TikTok address staff paste, retaining only its handle. */
+export function socialHandle(input: string) {
   const text = input.trim();
-  const address = text.match(/^(?:https?:\/\/)?(?:www\.)?instagram\.com\/([^/?#]+)/i);
+  const address = text.match(
+    /^(?:https?:\/\/)?(?:www\.|m\.)?(?:instagram\.com|tiktok\.com)\/@?([^/?#]+)/i
+  );
   return (address?.[1] ?? text).replace(/^@/, '').toLowerCase();
 }
+/** Kept for anything still calling it by its old name. */
+export const instagramHandle = socialHandle;
+
+type Where = 'instagram' | 'tiktok' | 'both';
+const WHERE: { key: Where; label: string }[] = [
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'tiktok', label: 'TikTok' },
+  { key: 'both', label: 'Both' },
+];
 
 export function Details({ csrf, page }: { csrf: string; page?: FeaturedDetail }) {
   const navigate = useNavigate();
   const write = useFeaturedWrite(csrf);
   const [error, setError] = useState('');
-  const [handle, setHandle] = useState(page?.instagram_handle ?? '');
+  const [where, setWhere] = useState<Where>(
+    page?.tiktok_handle ? (page.instagram_handle ? 'both' : 'tiktok') : 'instagram'
+  );
+  const [instagram, setInstagram] = useState(page?.instagram_handle ?? '');
+  const [tiktok, setTiktok] = useState(page?.tiktok_handle ?? '');
+  const onInstagram = where !== 'tiktok';
+  const onTiktok = where !== 'instagram';
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (write.isPending) return;
     const body = new FormData(event.currentTarget);
-    body.set(
-      'instagram_handle',
-      instagramHandle(String(body.get('instagram_handle') ?? page?.instagram_handle ?? ''))
-    );
+    if (!page?.live) {
+      // Only the places they're on: switching to TikTok alone clears Instagram.
+      body.set('instagram_handle', onInstagram ? socialHandle(instagram) : '');
+      body.set('tiktok_handle', onTiktok ? socialHandle(tiktok) : '');
+    }
     // An empty file input is not an uploaded photo.
     if (!(body.get('avatar') instanceof File) || !(body.get('avatar') as File).size)
       body.delete('avatar');
@@ -44,28 +62,62 @@ export function Details({ csrf, page }: { csrf: string; page?: FeaturedDetail })
       setError(staffMessage(failure));
     }
   };
-  const cleaned = instagramHandle(handle);
+  const locked = !!page?.live;
+  const lead = onInstagram ? socialHandle(instagram) : socialHandle(tiktok);
+  const note = (value: string, other: string) =>
+    locked
+      ? 'Locked while the page is live'
+      : socialHandle(value) && socialHandle(value) === lead && socialHandle(value) !== value.trim()
+        ? `Saved as @${lead}, which is also their Yasante address.`
+        : `Paste @handle or ${other} link.`;
   return (
     <form onSubmit={event => void save(event)}>
       <fieldset className={s.fields} disabled={write.isPending || !!page?.claimed_at}>
-        <Input
-          label="Instagram handle"
-          name="instagram_handle"
-          value={handle}
-          onChange={event => setHandle(event.target.value)}
-          disabled={page?.live}
-          required={!page?.live}
-          maxLength={200}
-          placeholder="@theirhandle or instagram.com/theirhandle"
-          error={!page ? error : undefined}
-          hint={
-            page?.live
-              ? 'Locked while the page is live'
-              : cleaned && cleaned !== handle.trim()
-                ? `Saved as @${cleaned}, which is also their Yasante address.`
-                : 'Paste @handle or an instagram.com link.'
-          }
-        />
+        <fieldset className={s.group} disabled={locked}>
+          <legend className={s.label}>Where are they?</legend>
+          <div className={s.chips} role="radiogroup" aria-label="Where are they?">
+            {WHERE.map(option => (
+              <label key={option.key} className={s.chip}>
+                <input
+                  className={s.chipInput}
+                  type="radio"
+                  name="where"
+                  checked={where === option.key}
+                  onChange={() => setWhere(option.key)}
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <div className={s.twoUp}>
+          {onInstagram && (
+            <Input
+              label="Instagram handle"
+              value={instagram}
+              onChange={event => setInstagram(event.target.value)}
+              disabled={locked}
+              required={!locked}
+              maxLength={200}
+              placeholder="@theirhandle"
+              error={!page && !onTiktok ? error : undefined}
+              hint={note(instagram, 'an instagram.com')}
+            />
+          )}
+          {onTiktok && (
+            <Input
+              label="TikTok handle"
+              value={tiktok}
+              onChange={event => setTiktok(event.target.value)}
+              disabled={locked}
+              required={!locked}
+              maxLength={200}
+              placeholder="@theirhandle"
+              error={!page ? error : undefined}
+              hint={note(tiktok, 'a tiktok.com')}
+            />
+          )}
+        </div>
         <div className={s.twoUp}>
           <Input
             label="Name"
@@ -73,7 +125,7 @@ export function Details({ csrf, page }: { csrf: string; page?: FeaturedDetail })
             defaultValue={page?.display_name}
             required
             maxLength={150}
-            placeholder="As it is on their Instagram"
+            placeholder="As it is on their profile"
           />
           <Input
             label="Area"
@@ -93,7 +145,7 @@ export function Details({ csrf, page }: { csrf: string; page?: FeaturedDetail })
           name="bio"
           defaultValue={page?.bio}
           maxLength={1000}
-          hint="Their own words from their Instagram bio, if they have one."
+          hint="Their own words from their profile, if they have one."
         />
         {page && error && <InlineAlert message={error} />}
         <div className={s.composerFooter}>

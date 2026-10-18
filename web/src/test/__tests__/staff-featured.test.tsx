@@ -639,3 +639,22 @@ it('always says what to do next', async () => {
     /Add their first look|Record their yes|Put it live|Send them their link|Waiting for them/
   );
 });
+
+it('adds a TikTok-only stylist, keeping only the handle from a pasted address', async () => {
+  const user = userEvent.setup();
+  const calls = setup({ 'POST /data/featured/': { ...page, id: 'new-one' } });
+  renderStaff('/featured/new');
+  await user.click(await screen.findByRole('radio', { name: 'TikTok' }));
+  expect(screen.queryByRole('textbox', { name: 'Instagram handle' })).not.toBeInTheDocument();
+  await user.type(
+    screen.getByRole('textbox', { name: 'TikTok handle' }),
+    'https://www.tiktok.com/@Efe.Braids?lang=en'
+  );
+  await user.type(screen.getByRole('textbox', { name: 'Name' }), 'Efe');
+  await user.type(screen.getByRole('textbox', { name: 'Area' }), 'Croydon');
+  await user.click(screen.getByRole('button', { name: 'Add a featured stylist' }));
+  await waitFor(() => expect(calls.some(call => call.method === 'POST')).toBe(true));
+  const body = calls.find(call => call.method === 'POST')!.body as FormData;
+  expect(body.get('tiktok_handle')).toBe('efe.braids');
+  expect(body.get('instagram_handle')).toBe('');
+});

@@ -58,6 +58,7 @@ class StylistProfile(TimeStampedModel):
     # sets up or edits her page. Empty: the default (apps.common.zones).
     time_zone = models.CharField(max_length=64, blank=True, default="")
     instagram_handle = models.CharField(max_length=50, blank=True, default="")
+    tiktok_handle = models.CharField(max_length=50, blank=True, default="")
 
     # Policies
     notice_hours = models.PositiveIntegerField(default=24)
@@ -316,7 +317,9 @@ def _hold_handle(sender, instance, **kwargs):
 
 class FeaturedPage(TimeStampedModel):
     profile = models.OneToOneField(StylistProfile, on_delete=models.CASCADE, related_name="featured_page")
-    instagram_handle = models.CharField(max_length=50)
+    # Where they are and agreed from: Instagram, TikTok, or both (at least one).
+    instagram_handle = models.CharField(max_length=50, blank=True, default="")
+    tiktok_handle = models.CharField(max_length=50, blank=True, default="")
     agreed_at = models.DateTimeField(null=True, blank=True)
     agreed_note = models.CharField(max_length=300, blank=True)
     agreed_proof = models.ForeignKey("common.Media", null=True, blank=True, on_delete=models.SET_NULL)
@@ -332,7 +335,7 @@ class FeaturedPage(TimeStampedModel):
         verbose_name_plural = "Featured stylists"
 
     def __str__(self):
-        return f"@{self.instagram_handle}"
+        return f"@{self.instagram_handle or self.tiktok_handle}"
 
 
 class PageWaitlist(models.Model):

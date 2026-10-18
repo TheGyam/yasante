@@ -76,7 +76,7 @@ export function LookForm({
     setPhotos(current => [...current, ...files]);
     setError('');
   };
-  // Copy a photo on Instagram, then paste it here: no saving to the computer first.
+  // Copy a photo from their post, then paste it here: no saving it first.
   const addRef = useRef(add);
   useEffect(() => {
     addRef.current = add;
@@ -137,7 +137,7 @@ export function LookForm({
     <form onSubmit={event => void save(event)} className={s.composer} aria-label="Add a look">
       <div className={s.composerHead}>
         <Text variant="title3">Add a look</Text>
-        <span className={ui.muted}>One post from their Instagram, up to 5 photos</span>
+        <span className={ui.muted}>One of their posts, up to 5 photos</span>
       </div>
       <fieldset className={s.fields} disabled={write.isPending}>
         <div

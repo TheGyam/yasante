@@ -30,7 +30,9 @@ export function PagePreview({ page }: { page: FeaturedDetail }) {
           <span className={s.phoneMuted}>Not taking bookings on Yasante yet</span>
         )}
       </div>
-      <span className={s.phoneButton}>Book on Instagram</span>
+      <span className={s.phoneButton}>
+        {page.instagram_handle ? 'Book on Instagram' : 'Book on TikTok'}
+      </span>
       <span className={`${s.phoneButton} ${s.phoneButtonQuiet}`}>Join the waitlist</span>
       <div className={s.phoneGrid}>
         {covers.length

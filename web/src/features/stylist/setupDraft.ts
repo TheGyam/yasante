@@ -33,6 +33,7 @@ export const EMPTY_DRAFT: SetupDraft = {
   timeZone: browserZone(),
   travelRadiusMiles: 5,
   instagramHandle: '',
+  tiktokHandle: '',
   policies: { noticeHours: 48, depositType: 'fixed', depositAmount: 20, rescheduleFreeOnce: true },
   proofPhotoUri: undefined,
 };
@@ -52,6 +53,7 @@ export function draftFromProfile(profile: StylistProfile): SetupDraft {
     timeZone: browserZone(),
     travelRadiusMiles: profile.travelRadiusMiles ?? EMPTY_DRAFT.travelRadiusMiles,
     instagramHandle: profile.instagramHandle ?? '',
+    tiktokHandle: profile.tiktokHandle ?? '',
     policies: {
       noticeHours: profile.policies.noticeHours,
       depositType: profile.policies.depositType,

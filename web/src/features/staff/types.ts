@@ -390,6 +390,7 @@ export interface FeaturedSummary {
   display_name: string;
   handle: string;
   instagram_handle: string;
+  tiktok_handle: string;
   avatar_uri: string;
   base_area: string;
   live: boolean;
