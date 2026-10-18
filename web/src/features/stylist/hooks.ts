@@ -23,9 +23,17 @@ import {
   updateMenuItem,
   updateProfile,
   uploadProof,
+  joinPageWaitlist,
+  leavePageWaitlist,
 } from './api';
 import { handleProblem } from './handle';
-import type { MenuItemDraft, StylistFilters, StylistProfile, StylistProfileDraft } from './types';
+import type {
+  MenuItemDraft,
+  StylistFilters,
+  StylistPage,
+  StylistProfile,
+  StylistProfileDraft,
+} from './types';
 
 /**
  * Query keys. `['stylist', handle]` (lower case) is also what the server inlines her
@@ -213,3 +221,27 @@ export function useSummary(accountId: string) {
     refetchInterval: 60_000,
   });
 }
+
+/** Toggles whether the signed-in visitor is on a featured stylist's waitlist. */
+export function useTogglePageWaitlist(handle: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (join: boolean) => (join ? joinPageWaitlist(handle) : leavePageWaitlist(handle)),
+    onMutate: async (join: boolean) => {
+      const key = stylistKeys.page(handle);
+      await client.cancelQueries({ queryKey: key });
+      const previous = client.getQueryData<StylistPage>(key);
+      client.setQueryData<StylistPage>(key, old => (old ? { ...old, waitlistJoined: join } : old));
+      return { previous };
+    },
+    onError: (_err, _join, context) => {
+      if (context?.previous) {
+        client.setQueryData(stylistKeys.page(handle), context.previous);
+      }
+    },
+    onSettled: () => {
+      client.invalidateQueries({ queryKey: stylistKeys.page(handle) });
+    },
+  });
+}
+

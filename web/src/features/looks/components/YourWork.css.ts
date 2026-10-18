@@ -44,3 +44,69 @@ export const remove = style({
   transition: `opacity ${vars.time.state} ${EASE_OUT}`,
   ':hover': { opacity: 1 },
 });
+
+export const editButton = style({
+  position: 'absolute',
+  bottom: space.xs,
+  right: space.xs,
+  padding: '4px 8px',
+  borderRadius: 999,
+  border: 0,
+  background: 'rgba(12, 6, 9, 0.65)',
+  color: '#fff',
+  fontSize: '0.75rem',
+  cursor: 'pointer',
+  opacity: 0.9,
+  transition: `opacity ${vars.time.state} ${EASE_OUT}`,
+  ':hover': { opacity: 1 },
+});
+
+export const tagEditor = style({
+  gridColumn: '1 / -1',
+  margin: `${space.sm}px 0`,
+  display: 'grid',
+  gap: space.md,
+});
+
+export const chipList = style({
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: space.xs,
+});
+
+export const tagsCheckBanner = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+  gap: space.md,
+  marginBottom: space.lg,
+});
+
+export const chip = style({
+  padding: '6px 12px',
+  borderRadius: 999,
+  border: `1px solid ${vars.color.glass.border}`,
+  background: 'transparent',
+  color: vars.color.text.primary,
+  cursor: 'pointer',
+  fontSize: '0.8125rem',
+  transition: `all ${vars.time.state} ${EASE_OUT}`,
+  ':hover': { borderColor: vars.color.accent },
+});
+
+export const chipActive = style({
+  borderColor: vars.color.accent,
+  background: vars.color.accent,
+  color: '#fff',
+  fontWeight: 600,
+  ':hover': { borderColor: vars.color.accent },
+});
+
+export const editorActions = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: space.sm,
+  marginTop: space.sm,
+});
+

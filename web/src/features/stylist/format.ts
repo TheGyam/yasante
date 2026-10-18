@@ -97,7 +97,7 @@ export function hoursOn(availability: Availability | undefined, day: string) {
 
 /** Where she works: "Travels up to 5 miles", or why the address isn't shown. */
 export function whereLabel(profile: Pick<PublicProfile, 'serviceModels' | 'travelRadiusMiles'>) {
-  return profile.serviceModels.includes('mobile') && profile.travelRadiusMiles
+  return profile.serviceModels?.includes('mobile') && profile.travelRadiusMiles
     ? `Travels up to ${profile.travelRadiusMiles} miles`
     : 'District only — the address comes with a confirmed booking';
 }

@@ -143,7 +143,7 @@ export function LookScreen({ id }: { id: string }) {
           )}
 
           <div className={styles.actions}>
-            {look.stylist?.handle && look.serviceId ? (
+            {look.stylist?.handle && look.serviceId && !look.stylistFeatured ? (
               <Button
                 label="Book this look"
                 icon={CalendarPlus}
@@ -162,7 +162,7 @@ export function LookScreen({ id }: { id: string }) {
             )}
           </div>
 
-          {(look.stylist || look.products.length > 0) && (
+          {(look.stylist || (look.products?.length ?? 0) > 0) && (
             <div>
               {look.stylist && (
                 <Section title="Done by">
@@ -170,13 +170,13 @@ export function LookScreen({ id }: { id: string }) {
                     icon={Scissors}
                     title={look.stylist.name}
                     subtitle={look.serviceName}
-                    value={price}
+                    value={look.stylistFeatured ? 'Featured' : price}
                     to={look.stylist.handle ? `/${look.stylist.handle}` : undefined}
                     preload={() => look.stylist?.handle && prefetchStylist(look.stylist.handle)}
                   />
                 </Section>
               )}
-              {look.products.length > 0 && (
+              {Boolean(look.products?.length) && (
                 <Section title="Products used">
                   {look.products.map(product => (
                     <ListRow

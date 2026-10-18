@@ -8,6 +8,8 @@ export interface PageProps {
   description?: string;
   /** A narrow column for long text. */
   width?: 'content' | 'reading';
+  /** Keep search engines from indexing private or draft pages. */
+  noIndex?: boolean;
   children: ReactNode;
 }
 
@@ -20,13 +22,24 @@ const DEFAULT_DESCRIPTION =
  * sends the right title and description with the first load (for search and link
  * previews); this keeps them right as people move around the site.
  */
-export function Page({ title, description, width = 'content', children }: PageProps) {
+export function Page({ title, description, width = 'content', noIndex, children }: PageProps) {
   useEffect(() => {
     document.title = title ? `${title} · ${SITE}` : SITE;
     document
       .querySelector('meta[name="description"]')
       ?.setAttribute('content', description ?? DEFAULT_DESCRIPTION);
-  }, [title, description]);
+    let robots = document.querySelector('meta[name="robots"]');
+    if (noIndex) {
+      if (!robots) {
+        robots = document.createElement('meta');
+        robots.setAttribute('name', 'robots');
+        document.head.appendChild(robots);
+      }
+      robots.setAttribute('content', 'noindex');
+    } else if (robots) {
+      robots.removeAttribute('content');
+    }
+  }, [title, description, noIndex]);
 
   return (
     <div className={`${styles.page} ${width === 'reading' ? styles.reading : ''}`}>{children}</div>

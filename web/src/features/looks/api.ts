@@ -22,3 +22,14 @@ export const getMyLooks = () => api.get<Look[]>('/looks/mine/');
 export const postLook = (look: NewLook) => api.post<Look>('/looks/', look);
 
 export const deleteLook = (id: string) => api.delete(`/looks/${id}/`);
+
+export const updateLook = (
+  id: string,
+  patch: { styles?: string[]; hairTexture?: Look['hairTexture'] }
+) => {
+  const body: { styles?: string[]; hair_texture?: string } = {};
+  if (patch.styles !== undefined) body.styles = patch.styles;
+  if (patch.hairTexture !== undefined) body.hair_texture = patch.hairTexture ?? '';
+  return api.patch<Look>(`/looks/${id}/`, body);
+};
+

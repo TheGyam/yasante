@@ -51,3 +51,18 @@ export const meta = style({
   fontWeight: weight.medium,
   opacity: 0.85,
 });
+
+export const featuredBadge = style({
+  position: 'absolute',
+  top: space.xs,
+  left: space.xs,
+  padding: '2px 8px',
+  borderRadius: radius.pill,
+  background: 'rgba(12, 6, 9, 0.65)',
+  color: '#fff',
+  fontSize: '0.75rem',
+  fontWeight: weight.medium,
+  backdropFilter: 'blur(8px)',
+  zIndex: 1,
+});
+
