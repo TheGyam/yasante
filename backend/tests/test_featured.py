@@ -1270,3 +1270,11 @@ def test_staff_page_responses_include_the_recorded_yes_date(page, make_user):
     expected = page.agreed_at.isoformat(timespec="milliseconds").replace("+00:00", "Z")
     assert client.get(item).json()["agreed_at"] == expected
     assert client.get(root).json()["items"][0]["agreed_at"] == expected
+
+
+def test_staff_list_shows_a_few_covers_newest_first(page, work, make_user):
+    client, _ = staff_client(make_user, superuser=True)
+    looks = [work() for _ in range(4)]
+    item = client.get("/data/featured/").json()["items"][0]
+    newest = sorted(looks, key=lambda look: look.created_at, reverse=True)[:3]
+    assert item["covers"] == [look.thumb_uri or look.photo_uri for look in newest]

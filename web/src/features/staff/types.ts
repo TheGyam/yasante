@@ -399,6 +399,8 @@ export interface FeaturedSummary {
   waiting: number;
   link_expires_at: string | null;
   claimed_at: string | null;
+  /** A few of their newest covers, in the list only. */
+  covers?: string[];
 }
 export interface FeaturedLook {
   id: string;

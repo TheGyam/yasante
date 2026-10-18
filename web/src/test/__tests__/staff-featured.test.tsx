@@ -230,11 +230,12 @@ it('validates look photos and styles before uploading, reorders cover first and 
   ]);
   expect(await within(form).findByAltText('one.jpg')).toBeInTheDocument();
   expect(within(form).getByAltText('two.jpg')).toBeInTheDocument();
-  await user.click(within(form).getByRole('button', { name: 'Remove Knotless braids' }));
+  // Tapping a picked style again unpicks it.
+  await user.click(within(form).getByRole('checkbox', { name: 'Knotless braids' }));
   expect(save).toBeDisabled();
   await user.click(within(form).getByRole('checkbox', { name: 'Knotless braids' }));
   await user.click(within(form).getByRole('button', { name: 'Move photo 2 earlier' }));
-  await user.selectOptions(within(form).getByLabelText('Hair type'), 'coily');
+  await user.click(within(form).getByRole('radio', { name: 'Coily' }));
   await user.click(save);
   await within(form).findByText('Look saved. Add the next look.');
   const upload = calls.find(call => call.method === 'POST')!;
@@ -332,13 +333,10 @@ it('shows and copies a link once and keeps only its expiry after leaving', async
   const view = renderStaff('/featured/ama');
   await user.click(await screen.findByRole('button', { name: 'Make a new link' }));
   expect(await screen.findByText('https://yasante.com/claim/secret-code')).toBeInTheDocument();
-  expect(
-    screen.getByText(
-      /This link works once and runs out on .*Making a new one stops this one working./
-    )
-  ).toBeInTheDocument();
+  // Ready to paste into the chat: the link, and when it runs out, said once.
+  expect(screen.getByText(/The link works once and runs out on 25 Oct/)).toBeInTheDocument();
+  expect(screen.getByText(/Making a new link stops this one working/)).toBeInTheDocument();
   expect(screen.queryByText(/^Link live ·/)).not.toBeInTheDocument();
-  expect(screen.getAllByText(/25 Oct 2099/)).toHaveLength(1);
   await user.click(screen.getByRole('button', { name: 'Copy their link' }));
   expect(clipboard).toHaveBeenCalledWith('https://yasante.com/claim/secret-code');
   await user.click(screen.getAllByRole('link', { name: 'Featured stylists' }).at(-1)!);
@@ -496,7 +494,8 @@ it('resolves style names beyond the first catalogue page', async () => {
     }),
   });
   renderStaff('/featured/ama');
-  expect(await screen.findByText('Knotless braids, Cornrows')).toBeInTheDocument();
+  expect(await screen.findByText('Knotless braids')).toBeInTheDocument();
+  expect(screen.getByText('Cornrows')).toBeInTheDocument();
   expect(calls.filter(call => call.url.startsWith('/data/records/looks/style/'))).toHaveLength(2);
 });
 
@@ -604,4 +603,39 @@ it('shows and copies the full https Yasante address returned by the server', asy
   expect(screen.queryByText('/claim/full-link-code', { exact: true })).not.toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Copy their link' }));
   expect(clipboard).toHaveBeenCalledWith(url);
+});
+
+it('adds photos pasted straight from the clipboard', async () => {
+  const user = userEvent.setup();
+  setup();
+  renderStaff('/featured/ama');
+  await user.click(await screen.findByRole('button', { name: 'Add a look' }));
+  const form = screen.getByRole('form', { name: 'Add a look' });
+  const paste = new Event('paste', { bubbles: true }) as Event & { clipboardData: unknown };
+  paste.clipboardData = { files: [photo('copied.jpg')] };
+  fireEvent(window, paste);
+  expect(await within(form).findByAltText('copied.jpg')).toBeInTheDocument();
+});
+
+it('makes the message to paste into the chat, with the link in it', async () => {
+  const user = userEvent.setup();
+  const clipboard = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
+  const url = 'https://yasante.com/claim/message-code';
+  setup({ 'POST /data/featured/ama/link/': { url, expires_at: '2099-10-25T10:00:00Z' } });
+  renderStaff('/featured/ama');
+  await user.click(await screen.findByRole('button', { name: 'Make a new link' }));
+  await user.click(await screen.findByRole('button', { name: 'Copy the message' }));
+  expect(clipboard).toHaveBeenCalledWith(expect.stringContaining(url));
+  expect(clipboard).toHaveBeenCalledWith(expect.stringContaining('Your page on Yasante is ready'));
+  expect(await screen.findByText('Message copied. Paste it into the chat.')).toBeInTheDocument();
+});
+
+it('always says what to do next', async () => {
+  setup();
+  renderStaff('/featured/ama');
+  await screen.findByRole('heading', { level: 1 });
+  const next = screen.getAllByRole('status').find(el => /^Next/.test(el.textContent ?? ''));
+  expect(next).toHaveTextContent(
+    /Add their first look|Record their yes|Put it live|Send them their link|Waiting for them/
+  );
 });
