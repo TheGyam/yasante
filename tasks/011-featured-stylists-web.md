@@ -2,7 +2,7 @@
 id: 011
 slug: featured-stylists-web
 assignee: codex # codex | gemini | sonnet | haiku | opus
-status: review # draft | ready | in-progress | review | blocked | done
+status: done # draft | ready | in-progress | review | blocked | done
 branch: agent/codex/011-featured-stylists-web
 depends_on: [009]
 ---
