@@ -5,6 +5,9 @@ import { useBeforeUnload, useBlocker } from 'react-router';
 import { readStaff, writeStaff } from './api';
 import type {
   Broadcasts,
+  FeaturedSummary,
+  FeaturedDetail,
+  FeaturedList,
   PushHealth,
   ErrorDetail,
   FormSchema,
@@ -238,4 +241,93 @@ export function useLocalSetting<T extends string>(key: string, fallback: T) {
     }
   };
   return [value, save] as const;
+}
+
+export const useFeaturedList = (page: number) =>
+  useStaffRead<FeaturedList>(`featured/?p=${page}`, { keepPrevious: true });
+export const useFeaturedDetail = (id: string) =>
+  useStaffRead<FeaturedDetail>(`featured/${encodeURIComponent(id)}/`, {
+    refetchOnWindowFocus: false,
+  });
+
+/** Keep the affected page and already-read list rows current, without refreshing the workspace. */
+export function useFeaturedWrite(csrf: string) {
+  const cache = useQueryClient();
+  return useMutation({
+    gcTime: 0,
+    mutationFn: async ({
+      path,
+      body,
+      method = 'POST',
+    }: {
+      path: string;
+      body: FormData;
+      method?: 'POST' | 'PATCH' | 'DELETE';
+    }) =>
+      writeStaff<
+        FeaturedSummary | { id: string } | { done: boolean } | { url: string; expires_at: string }
+      >(path, body, csrf, method),
+    onSuccess: async (result, { path, method }) => {
+      const [, id, action] = path.split('/');
+      const removed = action === 'take-down';
+      let summary: FeaturedSummary | undefined;
+      if ('display_name' in result) {
+        summary = result;
+        if (method === 'PATCH')
+          cache.setQueryData(keys.read(`featured/${id}/`), (old: FeaturedDetail | undefined) =>
+            old ? { ...old, ...result } : undefined
+          );
+      } else if (id && !removed && ('url' in result || action === 'live' || method === 'DELETE')) {
+        const old = cache.getQueryData<FeaturedDetail>(keys.read(`featured/${id}/`));
+        if (old) {
+          const looks =
+            method === 'DELETE'
+              ? old.looks.filter(look => look.id !== path.split('/')[3])
+              : old.looks;
+          const detail = {
+            ...old,
+            looks,
+            look_count: looks.length,
+            ...('url' in result ? { link_expires_at: result.expires_at } : {}),
+            ...(action === 'live' ? { live: true } : {}),
+          };
+          summary = detail;
+          cache.setQueryData(keys.read(`featured/${id}/`), detail);
+        }
+      } else if (id && !removed) {
+        // Action replies contain only done/id; read just this page for its saved date/photos.
+        const detail = await readStaff<FeaturedDetail>(
+          `featured/${id}/`,
+          new AbortController().signal
+        );
+        summary = detail;
+        cache.setQueryData(keys.read(`featured/${id}/`), detail);
+      }
+      if (removed) cache.removeQueries({ queryKey: keys.read(`featured/${id}/`), exact: true });
+      cache.setQueriesData<FeaturedList>({ queryKey: keys.family('featured') }, old => {
+        if (!old || !('items' in old)) return old;
+        if (removed)
+          return {
+            ...old,
+            items: old.items.filter(item => item.id !== id),
+            count: Math.max(0, old.count - 1),
+            pages: Math.max(1, Math.ceil((old.count - 1) / 25)),
+          };
+        if (!summary) return old;
+        const exists = old.items.some(item => item.id === summary.id);
+        const created = path === 'featured/';
+        const count = old.count + (created && !exists ? 1 : 0);
+        return {
+          ...old,
+          items: exists
+            ? old.items.map(item => (item.id === summary.id ? summary : item))
+            : created && old.page === 1
+              ? [summary, ...old.items].slice(0, 25)
+              : old.items,
+          count,
+          pages: Math.max(1, Math.ceil(count / 25)),
+        };
+      });
+    },
+  });
 }

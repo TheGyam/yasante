@@ -1254,3 +1254,16 @@ def test_yes_record_belongs_to_uploader_and_is_deleted_on_take_down(
     assert not Media.objects.filter(pk=proof.pk).exists()
     assert all(not default_storage.exists(path) for path in paths)
     assert User.objects.filter(pk=uploader.pk).exists()
+
+
+def test_staff_page_responses_include_the_recorded_yes_date(page, make_user):
+    client, _ = staff_client(make_user, superuser=True)
+    root = "/data/featured/"
+    item = f"{root}{page.pk}/"
+    assert client.get(item).json()["agreed_at"] is None
+    assert client.get(root).json()["items"][0]["agreed_at"] is None
+    assert client.post(item + "yes/", {"note": "Said yes to Akua on Instagram"}).status_code == 200
+    page.refresh_from_db()
+    expected = page.agreed_at.isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    assert client.get(item).json()["agreed_at"] == expected
+    assert client.get(root).json()["items"][0]["agreed_at"] == expected

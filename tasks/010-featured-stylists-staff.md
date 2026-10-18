@@ -2,7 +2,7 @@
 id: 010
 slug: featured-stylists-staff
 assignee: codex # codex | gemini | sonnet | haiku | opus
-status: blocked # draft | ready | in-progress | review | blocked | done
+status: review # draft | ready | in-progress | review | blocked | done
 branch: agent/codex/010-featured-stylists-staff
 depends_on: [009]
 ---
@@ -128,10 +128,26 @@ npm ci && npx tsc --noEmit && npm run lint && npm test && npx vite build
 
 ## Report to the lead
 
-- **Changed:** Read the instructions, architecture, plan, staff endpoint brief, merged staff endpoint implementation and this task in the requested order. Created `agent/codex/010-featured-stylists-staff` from the latest `origin/master` in the clean managed worktree. No UI or server code changed. The unrelated working changes in the main checkout were left alone. Updating local master directly was refused because it has diverged; it was not reset or overwritten.
-- **Checks run:** `npm ci`: not run. `npx tsc --noEmit`: not run. `npm run lint`: not run. `npm test`: not run. `npx vite build`: not run. Implementation stopped at the required server-contract check, before any code changes.
-- **Unsure about:** The server cannot currently supply two requirements below. No missing values were invented and no client behavior was substituted for the required server behavior.
-- **Skipped, and why:** UI implementation and acceptance tests are not started because the brief explicitly requires stopping when an endpoint does not provide what the staff section needs. No dependencies, backend files, public website files or app files changed.
-- **Question for the lead:**
-  1. Step 4.3 requires the saved yes to show its note, date and who recorded it. `GET /data/featured/<id>/` returns `agreed` and `agreed_note`, but no `agreed_at` or recorder identity. `POST .../yes/` returns only `{done: true}`. The audit entry has an actor and time, but is not included in this response or reliably available to every user with the model permission. Please have the server return the recorded date and recorder identity, including after reloading the page, or revise this display requirement. The creator is not necessarily the recorder, and the optional screenshot cannot supply that information reliably.
-  2. Step 5 requires uploading photos in parallel, at most three at a time. `POST /data/featured/<id>/looks/` accepts all 1–5 files in a single multipart request and stores them sequentially before creating one look. There is no staff upload-and-attach contract for uploading those files separately while keeping one look and its chosen cover/order. Should the staff UI submit one ordered multipart request with a busy state, or will the server provide the separate upload contract needed for the requested parallel uploads?
+- **Changed:**
+  - Added the lazy-loaded Featured stylists section under People, with paged rows, all five next-step statuses, a name/handle filter, and the requested empty state. The filter explicitly says it applies to the current server page; the existing endpoint does not implement global search.
+  - Added creation and editing with Instagram handle/link normalisation, optional avatar, the live-handle lock and server errors. Staff writes keep same-origin cookies and CSRF through `writeStaff`.
+  - Added the look grid, confirmed removal, searchable and paged style choices from the existing staff style catalogue, hair type and caption. Choosing/dropping 1–5 photos previews them before upload; drag and keyboard buttons reorder them. One multipart request sends the cover first. The button says Saving… and cannot be pressed again while saving; a successful save clears the still-open panel.
+  - Added the yes note/screenshot and the exact saved-date line, a private link kept only on the mounted screen, copying and expiry status, the guarded publishing button, and typed-handle take-down with real look/photo counts. Claiming hides the destructive and handover actions. Existing staff UI pieces, tokens and dialogs are reused.
+  - Added only `agreed_at` to the server summary, which is also used by the detail response. The regression covers missing and recorded dates in both responses. Nothing else in backend changed except that test.
+  - Added 18 staff tests covering navigation, all statuses, empty state, both handle formats, refused handles, look validation/order/dragging/previews/clearing/busy state, publishing reasons, the yes date and live handle lock, private-link lifetime/copying/expiry, typed take-down, claimed state, removal, CSRF for every write and the lazy export. All existing tests and their timeouts remain unchanged.
+  - Supporting change: `web/src/features/staff/api.ts` accepts an optional POST/PATCH/DELETE method, defaulting to POST, so the new staff endpoints use the existing writer without duplicating its CSRF/error handling. Existing callers keep their behavior. Other listed staff files contain additions for this section only.
+  - Writes update cached detail/list rows without reloading the workspace. Create/edit, links, publication and removal use the returned data and confirmed action. Adding a look and recording the yes return only an id/done flag, so those two actions read just the affected detail to obtain authoritative media addresses or the saved date, then update its cached list row. Link codes are not put in query data or browser storage.
+- **Checks run:**
+  - Website `npm ci`: passed, 309 packages installed from the existing lockfile. npm reported one existing high-severity audit finding; no dependency or lockfile changed.
+  - Website `npx tsc --noEmit`: passed. Early errors were limited to the new test typings and were corrected.
+  - Website `npm run lint`: passed, zero errors or warnings. The first run caught an impure expiry calculation during render; it now uses state and an expiry timer.
+  - Website `npm test`: passed for all 18 files and 101 tests, including all 18 new staff cases. Earlier runs exposed a missing asynchronous wait in the new list test; it now waits for the lazy screen and its data. One intermediate parallel run also timed out in the unchanged existing signup test. The final ordinary `npm test` run passes with the original timeouts and assertions; no workers or suites were excluded.
+  - Website `npx vite build`: passed. The output includes a separate Featured chunk, and a test also verifies the lazy export.
+  - Backend `python -m pip install -r requirements-dev.txt`: passed; requirements already satisfied.
+  - Backend `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run`: passed; no changes detected. PowerShell supplied test settings and the isolated local PostgreSQL URL through environment variables.
+  - Backend `python -m pytest -q -p no:cacheprovider --create-db`: passed for the whole backend, all 529 tests, including the new date-response test.
+  - `python manage.py spectacular --file ../openapi.yaml` and `git diff --exit-code ../openapi.yaml`: passed. Seven existing schema warnings, zero errors and no generated change: staff endpoints are excluded from the public schema.
+  - Root and website `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: passed; both clients regenerated without drift or manual edits.
+  - `git diff --check`: passed. Dependency lockfile diff check: passed, no changes.
+- **Unsure about:** No unanswered implementation questions. Style choices use the existing staff catalogue and its existing model permissions. The current-page search and the two targeted detail reads are described above so their limits are explicit.
+- **Skipped, and why:** No acceptance test skipped or weakened. Manual browser/device testing and the unrelated app test suite were not run; the staff interactions were exercised through the complete routed component tests. No changes to the public website, app, other backend behavior, dependencies or lockfiles.

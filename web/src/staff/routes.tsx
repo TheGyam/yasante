@@ -7,6 +7,7 @@ import ReviewRoute from './routes/review';
 import InsightsRoute from './routes/insights';
 import ErrorsRoute from './routes/errors';
 import NotificationsRoute from './routes/notifications';
+import FeaturedRoute from './routes/featured';
 import MetricsRoute from './routes/metrics';
 import PasswordRoute from './routes/password';
 import RecordsRoute from './routes/records';
@@ -23,6 +24,8 @@ export const staffRoutes: RouteObject[] = [
       { path: '/review', element: <ReviewRoute /> },
       { path: '/insights', element: <InsightsRoute /> },
       { path: '/errors', element: <ErrorsRoute /> },
+      { path: '/featured', element: <FeaturedRoute /> },
+      { path: '/featured/:id', element: <FeaturedRoute /> },
       { path: '/notifications', element: <NotificationsRoute /> },
       { path: '/notifications/:action', element: <NotificationsRoute /> },
       { path: '/errors/:id', element: <ErrorsRoute /> },
