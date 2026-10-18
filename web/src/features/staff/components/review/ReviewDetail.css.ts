@@ -64,7 +64,10 @@ export const images = style({
   display: 'grid',
   gridTemplateColumns: 'minmax(0, 1fr)',
   gap: space.md,
-  selectors: { '&[data-pair="true"]': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' } },
+  selectors: {
+    '&[data-pair="true"]': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
+    '&[data-grid="true"]': { gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' },
+  },
 });
 
 export const figure = style({ margin: 0, display: 'grid', gap: space.xs });
