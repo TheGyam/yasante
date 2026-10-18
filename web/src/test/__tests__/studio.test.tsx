@@ -143,6 +143,180 @@ describe('her studio', () => {
     ]);
   });
 
+  it('offers no choice to post together while the switch is off, and still posts one look a photo', async () => {
+    let looks = 0;
+    const calls = signedIn({
+      'GET /api/features/': { features: { multi_photo_looks: false } },
+      'POST /api/uploads/': (call: { body?: unknown }) => {
+        const file = (call.body as FormData).get('file') as File;
+        return { status: 201, body: { id: file.name, uri: `https://x/${file.name}`, photoAspect: 0.8 } };
+      },
+      'POST /api/looks/': (call: { body?: unknown }) => ({
+        status: 201,
+        body: { ...(call.body as object), id: `l${++looks}`, photoUri: `https://x/${looks}.jpg` },
+      }),
+      'POST /api/stylists/me/portfolio/': { status: 201, body: [] },
+    });
+    const typist = userEvent.setup();
+    const { router } = renderSite('/looks/new');
+    const input = (await screen.findByText('Choose photos of your work'))
+      .closest('label')!
+      .querySelector('input')!;
+    await typist.upload(input, [
+      new File(['a'], 'a.jpg', { type: 'image/jpeg' }),
+      new File(['b'], 'b.jpg', { type: 'image/jpeg' }),
+      new File(['c'], 'c.jpg', { type: 'image/jpeg' }),
+    ]);
+    expect(screen.queryByRole('tab', { name: 'One look with these photos' })).toBeNull();
+
+    await typist.selectOptions(screen.getAllByRole('combobox', { name: 'Style' })[0], 'knotless');
+    await typist.click(screen.getByRole('button', { name: 'Post 3 photos' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/portfolio'));
+    const posted = calls.filter(c => c.url === '/api/looks/' && c.method === 'POST');
+    expect(posted).toHaveLength(3);
+  });
+
+  it('posts several photos as one look when the switch is on, in the order on screen after a move', async () => {
+    const calls = signedIn({
+      'GET /api/features/': { features: { multi_photo_looks: true } },
+      'POST /api/uploads/': (call: { body?: unknown }) => {
+        const file = (call.body as FormData).get('file') as File;
+        return {
+          status: 201,
+          body: { id: file.name, uri: `https://x/${file.name}`, thumbUri: `https://x/${file.name}-t`, photoAspect: 0.8 },
+        };
+      },
+      'POST /api/looks/': (call: { body?: unknown }) => {
+        const body = call.body as { photoUris: string[] };
+        return {
+          status: 201,
+          body: { ...body, id: 'l1', photoUri: body.photoUris[0], thumbUri: `${body.photoUris[0]}-t` },
+        };
+      },
+      'POST /api/stylists/me/portfolio/': { status: 201, body: [] },
+    });
+    const typist = userEvent.setup();
+    const { router } = renderSite('/looks/new');
+    const input = (await screen.findByText('Choose photos of your work'))
+      .closest('label')!
+      .querySelector('input')!;
+    await typist.upload(input, [
+      new File(['a'], 'a.jpg', { type: 'image/jpeg' }),
+      new File(['b'], 'b.jpg', { type: 'image/jpeg' }),
+      new File(['c'], 'c.jpg', { type: 'image/jpeg' }),
+    ]);
+    await typist.click(await screen.findByRole('tab', { name: 'One look with these photos' }));
+    expect(screen.getByText('Cover')).toBeInTheDocument();
+
+    // a, b, c -> move c earlier, so the order becomes a, c, b.
+    const earlier = screen.getAllByRole('button', { name: 'Move earlier' });
+    await typist.click(earlier[1]);
+
+    await typist.selectOptions(screen.getByRole('combobox', { name: 'Style' }), 'knotless');
+    await typist.click(screen.getByRole('button', { name: 'Post 1 look with 3 photos' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/portfolio'));
+    const posted = calls.filter(c => c.url === '/api/looks/' && c.method === 'POST');
+    expect(posted).toHaveLength(1);
+    expect(posted[0].body).toMatchObject({
+      photoUris: ['https://x/a.jpg', 'https://x/c.jpg', 'https://x/b.jpg'],
+      styles: ['knotless'],
+      visibility: 'public',
+    });
+    const onPage = calls.filter(c => c.url === '/api/stylists/me/portfolio/' && c.method === 'POST');
+    expect(onPage).toHaveLength(1);
+    const photos = (onPage[0].body as { photos: { uri: string; lookId: string }[] }).photos;
+    expect(photos).toHaveLength(1);
+    expect(photos[0]).toMatchObject({ uri: 'https://x/a.jpg', lookId: 'l1' });
+  });
+
+  it('keeps the choice but blocks posting more than 5 photos as one look', async () => {
+    signedIn({ 'GET /api/features/': { features: { multi_photo_looks: true } } });
+    const typist = userEvent.setup();
+    renderSite('/looks/new');
+    const input = (await screen.findByText('Choose photos of your work'))
+      .closest('label')!
+      .querySelector('input')!;
+    await typist.upload(
+      input,
+      Array.from({ length: 6 }, (_, i) => new File([`p${i}`], `p${i}.jpg`, { type: 'image/jpeg' }))
+    );
+    await typist.click(await screen.findByRole('tab', { name: 'One look with these photos' }));
+    await typist.selectOptions(screen.getByRole('combobox', { name: 'Style' }), 'knotless');
+
+    expect(
+      screen.getByText('A look holds up to 5 photos. Remove some to post them together.')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Post 1 look with 6 photos' })).toBeDisabled();
+  });
+
+  it('uploads a look’s photos at most 3 at a time', async () => {
+    startSession({ user, accessToken: 'a', refreshToken: 'r', expiresAt: 0 });
+    let started = 0;
+    const pending: Array<() => void> = [];
+    const fixed: Record<string, unknown> = {
+      'GET /api/stylists/me/': profile,
+      'GET /api/stylists/me/summary/': { pendingRequests: 1, appointmentsToday: 0 },
+      'GET /api/stylists/me/menu/': [knotless],
+      'GET /api/looks/mine/': [],
+      'GET /api/bookings/': [],
+      'GET /api/styles/': [{ id: 'knotless', name: 'Knotless braids' }],
+      'GET /api/features/': { features: { multi_photo_looks: true } },
+      'POST /api/looks/': { id: 'l1', photoUri: 'https://x/1.jpg' },
+      'POST /api/stylists/me/portfolio/': [],
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: string, init?: RequestInit) => {
+        const url = String(input);
+        const method = init?.method ?? 'GET';
+        const path = url.split('?')[0];
+        if (method === 'POST' && path === '/api/uploads/') {
+          started++;
+          const n = started;
+          return new Promise<Response>(resolve => {
+            pending.push(() =>
+              resolve(
+                new Response(JSON.stringify({ id: `m${n}`, uri: `https://x/${n}.jpg`, photoAspect: 0.8 }), {
+                  status: 201,
+                  headers: { 'Content-Type': 'application/json' },
+                })
+              )
+            );
+          });
+        }
+        const body = fixed[`${method} ${path}`] ?? fixed[path] ?? { message: 'Not found' };
+        return Promise.resolve(
+          new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
+        );
+      })
+    );
+
+    const typist = userEvent.setup();
+    const { router } = renderSite('/looks/new');
+    const input = (await screen.findByText('Choose photos of your work'))
+      .closest('label')!
+      .querySelector('input')!;
+    await typist.upload(
+      input,
+      Array.from({ length: 5 }, (_, i) => new File([`p${i}`], `p${i}.jpg`, { type: 'image/jpeg' }))
+    );
+    await typist.click(await screen.findByRole('tab', { name: 'One look with these photos' }));
+    await typist.selectOptions(screen.getByRole('combobox', { name: 'Style' }), 'knotless');
+    await typist.click(screen.getByRole('button', { name: 'Post 1 look with 5 photos' }));
+
+    await waitFor(() => expect(started).toBe(3));
+    expect(pending).toHaveLength(3);
+
+    pending.shift()!();
+    pending.shift()!();
+    await waitFor(() => expect(started).toBe(5));
+
+    pending.forEach(resolve => resolve());
+    await waitFor(() => expect(router.state.location.pathname).toBe('/portfolio'));
+  });
+
   it('adds a service priced by length and size', async () => {
     const calls = signedIn({ 'POST /api/stylists/me/menu/': { status: 201, body: knotless } });
     const typist = userEvent.setup();
