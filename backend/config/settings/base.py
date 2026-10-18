@@ -64,6 +64,7 @@ LOCAL_APPS = [
     "apps.shelf",
     "apps.content",
     "apps.web",
+    "apps.features",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

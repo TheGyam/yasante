@@ -909,6 +909,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/features/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Open to everyone: the app needs this before sign-in decides anything. */
+        get: operations["features_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hair-log/": {
         parameters: {
             query?: never;
@@ -2408,6 +2425,11 @@ export interface components {
         };
         FavoriteToggleRequestRequest: {
             contentId: string;
+        };
+        FeaturesResponse: {
+            features: {
+                [key: string]: boolean;
+            };
         };
         /** @description POST /api/auth/forgot-password/ */
         ForgotPasswordRequest: {
@@ -4991,6 +5013,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FavoriteState"];
+                };
+            };
+        };
+    };
+    features_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeaturesResponse"];
                 };
             };
         };

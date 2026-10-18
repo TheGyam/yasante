@@ -304,7 +304,8 @@ def test_a_live_stylist_can_post_her_back_catalogue(api, make_user, make_stylist
 def test_ordered_photos_and_cover(api, make_user, styles, photo, count):
     from apps.looks.models import Look
 
-    user = make_user()
+    # Multi-photo looks are staff-only until the switch opens them to everyone.
+    user = make_user(is_staff=True)
     uris = [photo(user) for _ in range(count)][::-1]
     result = api(user).post("/api/looks/", {
         "photoUris": uris, "styles": ["knotless"], "photoAspect": 99,
@@ -345,7 +346,8 @@ def test_legacy_post_has_one_photo(api, make_user, styles, photo):
 def test_invalid_photos_create_nothing(api, make_user, styles, photo, case, message):
     from apps.looks.models import Look, LookPhoto
 
-    user = make_user()
+    # Staff, so these cases reach the checks they're meant to test, past the switch.
+    user = make_user(is_staff=True)
     uri = photo(user)
     uris = {"empty": [], "six": [uri] * 6, "duplicate": [uri, uri],
             "alias": [uri, uri.replace(".jpg", "_w320.jpg")],
@@ -355,6 +357,33 @@ def test_invalid_photos_create_nothing(api, make_user, styles, photo, case, mess
     assert result.status_code == 400
     assert result.json()["message"] == message
     assert (Look.objects.count(), LookPhoto.objects.count()) == counts
+
+
+def test_multi_photo_switch_gates_more_than_one_photo(api, make_user, styles, photo):
+    from apps.features.models import Switch
+
+    switch = Switch.objects.get(key="multi_photo_looks")
+    switch.mode = "off"
+    switch.save()
+
+    plain, staff = make_user(), make_user(is_staff=True)
+
+    # One photo always works, switch or no switch.
+    assert api(plain).post(
+        "/api/looks/", {"photoUri": photo(plain), "styles": ["knotless"]}
+    ).status_code == 201
+
+    two_photos = {"photoUris": [photo(plain), photo(plain)], "styles": ["knotless"]}
+    refused = api(plain).post("/api/looks/", two_photos)
+    assert refused.status_code == 400
+    assert refused.json()["message"] == "Posting several photos in one look isn't open yet"
+
+    switch.mode = "staff"
+    switch.save()
+    assert api(plain).post("/api/looks/", two_photos).status_code == 400
+    assert api(staff).post(
+        "/api/looks/", {"photoUris": [photo(staff), photo(staff)], "styles": ["knotless"]}
+    ).status_code == 201
 
 
 def test_cover_fallback_without_photo_rows(api, make_user, make_look):
@@ -394,7 +423,7 @@ def test_photo_files_are_deleted(api, make_user, styles, photo, target):
     from apps.looks.models import Look
     from django.core.files.storage import default_storage
 
-    user = make_user()
+    user = make_user(is_staff=True)
     uris = [photo(user) for _ in range(3)]
     result = api(user).post("/api/looks/", {"photoUris": uris, "styles": ["knotless"]})
     look = Look.objects.get(pk=result.json()["id"])

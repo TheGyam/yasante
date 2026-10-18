@@ -2,7 +2,7 @@
 id: 006
 slug: feature-switches-backend
 assignee: sonnet # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+status: review # draft | ready | in-progress | review | blocked | done
 branch: agent/sonnet/006-feature-switches-backend
 depends_on: [003]
 ---
@@ -100,10 +100,56 @@ npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts
 
 ## Report to the lead
 
-_Filled in by the assignee when it sets `status: review` or `blocked`._
-
 - **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
+  - New `backend/apps/features/` app: `Switch` model (key, description, mode,
+    percent, users, updated_at, updated_by), `switches.py` (`is_on`,
+    `features_for`, one query cached 30s, cleared on save/delete/users change),
+    `GET /api/features/` (plain `JSONRenderer`, not the camelCase one — a
+    switch's key is a slug the admin and app must agree on verbatim), admin
+    (list_editable mode/percent, filter_horizontal users, superuser-only
+    add/delete, `updated_by` filled from the request), and the seed migration
+    for `multi_photo_looks` (staff) and `video_posts` (off).
+  - `apps.features` added to `INSTALLED_APPS`; one path added in
+    `config/urls.py`.
+  - `create_look` in `backend/apps/looks/views.py`: a look with more than one
+    photo is refused with "Posting several photos in one look isn't open yet"
+    unless `multi_photo_looks` is on for the poster. Placed before the
+    existing 5-photo cap, so the cap's own message still fires once the
+    switch lets a post through.
+  - `backend/tests/test_features.py` (new): every mode for every kind of
+    visitor, unknown key, percent at 0/30/50/100 with monotonic growth over
+    1000 ids, cache cleared on save/delete/users-change (checked against the
+    real cache, not a mock), the endpoint signed out and signed in with query
+    counts.
+  - `backend/tests/test_looks.py`: added a test for the switch gating 1 vs 2
+    photos, off vs staff. Also changed three existing multi-photo tests
+    (`test_ordered_photos_and_cover`, `test_invalid_photos_create_nothing`,
+    `test_photo_files_are_deleted`) to post as a staff user — they post 2+
+    photos to exercise ordering, duplicate/alias/foreign-photo checks and the
+    5-photo cap, none of which this task touches, but the new switch (seeded
+    `staff`) now sits in front of all of them.
+  - **Out of scope, touched anyway:** `backend/apps/staff/names.py` — one line
+    adding `features.switch` to the `System` group. Registering `Switch` in
+    `admin.py` (required by the task) makes
+    `test_staff_workspace_v2.py::test_every_registered_model_has_a_friendly_name`
+    fail, because that test requires every admin-registered model to have an
+    entry there. The fix is one list entry, in the same style as the rest of
+    the file; flagging it here since the task's scope doesn't list this file.
+  - Regenerated `openapi.yaml`, `src/shared/lib/api/schema.d.ts` and
+    `web/src/shared/lib/api/schema.d.ts`.
+- **Checks run:**
+  - `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run` — passed, no changes detected.
+  - `python -m pytest -q -p no:cacheprovider --create-db` — passed, full suite (including the names.py fix).
+  - `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts` — ran `api:types`, which produced a diff (the new endpoint); diff is included in this branch, not left uncommitted. The repo-root `tsc`/`lint`/`jest` checks weren't run — this task's scope is backend only and doesn't name them.
+  - Also ran `python manage.py spectacular --file ../openapi.yaml` and `npm run api:types` in `web/`, both regenerated cleanly (only pre-existing enum-naming warnings, unrelated to this change).
 - **Unsure about:**
-- **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+  - Whether the lead wants the `names.py` line kept, reverted (test updated
+    instead, if that's preferred), or moved into a follow-up task.
+  - The endpoint's throttling: no `throttle_classes` or `throttle_scope` is
+    set, matching every other `AllowAny` view in this codebase (e.g.
+    `StyleListView`, `AreaListView`) — none of them set a scope either, so in
+    practice none of them throttle beyond the global default. That's "the
+    same throttle classes the other public endpoints use" read literally; if
+    a real rate limit was intended, it needs its own scope and a
+    `DEFAULT_THROTTLE_RATES` entry, which the task didn't name.
+- **Skipped, and why:** Nothing else skipped.

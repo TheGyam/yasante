@@ -1391,6 +1391,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/FavoriteState'
           description: ''
+  /api/features/:
+    get:
+      operationId: features_retrieve
+      description: 'Open to everyone: the app needs this before sign-in decides anything.'
+      tags:
+      - features
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturesResponse'
+          description: ''
   /api/hair-log/:
     get:
       operationId: hair_log_list
@@ -4015,6 +4031,15 @@ components:
           minLength: 1
       required:
       - contentId
+    FeaturesResponse:
+      type: object
+      properties:
+        features:
+          type: object
+          additionalProperties:
+            type: boolean
+      required:
+      - features
     ForgotPasswordRequest:
       type: object
       description: POST /api/auth/forgot-password/
