@@ -1391,6 +1391,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/FavoriteState'
           description: ''
+  /api/featured/claim/{code}/:
+    get:
+      operationId: featured_claim_retrieve
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - featured
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimPreview'
+          description: ''
+    post:
+      operationId: featured_claim_create
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - featured
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+          description: ''
+  /api/features/:
+    get:
+      operationId: features_retrieve
+      description: 'Open to everyone: the app needs this before sign-in decides anything.'
+      tags:
+      - features
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturesResponse'
+          description: ''
   /api/hair-log/:
     get:
       operationId: hair_log_list
@@ -1594,6 +1650,32 @@ paths:
         required: true
       tags:
       - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Look'
+          description: ''
+    patch:
+      operationId: looks_partial_update
+      description: GET / DELETE /api/looks/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - looks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLookTagsRequestRequest'
       security:
       - jwtAuth: []
       responses:
@@ -2214,14 +2296,41 @@ paths:
   /api/stylists/by-handle/{handle}/slots/:
     get:
       operationId: stylists_by_handle_slots_retrieve
-      description: GET /api/stylists/by-handle/:handle/slots/?service=&options= —
-        her free times.
+      description: |-
+        GET /api/stylists/by-handle/:handle/slots/?service=&options=&from=&to= — her free
+        times on the days asked for, two months at most. With ?booking= instead of a
+        service, the times the client could move that appointment to.
       parameters:
+      - in: query
+        name: booking
+        schema:
+          type: string
+        description: 'Her appointment to move: its length, its own time left free'
+      - in: query
+        name: from
+        schema:
+          type: string
+        description: First day wanted, yyyy-MM-dd (today if left out)
       - in: path
         name: handle
         schema:
           type: string
         required: true
+      - in: query
+        name: options
+        schema:
+          type: string
+        description: Its chosen option ids, comma separated
+      - in: query
+        name: service
+        schema:
+          type: string
+        description: The menu item
+      - in: query
+        name: to
+        schema:
+          type: string
+        description: Last day wanted, yyyy-MM-dd (four weeks on if left out)
       tags:
       - stylists
       security:
@@ -2234,6 +2343,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/FreeSlots'
           description: ''
+  /api/stylists/by-handle/{handle}/waitlist/:
+    put:
+      operationId: stylists_by_handle_waitlist_update
+      parameters:
+      - in: path
+        name: handle
+        schema:
+          type: string
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageWaitlist'
+          description: ''
+    delete:
+      operationId: stylists_by_handle_waitlist_destroy
+      parameters:
+      - in: path
+        name: handle
+        schema:
+          type: string
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/stylists/handle-available/:
     get:
       operationId: stylists_handle_available_retrieve
@@ -2283,6 +2427,168 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StylistProfile'
+          description: ''
+  /api/stylists/me/blocks/:
+    get:
+      operationId: stylists_me_blocks_list
+      description: |-
+        GET / POST /api/stylists/me/blocks/ — part of a day she's taken out of her diary
+        (a client booked elsewhere, a school run). Clients see it as booked.
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeBlock'
+          description: ''
+    post:
+      operationId: stylists_me_blocks_create
+      description: |-
+        GET / POST /api/stylists/me/blocks/ — part of a day she's taken out of her diary
+        (a client booked elsewhere, a school run). Clients see it as booked.
+      tags:
+      - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeBlockRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeBlock'
+          description: ''
+  /api/stylists/me/blocks/{id}/:
+    delete:
+      operationId: stylists_me_blocks_destroy
+      description: DELETE /api/stylists/me/blocks/:id/ — the time is hers to book
+        again.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/stylists/me/blocks/{id}/skip/:
+    post:
+      operationId: stylists_me_blocks_skip_create
+      description: |-
+        POST /api/stylists/me/blocks/:id/skip/ {date, skip} — one day a repeating block
+        doesn't come round (working through lunch next Tuesday), or does again.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeBlockSkipRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeBlock'
+          description: ''
+  /api/stylists/me/closed-days/:
+    post:
+      operationId: stylists_me_closed_days_create
+      description: |-
+        POST /api/stylists/me/closed-days/ {date, closed} — she has enough clients that day:
+        no new requests for it. Appointments already on it stay as they are. `closed: false`
+        opens it again.
+      tags:
+      - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClosedDayRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StylistProfile'
+          description: ''
+  /api/stylists/me/finish/:
+    get:
+      operationId: stylists_me_finish_retrieve
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Finish'
+          description: ''
+  /api/stylists/me/finish/price/:
+    post:
+      operationId: stylists_me_finish_price_create
+      tags:
+      - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinishPriceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Finish'
+          description: ''
+  /api/stylists/me/finish/tags-checked/:
+    post:
+      operationId: stylists_me_finish_tags_checked_create
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Finish'
           description: ''
   /api/stylists/me/menu/:
     get:
@@ -2844,6 +3150,18 @@ components:
           items:
             type: string
             format: date
+        closed:
+          type: array
+          items:
+            type: string
+            format: date
+        leadHours:
+          type: integer
+          minimum: 1
+        aheadDays:
+          type: integer
+        gapMinutes:
+          type: integer
       required:
       - blocked
       - week
@@ -3134,6 +3452,21 @@ components:
         * `50_100` - £50–100
         * `100_150` - £100–150
         * `150_plus` - £150+
+    Busy:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        mine:
+          type: boolean
+          description: 'The viewer''s own: why some times aren''t offered'
+      required:
+      - end
+      - start
     ByEnum:
       enum:
       - client
@@ -3311,6 +3644,42 @@ components:
         * `colour` - Colour
         * `bleach` - Bleach
         * `keratin` - Keratin
+    ClaimPhoto:
+      type: object
+      properties:
+        uri:
+          type: string
+        thumbUri:
+          type: string
+      required:
+      - thumbUri
+      - uri
+    ClaimPreview:
+      type: object
+      properties:
+        displayName:
+          type: string
+        handle:
+          type: string
+        avatarUri:
+          type: string
+        lookCount:
+          type: integer
+        live:
+          type: boolean
+        waiting:
+          type: integer
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimPhoto'
+      required:
+      - displayName
+      - handle
+      - live
+      - lookCount
+      - photos
+      - waiting
     ClientErrorKindEnum:
       enum:
       - crash
@@ -3382,6 +3751,17 @@ components:
           $ref: '#/components/schemas/TimingRequest'
       required:
       - outcome
+    ClosedDayRequestRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        closed:
+          type: boolean
+          default: true
+      required:
+      - date
     CodeSent:
       type: object
       properties:
@@ -3836,6 +4216,71 @@ components:
           minLength: 1
       required:
       - contentId
+    FeaturesResponse:
+      type: object
+      properties:
+        features:
+          type: object
+          additionalProperties:
+            type: boolean
+      required:
+      - features
+    Finish:
+      type: object
+      properties:
+        styles:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinishStyle'
+        hoursSet:
+          type: boolean
+        tagsChecked:
+          type: boolean
+        done:
+          type: boolean
+      required:
+      - done
+      - hoursSet
+      - styles
+      - tagsChecked
+    FinishPriceRequest:
+      type: object
+      properties:
+        style:
+          type: string
+          minLength: 1
+        price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: 0.01
+          exclusiveMaximum: true
+        fromPrice:
+          type: boolean
+          default: false
+        durationMinutes:
+          type: integer
+          minimum: 1
+          nullable: true
+      required:
+      - price
+      - style
+    FinishStyle:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        photoCount:
+          type: integer
+        priced:
+          type: boolean
+      required:
+      - name
+      - photoCount
+      - priced
+      - slug
     ForgotPasswordRequest:
       type: object
       description: POST /api/auth/forgot-password/
@@ -3857,6 +4302,18 @@ components:
           items:
             type: string
             format: date-time
+        room:
+          description: |-
+            Plenty while at least half the times a job like this could start are free
+
+            * `plenty` - plenty
+            * `few` - few
+          $ref: '#/components/schemas/RoomEnum'
+        busy:
+          type: array
+          items:
+            $ref: '#/components/schemas/Busy'
+          description: What's already in her diary that day
       required:
       - date
       - times
@@ -3869,9 +4326,35 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FreeDay'
+          description: Days asked for with a time free, in order
         timeZone:
           type: string
           description: 'The stylist''s zone (IANA): whose clock the times are on'
+        noticeHours:
+          type: integer
+        lastDate:
+          type: string
+          format: date
+          description: The furthest day she can be booked; one more opens each morning
+        full:
+          type: array
+          items:
+            type: string
+            format: date
+          description: Days she works with no time left, or closed as full
+        away:
+          type: array
+          items:
+            type: string
+            format: date
+        soonest:
+          type: string
+          format: date-time
+          description: Her first free time, whatever days were asked for
+        weekend:
+          type: string
+          format: date-time
+          description: Her first free Saturday or Sunday time
       required:
       - days
       - minutes
@@ -4247,6 +4730,12 @@ components:
     Look:
       type: object
       properties:
+        stylistFeatured:
+          type: boolean
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/LookPhoto'
         id:
           type: string
         authorId:
@@ -4319,10 +4808,12 @@ components:
       - liked
       - mine
       - photoUri
+      - photos
       - products
       - saveCount
       - saved
       - styles
+      - stylistFeatured
       - visibility
     LookCreateRequestRequest:
       type: object
@@ -4330,6 +4821,12 @@ components:
         photoUri:
           type: string
           minLength: 1
+        photoUris:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: One to five upload addresses, in display order
         thumbUri:
           type: string
           minLength: 1
@@ -4366,8 +4863,22 @@ components:
           type: string
           minLength: 1
       required:
-      - photoUri
       - styles
+    LookPhoto:
+      type: object
+      properties:
+        uri:
+          type: string
+        thumbUri:
+          type: string
+        feedUri:
+          type: string
+        aspect:
+          type: number
+          format: double
+      required:
+      - aspect
+      - uri
     LookStylist:
       type: object
       properties:
@@ -4703,6 +5214,13 @@ components:
       - rating
       - serviceName
       - status
+    PageWaitlist:
+      type: object
+      properties:
+        joined:
+          type: boolean
+      required:
+      - joined
     PatchedCarePlanRequestRequest:
       type: object
       properties:
@@ -4786,6 +5304,16 @@ components:
           type: string
           format: date-time
           nullable: true
+    PatchedLookTagsRequestRequest:
+      type: object
+      properties:
+        styles:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        hairTexture:
+          type: string
     PatchedMenuItemDraftRequest:
       type: object
       description: For creating/updating menu items.
@@ -5089,6 +5617,11 @@ components:
           type: string
           format: uuid
           readOnly: true
+        lookPhotos:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkLookPhoto'
+          readOnly: true
         createdAt:
           type: string
           format: date-time
@@ -5212,6 +5745,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/VerificationTierEnum'
           readOnly: true
+        featured:
+          type: boolean
+          readOnly: true
         published:
           type: boolean
         createdAt:
@@ -5223,12 +5759,16 @@ components:
           items:
             type: string
           description: phone, work, met_in_person, met_on_video, insurance
+        claimable:
+          type: boolean
       required:
       - accountId
       - baseArea
       - checks
+      - claimable
       - createdAt
       - displayName
+      - featured
       - handle
       - id
       - policies
@@ -5395,6 +5935,14 @@ components:
         * `client` - client
         * `stylist` - stylist
         * `admin` - admin
+    RoomEnum:
+      enum:
+      - plenty
+      - few
+      type: string
+      description: |-
+        * `plenty` - plenty
+        * `few` - few
     ServiceModelEnum:
       enum:
       - salon
@@ -5571,6 +6119,9 @@ components:
         openedOn:
           type: string
           format: date
+        opens:
+          type: boolean
+          description: Waiting for days she isn't taking bookings for yet
         createdAt:
           type: string
           format: date-time
@@ -5584,6 +6135,7 @@ components:
       - createdAt
       - from
       - id
+      - opens
       - stylistId
       - stylistName
       - to
@@ -5679,6 +6231,8 @@ components:
     StylistPageResponse:
       type: object
       properties:
+        waitlistJoined:
+          type: boolean
         profile:
           $ref: '#/components/schemas/PublicProfile'
         menu:
@@ -5781,6 +6335,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/VerificationTierEnum'
           readOnly: true
+        featured:
+          type: boolean
+          readOnly: true
         published:
           type: boolean
         createdAt:
@@ -5792,6 +6349,7 @@ components:
       - baseArea
       - createdAt
       - displayName
+      - featured
       - handle
       - id
       - paymentMethods
@@ -5937,6 +6495,70 @@ components:
         * `curly` - Curly
         * `coily` - Coily
         * `kinky` - Kinky
+    TimeBlock:
+      type: object
+      properties:
+        id:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        note:
+          type: string
+          description: 'Hers alone: never shown to clients'
+        repeats:
+          type: array
+          items:
+            type: integer
+          description: Weekdays it comes round again (Sunday 0), at the same time;
+            empty is once
+        skips:
+          type: array
+          items:
+            type: string
+            format: date
+          description: Days still to come it doesn't come round
+      required:
+      - end
+      - id
+      - repeats
+      - skips
+      - start
+    TimeBlockRequestRequest:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        note:
+          type: string
+          maxLength: 100
+        repeats:
+          type: array
+          items:
+            type: integer
+            maximum: 6
+            minimum: 0
+      required:
+      - end
+      - start
+    TimeBlockSkipRequestRequest:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        skip:
+          type: boolean
+          default: true
+      required:
+      - date
     TimeOfDayEnum:
       enum:
       - morning
@@ -6316,6 +6938,15 @@ components:
       description: |-
         * `no_show` - no_show
         * `timing` - timing
+    WorkLookPhoto:
+      type: object
+      properties:
+        uri:
+          type: string
+        thumbUri:
+          type: string
+      required:
+      - uri
   securitySchemes:
     cookieAuth:
       type: apiKey

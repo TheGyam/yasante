@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import { View } from 'react-native';
 import { BellRing, CalendarClock, CalendarX, X, CalendarCheck } from 'lucide-react-native';
 import {
@@ -58,7 +59,11 @@ export default function BookingsScreen() {
     interest.openedOn ? (
       <ListRow
         key={interest.id}
-        title={`A slot opened with ${interest.stylistName}`}
+        title={
+          interest.opens
+            ? `${interest.stylistName} is taking bookings for ${format(new Date(`${interest.from}T12:00:00`), 'MMMM')}`
+            : `A slot opened with ${interest.stylistName}`
+        }
         subtitle={`${dayLabel(interest.openedOn)} — ask before someone else does`}
         icon={CalendarCheck}
         iconTone="success"
@@ -69,7 +74,11 @@ export default function BookingsScreen() {
       <ListRow
         key={interest.id}
         title={interest.stylistName}
-        subtitle={`Any day ${inSentence(dayLabel(interest.from))} – ${inSentence(dayLabel(interest.to))}`}
+        subtitle={
+          interest.opens
+            ? `When ${format(new Date(`${interest.from}T12:00:00`), 'MMMM')} opens for booking`
+            : `Any day ${inSentence(dayLabel(interest.from))} – ${inSentence(dayLabel(interest.to))}`
+        }
         icon={BellRing}
         iconTone="neutral"
         trailing={

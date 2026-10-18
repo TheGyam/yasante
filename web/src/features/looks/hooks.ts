@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   useMutation,
   useInfiniteQuery,
@@ -8,7 +8,16 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { addToPortfolio, uploadPhoto } from '@/features/stylist';
-import { deleteLook, getAreas, getLook, getLooks, getMyLooks, getStyles, postLook } from './api';
+import {
+  deleteLook,
+  getAreas,
+  getLook,
+  getLooks,
+  getMyLooks,
+  getStyles,
+  postLook,
+  updateLook,
+} from './api';
 import type { Look, LookFilters, LooksPage } from './types';
 
 /**
@@ -153,4 +162,142 @@ export function usePostWork() {
   };
 
   return { post, progress, reset: () => setProgress(undefined) };
+}
+
+type UploadedPhoto = Awaited<ReturnType<typeof uploadPhoto>>;
+
+/** Uploads this many of a look's photos at once. */
+const MAX_CONCURRENT_UPLOADS = 3;
+
+export interface LookPhotosProgress {
+  done: number;
+  total: number;
+}
+
+/** Thrown when a photo can't be uploaded, after one retry. Names which one. */
+export class PhotoUploadError extends Error {
+  constructor(public readonly photoIndex: number) {
+    super(`Photo ${photoIndex + 1} didn’t upload. Try again.`);
+  }
+}
+
+/**
+ * Uploads a look's photos, at most {@link MAX_CONCURRENT_UPLOADS} at a time, keeping
+ * their order. Anything already in `cache` (by file) is reused rather than sent again,
+ * so calling this again after a failure only re-sends the photos that didn't make it.
+ * A photo that fails twice (one retry) stops the whole upload.
+ */
+async function uploadLookPhotos(
+  files: File[],
+  cache: Map<File, UploadedPhoto>,
+  onProgress?: (progress: LookPhotosProgress) => void
+): Promise<UploadedPhoto[]> {
+  const total = files.length;
+  const results: (UploadedPhoto | undefined)[] = files.map(file => cache.get(file));
+  let done = results.filter(Boolean).length;
+  let next = 0;
+  let failedAt = -1;
+  onProgress?.({ done, total });
+
+  const worker = async () => {
+    while (failedAt === -1) {
+      const i = next++;
+      if (i >= total) return;
+      if (results[i]) continue;
+      const file = files[i];
+      try {
+        let uploaded: UploadedPhoto;
+        try {
+          uploaded = await uploadPhoto(file, 'look');
+        } catch {
+          uploaded = await uploadPhoto(file, 'look'); // one retry
+        }
+        cache.set(file, uploaded);
+        results[i] = uploaded;
+        done++;
+        onProgress?.({ done, total });
+      } catch {
+        failedAt = i;
+      }
+    }
+  };
+
+  await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT_UPLOADS, total) }, worker));
+  if (failedAt !== -1) throw new PhotoUploadError(failedAt);
+  return results as UploadedPhoto[];
+}
+
+/** One look, several photos: the shared fields that stand in for every photo's own. */
+export interface LookPhotosDraft {
+  files: File[];
+  style: string;
+  serviceId?: string;
+  caption: string;
+}
+
+/**
+ * Posts several photos as one look: uploaded together (in order), then one `postLook`
+ * call. A failed upload posts nothing; retrying only re-sends what didn't make it, since
+ * what already uploaded stays cached for as long as this hook is mounted.
+ */
+export function usePostLookPhotos() {
+  const client = useQueryClient();
+  const [progress, setProgress] = useState<LookPhotosProgress>();
+  const cache = useRef(new Map<File, UploadedPhoto>()).current;
+
+  const post = async (draft: LookPhotosDraft, onPage: boolean) => {
+    setProgress({ done: 0, total: draft.files.length });
+    try {
+      const uploaded = await uploadLookPhotos(draft.files, cache, setProgress);
+      const look = await postLook({
+        photoUris: uploaded.map(photo => photo.uri ?? ''),
+        thumbUri: uploaded[0]?.thumbUri,
+        feedUri: uploaded[0]?.feedUri,
+        photoAspect: uploaded[0]?.photoAspect,
+        styles: [draft.style],
+        serviceId: draft.serviceId,
+        caption: draft.caption.trim(),
+        visibility: 'public',
+      });
+      if (onPage) {
+        await addToPortfolio([
+          {
+            uri: look.photoUri,
+            thumbUri: look.thumbUri,
+            serviceId: draft.serviceId,
+            lookId: look.id,
+          },
+        ]);
+      }
+      cache.clear();
+      client.invalidateQueries({ queryKey: lookKeys.mine });
+      client.invalidateQueries({ queryKey: ['looks', 'feed'] });
+      client.invalidateQueries({ queryKey: ['stylist', 'portfolio'] });
+      return undefined;
+    } catch (error) {
+      return error;
+    } finally {
+      setProgress(undefined);
+    }
+  };
+
+  return { post, progress, reset: () => setProgress(undefined) };
+}
+
+export function useUpdateLook() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: { styles?: string[]; hairTexture?: Look['hairTexture'] | null };
+    }) => updateLook(id, patch),
+    onSuccess: look => {
+      client.setQueryData(lookKeys.look(look.id), look);
+      client.invalidateQueries({ queryKey: lookKeys.mine });
+      client.invalidateQueries({ queryKey: ['looks', 'feed'] });
+    },
+  });
 }

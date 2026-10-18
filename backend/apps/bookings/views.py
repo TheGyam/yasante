@@ -12,9 +12,8 @@ from apps.common.timeparse import parse_iso
 from apps.stylists.models import StylistProfile
 from apps.stylists.numbers import recompute_public_stats
 from apps.stylists.pricing import option_groups, price_choice
-from apps.stylists.slots import is_open_on, start_fits
+from apps.stylists.slots import bookable_problem
 from django.conf import settings
-from django.db import transaction
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from apps.common.throttling import BookingRequestThrottle, ReviewThrottle
@@ -23,8 +22,8 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .held import clash_exists, release, sweep
-from .models import Booking, CheckIn, Review, ReviewReport, SlotInterest
+from .held import clashing, client_ranges, diary_lock, held_ranges, held_starts, holding, release, sweep
+from .models import Booking, CheckIn, Review, ReviewReport, SlotInterest, TimeBlock
 from .serializers import (
     AcceptRequestSerializer,
     AnswerRequestSerializer,
@@ -62,7 +61,9 @@ def _bookable_look(look_id):
     from apps.looks.models import Look
 
     try:
-        return Look.objects.filter(pk=look_id, visibility="public", status="live").first() if look_id else None
+        from apps.looks.views import public_looks
+
+        return public_looks().filter(pk=look_id, visibility="public", status="live").first() if look_id else None
     except (ValueError, DjangoValidationError):
         return None
 
@@ -91,6 +92,30 @@ def _find(pk):
     return qs.select_related("client", "stylist_profile").first()
 
 
+def _taken(booking, when):
+    """Why `when` can't become this booking's time now, or None: it must never land on
+    another appointment or hold, nor on another of the client's own."""
+    if booking.stylist_profile is None:
+        return None
+    from apps.stylists.slots import gap_minutes
+
+    minutes = booking.duration_minutes or 120
+    profile = booking.stylist_profile
+    taken = clashing(when, minutes, held_ranges(profile, booking.pk, gap_minutes(profile)))
+    if isinstance(taken, TimeBlock):
+        return "You’ve blocked that time out. Remove the block first, or pick another"
+    if taken:
+        return "That time is already booked. Pick another"
+    mine = clashing(when, minutes, client_ranges(booking.client_id, booking.pk))
+    if mine:
+        return f"{_first(booking)} is already booked with {mine.stylist_name} then. Pick another time"
+    return None
+
+
+def _first(booking):
+    return (booking.client_name or "The client").split(" ")[0]
+
+
 def _party(booking, user):
     return booking is not None and user.pk in (booking.client_id, booking.stylist_id)
 
@@ -108,6 +133,19 @@ def _local_day(at, profile):
     return at.astimezone(zones.of(profile)).date()
 
 
+def answer_by(start, hours):
+    """
+    When a request or a deposit lapses: `hours` from now, but never later than shortly
+    before the appointment itself, so nothing is still waiting once it should have begun.
+    """
+    now = timezone.now()
+    lapse = now + hours * HOUR
+    if start is None:
+        return lapse
+    before = start - settings.BOOKING_ANSWER_BEFORE_START_HOURS * HOUR
+    return min(lapse, before) if before > now else start
+
+
 def _take(booking, scheduled_for, deposit):
     """Taking a time: straight to confirmed with no deposit, otherwise a day to pay it."""
     booking.scheduled_for = scheduled_for
@@ -123,7 +161,7 @@ def _take(booking, scheduled_for, deposit):
         booking.deposit_amount = amount
         booking.deposit_method = str((deposit or {}).get("method") or "").strip()[:200]
         booking.deposit_status = "awaiting"
-        booking.expires_at = timezone.now() + settings.BOOKING_DEPOSIT_LAPSE_HOURS * HOUR
+        booking.expires_at = answer_by(scheduled_for, settings.BOOKING_DEPOSIT_LAPSE_HOURS)
     else:
         booking.status = "confirmed"
         booking.expires_at = None
@@ -176,6 +214,10 @@ class BookingListCreateView(APIView):
         )
         if profile is None:
             return _err("That stylist isn’t taking bookings", 404)
+        if profile.featured:
+            from apps.stylists.featured import not_booking_message
+
+            return _err(not_booking_message(profile), 400)
         if str(stylist_id) == str(user.pk):
             return _err("You can’t book yourself", 400)
 
@@ -193,17 +235,13 @@ class BookingListCreateView(APIView):
             names = " and ".join(g["group"] for g in groups)
             return _err(f"Pick your {names} so the stylist knows what to quote", 400)
 
-        times = [t for t in (data.get("requested_times") or []) if t]
-        if not times:
+        # One time per request: the one she picked from the stylist's free times.
+        if not [t for t in (data.get("requested_times") or []) if t]:
             return _err("Say when you’d like to come", 400)
-        starts = [_parse_time(t) for t in times]
-        if any(s is None for s in starts):
+        start = _parse_time(next(t for t in data["requested_times"] if t))
+        if start is None:
             return _err("Pick one of the stylist’s times", 400)
-        if any(not is_open_on(profile, s) for s in starts):
-            return _err("The stylist doesn’t work one of those days. Pick another", 400)
-        minutes = priced["minutes"] or service.duration_minutes or 120
-        if profile.availability and not start_fits(profile, starts[0], minutes):
-            return _err("That’s outside the stylist’s hours. Pick one of their times", 400)
+        minutes = priced["minutes"] or 120
         if not data.get("policy_version"):
             return _err("The stylist’s terms have to be accepted", 400)
 
@@ -219,11 +257,20 @@ class BookingListCreateView(APIView):
             if not outcode:
                 return _err("Add your street and postcode so the stylist can get to you", 400)
 
-        with transaction.atomic():
-            # One request at a time per stylist, so two clients can't take one slot.
-            StylistProfile.objects.select_for_update().get(pk=profile.pk)
-            if clash_exists(profile, starts[0], minutes):
-                return _err("Someone has just asked for that time. Pick another", 409)
+        with diary_lock(profile.pk, user.pk):
+            # Inside the lock: the time may have gone since she saw it.
+            problem = bookable_problem(profile, start, minutes, client_id=user.pk)
+            if problem:
+                return _err(*problem)
+            waiting = holding(
+                Booking.objects.filter(client=user, stylist_profile=profile, status="requested")
+            ).count()
+            if waiting >= settings.BOOKING_OPEN_REQUESTS_PER_STYLIST:
+                return _err(
+                    f"You have {waiting} requests waiting with {profile.display_name}. "
+                    "Wait for an answer, or withdraw one first",
+                    409,
+                )
             booking = Booking.objects.create(
                 status="requested",
                 client=user,
@@ -244,8 +291,8 @@ class BookingListCreateView(APIView):
                 styles=list(service.styles),
                 from_look=_bookable_look(data.get("look_id")),
                 notes=str(data.get("notes") or "").strip()[:1000],
-                requested_times=starts,
-                expires_at=timezone.now() + settings.BOOKING_REQUEST_LAPSE_HOURS * HOUR,
+                requested_times=[start],
+                expires_at=answer_by(start, settings.BOOKING_REQUEST_LAPSE_HOURS),
                 # The client's postcode district when the stylist travels, so they can
                 # judge the journey before saying yes; the street waits for confirming.
                 area=outcode if at_client else profile.base_area,
@@ -281,11 +328,14 @@ class _BookingAction(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        booking = _find(pk)
-        if booking is None:
+        whose = Booking.objects.filter(pk=pk).values_list("stylist_profile_id", "client_id").first()
+        if whose is None:
             return _err("That booking is gone", 404)
-        booking._actor = request.user  # for the audit trail
-        return self.act(request, booking)
+        # Every change happens inside the diary lock, read fresh, lapses applied.
+        with diary_lock(*whose):
+            booking = _find(pk)
+            booking._actor = request.user  # for the audit trail
+            return self.act(request, booking)
 
 
 @extend_schema_view(post=extend_schema(request=AcceptRequestSerializer, responses=BookingSerializer))
@@ -298,6 +348,13 @@ class BookingAcceptView(_BookingAction):
         when = _parse_time(request.data.get("scheduled_for"))
         if when is None:
             return _err("Pick the time you’re accepting", 400)
+        if when <= timezone.now():
+            return _err("That time has passed. Suggest another instead", 400)
+        if when not in booking.requested_times:
+            return _err("They didn’t ask for that time. Suggest it instead", 400)
+        problem = _taken(booking, when)
+        if problem:
+            return _err(problem, 409)
         _take(booking, when, request.data.get("deposit"))
         recompute_public_stats(booking.stylist_profile)
         return _ok(booking, request)
@@ -313,6 +370,11 @@ class BookingProposeView(_BookingAction):
         when = _parse_time(request.data.get("scheduled_for"))
         if when is None:
             return _err("Pick the time you’re suggesting", 400)
+        if when <= timezone.now():
+            return _err("Suggest a time that hasn’t passed", 400)
+        problem = _taken(booking, when)
+        if problem:
+            return _err(problem, 409)
         deposit = request.data.get("deposit") or {}
         try:
             amount = float(deposit.get("amount") or 0)
@@ -327,8 +389,8 @@ class BookingProposeView(_BookingAction):
             ),
         }
         booking.responded_at = booking.responded_at or timezone.now()
-        # Now the client has 48 hours to answer.
-        booking.expires_at = timezone.now() + settings.BOOKING_REQUEST_LAPSE_HOURS * HOUR
+        # Now the client has up to 48 hours to answer, and never past the time itself.
+        booking.expires_at = answer_by(when, settings.BOOKING_REQUEST_LAPSE_HOURS)
         booking.save()
         recompute_public_stats(booking.stylist_profile)
         return _ok(booking, request)
@@ -341,15 +403,20 @@ class BookingProposalAnswerView(_BookingAction):
             return _err("That isn’t yours to answer", 403)
         if booking.status != "requested" or not booking.proposal:
             return _err("There’s no suggested time to answer", 409)
+        proposal = booking.proposal
+        when = parse_iso(proposal["scheduled_for"])
         if request.data.get("accept"):
-            proposal = booking.proposal
-            _take(booking, parse_iso(proposal["scheduled_for"]), proposal.get("deposit"))
+            problem = _taken(booking, when)
+            if problem:
+                return _err(problem.replace(f"{_first(booking)} is", "You’re"), 409)
+            _take(booking, when, proposal.get("deposit"))
         else:
             booking.proposal = None
             booking.expires_at = None
             booking.status = "declined"
             booking.reason = "The suggested time didn’t work"
             booking.save()
+            release(booking, when)
         return _ok(booking, request)
 
 
@@ -360,11 +427,14 @@ class BookingDeclineView(_BookingAction):
             return _err("Only the stylist can decline it", 403)
         if not can_transition(booking.status, "declined"):
             return _err(f"A booking that is {booking.status} can't be declined", 409)
+        freed = held_starts(booking)
         booking.status = "declined"
         booking.reason = str(request.data.get("reason") or "").strip()[:500]
         booking.responded_at = booking.responded_at or timezone.now()
         booking.expires_at = None
         booking.save()
+        if freed:
+            release(booking, freed[0])
         recompute_public_stats(booking.stylist_profile)
         return _ok(booking, request)
 
@@ -460,22 +530,19 @@ class BookingAttendingView(_BookingAction):
 
 def _move_problem(booking, when, by):
     """
-    Why an appointment can't move to `when`, or None. It must never land on another
-    appointment. A client asks within the stylist's working days and hours, as when
-    booking; a stylist may move her own appointment outside them.
+    Why an appointment can't move to `when`, as (message, status), or None. It must never
+    land on another appointment or hold. A client asks by the same rules as booking; a
+    stylist may move her own appointment outside her hours, notice and reach.
     """
     profile = booking.stylist_profile
     if profile is None:
         return None
-    minutes = booking.duration_minutes or 120
     if by == "client":
-        if not is_open_on(profile, when):
-            return "The stylist doesn’t work that day. Pick another"
-        if profile.availability and not start_fits(profile, when, minutes):
-            return "That’s outside the stylist’s hours. Pick another time"
-    if clash_exists(profile, when, minutes, exclude_id=booking.pk):
-        return "That time is already booked. Pick another"
-    return None
+        return bookable_problem(
+            profile, when, booking.duration_minutes or 120, client_id=booking.client_id, exclude_id=booking.pk
+        )
+    problem = _taken(booking, when)
+    return (problem, 409) if problem else None
 
 
 @extend_schema_view(post=extend_schema(request=MoveRequestBodySerializer, responses=BookingSerializer))
@@ -496,7 +563,7 @@ class BookingMoveView(_BookingAction):
         by = "stylist" if request.user.pk == booking.stylist_id else "client"
         problem = _move_problem(booking, when, by)
         if problem:
-            return _err(problem, 409 if "already booked" in problem else 400)
+            return _err(*problem)
         booking.move_request = {
             "by": by,
             "scheduled_for": when.isoformat().replace("+00:00", "Z"),
@@ -516,17 +583,22 @@ class BookingMoveAnswerView(_BookingAction):
         side = "stylist" if request.user.pk == booking.stylist_id else "client"
         if asked.get("by") == side:
             return _err("The other side answers a move", 403)
+        when = parse_iso(asked["scheduled_for"])
+        # The time the appointment leaves (on a yes) or the one asked for (on a no).
+        freed = booking.scheduled_for
         if request.data.get("accept"):
-            # Still free? Another booking may have taken it since it was asked for.
-            when = parse_iso(asked["scheduled_for"])
-            if _move_problem(booking, when, "stylist"):
+            # Held while it was asked about, so this only fails on records from before.
+            if _taken(booking, when):
                 return _err("That time has been booked since. Ask for another", 409)
             booking.scheduled_for = when
             booking.moves += 1
             # A new day needs a new "yes, I'm coming".
             booking.attendance_confirmed_at = None
+        else:
+            freed = when
         booking.move_request = None
         booking.save()
+        release(booking, freed)
         return _ok(booking, request)
 
 
@@ -676,17 +748,31 @@ class SlotInterestListCreateView(APIView):
         )
         if profile is None:
             return _err("No stylist to wait for", 404)
+        if profile.featured:
+            from apps.stylists.featured import not_booking_message
+
+            return _err(not_booking_message(profile), 400)
         start = _parse_time(request.data.get("from"))
         end = _parse_time(request.data.get("to"))
         if start is None or end is None or end < start:
             return _err("Pick the days you could do", 400)
-        interest = SlotInterest.objects.create(
+        from apps.stylists.slots import last_day
+
+        from_date, to_date = _local_day(start, profile), _local_day(end, profile)
+        # Asking twice for the same days is the same wait, not a second alert.
+        interest, _ = SlotInterest.objects.get_or_create(
             client=request.user,
             stylist_id=profile.account_id,
-            stylist_name=profile.display_name,
-            stylist_handle=profile.handle,
-            from_date=_local_day(start, profile),
-            to_date=_local_day(end, profile),
+            from_date=from_date,
+            to_date=to_date,
+            opened_on__isnull=True,
+            defaults={
+                "stylist_name": profile.display_name,
+                "stylist_handle": profile.handle,
+                # Days she isn't taking bookings for yet: told when they open, not when
+                # a time frees up.
+                "opens": from_date > last_day(profile),
+            },
         )
         return Response(present_slot_interest(interest), status=201)
 

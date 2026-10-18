@@ -909,6 +909,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/featured/claim/{code}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["featured_claim_retrieve"];
+        put?: never;
+        post: operations["featured_claim_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/features/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Open to everyone: the app needs this before sign-in decides anything. */
+        get: operations["features_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hair-log/": {
         parameters: {
             query?: never;
@@ -1037,7 +1070,8 @@ export interface paths {
         delete: operations["looks_destroy"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** @description GET / DELETE /api/looks/:id/ */
+        patch: operations["looks_partial_update"];
         trace?: never;
     };
     "/api/looks/{id}/like/": {
@@ -1440,11 +1474,31 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description GET /api/stylists/by-handle/:handle/slots/?service=&options= — her free times. */
+        /**
+         * @description GET /api/stylists/by-handle/:handle/slots/?service=&options=&from=&to= — her free
+         *     times on the days asked for, two months at most. With ?booking= instead of a
+         *     service, the times the client could move that appointment to.
+         */
         get: operations["stylists_by_handle_slots_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/by-handle/{handle}/waitlist/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["stylists_by_handle_waitlist_update"];
+        post?: never;
+        delete: operations["stylists_by_handle_waitlist_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1483,6 +1537,136 @@ export interface paths {
         head?: never;
         /** @description GET / PATCH /api/stylists/me/ */
         patch: operations["stylists_me_partial_update"];
+        trace?: never;
+    };
+    "/api/stylists/me/blocks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET / POST /api/stylists/me/blocks/ — part of a day she's taken out of her diary
+         *     (a client booked elsewhere, a school run). Clients see it as booked.
+         */
+        get: operations["stylists_me_blocks_list"];
+        put?: never;
+        /**
+         * @description GET / POST /api/stylists/me/blocks/ — part of a day she's taken out of her diary
+         *     (a client booked elsewhere, a school run). Clients see it as booked.
+         */
+        post: operations["stylists_me_blocks_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/me/blocks/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description DELETE /api/stylists/me/blocks/:id/ — the time is hers to book again. */
+        delete: operations["stylists_me_blocks_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/me/blocks/{id}/skip/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/stylists/me/blocks/:id/skip/ {date, skip} — one day a repeating block
+         *     doesn't come round (working through lunch next Tuesday), or does again.
+         */
+        post: operations["stylists_me_blocks_skip_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/me/closed-days/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/stylists/me/closed-days/ {date, closed} — she has enough clients that day:
+         *     no new requests for it. Appointments already on it stay as they are. `closed: false`
+         *     opens it again.
+         */
+        post: operations["stylists_me_closed_days_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/me/finish/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stylists_me_finish_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/me/finish/price/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["stylists_me_finish_price_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/me/finish/tags-checked/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["stylists_me_finish_tags_checked_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/stylists/me/menu/": {
@@ -1851,6 +2035,10 @@ export interface components {
                 } | null
             ];
             blocked: string[];
+            closed?: string[];
+            leadHours?: number;
+            aheadDays?: number;
+            gapMinutes?: number;
         };
         BarcodeResult: {
             product: components["schemas"]["ProductResponse"];
@@ -1982,6 +2170,14 @@ export interface components {
          * @enum {string}
          */
         BudgetEnum: "under_50" | "50_100" | "100_150" | "150_plus";
+        Busy: {
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+            /** @description The viewer's own: why some times aren't offered */
+            mine?: boolean;
+        };
         /**
          * @description * `client` - client
          *     * `stylist` - stylist
@@ -2066,6 +2262,19 @@ export interface components {
          * @enum {string}
          */
         ChemicalsEnum: "relaxer" | "texturiser" | "colour" | "bleach" | "keratin";
+        ClaimPhoto: {
+            uri: string;
+            thumbUri: string;
+        };
+        ClaimPreview: {
+            displayName: string;
+            handle: string;
+            avatarUri?: string;
+            lookCount: number;
+            live: boolean;
+            waiting: number;
+            photos: components["schemas"]["ClaimPhoto"][];
+        };
         /**
          * @description * `crash` - crash
          *     * `stall` - stall
@@ -2101,6 +2310,12 @@ export interface components {
             /** Format: double */
             actualPrice?: number;
             timing?: components["schemas"]["TimingRequest"];
+        };
+        ClosedDayRequestRequest: {
+            /** Format: date */
+            date: string;
+            /** @default true */
+            closed: boolean;
         };
         CodeSent: {
             resendInSeconds: number;
@@ -2305,6 +2520,31 @@ export interface components {
         FavoriteToggleRequestRequest: {
             contentId: string;
         };
+        FeaturesResponse: {
+            features: {
+                [key: string]: boolean;
+            };
+        };
+        Finish: {
+            styles: components["schemas"]["FinishStyle"][];
+            hoursSet: boolean;
+            tagsChecked: boolean;
+            done: boolean;
+        };
+        FinishPriceRequest: {
+            style: string;
+            /** Format: double */
+            price: number;
+            /** @default false */
+            fromPrice: boolean;
+            durationMinutes?: number | null;
+        };
+        FinishStyle: {
+            slug: string;
+            name: string;
+            photoCount: number;
+            priced: boolean;
+        };
         /** @description POST /api/auth/forgot-password/ */
         ForgotPasswordRequest: {
             /** Format: email */
@@ -2314,12 +2554,41 @@ export interface components {
             /** Format: date */
             date: string;
             times: string[];
+            /**
+             * @description Plenty while at least half the times a job like this could start are free
+             *
+             *     * `plenty` - plenty
+             *     * `few` - few
+             */
+            room?: components["schemas"]["RoomEnum"];
+            /** @description What's already in her diary that day */
+            busy?: components["schemas"]["Busy"][];
         };
         FreeSlots: {
             minutes: number;
+            /** @description Days asked for with a time free, in order */
             days: components["schemas"]["FreeDay"][];
             /** @description The stylist's zone (IANA): whose clock the times are on */
             timeZone: string;
+            noticeHours?: number;
+            /**
+             * Format: date
+             * @description The furthest day she can be booked; one more opens each morning
+             */
+            lastDate?: string;
+            /** @description Days she works with no time left, or closed as full */
+            full?: string[];
+            away?: string[];
+            /**
+             * Format: date-time
+             * @description Her first free time, whatever days were asked for
+             */
+            soonest?: string;
+            /**
+             * Format: date-time
+             * @description Her first free Saturday or Sunday time
+             */
+            weekend?: string;
         };
         /**
          * @description * `daily` - daily
@@ -2505,6 +2774,8 @@ export interface components {
             refreshToken?: string;
         };
         Look: {
+            stylistFeatured: boolean;
+            photos: components["schemas"]["LookPhoto"][];
             id: string;
             authorId: string;
             authorName: string;
@@ -2537,7 +2808,9 @@ export interface components {
             mine: boolean;
         };
         LookCreateRequestRequest: {
-            photoUri: string;
+            photoUri?: string;
+            /** @description One to five upload addresses, in display order */
+            photoUris?: string[];
             thumbUri?: string;
             feedUri?: string;
             /** Format: double */
@@ -2551,6 +2824,13 @@ export interface components {
             productIds?: string[];
             visibility?: components["schemas"]["VisibilityEnum"];
             hairTexture?: string;
+        };
+        LookPhoto: {
+            uri: string;
+            thumbUri?: string;
+            feedUri?: string;
+            /** Format: double */
+            aspect: number;
         };
         LookStylist: {
             id: string;
@@ -2693,6 +2973,9 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        PageWaitlist: {
+            joined: boolean;
+        };
         PatchedCarePlanRequestRequest: {
             name?: string;
             frequency?: components["schemas"]["FrequencyEnum"];
@@ -2724,6 +3007,10 @@ export interface components {
             lengthCm?: number | null;
             /** Format: date-time */
             completedAt?: string | null;
+        };
+        PatchedLookTagsRequestRequest: {
+            styles?: string[];
+            hairTexture?: string;
         };
         /** @description For creating/updating menu items. */
         PatchedMenuItemDraftRequest: {
@@ -2864,6 +3151,7 @@ export interface components {
             readonly serviceId?: string;
             /** Format: uuid */
             readonly lookId?: string;
+            readonly lookPhotos?: components["schemas"]["WorkLookPhoto"][];
             /** Format: date-time */
             readonly createdAt: string;
         };
@@ -2911,11 +3199,13 @@ export interface components {
             readonly policies: components["schemas"]["Policies"];
             readonly availability?: components["schemas"]["Availability"];
             readonly verificationTier: components["schemas"]["VerificationTierEnum"];
+            readonly featured: boolean;
             published: boolean;
             /** Format: date-time */
             readonly createdAt: string;
             /** @description phone, work, met_in_person, met_on_video, insurance */
             checks: string[];
+            claimable: boolean;
         };
         Rating: {
             /** Format: double */
@@ -2992,6 +3282,12 @@ export interface components {
          * @enum {string}
          */
         RolesEnum: "client" | "stylist" | "admin";
+        /**
+         * @description * `plenty` - plenty
+         *     * `few` - few
+         * @enum {string}
+         */
+        RoomEnum: "plenty" | "few";
         /**
          * @description * `salon` - salon
          *     * `home` - home
@@ -3077,6 +3373,8 @@ export interface components {
             stylistHandle?: string;
             /** Format: date */
             openedOn?: string;
+            /** @description Waiting for days she isn't taking bookings for yet */
+            opens: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date */
@@ -3126,6 +3424,7 @@ export interface components {
             name: string;
         };
         StylistPageResponse: {
+            waitlistJoined?: boolean;
             profile: components["schemas"]["PublicProfile"];
             menu: components["schemas"]["MenuItem"][];
             photos: components["schemas"]["PortfolioPhoto"][];
@@ -3158,6 +3457,7 @@ export interface components {
             readonly paymentMethods: components["schemas"]["PaymentMethod"][];
             proofPhotoUri?: string;
             readonly verificationTier: components["schemas"]["VerificationTierEnum"];
+            readonly featured: boolean;
             published: boolean;
             /** Format: date-time */
             readonly createdAt: string;
@@ -3222,6 +3522,33 @@ export interface components {
          * @enum {string}
          */
         TextureEnum: "straight" | "wavy" | "curly" | "coily" | "kinky";
+        TimeBlock: {
+            id: string;
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+            /** @description Hers alone: never shown to clients */
+            note?: string;
+            /** @description Weekdays it comes round again (Sunday 0), at the same time; empty is once */
+            repeats: number[];
+            /** @description Days still to come it doesn't come round */
+            skips: string[];
+        };
+        TimeBlockRequestRequest: {
+            /** Format: date-time */
+            start: string;
+            /** Format: date-time */
+            end: string;
+            note?: string;
+            repeats?: number[];
+        };
+        TimeBlockSkipRequestRequest: {
+            /** Format: date */
+            date: string;
+            /** @default true */
+            skip: boolean;
+        };
         /**
          * @description * `morning` - morning
          *     * `afternoon` - afternoon
@@ -3400,6 +3727,10 @@ export interface components {
          * @enum {string}
          */
         WhatEnum: "no_show" | "timing";
+        WorkLookPhoto: {
+            uri: string;
+            thumbUri?: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -4817,6 +5148,67 @@ export interface operations {
             };
         };
     };
+    featured_claim_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimPreview"];
+                };
+            };
+        };
+    };
+    featured_claim_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+        };
+    };
+    features_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeaturesResponse"];
+                };
+            };
+        };
+    };
     hair_log_list: {
         parameters: {
             query?: never;
@@ -5046,6 +5438,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    looks_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedLookTagsRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Look"];
+                };
             };
         };
     };
@@ -5661,7 +6078,18 @@ export interface operations {
     };
     stylists_by_handle_slots_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Her appointment to move: its length, its own time left free */
+                booking?: string;
+                /** @description First day wanted, yyyy-MM-dd (today if left out) */
+                from?: string;
+                /** @description Its chosen option ids, comma separated */
+                options?: string;
+                /** @description The menu item */
+                service?: string;
+                /** @description Last day wanted, yyyy-MM-dd (four weeks on if left out) */
+                to?: string;
+            };
             header?: never;
             path: {
                 handle: string;
@@ -5677,6 +6105,47 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["FreeSlots"];
                 };
+            };
+        };
+    };
+    stylists_by_handle_waitlist_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handle: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageWaitlist"];
+                };
+            };
+        };
+    };
+    stylists_by_handle_waitlist_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                handle: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5737,6 +6206,177 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StylistProfile"];
+                };
+            };
+        };
+    };
+    stylists_me_blocks_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeBlock"][];
+                };
+            };
+        };
+    };
+    stylists_me_blocks_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeBlockRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeBlock"];
+                };
+            };
+        };
+    };
+    stylists_me_blocks_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    stylists_me_blocks_skip_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeBlockSkipRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeBlock"];
+                };
+            };
+        };
+    };
+    stylists_me_closed_days_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClosedDayRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StylistProfile"];
+                };
+            };
+        };
+    };
+    stylists_me_finish_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Finish"];
+                };
+            };
+        };
+    };
+    stylists_me_finish_price_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinishPriceRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Finish"];
+                };
+            };
+        };
+    };
+    stylists_me_finish_tags_checked_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Finish"];
                 };
             };
         };

@@ -67,7 +67,7 @@ export default function WorkViewer() {
   const remove = useRemovePhoto();
   const [editing, setEditing] = useState(false);
   const start = Math.max(0, Number(index) || 0);
-  const [current, setCurrent] = useState(start);
+  const [current, setCurrent] = useState(-1);
   // FlatList wants the same function for its whole life.
   const onViewable = useRef(({ viewableItems }: { viewableItems: { index: number | null }[] }) => {
     const shown = viewableItems[0]?.index;
@@ -75,19 +75,41 @@ export default function WorkViewer() {
   }).current;
 
   const photos = data?.photos ?? [];
-  const photo = photos[current];
+  // A look posted as several photos swipes through all of them, in order, before the
+  // next piece of work.
+  const pages = photos.flatMap((item, at) =>
+    (item.lookPhotos ?? [{ uri: item.uri, thumbUri: item.thumbUri }]).map((shot, part) => ({
+      item,
+      at,
+      part,
+      parts: item.lookPhotos?.length ?? 1,
+      uri: shot.uri,
+      thumbUri: shot.thumbUri,
+    }))
+  );
+  const firstPage = Math.max(
+    0,
+    pages.findIndex(p => p.at === start)
+  );
+  const page_ = pages[current < 0 ? firstPage : current];
+  const photo = page_?.item;
   const service = data?.menu.find(item => item.id === photo?.serviceId);
 
-  const renderItem = ({ item }: { item: PortfolioPhoto }) => (
+  const renderItem = ({ item: shot }: { item: (typeof pages)[number] }) => (
     <View style={{ width, height }}>
       <RemoteImage
-        uri={item.uri}
-        placeholderUri={item.thumbUri}
+        uri={shot.uri}
+        placeholderUri={shot.thumbUri}
         style={StyleSheet.absoluteFill}
         contentFit="contain"
-        recyclingKey={item.id}
+        recyclingKey={`${shot.item.id}-${shot.part}`}
         priority="high"
-        accessibilityLabel={data?.menu.find(m => m.id === item.serviceId)?.name ?? 'Their work'}
+        accessibilityLabel={[
+          data?.menu.find(m => m.id === shot.item.serviceId)?.name ?? 'Their work',
+          shot.parts > 1 ? `photo ${shot.part + 1} of ${shot.parts} in this look` : '',
+        ]
+          .filter(Boolean)
+          .join(', ')}
       />
     </View>
   );
@@ -96,13 +118,13 @@ export default function WorkViewer() {
     <View style={styles.screen} testID="work-viewer">
       <StatusBar style="light" />
       <FlatList
-        data={photos}
-        keyExtractor={item => item.id}
+        data={pages}
+        keyExtractor={shot => `${shot.item.id}-${shot.part}`}
         renderItem={renderItem}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        initialScrollIndex={Math.min(start, Math.max(photos.length - 1, 0))}
+        initialScrollIndex={firstPage}
         getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
         onViewableItemsChanged={onViewable}
         viewabilityConfig={VIEWABLE}
@@ -117,9 +139,10 @@ export default function WorkViewer() {
           accessibilityLabel="Close"
           onPress={() => router.back()}
         />
-        {photos.length > 1 && (
+        {!!page_ && (photos.length > 1 || page_.parts > 1) && (
           <Text variant="subhead" style={styles.count} accessibilityLiveRegion="polite">
-            {current + 1} of {photos.length}
+            {page_.at + 1} of {photos.length}
+            {page_.parts > 1 ? ` · photo ${page_.part + 1} of ${page_.parts}` : ''}
           </Text>
         )}
       </View>
@@ -198,7 +221,7 @@ export default function WorkViewer() {
             remove.mutate(photo.id);
             // The last one gone: nothing left to look at.
             if (photos.length <= 1) router.back();
-            else setCurrent(i => Math.min(i, photos.length - 2));
+            else setCurrent(i => Math.max(0, Math.min(i, pages.length - 2)));
           }}
         />
       )}

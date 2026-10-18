@@ -6,6 +6,7 @@ import {
   confirmAttendance,
   getFreeSlots,
   listMyBookings,
+  watchSlots,
   requestBooking,
   requestMove,
   reviewBooking,
@@ -18,15 +19,22 @@ import {
   listBookings,
   proposeTime,
 } from './api';
-import type { Booking, BookingDraft, BookingStatus, CloseOut, Deposit } from './types';
+import type { Booking, BookingDraft, BookingStatus, CloseOut, Deposit, SlotQuery } from './types';
 
 export const bookingKeys = {
   all: ['bookings'] as const,
   list: (status: BookingStatus[]) => ['bookings', 'stylist', status] as const,
   one: (id: string) => ['bookings', 'one', id] as const,
   mine: ['bookings', 'client'] as const,
-  slots: (handle: string, serviceId: string, options: string[]) =>
-    ['slots', handle, serviceId, options] as const,
+  slots: (query: SlotQuery, from?: string, to?: string) =>
+    [
+      'slots',
+      query.handle,
+      query.booking ?? query.serviceId ?? '',
+      [...(query.optionIds ?? [])].sort().join(','),
+      from,
+      to,
+    ] as const,
 };
 
 export function useBookings(status: BookingStatus[]) {
@@ -82,13 +90,26 @@ export function useMyBookings(enabled = true) {
  * stop showing soon (and the server refuses a clash anyway). The last times stay up,
  * dimmed, while new ones load.
  */
-export function useFreeSlots(handle: string, serviceId: string | undefined, options: string[]) {
+export function useFreeSlots(query: SlotQuery, from?: string, to?: string, enabled = true) {
   return useQuery({
-    queryKey: bookingKeys.slots(handle, serviceId ?? '', options),
-    queryFn: () => getFreeSlots(handle, serviceId!, options),
-    enabled: !!serviceId,
+    queryKey: bookingKeys.slots(query, from, to),
+    queryFn: () => getFreeSlots(query, from, to),
+    enabled: enabled && !!query.handle && !!(query.booking || query.serviceId),
     staleTime: 30_000,
     placeholderData: keepPreviousData,
+  });
+}
+
+/** After a time was taken from under someone: every picker asks again. */
+export function useRefreshFreeSlots() {
+  const client = useQueryClient();
+  return () => client.invalidateQueries({ queryKey: ['slots'] });
+}
+
+export function useWatchSlots() {
+  return useMutation({
+    mutationFn: ({ stylistId, from, to }: { stylistId: string; from: string; to: string }) =>
+      watchSlots(stylistId, from, to),
   });
 }
 

@@ -8,6 +8,7 @@ import {
   formatDuration,
   formatServicePrice,
   hoursLabel,
+  noticeLabel,
   optionGroups,
   useStylistPage,
   type ChosenOptions,
@@ -30,8 +31,8 @@ import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Switch } from '@/shared/ui/Switch';
 import { Text } from '@/shared/ui/Text';
-import { whenLabel } from '../format';
-import { useFreeSlots, useMyBookings, useRequestBooking } from '../hooks';
+import { inSentence, replyBy, whenLabel } from '../format';
+import { useMyBookings, useRefreshFreeSlots, useRequestBooking, useWatchSlots } from '../hooks';
 import { GetTheApp } from './GetTheApp';
 import { SlotPicker } from './SlotPicker';
 import * as styles from './BookScreen.css';
@@ -72,7 +73,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
   const page = useStylistPage(handle);
   const { data: fromLook } = useLook(lookId ?? '');
   const request = useRequestBooking();
-  const [sent, setSent] = useState<{ id: string; name: string }>();
+  const [sent, setSent] = useState<{ id: string; name: string; until?: string }>();
 
   const [draft, setDraft] = useState<Draft>(
     () => readJson<Draft>(draftKey(handle), 'session') ?? { ...EMPTY, serviceId: fromLookService }
@@ -98,12 +99,9 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
   // Her free times depend on how long the job runs, so they follow the options.
   const optionIds = Object.values(draft.chosen).filter((id): id is string => !!id);
   const quote = service ? estimate(service, draft.chosen) : undefined;
-  const slots = useFreeSlots(handle, quote?.complete ? service?.id : undefined, optionIds);
-  // A different job can take a different time: a picked time that no longer fits is dropped.
-  const time =
-    draft.time && slots.data && !slots.data.days.some(d => d.times.includes(draft.time!))
-      ? undefined
-      : draft.time;
+  const time = draft.time;
+  const refreshSlots = useRefreshFreeSlots();
+  const watch = useWatchSlots();
 
   if (page.isPending) {
     return (
@@ -140,7 +138,10 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
             Sent to {sent.name}
           </Text>
           <Text variant="body" tone="secondary">
-            They have 48 hours to reply. We’ll email you the moment they do.
+            {sent.until
+              ? `They have until ${inSentence(whenLabel(sent.until, profile.timeZone))} to reply.`
+              : 'They’ll reply soon.'}{' '}
+            We’ll email you the moment they do.
           </Text>
           <div className={styles.actions}>
             <Button label="See your booking" to={`/bookings/${sent.id}`} fullWidth />
@@ -174,7 +175,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
     : !quote?.complete
       ? `Pick your ${groupNames}.`
       : !time
-        ? 'Pick a time and they have 48 hours to reply.'
+        ? 'Pick a time to send your request.'
         : comesToMe && !addressReady
           ? 'Add your street and postcode so they can get to you.'
           : !accepted
@@ -206,9 +207,10 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
         clientAddress: comesToMe ? joinAddress(street, postcode) : undefined,
       },
       {
-        onSuccess: booking => setSent({ id: booking.id, name: profile.displayName }),
+        onSuccess: booking =>
+          setSent({ id: booking.id, name: profile.displayName, until: booking.expiresAt }),
         // Someone may have got there first: show what's still free.
-        onError: () => void slots.refetch(),
+        onError: () => void refreshSlots(),
       }
     );
   };
@@ -305,7 +307,10 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                     index === 0 ? choice.label : `${choice.label} · +${formatMoney(choice.add)}`
                   }
                   selected={draft.chosen[group] === choice.id}
-                  onClick={() => set({ chosen: { ...draft.chosen, [group]: choice.id } })}
+                  // A longer job may not fit the time picked for a shorter one.
+                  onClick={() =>
+                    set({ chosen: { ...draft.chosen, [group]: choice.id }, time: undefined })
+                  }
                 />
               ))}
             </div>
@@ -350,17 +355,31 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
               ? 'Pick a service to see when they’re free.'
               : !quote?.complete
                 ? `Pick your ${groupNames} to see when they’re free.`
-                : `When suits you?${hoursLabel(profile.availability) ? ` They work ${hoursLabel(profile.availability)}.` : ''}`}
+                : `When suits you? They ${hoursLabel(profile.availability) ? `work ${hoursLabel(profile.availability)}, and ` : ''}need ${noticeLabel(profile.availability?.leadHours)}.`}
           </Text>
-          {quote?.complete && (
+          {quote?.complete && service && (
             <SlotPicker
-              slots={slots.data}
-              loading={slots.isLoading}
-              refreshing={slots.isPlaceholderData}
+              query={{ handle, serviceId: service.id, optionIds }}
+              stylistName={profile.displayName}
+              availability={profile.availability}
+              timeZone={profile.timeZone}
               value={time}
               onChange={time => set({ time })}
               initialDay={day}
+              onWatch={async (from, to) => {
+                // Being told needs an account: make one, then come back here.
+                if (!session?.user.emailVerified) {
+                  navigate(
+                    withNext(session ? '/auth/verify-email' : '/auth/login', pathname + search)
+                  );
+                  throw new Error('Sign in first');
+                }
+                await watch.mutateAsync({ stylistId: profile.accountId, from, to });
+              }}
             />
+          )}
+          {watch.isError && (
+            <InlineAlert message={errorMessage(watch.error, 'Couldn’t add you. Try again.')} />
           )}
         </div>
 
@@ -451,7 +470,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
           <Text variant="caption" tone="tertiary">
             {missing ??
               (session
-                ? `${whenLabel(time!, slots.data?.timeZone)}. They have 48 hours to reply.`
+                ? `${whenLabel(time!, profile.timeZone)}. They have until ${inSentence(whenLabel(replyBy(time!).toISOString(), profile.timeZone))} to reply.`
                 : 'It takes a minute. Everything you’ve picked stays here.')}
           </Text>
           {!session && (

@@ -3,30 +3,31 @@ Usernames: what a person's posts show. One namespace with stylist handles, so
 "braidsbyama" is only ever Braids by Ama, and the same rules as handles.
 """
 
-import re
-
-USERNAME = re.compile(r"^[a-z0-9][a-z0-9._]{1,28}[a-z0-9]$")
+from apps.common.identifiers import POLICY, UNAVAILABLE, identifier_problem, normalise  # noqa: F401
 
 
-def normalise(value):
-    return str(value or "").strip().lstrip("@").lower()
+def name_in_use(value, user=None):
+    """
+    Whether `value` is someone else's: their username or handle (one namespace, any
+    case), or a name they gave up that's still held. `user`'s own never counts.
+    """
+    from apps.stylists.models import StylistProfile
+
+    from .models import ReleasedName, User
+
+    users = User.objects.filter(username__iexact=value)
+    stylists = StylistProfile.objects.filter(handle__iexact=value)
+    if user is not None:
+        users = users.exclude(pk=user.pk)
+        stylists = stylists.exclude(account=user)
+    return users.exists() or stylists.exists() or ReleasedName.held(value, user)
 
 
 def username_problem(value, user=None):
     """Why a username can't be used, or None if it can."""
-    from apps.stylists.models import NOT_HANDLES, StylistProfile
-
-    from .models import User
-
-    if not USERNAME.match(value) or re.search(r"[._]{2,}", value):
-        return "3 to 30 letters, numbers, dots or underscores, not starting or ending with a dot"
-    if value in NOT_HANDLES:
-        return "That one's reserved"
-    users = User.objects.filter(username=value)
-    stylists = StylistProfile.objects.filter(handle=value)
-    if user is not None:
-        users = users.exclude(pk=user.pk)
-        stylists = stylists.exclude(account=user)
-    if users.exists() or stylists.exists():
-        return "Someone already has that"
+    problem = identifier_problem(value, max_length=POLICY["username_max"], current=getattr(user, "username", None))
+    if problem:
+        return problem
+    if value != getattr(user, "username", None) and name_in_use(value, user):
+        return UNAVAILABLE
     return None

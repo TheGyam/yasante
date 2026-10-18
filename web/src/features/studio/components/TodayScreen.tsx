@@ -13,13 +13,21 @@ import {
 } from 'lucide-react';
 import { useBookings, whenLabel, type Booking } from '@/features/booking';
 import { useMyLooks } from '@/features/looks';
-import { useMenu, useMyProfile, useNumbers, type StylistProfile } from '@/features/stylist';
+import {
+  useCloseDay,
+  useMenu,
+  useMyProfile,
+  useNumbers,
+  type StylistProfile,
+} from '@/features/stylist';
+import { useFinishState } from '@/features/claim';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Glass } from '@/shared/ui/Glass';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Page } from '@/shared/ui/Page';
 import { Section } from '@/shared/ui/Section';
+import { Switch } from '@/shared/ui/Switch';
 import { Text } from '@/shared/ui/Text';
 import * as styles from './Studio.css';
 
@@ -28,6 +36,34 @@ const LOOKS_GOAL = 9;
 
 const today = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
 
+/** A day as yyyy-MM-dd on this computer's calendar, which is hers. */
+const dayOf = (at: Date) => at.toLocaleDateString('en-CA');
+const sayDay = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+
+/** The switch under a day: once she has enough clients, no new requests for it. */
+function TakingRequests({
+  accountId,
+  day,
+  closed,
+}: {
+  accountId: string;
+  day: string;
+  closed: boolean;
+}) {
+  const close = useCloseDay(accountId);
+  return (
+    <Switch
+      label="Taking new requests"
+      hint={
+        closed ? 'Closed: you have enough clients this day' : 'Turn off once the day is full enough'
+      }
+      checked={!closed}
+      disabled={close.isPending}
+      onChange={event => close.mutate({ date: day, closed: !event.target.checked })}
+    />
+  );
+}
+
 /** Her page, what's left to do before clients arrive, her week and her appointments. */
 export function TodayScreen({ accountId }: { accountId: string }) {
   const { data: profile } = useMyProfile(accountId);
@@ -35,6 +71,7 @@ export function TodayScreen({ accountId }: { accountId: string }) {
   const { data: looks } = useMyLooks();
   const { data: numbers } = useNumbers(accountId);
   const { data: confirmed = [] } = useBookings(['confirmed']);
+  const { data: finish } = useFinishState();
   if (!profile) return null;
 
   const now = new Date();
@@ -44,6 +81,16 @@ export function TodayScreen({ accountId }: { accountId: string }) {
       new Date(b.scheduledFor) < now);
   const todays = confirmed.filter(due);
   const later = confirmed.filter(b => b.scheduledFor && !due(b));
+  // Coming up, a day at a time, each with its switch for taking more.
+  const days = [...new Set(later.map(b => dayOf(new Date(b.scheduledFor!))))];
+  const closed = new Set(profile.availability?.closed ?? []);
+
+  const allPriced = finish
+    ? finish.styles.length === 0 || finish.styles.every(s => s.priced)
+    : false;
+  const finishDoneCount = finish
+    ? [allPriced, finish.hoursSet, finish.tagsChecked].filter(Boolean).length
+    : 0;
 
   return (
     <Page title="Today">
@@ -53,6 +100,17 @@ export function TodayScreen({ accountId }: { accountId: string }) {
           {today.format(now)}
         </Text>
       </div>
+      {finish && !finish.done && (
+        <Glass padded radius="xl" className={styles.finish}>
+          <div>
+            <Text variant="title3">Finish your page</Text>
+            <Text variant="subhead" tone="secondary">
+              {finishDoneCount} of 3 done
+            </Text>
+          </div>
+          <Button label="Continue" variant="secondary" size="md" to="/finish" />
+        </Glass>
+      )}
       <div className={styles.columns}>
         <div>
           <PageCard profile={profile} />
@@ -106,6 +164,11 @@ export function TodayScreen({ accountId }: { accountId: string }) {
                   to={`/requests/${b.id}`}
                 />
               ))}
+              <TakingRequests
+                accountId={accountId}
+                day={dayOf(now)}
+                closed={closed.has(dayOf(now))}
+              />
             </Section>
           ) : (
             <EmptyState
@@ -114,19 +177,26 @@ export function TodayScreen({ accountId }: { accountId: string }) {
               body="Confirmed bookings show up here with the time and what the client asked for."
             />
           )}
-          {later.length > 0 && (
-            <Section title="Coming up">
-              {later.map(b => (
-                <ListRow
-                  key={b.id}
-                  icon={CalendarDays}
-                  title={`${b.clientName} · ${b.serviceName}`}
-                  subtitle={whenLabel(b.scheduledFor!)}
-                  to={`/requests/${b.id}`}
-                />
-              ))}
-            </Section>
-          )}
+          {days.map(day => {
+            const those = later.filter(b => dayOf(new Date(b.scheduledFor!)) === day);
+            return (
+              <Section
+                key={day}
+                title={`${sayDay.format(new Date(`${day}T12:00:00`))} · ${those.length} booked`}
+              >
+                {those.map(b => (
+                  <ListRow
+                    key={b.id}
+                    icon={CalendarDays}
+                    title={`${b.clientName} · ${b.serviceName}`}
+                    subtitle={whenLabel(b.scheduledFor!)}
+                    to={`/requests/${b.id}`}
+                  />
+                ))}
+                <TakingRequests accountId={accountId} day={day} closed={closed.has(day)} />
+              </Section>
+            );
+          })}
         </div>
       </div>
     </Page>

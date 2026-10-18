@@ -1,5 +1,12 @@
 import { defineMocks, MockError, requireAccount, type MockRequest } from '@/shared/lib/api/mock';
 import { db } from './db';
+import {
+  identifierPolicy,
+  nameProblem,
+  nameTaken,
+  normaliseName,
+  unavailableName,
+} from './identifiers';
 
 const account = (id: string) => {
   const found = db.accounts.get(id);
@@ -17,19 +24,14 @@ const own = (request: MockRequest) => {
 defineMocks({
   'GET /api/users/username-check/': request => {
     const me = requireAccount(request);
-    const wanted = (request.query.get('username') ?? '').toLowerCase();
-    const taken = [...db.accounts.values()].some(
-      a => a.id !== me && (a as { username?: string }).username === wanted
-    );
-    const shape = /^[a-z0-9][a-z0-9._]{1,28}[a-z0-9]$/.test(wanted);
+    const wanted = normaliseName(request.query.get('username'));
+    const problem =
+      nameProblem(wanted, identifierPolicy.username_max, db.accounts.get(me)?.username) ??
+      (nameTaken(wanted, me) ? unavailableName : undefined);
     return {
       username: wanted,
-      available: shape && !taken,
-      reason: !shape
-        ? '3 to 30 letters, numbers, dots or underscores'
-        : taken
-          ? 'Someone already has that'
-          : undefined,
+      available: !problem,
+      reason: problem,
     };
   },
 
@@ -52,9 +54,17 @@ defineMocks({
   },
 
   'PATCH /api/users/:id/': request => {
-    requireAccount(request);
+    const me = own(request);
     const found = account(request.params.id);
-    Object.assign(found, request.body, { updatedAt: new Date().toISOString() });
+    const changes = { ...request.body };
+    if ('username' in changes) {
+      changes.username = normaliseName(changes.username);
+      const problem =
+        nameProblem(changes.username, identifierPolicy.username_max, found.username) ??
+        (nameTaken(changes.username, me) ? unavailableName : undefined);
+      if (problem) throw new MockError(400, problem);
+    }
+    Object.assign(found, changes, { updatedAt: new Date().toISOString() });
     return found;
   },
 

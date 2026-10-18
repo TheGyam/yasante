@@ -2,6 +2,7 @@ import { memo, useCallback, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { Bookmark, BookmarkPlus } from 'lucide-react-native';
+import { PhotoCount } from '@/shared/ui/PhotoCount';
 import { formatMoney } from '@/shared/lib/format';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
@@ -9,7 +10,7 @@ import { IconButton } from '@/shared/ui/IconButton';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
 import { openWithHero } from '../heroTransition';
-import type { Look } from '../types';
+import { lookPhotos, type Look } from '../types';
 import { LikeButton } from './LikeButton';
 import { usePhotoTaps } from './usePhotoTaps';
 
@@ -128,6 +129,7 @@ export const LookTile = memo(function LookTile({
             </Text>
           </View>
         )}
+        {lookPhotos(look).length > 1 && <PhotoCount count={lookPhotos(look).length} />}
         {onSave && (
           <IconButton
             icon={look.saved ? Bookmark : BookmarkPlus}

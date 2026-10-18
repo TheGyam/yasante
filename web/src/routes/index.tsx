@@ -5,6 +5,7 @@ import BookRoute, { BookingRoute, BookingsRoute } from './book';
 import DeleteAccountRoute from './delete-account';
 import HomeRoute from './home';
 import Layout from './Layout';
+import LinksRoute from './links';
 import LookRoute from './look';
 import LooksRoute from './looks';
 import NotFoundRoute from './not-found';
@@ -30,6 +31,8 @@ import {
 import VerifyEmailRoute from './verify-email';
 import StyleRoute from './style';
 import StylistRoute from './stylist';
+import ClaimRoute from './claim';
+import FinishRoute from './finish';
 
 /**
  * Every page on yasante.com. The addresses match the app's (a shared link opens the
@@ -37,6 +40,7 @@ import StylistRoute from './stylist';
  * Add a page in both places.
  */
 export const routes = [
+  { path: '/links', element: <LinksRoute />, errorElement: <RouteError /> },
   {
     element: <Layout />,
     errorElement: <RouteError />,
@@ -79,6 +83,8 @@ export const routes = [
           { path: '/account', element: <AccountRoute /> },
         ],
       },
+      { path: '/claim/:code', element: <ClaimRoute /> },
+      { path: '/finish', element: <FinishRoute /> },
       // Last: her bio link, yasante.com/{handle}.
       { path: '/:handle', element: <StylistRoute /> },
       { path: '*', element: <NotFoundRoute /> },

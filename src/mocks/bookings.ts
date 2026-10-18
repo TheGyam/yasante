@@ -136,21 +136,29 @@ const HOLDS: BookingStatus[] = ['requested', 'awaiting_deposit', 'confirmed'];
 
 /** Her diary as time ranges, so a slot can't be offered — or asked for — twice. */
 function busyFor(stylistId: string) {
-  return db.bookings
-    .filter(b => b.stylistId === stylistId && HOLDS.includes(b.status))
-    .map(b => {
-      const start = new Date(b.scheduledFor ?? b.proposal?.scheduledFor ?? b.requestedTimes[0]);
-      return { start: start.getTime(), end: start.getTime() + (b.durationMinutes ?? 120) * 60_000 };
-    });
+  const blocked = db.timeBlocks
+    .filter(b => b.stylistId === stylistId)
+    .map(b => ({ start: new Date(b.start).getTime(), end: new Date(b.end).getTime() }));
+  return blocked.concat(
+    db.bookings
+      .filter(b => b.stylistId === stylistId && HOLDS.includes(b.status))
+      .map(b => {
+        const start = new Date(b.scheduledFor ?? b.proposal?.scheduledFor ?? b.requestedTimes[0]);
+        return {
+          start: start.getTime(),
+          end: start.getTime() + (b.durationMinutes ?? 120) * 60_000,
+        };
+      })
+  );
 }
 
 /** How long the job runs, from her menu and the options chosen. Unknown is two hours. */
 const minutesFor = (service: MenuItem, chosen: ChosenOptions) =>
   estimate(service, chosen).minutes ?? service.durationMinutes ?? 120;
 
-/** Far enough ahead that she can see the request before the time comes. */
-const LEAD_MS = 3 * HOUR;
-/** How far ahead a client can see. */
+/** Her notice, a day unless she set it (the server's BOOKING_NOTICE_DEFAULT_HOURS). */
+const leadMs = (availability?: { leadHours?: number }) => (availability?.leadHours ?? 24) * HOUR;
+/** What an older app sees when it doesn't say which days. */
 const SLOT_DAYS = 28;
 
 const find = (id: string) => {
@@ -246,17 +254,61 @@ defineMocks({
 
     const minutes = minutesFor(service, chosen);
     const busy = busyFor(profile.accountId);
-    const notBefore = Date.now() + LEAD_MS;
+    const availability = profile.availability;
+    const notBefore = Date.now() + leadMs(availability);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const days = [];
-    for (let i = 0; i < SLOT_DAYS; i++) {
+    const dayAt = (offset: number) => {
       const day = new Date(today);
-      day.setDate(today.getDate() + i);
-      const times = freeStarts(profile.availability, day, minutes, busy, notBefore);
-      if (times.length) days.push({ date: ymd(day), times: times.map(t => t.toISOString()) });
+      day.setDate(today.getDate() + offset);
+      return day;
+    };
+    // As far ahead as she books, twelve weeks unless she said.
+    const reach = availability?.aheadDays ?? 84;
+    const lastDate = ymd(dayAt(reach - 1));
+    const closed = availability?.closed ?? [];
+    const startsOn = (day: Date) =>
+      closed.includes(ymd(day)) ? [] : freeStarts(availability, day, minutes, busy, notBefore);
+    const asked = (key: string) => request.query.get(key) ?? '';
+    const from = asked('from') || ymd(today);
+    const to = asked('to') || ymd(dayAt(SLOT_DAYS - 1));
+    const days = [];
+    const full = [];
+    const away = [];
+    for (let i = 0; i < reach; i++) {
+      const day = dayAt(i);
+      const key = ymd(day);
+      if (key < from || key > to) continue;
+      const times = startsOn(day);
+      if (times.length) {
+        const busyThen = busy
+          .filter(b => ymd(new Date(b.start)) === key)
+          .map(b => ({
+            start: new Date(b.start).toISOString(),
+            end: new Date(b.end).toISOString(),
+          }));
+        days.push({ date: key, times: times.map(t => t.toISOString()), busy: busyThen });
+      } else if (availability?.blocked.includes(key)) away.push(key);
+      else if (closed.includes(key) || isOpenOn(availability, day)) full.push(key);
     }
-    return { minutes, days };
+    const first = (wanted: (day: Date) => boolean) => {
+      for (let i = 0; i < reach; i++) {
+        const day = dayAt(i);
+        const times = wanted(day) ? startsOn(day) : [];
+        if (times.length) return times[0].toISOString();
+      }
+      return undefined;
+    };
+    return {
+      minutes,
+      days,
+      full,
+      away,
+      lastDate,
+      noticeHours: availability?.leadHours ?? 24,
+      soonest: first(() => true),
+      weekend: first(day => day.getDay() === 0 || day.getDay() === 6),
+    };
   },
 
   'GET /api/bookings/:id/': request => {

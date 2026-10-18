@@ -7,6 +7,7 @@ from apps.common.admin_access import SuperusersOnly
 from django.utils import timezone
 
 from .models import (
+    FeaturedPage,
     MenuItem,
     PageView,
     PaymentMethod,
@@ -142,3 +143,21 @@ class VerificationAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         recompute_tier(obj.account_id)
+
+
+
+
+@admin.register(FeaturedPage)
+class FeaturedPageAdmin(admin.ModelAdmin):
+    list_display = ("profile", "instagram_handle", "agreed_at", "claimed_at", "created_at")
+    search_fields = ("profile__handle", "instagram_handle")
+    readonly_fields = tuple(f.name for f in FeaturedPage._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

@@ -1,13 +1,15 @@
 import { View } from 'react-native';
 import { format, isToday } from 'date-fns';
-import { CalendarClock, ClipboardCheck, Store, UserCheck } from 'lucide-react-native';
-import { useBookings, whenLabel, type Booking } from '@/features/booking';
+import { CalendarClock, CalendarX2, ClipboardCheck, Store, UserCheck } from 'lucide-react-native';
+import { salonTime, useBookings, whenLabel, type Booking } from '@/features/booking';
 import {
   PageLinkCard,
   isNotFound,
+  useCloseDay,
   useMyStylistProfile,
   useStylistNumbers,
 } from '@/features/stylist';
+import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Card } from '@/shared/ui/Card';
@@ -18,6 +20,7 @@ import { Section } from '@/shared/ui/Section';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { Toggle } from '@/shared/ui/Toggle';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
@@ -34,6 +37,42 @@ function attendance(booking: Booking) {
     : { text: 'Not confirmed yet', icon: CalendarClock, tone: 'neutral' as const };
 }
 
+/** The day an appointment is on, yyyy-MM-dd on the stylist's calendar. */
+const dayOf = (booking: Booking) =>
+  format(salonTime(booking.scheduledFor!, booking.timeZone), 'yyyy-MM-dd');
+
+/**
+ * The switch at the foot of a day: once she has enough clients, no new requests for
+ * it. What's booked stays as it is.
+ */
+function TakingRequests({ day, closed }: { day: string; closed: boolean }) {
+  const close = useCloseDay();
+  const set = (open: boolean) => {
+    haptics.selection();
+    close.mutate({ date: day, closed: !open });
+  };
+  return (
+    <ListRow
+      title="Taking new requests"
+      subtitle={
+        closed ? 'Closed: you have enough clients this day' : 'Turn off once the day is full enough'
+      }
+      icon={closed ? CalendarX2 : CalendarClock}
+      iconTone={closed ? 'neutral' : 'accent'}
+      onPress={() => set(closed)}
+      trailing={
+        <Toggle
+          value={!closed}
+          onValueChange={set}
+          disabled={close.isPending}
+          accessibilityLabel={`Taking new requests on ${format(new Date(`${day}T12:00:00`), 'EEEE d MMMM')}`}
+        />
+      }
+      testID={`take-requests-${day}`}
+    />
+  );
+}
+
 export default function TodayScreen() {
   const styles = useStyles();
   const router = useRouter();
@@ -47,6 +86,13 @@ export default function TodayScreen() {
     (isToday(new Date(booking.scheduledFor)) || new Date(booking.scheduledFor) < new Date());
   const today = confirmed.filter(due);
   const later = confirmed.filter(booking => booking.scheduledFor && !due(booking));
+  // Coming up, a day at a time: each with its switch for taking more.
+  const days = [...new Set(later.map(dayOf))].map(day => ({
+    day,
+    bookings: later.filter(b => dayOf(b) === day),
+  }));
+  const closed = new Set(profile?.availability?.closed ?? []);
+  const todayKey = format(salonTime(new Date(), profile?.timeZone), 'yyyy-MM-dd');
 
   return (
     <Screen
@@ -113,6 +159,7 @@ export default function TodayScreen() {
                   />
                 );
               })}
+              <TakingRequests day={todayKey} closed={closed.has(todayKey)} />
             </Section>
           ) : (
             <EmptyState
@@ -123,18 +170,27 @@ export default function TodayScreen() {
           )}
         </View>
 
-        {later.length > 0 && (
-          <Section title="Coming up">
-            {later.map(booking => (
-              <ListRow
-                key={booking.id}
-                title={`${booking.clientName} · ${booking.serviceName}`}
-                subtitle={`${whenLabel(booking.scheduledFor!, booking.timeZone)} · ${attendance(booking).text}`}
-                icon={CalendarClock}
-                onPress={() => router.push(`/requests/${booking.id}`)}
-              />
+        {days.length > 0 && (
+          <View style={{ gap: space.lg }}>
+            <SectionHeader title="Coming up" />
+            {days.map(({ day, bookings }) => (
+              <Section
+                key={day}
+                title={`${format(new Date(`${day}T12:00:00`), 'EEEE d MMMM')} · ${bookings.length} booked`}
+              >
+                {bookings.map(booking => (
+                  <ListRow
+                    key={booking.id}
+                    title={`${booking.clientName} · ${booking.serviceName}`}
+                    subtitle={`${whenLabel(booking.scheduledFor!, booking.timeZone)} · ${attendance(booking).text}`}
+                    icon={CalendarClock}
+                    onPress={() => router.push(`/requests/${booking.id}`)}
+                  />
+                ))}
+                <TakingRequests day={day} closed={closed.has(day)} />
+              </Section>
             ))}
-          </Section>
+          </View>
         )}
       </View>
     </Screen>

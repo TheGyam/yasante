@@ -9,7 +9,8 @@ from rest_framework import serializers
 
 from apps.common.schema import BlankIsOptional, optional
 
-from .models import NOT_HANDLES, MenuItem, PaymentMethod, PortfolioPhoto, StylistProfile
+from apps.common.identifiers import POLICY, identifier_problem, normalise
+from .models import MenuItem, PaymentMethod, PortfolioPhoto, StylistProfile
 
 
 class PaymentMethodSerializer(BlankIsOptional, serializers.ModelSerializer):
@@ -78,15 +79,57 @@ class MenuItemDraftSerializer(serializers.Serializer):
     )
 
 
+class WorkLookPhotoSerializer(serializers.Serializer):
+    uri = serializers.CharField()
+    thumb_uri = optional(serializers.CharField())
+
+
+class LookPhotosField(serializers.ListField):
+    """Every photo of the look it's from, in order, when that look has more than one."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**{"child": WorkLookPhotoSerializer(), "read_only": True, **kwargs})
+
+    def get_attribute(self, instance):
+        return self.parent.photos_of_looks().get(instance.look_id)
+
+    def to_representation(self, value):
+        return value
+
+
 class PortfolioPhotoSerializer(BlankIsOptional, serializers.ModelSerializer):
     service_id = serializers.UUIDField(
         source="service.id", read_only=True, allow_null=True
     )
+    look_photos = optional(LookPhotosField())
 
     class Meta:
         model = PortfolioPhoto
-        fields = ["id", "uri", "thumb_uri", "service_id", "look_id", "created_at"]
+        fields = ["id", "uri", "thumb_uri", "service_id", "look_id", "look_photos", "created_at"]
         read_only_fields = ["id", "thumb_uri", "look_id", "created_at"]
+
+    def photos_of_looks(self):
+        """
+        The photos of every live look these come from, read once for the whole list:
+        a look posted as several photos swipes through all of them on her page.
+        """
+        root = self.parent if isinstance(self.parent, serializers.ListSerializer) else None
+        holder = root or self
+        if not hasattr(holder, "_look_photos"):
+            from apps.looks.models import LookPhoto
+            from apps.looks.views import public_looks
+
+            items = root.instance if root is not None else [self.instance]
+            ids = {p.look_id for p in items if p.look_id}
+            found = {}
+            for photo in LookPhoto.objects.filter(
+                look_id__in=public_looks().filter(pk__in=ids).values("pk"), look__status="live", look__visibility="public"
+            ).order_by("look_id", "position"):
+                found.setdefault(photo.look_id, []).append(
+                    {"uri": photo.photo_uri, "thumb_uri": photo.thumb_uri or None}
+                )
+            holder._look_photos = {k: v for k, v in found.items() if len(v) > 1}
+        return holder._look_photos
 
 
 DAY_HOURS = {
@@ -107,7 +150,16 @@ class WeekField(serializers.JSONField):
 class AvailabilitySerializer(serializers.Serializer):
     # Sunday first; null is a day off, so each day's hours are written out here.
     week = WeekField()
+    # Days away: she isn't working.
     blocked = serializers.ListField(child=serializers.DateField())
+    # Days closed to new bookings: she has enough clients; what's booked stays.
+    closed = optional(serializers.ListField(child=serializers.DateField()))
+    # The notice she needs before an appointment, in hours: 3, 12, 24, 48, 72 or her own.
+    lead_hours = optional(serializers.IntegerField(min_value=1))
+    # How far ahead clients can book, in days: 28, 56, 84 (when unset) or 182.
+    ahead_days = optional(serializers.IntegerField())
+    # Minutes she keeps free between clients: 0, 15, 30, 45 or 60.
+    gap_minutes = optional(serializers.IntegerField())
 
 
 @extend_schema_field(optional(AvailabilitySerializer()))
@@ -118,7 +170,11 @@ class AvailabilityField(serializers.JSONField):
         week = (value or {}).get("week")
         if not isinstance(week, list) or len(week) != 7:
             return None
-        return {"week": week, "blocked": list(value.get("blocked") or [])}
+        shown = {"week": week, "blocked": list(value.get("blocked") or [])}
+        for key in ("closed", "lead_hours", "ahead_days", "gap_minutes"):
+            if value.get(key):
+                shown[key] = value[key]
+        return shown
 
 
 @extend_schema_field({"type": "integer", "enum": [0, 1, 2]})
@@ -156,10 +212,11 @@ class StylistProfileSerializer(BlankIsOptional, serializers.ModelSerializer):
             "payment_methods",
             "proof_photo_uri",
             "verification_tier",
+            "featured",
             "published",
             "created_at",
         ]
-        read_only_fields = ["id", "account_id", "verification_tier", "created_at"]
+        read_only_fields = ["id", "account_id", "verification_tier", "featured", "created_at"]
 
 
 class StylistProfileDraftSerializer(serializers.Serializer):
@@ -195,20 +252,10 @@ class StylistProfileDraftSerializer(serializers.Serializer):
     payment_methods = PaymentMethodSerializer(many=True, required=False)
 
     def validate_handle(self, value):
-        import re
-
-        value = value.lower().strip()
-        if value in NOT_HANDLES:
-            raise serializers.ValidationError("That handle is reserved.")
-        # The same rules the app checks as she types.
-        if (
-            not re.fullmatch(r"[a-z0-9][a-z0-9._]*", value)
-            or re.search(r"[._]{2,}", value)
-            or value[-1] in "._"
-        ):
-            raise serializers.ValidationError(
-                "Letters, numbers, dots and underscores only."
-            )
+        value = normalise(value)
+        problem = identifier_problem(value, max_length=POLICY["handle_max"])
+        if problem:
+            raise serializers.ValidationError(problem)
         return value
 
 
@@ -279,6 +326,7 @@ class HandleCheckResponseSerializer(serializers.Serializer):
 class PublicProfileSerializer(StylistProfileSerializer):
     """Her page's profile: no proof photo, payment details or address, plus the checks held."""
 
+    claimable = serializers.BooleanField()
     checks = serializers.ListField(
         child=serializers.CharField(), help_text="phone, work, met_in_person, met_on_video, insurance"
     )
@@ -288,7 +336,7 @@ class PublicProfileSerializer(StylistProfileSerializer):
             f
             for f in StylistProfileSerializer.Meta.fields
             if f not in ("proof_photo_uri", "payment_methods", "address")
-        ] + ["checks"]
+        ] + ["checks", "claimable"]
 
 
 class PageReviewSerializer(serializers.Serializer):
@@ -314,6 +362,7 @@ class TimingLabelSerializer(serializers.Serializer):
 
 
 class StylistPageResponseSerializer(serializers.Serializer):
+    waitlist_joined = optional(serializers.BooleanField())
     profile = PublicProfileSerializer()
     menu = MenuItemSerializer(many=True)
     photos = PortfolioPhotoSerializer(many=True)
@@ -324,15 +373,63 @@ class StylistPageResponseSerializer(serializers.Serializer):
     timing_label = optional(TimingLabelSerializer())
 
 
+class BusySerializer(serializers.Serializer):
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    mine = optional(serializers.BooleanField(help_text="The viewer's own: why some times aren't offered"))
+
+
 class FreeDaySerializer(serializers.Serializer):
     date = serializers.DateField()
     times = serializers.ListField(child=serializers.DateTimeField())
+    room = optional(serializers.ChoiceField(
+        choices=["plenty", "few"],
+        help_text="Plenty while at least half the times a job like this could start are free",
+    ))
+    busy = serializers.ListField(child=BusySerializer(), required=False, help_text="What's already in her diary that day")
 
 
 class FreeSlotsSerializer(serializers.Serializer):
     minutes = serializers.IntegerField()
-    days = FreeDaySerializer(many=True)
+    days = FreeDaySerializer(many=True, help_text="Days asked for with a time free, in order")
     time_zone = serializers.CharField(help_text="The stylist's zone (IANA): whose clock the times are on")
+    notice_hours = optional(serializers.IntegerField())
+    last_date = optional(serializers.DateField(help_text="The furthest day she can be booked; one more opens each morning"))
+    full = optional(serializers.ListField(child=serializers.DateField(), help_text="Days she works with no time left, or closed as full"))
+    away = optional(serializers.ListField(child=serializers.DateField()))
+    soonest = optional(serializers.DateTimeField(help_text="Her first free time, whatever days were asked for"))
+    weekend = optional(serializers.DateTimeField(help_text="Her first free Saturday or Sunday time"))
+
+
+class TimeBlockSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    note = optional(serializers.CharField(help_text="Hers alone: never shown to clients"))
+    repeats = serializers.ListField(
+        child=serializers.IntegerField(),
+        help_text="Weekdays it comes round again (Sunday 0), at the same time; empty is once",
+    )
+    skips = serializers.ListField(
+        child=serializers.DateField(), help_text="Days still to come it doesn't come round"
+    )
+
+
+class TimeBlockSkipRequestSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    skip = serializers.BooleanField(default=True)
+
+
+class TimeBlockRequestSerializer(serializers.Serializer):
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    note = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    repeats = serializers.ListField(child=serializers.IntegerField(min_value=0, max_value=6), required=False)
+
+
+class ClosedDayRequestSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    closed = serializers.BooleanField(default=True)
 
 
 class WeekCountsSerializer(serializers.Serializer):
@@ -380,3 +477,43 @@ class PortfolioAddRequestSerializer(serializers.Serializer):
 
 class PortfolioPatchRequestSerializer(serializers.Serializer):
     service_id = serializers.CharField(allow_null=True)
+
+
+class PageWaitlistSerializer(serializers.Serializer):
+    joined = serializers.BooleanField()
+
+
+class ClaimPhotoSerializer(serializers.Serializer):
+    uri = serializers.CharField()
+    thumb_uri = serializers.CharField()
+
+
+class ClaimPreviewSerializer(serializers.Serializer):
+    display_name = serializers.CharField()
+    handle = serializers.CharField()
+    avatar_uri = optional(serializers.CharField())
+    look_count = serializers.IntegerField()
+    live = serializers.BooleanField()
+    waiting = serializers.IntegerField()
+    photos = ClaimPhotoSerializer(many=True)
+
+
+class FinishStyleSerializer(serializers.Serializer):
+    slug = serializers.CharField()
+    name = serializers.CharField()
+    photo_count = serializers.IntegerField()
+    priced = serializers.BooleanField()
+
+
+class FinishSerializer(serializers.Serializer):
+    styles = FinishStyleSerializer(many=True)
+    hours_set = serializers.BooleanField()
+    tags_checked = serializers.BooleanField()
+    done = serializers.BooleanField()
+
+
+class FinishPriceSerializer(serializers.Serializer):
+    style = serializers.CharField()
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0.01"))
+    from_price = serializers.BooleanField(default=False)
+    duration_minutes = serializers.IntegerField(required=False, allow_null=True, min_value=1)

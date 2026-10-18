@@ -11,6 +11,7 @@ import type {
   StylistProfile,
   StylistProfileDraft,
   StylistSearchResult,
+  TimeBlock,
   Upload,
 } from './types';
 
@@ -33,6 +34,23 @@ export const updateProfile = (draft: Partial<StylistProfileDraft>) =>
   api.patch<StylistProfile>('/stylists/me/', draft);
 
 export const publishProfile = () => api.post<StylistProfile>('/stylists/me/publish/');
+
+/** Time she's blocked out of her diary, still to come. Clients see it as booked. */
+export const getTimeBlocks = () => api.get<TimeBlock[]>('/stylists/me/blocks/');
+export const addTimeBlock = (block: {
+  start: string;
+  end: string;
+  note?: string;
+  repeats?: number[];
+}) => api.post<TimeBlock>('/stylists/me/blocks/', block);
+export const removeTimeBlock = (id: string) => api.delete(`/stylists/me/blocks/${id}/`);
+/** One day of a repeating block off, or on again. */
+export const skipTimeBlock = ({ id, date, skip }: { id: string; date: string; skip: boolean }) =>
+  api.post<TimeBlock>(`/stylists/me/blocks/${id}/skip/`, { date, skip });
+
+/** Enough clients that day: no new requests for it (what's booked stays), or open again. */
+export const closeDay = (date: string, closed: boolean) =>
+  api.post<StylistProfile>('/stylists/me/closed-days/', { date, closed });
 
 export const checkHandle = (handle: string) =>
   api.get<HandleCheck>('/stylists/handle-available/', { handle });
@@ -75,3 +93,10 @@ export function uploadPhoto(file: File, kind: 'look' | 'portfolio') {
 export const addToPortfolio = (
   photos: { uri: string; thumbUri?: string; serviceId?: string; lookId?: string }[]
 ) => api.post<PortfolioPhoto[]>('/stylists/me/portfolio/', { photos });
+
+/** Join or leave the waitlist for a featured stylist. */
+export const joinPageWaitlist = (handle: string) =>
+  api.put<{ joined: boolean }>(`/stylists/by-handle/${encodeURIComponent(handle)}/waitlist/`);
+
+export const leavePageWaitlist = (handle: string) =>
+  api.delete<{ joined: boolean }>(`/stylists/by-handle/${encodeURIComponent(handle)}/waitlist/`);

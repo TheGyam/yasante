@@ -287,7 +287,57 @@ class SlotInterest(TimeStampedModel):
     from_date = models.DateField()
     to_date = models.DateField()
     opened_on = models.DateField(null=True, blank=True)
+    # Waiting for days she isn't taking bookings for yet ("tell me when January opens"),
+    # rather than for a full day to free up.
+    opens = models.BooleanField(default=False)
 
     class Meta:
         db_table = "bookings_slot_interest"
         ordering = ["-created_at"]
+
+
+class TimeBlock(models.Model):
+    """
+    Part of a day a stylist has taken out of her diary: a client booked outside
+    Yasante, a school run, a long lunch. Clients see it as booked; nothing can land
+    on it.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    stylist_profile = models.ForeignKey(
+        "stylists.StylistProfile", on_delete=models.CASCADE, related_name="time_blocks"
+    )
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+    # Hers alone ("Private client"): never shown to clients.
+    note = models.CharField(max_length=100, blank=True, default="")
+    # The weekdays it comes round again (Sunday 0), from its first day on, at the same
+    # time on her clock, until she removes it: a daily lunch, a Friday school run.
+    # Empty is once.
+    repeats = ArrayField(models.PositiveSmallIntegerField(), default=list, blank=True)
+    # Days on her calendar a repeating block doesn't come round (working through lunch
+    # next Tuesday). The rest of the series stays.
+    skips = ArrayField(models.DateField(), default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "bookings_time_block"
+        ordering = ["start"]
+        indexes = [models.Index(fields=["stylist_profile", "end"])]
+
+    def occurrences(self, zone, first, last):
+        """Each (start, end) it takes, on local days `first` to `last`."""
+        if not self.repeats:
+            return [(self.start, self.end)]
+        from datetime import datetime, timedelta
+
+        begins, ends = self.start.astimezone(zone), self.end.astimezone(zone)
+        length = ends - begins
+        day = max(first, begins.date())
+        found = []
+        while day <= last:
+            if (day.weekday() + 1) % 7 in self.repeats and day not in self.skips:
+                start = datetime.combine(day, begins.time(), tzinfo=zone)
+                found.append((start, start + length))
+            day += timedelta(days=1)
+        return found

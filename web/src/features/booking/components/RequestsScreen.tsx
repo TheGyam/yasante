@@ -88,7 +88,7 @@ export function RequestsScreen() {
           {asked.length > 0 && (
             <Section
               title="Waiting for your answer"
-              footer="A request you don’t answer in 48 hours lapses on its own."
+              footer="Answer each one before it lapses: within 48 hours, and at least 2 hours before its time."
             >
               {asked.map(b =>
                 row(

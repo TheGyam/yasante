@@ -1,8 +1,9 @@
+import { useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
+  ArrowRight,
   CalendarCheck,
   CalendarDays,
-  Images,
   LayoutList,
   NotebookPen,
   Search,
@@ -10,12 +11,10 @@ import {
 } from 'lucide-react';
 import { LookGrid } from '@/features/looks';
 import { WaitlistForm } from '@/features/waitlist';
-import { Button } from '@/shared/ui/Button';
-import { Glass } from '@/shared/ui/Glass';
+import { Link } from '@/shared/ui/Link';
 import { Page } from '@/shared/ui/Page';
-import { Rise } from '@/shared/ui/Rise';
-import { SectionHeader } from '@/shared/ui/SectionHeader';
-import { Text } from '@/shared/ui/Text';
+import { FilmDialog, type FilmDialogHandle } from './FilmDialog';
+import { Hero } from './Hero';
 import * as styles from './HomeScreen.css';
 
 interface Point {
@@ -33,7 +32,7 @@ const FOR_CLIENTS: Point[] = [
   },
   {
     icon: CalendarCheck,
-    title: 'Book the braider who did it',
+    title: 'Book the stylist who did it',
     body: 'Pick a service, see the price and their free times, and send a request. Follow it from asked to done.',
   },
   {
@@ -70,10 +69,8 @@ function Points({ points }: { points: Point[] }) {
             <Icon size={18} strokeWidth={2.1} aria-hidden />
           </span>
           <span className={styles.pointText}>
-            <Text variant="bodyStrong">{title}</Text>
-            <Text variant="subhead" tone="secondary">
-              {body}
-            </Text>
+            <strong className={styles.pointTitle}>{title}</strong>
+            <span className={styles.pointBody}>{body}</span>
           </span>
         </li>
       ))}
@@ -82,54 +79,69 @@ function Points({ points }: { points: Point[] }) {
 }
 
 export function HomeScreen({ source }: { source?: string }) {
+  const film = useRef<FilmDialogHandle>(null);
   return (
-    <Page>
-      <Rise className={styles.hero}>
-        <Text variant="display">Everything for your hair, in one place.</Text>
-        <Text variant="body" tone="secondary" className={styles.lede}>
-          Find styles on real hair like yours, learn what your texture loves, keep track of your
-          routine and products, and book stylists whose work you’ve already seen.
-        </Text>
-        <div className={styles.actions}>
-          <Button label="Join the waitlist" href="#waitlist" />
-          <Button label="See the looks" variant="secondary" icon={Images} to="/looks" />
-        </div>
-      </Rise>
+    <>
+      <Hero onWatch={() => film.current?.open()} />
+      <FilmDialog ref={film} />
 
-      <LookGrid filters={{}} limit={8} />
-
-      <SectionHeader title="Two sides, one app" />
-      <div className={styles.sides}>
-        <Glass padded radius="xl" className={styles.side}>
-          <Text variant="overline" tone="accent" as="h3">
-            If you’re getting your hair done
-          </Text>
-          <Points points={FOR_CLIENTS} />
-        </Glass>
-        <Glass padded radius="xl" className={styles.side}>
-          <Text variant="overline" tone="accent" as="h3">
-            If you’re a stylist
-          </Text>
-          <Points points={FOR_STYLISTS} />
-          <div>
-            <Button label="Set up your page" size="md" to="/auth/signup" />
+      <Page>
+        <section className={styles.block} aria-labelledby="looks-title">
+          <div className={styles.head}>
+            <div>
+              <p className={styles.overline}>Real looks, real hair</p>
+              <h2 id="looks-title" className={styles.big}>
+                On hair <span className={styles.silk}>like yours.</span>
+              </h2>
+            </div>
+            <Link to="/looks" className={styles.pill}>
+              See all looks
+              <ArrowRight size={16} strokeWidth={2.4} aria-hidden />
+            </Link>
           </div>
-        </Glass>
-      </div>
+          <LookGrid filters={{}} limit={8} />
+        </section>
 
-      <section id="waitlist" className={styles.join} aria-labelledby="waitlist-title">
-        <div className={styles.joinText}>
-          <Text variant="title1" as="h2" id="waitlist-title">
-            Be first when it opens near you
-          </Text>
-          <Text variant="body" tone="secondary">
-            Leave your email and we’ll tell you when Yasante is in your app store and your area.
-          </Text>
-        </div>
-        <Glass padded radius="xl">
-          <WaitlistForm source={source} />
-        </Glass>
-      </section>
-    </Page>
+        <section className={styles.block} aria-labelledby="sides-title">
+          <div className={styles.head}>
+            <div>
+              <p className={styles.overline}>Two sides, one app</p>
+              <h2 id="sides-title" className={styles.big}>
+                Get it done. <span className={styles.silk}>Or do it.</span>
+              </h2>
+            </div>
+          </div>
+          <div className={styles.sides}>
+            <div className={styles.panel}>
+              <p className={styles.panelKicker}>If you’re getting your hair done</p>
+              <Points points={FOR_CLIENTS} />
+            </div>
+            <div className={styles.panel}>
+              <p className={styles.panelKicker}>If you’re a stylist</p>
+              <Points points={FOR_STYLISTS} />
+              <Link to="/auth/signup" className={styles.light}>
+                Set up your page
+                <ArrowRight size={16} strokeWidth={2.4} aria-hidden />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section id="waitlist" className={styles.join} aria-labelledby="waitlist-title">
+          <div className={styles.joinText}>
+            <p className={styles.overline}>Coming to your app store</p>
+            <h2 id="waitlist-title" className={styles.big}>
+              Be first <span className={styles.silk}>in.</span>
+            </h2>
+            <p className={styles.joinBody}>
+              Leave your email and we’ll tell you when Yasante is in your app store and your area.
+            </p>
+          </div>
+          <div className={styles.form}>
+            <WaitlistForm source={source} />
+          </div>
+        </section>
+      </Page>
+    </>
   );
 }

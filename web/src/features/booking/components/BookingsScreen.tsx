@@ -1,4 +1,5 @@
 import { CalendarClock, CalendarX } from 'lucide-react';
+import { SignedInAs } from '@/features/auth';
 import { errorMessage } from '@/shared/lib/errors';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
@@ -84,6 +85,7 @@ export function BookingsScreen() {
           />
         )}
         <GetTheApp />
+        <SignedInAs />
       </div>
     </Page>
   );

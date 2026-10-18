@@ -8,94 +8,12 @@ from apps.common.models import TimeStampedModel
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
+from django.db.models.functions import Upper
 
-# Reserved handles — website paths that can't be taken
-NOT_HANDLES = {
-    "manage",
-    "admin",
-    "api",
-    "auth",
-    "login",
-    "signup",
-    "register",
-    "about",
-    "terms",
-    "privacy",
-    "help",
-    "support",
-    "settings",
-    "search",
-    "explore",
-    "discover",
-    "feed",
-    "home",
-    "profile",
-    "account",
-    "book",
-    "booking",
-    "bookings",
-    "stylist",
-    "stylists",
-    "looks",
-    "learn",
-    "library",
-    "shop",
-    "reset-password",
-    "forgot-password",
-    "invite",
-    "invites",
-    "verify",
-    "notifications",
-    "messages",
-    "static",
-    "media",
-    "assets",
-    "css",
-    "js",
-    "images",
-    "fonts",
-    ".well-known",
-    "favicon.ico",
-    "robots.txt",
-    "sitemap.xml",
-    "waitlist",
-    "delete-account",
-    # App screens opened by path (src/shared/lib/links.ts reserves the same words).
-    "planner",
-    "saved",
-    "insights",
-    "who",
-    "work",
-    "requests",
-    "numbers",
-    "shelf",
-    "collections",
-    "care-plans",
-    "hair-profile",
-    "check-in",
-    "close-out",
-    "menu",
-    "portfolio",
-    "availability",
-    "review",
-    "onboarding",
-    "edit-profile",
-    "username",
-    "policy",
-    "payment-methods",
-    "stylist-setup",
-    "today",
-    "styles",
-    "areas",
-    "guidelines",
-    "stylist-terms",
-    "content",
-    "hair-log",
-    "styles",
-    "areas",
-    "yasante",
-    "hair",
-}
+# Kept here for callers that import the reserved site names from the model.
+from apps.common.identifiers import NOT_HANDLES, POLICY, validate_model_identifier
 
 SERVICE_MODEL_CHOICES = [
     ("salon", "Salon"),
@@ -158,6 +76,8 @@ class StylistProfile(TimeStampedModel):
     proof_photo_uri = models.URLField(max_length=500, blank=True, default="")
     verification_tier = models.PositiveSmallIntegerField(default=0)
 
+    # Set up by Yasante and not taking bookings yet.
+    featured = models.BooleanField(default=False, db_index=True)
     published = models.BooleanField(default=False, db_index=True)
 
     # Precomputed stats (updated by signals/tasks)
@@ -171,9 +91,26 @@ class StylistProfile(TimeStampedModel):
     class Meta:
         db_table = "stylists_profile"
         ordering = ["-created_at"]
+        indexes = [models.Index(Upper("handle"), name="stylist_handle_ci_idx")]
 
     def __str__(self):
         return f"@{self.handle} ({self.display_name})"
+
+    def clean(self):
+        super().clean()
+        validate_model_identifier(self, "handle", max_length=POLICY["handle_max"])
+
+    def save(self, *args, **kwargs):
+        fields = kwargs.get("update_fields")
+        previous = None
+        if fields is None or "handle" in fields:
+            previous = validate_model_identifier(self, "handle", max_length=POLICY["handle_max"])
+        result = super().save(*args, **kwargs)
+        if previous and previous.lower() != self.handle.lower():
+            from apps.accounts.models import ReleasedName
+
+            ReleasedName.hold(previous, self.account_id)
+        return result
 
     @property
     def policies(self) -> dict:
@@ -368,3 +305,41 @@ def record_check(account_id, type, status="verified", evidence="", by=None):
     )
     recompute_tier(account_id)
     return check
+
+
+@receiver(pre_delete, sender=StylistProfile)
+def _hold_handle(sender, instance, **kwargs):
+    from apps.accounts.models import ReleasedName
+
+    ReleasedName.hold(instance.handle, instance.account_id)
+
+
+class FeaturedPage(TimeStampedModel):
+    profile = models.OneToOneField(StylistProfile, on_delete=models.CASCADE, related_name="featured_page")
+    instagram_handle = models.CharField(max_length=50)
+    agreed_at = models.DateTimeField(null=True, blank=True)
+    agreed_note = models.CharField(max_length=300, blank=True)
+    agreed_proof = models.ForeignKey("common.Media", null=True, blank=True, on_delete=models.SET_NULL)
+    added_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    code_hash = models.CharField(max_length=64, blank=True, db_index=True)
+    code_expires_at = models.DateTimeField(null=True, blank=True)
+    claimed_at = models.DateTimeField(null=True, blank=True)
+    claimed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    tags_checked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "featured stylist"
+        verbose_name_plural = "Featured stylists"
+
+    def __str__(self):
+        return f"@{self.instagram_handle}"
+
+
+class PageWaitlist(models.Model):
+    client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="page_waitlists")
+    stylist = models.ForeignKey(StylistProfile, on_delete=models.CASCADE, related_name="waitlist")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["stylist", "client"], name="unique_page_waitlist_client")]
+        indexes = [models.Index(fields=["stylist", "created_at"])]

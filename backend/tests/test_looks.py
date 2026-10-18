@@ -298,3 +298,245 @@ def test_a_live_stylist_can_post_her_back_catalogue(api, make_user, make_stylist
     stylist = api(profile.account)
     look = {**look, "photoUri": photo(profile.account)}
     assert all(stylist.post("/api/looks/", look).status_code == 201 for _ in range(40))
+
+
+@pytest.mark.parametrize("count", [1, 3, 5])
+def test_ordered_photos_and_cover(api, make_user, styles, photo, count):
+    from apps.looks.models import Look
+
+    # Multi-photo looks are staff-only until the switch opens them to everyone.
+    user = make_user(is_staff=True)
+    uris = [photo(user) for _ in range(count)][::-1]
+    result = api(user).post("/api/looks/", {
+        "photoUris": uris, "styles": ["knotless"], "photoAspect": 99,
+        "thumbUri": "https://example.com/fake.jpg", "feedUri": "https://example.com/fake.jpg",
+    })
+    assert result.status_code == 201
+    body = result.json()
+    assert [p["uri"] for p in body["photos"]] == uris
+    assert body["photoUri"] == body["photos"][0]["uri"]
+    assert body["photoAspect"] == body["photos"][0]["aspect"] == 0.8
+    assert body.get("thumbUri") == body["photos"][0].get("thumbUri")
+    assert body.get("feedUri") == body["photos"][0].get("feedUri")
+    look = Look.objects.get(pk=body["id"])
+    assert list(look.photos.values_list("position", flat=True)) == list(range(count))
+    for seen in [api(user).get(f"/api/looks/{look.pk}/").json(),
+                 api(user).get("/api/looks/mine/").json()[0],
+                 api().get("/api/looks/").json()["data"][0]]:
+        assert seen["photos"] == body["photos"]
+
+
+def test_legacy_post_has_one_photo(api, make_user, styles, photo):
+    user = make_user()
+    uri = photo(user)
+    result = api(user).post("/api/looks/", {"photoUri": uri, "styles": ["knotless"]})
+    assert result.status_code == 201
+    assert [p["uri"] for p in result.json()["photos"]] == [uri]
+
+
+@pytest.mark.parametrize("case,message", [
+    ("empty", "A look needs a photo"),
+    ("six", "Up to 5 photos in a look"),
+    ("duplicate", "That photo is in this look twice"),
+    ("alias", "That photo is in this look twice"),
+    ("foreign", "That photo isn't one of yours"),
+    ("invalid", "That photo isn't one of yours"),
+    ("not-list", "A look needs a photo"),
+])
+def test_invalid_photos_create_nothing(api, make_user, styles, photo, case, message):
+    from apps.looks.models import Look, LookPhoto
+
+    # Staff, so these cases reach the checks they're meant to test, past the switch.
+    user = make_user(is_staff=True)
+    uri = photo(user)
+    uris = {"empty": [], "six": [uri] * 6, "duplicate": [uri, uri],
+            "alias": [uri, uri.replace(".jpg", "_w320.jpg")],
+            "foreign": [uri, photo(make_user())], "invalid": [uri, {}], "not-list": uri}[case]
+    counts = (Look.objects.count(), LookPhoto.objects.count())
+    result = api(user).post("/api/looks/", {"photoUris": uris, "photoUri": uri, "styles": ["knotless"]})
+    assert result.status_code == 400
+    assert result.json()["message"] == message
+    assert (Look.objects.count(), LookPhoto.objects.count()) == counts
+
+
+def test_multi_photo_switch_gates_more_than_one_photo(api, make_user, styles, photo):
+    from apps.features.models import Switch
+
+    switch = Switch.objects.get(key="multi_photo_looks")
+    switch.mode = "off"
+    switch.save()
+
+    plain, staff = make_user(), make_user(is_staff=True)
+
+    # One photo always works, switch or no switch.
+    assert api(plain).post(
+        "/api/looks/", {"photoUri": photo(plain), "styles": ["knotless"]}
+    ).status_code == 201
+
+    two_photos = {"photoUris": [photo(plain), photo(plain)], "styles": ["knotless"]}
+    refused = api(plain).post("/api/looks/", two_photos)
+    assert refused.status_code == 400
+    assert refused.json()["message"] == "Posting several photos in one look isn't open yet"
+
+    switch.mode = "staff"
+    switch.save()
+    assert api(plain).post("/api/looks/", two_photos).status_code == 400
+    assert api(staff).post(
+        "/api/looks/", {"photoUris": [photo(staff), photo(staff)], "styles": ["knotless"]}
+    ).status_code == 201
+
+
+def test_cover_fallback_without_photo_rows(api, make_user, make_look):
+    from apps.looks.serializers import present_looks
+
+    look = make_look(make_user())
+    assert present_looks([look], None)[0]["photos"] == [
+        {"uri": look.photo_uri, "thumb_uri": None, "feed_uri": None, "aspect": 1}
+    ]
+    assert api().get(f"/api/looks/{look.pk}/").json()["photos"] == [{"uri": look.photo_uri, "aspect": 1}]
+
+
+def test_photo_feed_queries_do_not_grow(api, make_user, make_look, django_assert_num_queries):
+    from apps.looks.models import LookPhoto
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    for _ in range(12):
+        look = make_look(make_user())
+        LookPhoto.objects.bulk_create([
+            LookPhoto(look=look, position=i, photo_uri=f"https://example.com/{i}.jpg") for i in range(3)
+        ])
+    client = api()
+    client.get("/api/looks/", limit=1)
+    with CaptureQueriesContext(connection) as queries:
+        assert len(client.get("/api/looks/", limit=1).json()["data"]) == 1
+    with django_assert_num_queries(len(queries)):
+        body = client.get("/api/looks/", limit=12).json()["data"]
+        assert len(body) == 12 and all(len(look["photos"]) == 3 for look in body)
+    assert sum('FROM "looks_look_photo"' in q["sql"] for q in queries) == 1
+
+
+@pytest.mark.parametrize("target", ["look", "account", "photo"])
+def test_photo_files_are_deleted(api, make_user, styles, photo, target):
+    from apps.common.models import Media
+    from apps.common.signals import delete_media_for
+    from apps.looks.models import Look
+    from django.core.files.storage import default_storage
+
+    user = make_user(is_staff=True)
+    uris = [photo(user) for _ in range(3)]
+    result = api(user).post("/api/looks/", {"photoUris": uris, "styles": ["knotless"]})
+    look = Look.objects.get(pk=result.json()["id"])
+    media = list(Media.objects.filter(owner=user))
+    if target == "photo":
+        media = [m for m in media if uris[1].endswith(m.full_path)]
+    paths = [path for m in media for path in m.paths()]
+    assert paths and all(default_storage.exists(path) for path in paths)
+    owner_id = user.pk
+    if target == "account":
+        user.delete()
+    elif target == "photo":
+        look.photos.get(position=1).delete()
+    else:
+        look.delete()
+    assert not Media.objects.filter(pk__in=[m.pk for m in media]).exists()
+    assert all(not default_storage.exists(path) for path in paths)
+    for m in media:
+        delete_media_for(f"/media/{m.full_path}", owner_id)
+
+
+def test_moderation_sees_all_photos_safely(make_user, make_look):
+    from apps.looks.models import LookPhoto, Report
+    from apps.staff.review import preview
+    from django.test import RequestFactory
+
+    look = make_look(make_user())
+    for i, uri in enumerate(["https://example.com/a.jpg", "/api/media/private/", "javascript:alert(1)"]):
+        LookPhoto.objects.create(look=look, position=i, photo_uri=uri)
+    report = Report.objects.create(reporter=make_user(), content_object=look, reason="other")
+    request = RequestFactory().get("/")
+    request.user = make_user(is_staff=True, is_superuser=True)
+    assert preview(request, "reports", report)["images"] == ["https://example.com/a.jpg", "/data/media/private/", ""]
+    request.user = make_user(is_staff=True)
+    assert preview(request, "reports", report)["images"] == []
+
+
+@pytest.mark.parametrize("count", [0, 1, 3])
+def test_seo_lists_photos_and_keeps_cover(make_user, make_look, count):
+    from apps.looks.models import LookPhoto
+    from .test_seo import html, jsonld, root
+
+    look = make_look(make_user(name="Efua Mensah"), caption="My braids",
+                     thumb_uri="https://example.com/thumb.jpg", feed_uri="https://example.com/feed.jpg")
+    for i in reversed(range(count)):
+        LookPhoto.objects.create(
+            look=look, position=i, photo_uri=f"https://example.com/{i}.jpg" if i else look.photo_uri,
+            thumb_uri=look.thumb_uri if i == 0 else "",
+            feed_uri=f"https://example.com/feed{i}.jpg" if i == 1 else "",
+        )
+    body = html(f"/looks/{look.pk}")
+    assert f'src="{look.feed_uri}"' in root(body)
+    assert f'<meta property="og:image" content="{look.feed_uri}">' in body
+    images = [item for item in jsonld(body) if item["@type"] == "ImageObject"]
+    cover = {
+        "@type": "ImageObject",
+        "@id": f"https://yasante.com/looks/{look.pk}#image",
+        "contentUrl": look.photo_uri,
+        "thumbnailUrl": look.thumb_uri,
+        "name": "Knotless braids",
+        "description": look.caption,
+        "uploadDate": look.created_at.isoformat(),
+        "keywords": "Knotless braids",
+        "creator": {"@type": "Person", "name": "Efua"},
+        "creditText": "Yasante",
+        "copyrightNotice": "Yasante",
+        "acquireLicensePage": "https://yasante.com/terms",
+        "license": "https://yasante.com/terms",
+        "isPartOf": {"@id": "https://yasante.com/#website"},
+    }
+    assert images == [cover] + [
+        {
+            **cover,
+            "@id": f"https://yasante.com/looks/{look.pk}#image-{i + 1}",
+            "contentUrl": f"https://example.com/{i}.jpg",
+            "thumbnailUrl": f"https://example.com/feed{i}.jpg" if i == 1 else f"https://example.com/{i}.jpg",
+        }
+        for i in range(1, count)
+    ]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_photo_migration_backfills_and_reverses():
+    from django.db import connection
+    from django.db.migrations.executor import MigrationExecutor
+
+    from apps.accounts.models import User
+
+    user = User.objects.create(email="migration@test.dev", name="Migration")
+    before = [("looks", "0006_report_not_hair")]
+    after = [("looks", "0008_backfill_look_photos")]
+    executor = MigrationExecutor(connection)
+    latest = executor.loader.graph.leaf_nodes()
+    try:
+        executor.migrate(before)
+        apps = executor.loader.project_state(before).apps
+        Look = apps.get_model("looks", "Look")
+        Look.objects.bulk_create([
+            Look(author_id=user.pk, photo_uri=f"https://example.com/{i}.jpg",
+                 thumb_uri="https://example.com/thumb.jpg", feed_uri="https://example.com/feed.jpg", photo_aspect=0.8)
+            for i in range(1001)
+        ])
+        executor = MigrationExecutor(connection)
+        executor.migrate(after)
+        apps = executor.loader.project_state(after).apps
+        Photo = apps.get_model("looks", "LookPhoto")
+        assert Photo.objects.count() == 1001
+        for photo in Photo.objects.select_related("look"):
+            assert photo.position == 0
+            assert (photo.photo_uri, photo.thumb_uri, photo.feed_uri, photo.aspect) == (
+                photo.look.photo_uri, photo.look.thumb_uri, photo.look.feed_uri, photo.look.photo_aspect)
+        MigrationExecutor(connection).migrate([("looks", "0007_lookphoto")])
+        assert Photo.objects.count() == 0
+        assert apps.get_model("looks", "Look").objects.count() == 1001
+    finally:
+        MigrationExecutor(connection).migrate(latest)

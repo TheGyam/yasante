@@ -25,6 +25,14 @@ def sweep_bookings():
     sweep()
 
 
+@shared_task
+def open_new_days():
+    """Each morning: anyone waiting for a stylist's next month hears when it opens."""
+    from .held import open_new_days as open_days
+
+    open_days()
+
+
 # Older beat entries in the database still name these; they do the same sweep.
 @shared_task
 def expire_stale_requests():

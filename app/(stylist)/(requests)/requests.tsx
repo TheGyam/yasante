@@ -153,7 +153,10 @@ export default function BookingsScreen() {
           asked.length || waiting.length ? (
             <>
               {asked.length > 0 && (
-                <Section title="New" footer="48 hours to reply, or it expires on its own.">
+                <Section
+                  title="New"
+                  footer="Answer each one before it lapses: within 48 hours, and at least 2 hours before its time."
+                >
                   {asked.map(request)}
                 </Section>
               )}

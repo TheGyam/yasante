@@ -140,12 +140,44 @@ export interface BookingDraft {
 }
 
 /** A stylist's free start times for one service, day by day. Only days with room. */
+/** Something already in the stylist's diary, as the day's timeline draws it. */
+export interface Busy {
+  start: string;
+  end: string;
+  /** The viewer's own: why some of her times aren't offered to them. */
+  mine?: boolean;
+}
+
+/**
+ * Her free times on the days asked for (two months at most), on her calendar: days are
+ * yyyy-MM-dd where she works, times are ISO.
+ */
 export interface FreeSlots {
   /** The stylist's zone (IANA): whose clock the times are on. */
   timeZone?: string;
   /** How long the job runs, which is what decides the times. */
   minutes: number;
-  days: { date: string; times: string[] }[];
+  /** Days with a time free, in order. */
+  days: { date: string; times: string[]; room?: 'plenty' | 'few'; busy?: Busy[] }[];
+  /** Days she works with nothing left, or that she's closed as full. */
+  full?: string[];
+  /** Days she's away. */
+  away?: string[];
+  noticeHours?: number;
+  /** The furthest day she can be booked. One more opens each morning. */
+  lastDate?: string;
+  /** Her first free time anywhere, and her first at a weekend. */
+  soonest?: string;
+  weekend?: string;
+}
+
+/** Which free times to ask for: a job from her menu, or an appointment to move. */
+export interface SlotQuery {
+  handle: string;
+  serviceId?: string;
+  optionIds?: string[];
+  /** Moving this appointment: its own length, its own time counted free. */
+  booking?: string;
 }
 
 /** Whose side of the booking you're looking at. */
@@ -236,6 +268,8 @@ export interface SlotInterest {
   to: string;
   /** The day a slot opened, once one has. */
   openedOn?: string;
+  /** Waiting for days she isn't taking bookings for yet, not for one to free up. */
+  opens?: boolean;
   createdAt: string;
 }
 

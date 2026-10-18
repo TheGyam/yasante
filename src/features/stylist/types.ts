@@ -34,11 +34,32 @@ export interface PaymentMethod {
 /** "09:00" to "18:00", or closed. */
 export type DayHours = { start: string; end: string } | null;
 
+/** Part of a day she's taken out of her diary. Clients see it as booked. */
+export interface TimeBlock {
+  id: string;
+  start: string;
+  end: string;
+  /** Hers alone: never shown to clients. */
+  note?: string;
+  /** Weekdays it comes round again (Sunday 0) at the same time; empty is once. */
+  repeats?: number[];
+  /** Days still to come it doesn't come round, yyyy-MM-dd. */
+  skips?: string[];
+}
+
 export interface Availability {
   /** Sunday is 0, as JavaScript counts. */
   week: [DayHours, DayHours, DayHours, DayHours, DayHours, DayHours, DayHours];
   /** Days off on top of the week — holidays, a wedding — as yyyy-MM-dd. */
   blocked: string[];
+  /** Days she's closed to new bookings (she has enough clients); what's booked stays. */
+  closed?: string[];
+  /** The notice she needs before an appointment, in hours. A day when unset. */
+  leadHours?: number;
+  /** How far ahead clients can book her, in days. Twelve weeks when unset. */
+  aheadDays?: number;
+  /** Minutes she keeps free between clients. */
+  gapMinutes?: number;
 }
 
 export interface StylistProfile {
@@ -130,6 +151,8 @@ export interface PortfolioPhoto {
   serviceId?: string;
   /** The look it was shared as, when she posted it to Looks while adding it. */
   lookId?: string;
+  /** Every photo of that look, in order, when it has more than one. */
+  lookPhotos?: { uri: string; thumbUri?: string }[];
   createdAt: string;
 }
 

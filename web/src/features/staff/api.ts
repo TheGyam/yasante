@@ -14,9 +14,14 @@ export async function readStaff<T>(path: string, signal: AbortSignal): Promise<T
   return data as T;
 }
 
-export async function writeStaff<T>(path: string, body: FormData, csrf: string): Promise<T> {
+export async function writeStaff<T>(
+  path: string,
+  body: FormData,
+  csrf: string,
+  method: 'POST' | 'PATCH' | 'DELETE' = 'POST'
+): Promise<T> {
   const response = await fetch(`/data/${path}`, {
-    method: 'POST',
+    method,
     credentials: 'same-origin',
     cache: 'no-store',
     body,

@@ -1,39 +1,120 @@
 import { style } from '@vanilla-extract/css';
-import { media, radius, space } from '@/shared/theme/tokens';
-import { vars } from '@/shared/theme/vars.css';
+import { EASE_OUT, media, radius, space, weight } from '@/shared/theme/tokens';
+import { darkSurface, vars } from '@/shared/theme/vars.css';
 import { HEADER_HEIGHT } from '@/shared/ui/SiteHeader.css';
 
-const twoColumns = 'screen and (min-width: 860px)';
+/** Petal to amber: the dark theme's own pastels, the light theme's deeper pair on white. */
+const SILK = `linear-gradient(100deg, ${vars.color.accent} 10%, ${vars.color.gold} 100%)`;
+const PLUM = [
+  'radial-gradient(70% 80% at 85% 0%, rgba(244,184,96,0.14), transparent 70%)',
+  'radial-gradient(110% 100% at 20% 100%, #6E1740 0%, #3E0A22 55%, #1E0610 100%)',
+].join(', ');
 
-export const hero = style({
+export const block = style({
   display: 'grid',
-  gap: space.lg,
-  maxWidth: 760,
-  padding: `${space.xxxl}px 0 ${space.xxl}px`,
-  '@media': { [media.wide]: { padding: `${space.giant}px 0 ${space.huge}px` } },
+  gap: space.xl,
+  marginTop: space.huge,
+  '@media': { [media.wide]: { marginTop: 88 } },
 });
 
-export const lede = style({ maxWidth: '38ch', fontSize: '1.125rem', lineHeight: 1.55 });
-
-export const actions = style({
+export const head = style({
   display: 'flex',
   flexWrap: 'wrap',
-  gap: space.md,
-  marginTop: space.sm,
+  alignItems: 'flex-end',
+  justifyContent: 'space-between',
+  gap: space.lg,
+});
+
+export const overline = style({
+  margin: `0 0 ${space.md}px`,
+  color: vars.color.accent,
+  fontSize: 12,
+  fontWeight: weight.bold,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+});
+
+/** Big type, tracked tight, as in the hero. */
+export const big = style({
+  margin: 0,
+  fontSize: 'clamp(40px, 5.4vw, 76px)',
+  fontWeight: weight.bold,
+  lineHeight: 0.92,
+  letterSpacing: '-0.045em',
+  textTransform: 'uppercase',
+});
+
+export const silk = style({
+  background: SILK,
+  backgroundClip: 'text',
+  WebkitBackgroundClip: 'text',
+  color: 'transparent',
+});
+
+const pillBase = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 10,
+  height: 48,
+  padding: '0 22px',
+  borderRadius: radius.pill,
+  fontSize: 13,
+  fontWeight: weight.bold,
+  letterSpacing: '0.05em',
+  textTransform: 'uppercase',
+  transition: `transform 180ms ${EASE_OUT}, background-color 180ms ${EASE_OUT}`,
+  selectors: {
+    '&:active': { transform: 'scale(0.97)' },
+    '&:hover': { transform: 'translateY(-1px)' },
+  },
+} as const;
+
+export const pill = style({
+  ...pillBase,
+  background: vars.color.text.primary,
+  color: vars.color.bg,
+});
+
+export const light = style({
+  ...pillBase,
+  justifySelf: 'start',
+  background: '#F8F1F4',
+  color: '#22060F',
 });
 
 export const sides = style({
   display: 'grid',
   gap: space.lg,
-  marginTop: space.xl,
-  '@media': { [media.wide]: { gridTemplateColumns: '1fr 1fr' } },
+  '@media': { [media.large]: { gridTemplateColumns: '1fr 1fr' } },
 });
 
-export const side = style({ display: 'grid', gap: space.lg, alignContent: 'start' });
+export const panel = style([
+  darkSurface,
+  {
+    display: 'grid',
+    alignContent: 'start',
+    gap: space.xl,
+    padding: space.xxl,
+    borderRadius: 28,
+    color: '#F8F1F4',
+    background: PLUM,
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
+    '@media': { [media.wide]: { padding: 36 } },
+  },
+]);
+
+export const panelKicker = style({
+  margin: 0,
+  color: '#F4B860',
+  fontSize: 12,
+  fontWeight: weight.bold,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+});
 
 export const points = style({
   display: 'grid',
-  gap: space.lg,
+  gap: space.xl,
   margin: 0,
   padding: 0,
   listStyle: 'none',
@@ -42,30 +123,57 @@ export const points = style({
 export const point = style({
   display: 'grid',
   gridTemplateColumns: 'auto 1fr',
-  gap: space.md,
+  gap: space.lg,
   alignItems: 'start',
 });
 
 export const icon = style({
   display: 'grid',
   placeItems: 'center',
-  width: 36,
-  height: 36,
-  borderRadius: radius.sm,
-  background: vars.color.accentSoft,
-  color: vars.color.accent,
+  width: 40,
+  height: 40,
+  borderRadius: '50%',
+  background: 'rgba(255,143,184,0.16)',
+  color: '#FF8FB8',
 });
 
-export const pointText = style({ display: 'grid', gap: 2 });
+export const pointText = style({ display: 'grid', gap: 4 });
+export const pointTitle = style({
+  fontSize: 17,
+  fontWeight: weight.bold,
+  letterSpacing: '-0.015em',
+});
+export const pointBody = style({ color: 'rgba(248,241,244,0.7)', fontSize: 14, lineHeight: 1.5 });
 
-export const join = style({
-  display: 'grid',
-  gap: space.xl,
-  marginTop: space.giant,
-  scrollMarginTop: HEADER_HEIGHT + space.xxl,
-  '@media': {
-    [twoColumns]: { gridTemplateColumns: '1fr 1.2fr', gap: space.huge, alignItems: 'start' },
+export const join = style([
+  darkSurface,
+  {
+    display: 'grid',
+    gap: space.xxl,
+    marginTop: space.huge,
+    padding: space.xxl,
+    borderRadius: 32,
+    color: '#F8F1F4',
+    background: PLUM,
+    scrollMarginTop: HEADER_HEIGHT + space.xxl,
+    '@media': {
+      [media.wide]: { marginTop: 88, padding: 48 },
+      [media.large]: { gridTemplateColumns: '1fr 1.1fr', gap: 56, alignItems: 'center' },
+    },
   },
-});
+]);
 
 export const joinText = style({ display: 'grid', gap: space.sm });
+export const joinBody = style({
+  maxWidth: '40ch',
+  margin: `${space.md}px 0 0`,
+  color: 'rgba(248,241,244,0.72)',
+});
+
+export const form = style({
+  padding: space.xl,
+  borderRadius: 24,
+  background: 'rgba(255,255,255,0.06)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderTopColor: 'rgba(255,255,255,0.2)',
+});

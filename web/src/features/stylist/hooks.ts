@@ -3,7 +3,12 @@ import { ApiError } from '@/shared/lib/api/client';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import {
   addMenuItem,
+  addTimeBlock,
   checkHandle,
+  closeDay,
+  getTimeBlocks,
+  removeTimeBlock,
+  skipTimeBlock,
   createProfile,
   getMenu,
   getMyProfile,
@@ -18,9 +23,17 @@ import {
   updateMenuItem,
   updateProfile,
   uploadProof,
+  joinPageWaitlist,
+  leavePageWaitlist,
 } from './api';
 import { handleProblem } from './handle';
-import type { MenuItemDraft, StylistFilters, StylistProfile, StylistProfileDraft } from './types';
+import type {
+  MenuItemDraft,
+  StylistFilters,
+  StylistPage,
+  StylistProfile,
+  StylistProfileDraft,
+} from './types';
 
 /**
  * Query keys. `['stylist', handle]` (lower case) is also what the server inlines her
@@ -168,6 +181,34 @@ export function useUpdateProfile(accountId: string) {
   });
 }
 
+export function useTimeBlocks(accountId: string) {
+  return useQuery({ queryKey: ['stylist', 'blocks', accountId], queryFn: getTimeBlocks });
+}
+
+function useBlockChange<A>(accountId: string, change: (args: A) => Promise<unknown>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: change,
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['stylist', 'blocks', accountId] });
+      client.invalidateQueries({ queryKey: ['slots'] });
+    },
+  });
+}
+
+export const useAddTimeBlock = (accountId: string) => useBlockChange(accountId, addTimeBlock);
+export const useRemoveTimeBlock = (accountId: string) => useBlockChange(accountId, removeTimeBlock);
+export const useSkipTimeBlock = (accountId: string) => useBlockChange(accountId, skipTimeBlock);
+
+/** Closes a day to new bookings, or opens it again. */
+export function useCloseDay(accountId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ date, closed }: { date: string; closed: boolean }) => closeDay(date, closed),
+    onSuccess: profile => client.setQueryData(stylistKeys.mine(accountId), profile),
+  });
+}
+
 export function useNumbers(accountId: string) {
   return useQuery({ queryKey: stylistKeys.numbers(accountId), queryFn: getNumbers });
 }
@@ -178,5 +219,30 @@ export function useSummary(accountId: string) {
     queryFn: getSummary,
     // Requests arrive while she's looking: check again every minute.
     refetchInterval: 60_000,
+  });
+}
+
+/**
+ * Joins or leaves a featured stylist's waitlist, showing the change at once. The
+ * answer sets the button; the page isn't read again, since every read of her page
+ * counts as a visit in her numbers.
+ */
+export function useTogglePageWaitlist(handle: string) {
+  const client = useQueryClient();
+  const key = stylistKeys.page(handle);
+  const set = (joined: boolean) =>
+    client.setQueryData<StylistPage>(key, old => (old ? { ...old, waitlistJoined: joined } : old));
+  return useMutation({
+    mutationFn: (join: boolean) => (join ? joinPageWaitlist(handle) : leavePageWaitlist(handle)),
+    onMutate: async (join: boolean) => {
+      await client.cancelQueries({ queryKey: key });
+      const previous = client.getQueryData<StylistPage>(key)?.waitlistJoined;
+      set(join);
+      return { previous };
+    },
+    onSuccess: answer => set(answer.joined),
+    onError: (_error, _join, context) => {
+      if (context) set(context.previous === true);
+    },
   });
 }

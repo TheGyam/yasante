@@ -357,3 +357,28 @@ def test_who_does_a_style_leaves_out_the_one_asking(api, make_stylist):
     me = make_stylist()
     found = api(me.account).get("/api/stylists/?style=knotless").json()
     assert me.handle not in [s["handle"] for s in found]
+
+
+def test_a_look_of_several_photos_shows_them_all_on_her_page(api, make_stylist, photo):
+    from apps.looks.models import Look, Style
+
+    Style.objects.get_or_create(slug="knotless", defaults={"name": "Knotless braids"})
+    profile = make_stylist()
+    profile.account.is_staff = True  # multi-photo looks are on for staff for now
+    profile.account.save()
+    me = api(profile.account)
+    uris = [photo(profile.account) for _ in range(3)]
+    look = me.post("/api/looks/", {"photoUris": uris, "styles": ["knotless"]}).json()
+    me.post("/api/stylists/me/portfolio/", {"photos": [{"uri": photo(profile.account), "lookId": look["id"]}]})
+    single = me.post("/api/stylists/me/portfolio/", {"photos": [{"uri": photo(profile.account)}]}).json()[0]
+
+    page = api().get(f"/api/stylists/by-handle/{profile.handle}/").json()
+    shown = {p["id"]: p for p in page["photos"]}
+    multi = next(p for p in page["photos"] if p.get("lookId") == look["id"])
+    assert len(multi["lookPhotos"]) == 3
+    assert "lookPhotos" not in shown[single["id"]]
+    # Her own portfolio says the same; a look taken down shows only its own photo.
+    assert len(next(p for p in me.get("/api/stylists/me/portfolio/").json() if p.get("lookId"))["lookPhotos"]) == 3
+    Look.objects.filter(pk=look["id"]).update(status="removed")
+    again = api().get(f"/api/stylists/by-handle/{profile.handle}/").json()
+    assert all("lookPhotos" not in p for p in again["photos"])

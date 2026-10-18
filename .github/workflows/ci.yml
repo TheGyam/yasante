@@ -55,22 +55,17 @@ jobs:
     defaults:
       run:
         working-directory: backend
-    services:
-      postgres:
-        # The official image, from AWS's mirror: Docker Hub rate-limits shared CI runners.
-        image: public.ecr.aws/docker/library/postgres:15
-        env:
-          POSTGRES_USER: yasante
-          POSTGRES_PASSWORD: yasante
-          POSTGRES_DB: yasante
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd "pg_isready -U yasante" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       SECRET_KEY: ci-only-not-a-secret
       DATABASE_URL: postgres://yasante:yasante@localhost:5432/yasante
     steps:
       - uses: actions/checkout@v5
+      # The runner comes with PostgreSQL installed, so nothing is downloaded: both Docker Hub
+      # and AWS's mirror rate-limit the image pulls of shared CI runners.
+      - name: Start PostgreSQL
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE USER yasante WITH PASSWORD 'yasante' SUPERUSER" -c "CREATE DATABASE yasante OWNER yasante"
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'

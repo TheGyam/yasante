@@ -55,6 +55,8 @@ class SignupSerializer(serializers.Serializer):
         return value
 
     def validate_email(self, value):
+        if value.lower().endswith("@yasante.invalid"):
+            raise serializers.ValidationError("Use your own email address")
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError(
                 "An account with this email already exists."

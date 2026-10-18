@@ -4,11 +4,12 @@ Stylist views: her page, menu, portfolio, free times, numbers and summary.
 
 import logging
 import uuid
-from datetime import timedelta
+from datetime import date, datetime, time, timedelta
 
-from apps.accounts.models import User
+from apps.accounts.serializers import UserResponseSerializer, UserSerializer
 from apps.bookings.models import Booking, Review
 from apps.common import zones
+from apps.common.identifiers import POLICY, UNAVAILABLE, identifier_problem, normalise
 from apps.common.blocks import blocked_account_ids, is_blocked
 from apps.common.models import log_search
 from apps.common.uploads import media_url, own_media
@@ -16,15 +17,19 @@ from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.throttling import ScopedRateThrottle
 
+from . import featured
+from .featured import open_if_ready, not_booking_message
 from .models import (
+    FeaturedPage,
+    PageWaitlist,
     held_checks,
     record_check,
-    NOT_HANDLES,
     MenuItem,
     PageView,
     PaymentMethod,
@@ -34,6 +39,14 @@ from .models import (
 from .numbers import numbers_for, timing_label_for
 from .pricing import clean_options
 from .serializers import (
+    ClaimPreviewSerializer,
+    FinishPriceSerializer,
+    FinishSerializer,
+    PageWaitlistSerializer,
+    ClosedDayRequestSerializer,
+    TimeBlockSkipRequestSerializer,
+    TimeBlockRequestSerializer,
+    TimeBlockSerializer,
     FreeSlotsSerializer,
     HandleCheckResponseSerializer,
     MenuImportRequestSerializer,
@@ -49,7 +62,7 @@ from .serializers import (
     StylistSearchResultSerializer,
     StylistSummarySerializer,
 )
-from .slots import compute_free_slots
+from .slots import DEFAULT_HOURS, free_times, job_minutes, last_day, today_for
 from .style_match import style_for_service
 
 logger = logging.getLogger(__name__)
@@ -85,6 +98,15 @@ def _payment_methods(raw):
     return kept
 
 
+def _dates(value):
+    if not isinstance(value, list):
+        return None
+    try:
+        return sorted({date.fromisoformat(str(d)).isoformat() for d in value})
+    except ValueError:
+        return None
+
+
 def _valid_availability(value):
     if not isinstance(value, dict):
         return False
@@ -96,12 +118,34 @@ def _valid_availability(value):
             continue
         if not isinstance(day, dict) or not day.get("start") or not day.get("end"):
             return False
-    return isinstance(value.get("blocked", []), list)
+    lead = value.get("lead_hours")
+    # One of the usual choices, or her own number of hours.
+    if lead is not None and not (type(lead) is int and 1 <= lead <= settings.BOOKING_NOTICE_MAX_HOURS):
+        return False
+    if value.get("ahead_days") not in (None, *settings.BOOKING_AHEAD_CHOICES):
+        return False
+    if value.get("gap_minutes") not in (None, *settings.BOOKING_GAP_CHOICES):
+        return False
+    return all(_dates(value.get(key, [])) is not None for key in ("blocked", "closed"))
 
 
-def _someones_username(handle, user):
-    """Handles and usernames are one namespace: another person's username is taken."""
-    return User.objects.filter(username=handle).exclude(pk=user.pk).exists()
+def _merged_availability(profile, value):
+    """
+    What she sent, over what's saved: a screen that doesn't know a setting (an older
+    app) leaves it as it was. Days gone by drop off her lists.
+    """
+    merged = {**(profile.availability or {}), **value}
+    today = today_for(profile).isoformat()
+    for key in ("blocked", "closed"):
+        merged[key] = [d for d in _dates(merged.get(key, [])) or [] if d >= today]
+    return merged
+
+
+def _taken(handle, user):
+    """Someone else's username or handle (one namespace), or a name still held."""
+    from apps.accounts.usernames import name_in_use
+
+    return name_in_use(handle, user if user.is_authenticated else None)
 
 
 @extend_schema_view(get=extend_schema(responses=HandleCheckResponseSerializer))
@@ -111,22 +155,21 @@ class HandleCheckView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        handle = request.query_params.get("handle", "").lower().strip()
+        handle = normalise(request.query_params.get("handle", ""))
         if not handle:
             return Response({"message": "Enter a handle to check."}, status=400)
 
+        current = None
+        if request.user.is_authenticated:
+            current = StylistProfile.objects.filter(account=request.user).values_list("handle", flat=True).first()
+        if identifier_problem(handle, max_length=POLICY["handle_max"], current=current):
+            return Response({"handle": handle, "available": False, "suggestions": []})
+
         # Her own handle isn't "taken": editing her page checks the one she already has.
-        others = StylistProfile.objects.all()
-        if request.user.is_authenticated:
-            others = others.exclude(account=request.user)
-
-        people = User.objects.exclude(username=None)
-        if request.user.is_authenticated:
-            people = people.exclude(pk=request.user.pk)
-
         def taken(h):
-            # A stylist's handle can't be someone's username either: one namespace.
-            return h in NOT_HANDLES or others.filter(handle=h).exists() or people.filter(username=h).exists()
+            return identifier_problem(h, max_length=POLICY["handle_max"], current=current) or (
+                h != current and _taken(h, request.user)
+            )
 
         if not taken(handle):
             return Response({"handle": handle, "available": True})
@@ -187,6 +230,7 @@ def _for_style(profiles, slug, name, viewer):
     them at once.
     """
     from apps.looks.models import Look
+    from apps.looks.views import public_looks
 
     ids = [p.pk for p in profiles]
     services = {}
@@ -195,7 +239,7 @@ def _for_style(profiles, slug, name, viewer):
     ).order_by("price"):
         services.setdefault(item.stylist_id, item)
     photos = {}
-    for look in Look.objects.filter(
+    for look in public_looks().filter(
         stylist_id__in=[str(p.account_id) for p in profiles], styles__slug=slug, status="live",
         visibility="public",
     ).order_by("-like_count", "-created_at").only("stylist_id", "thumb_uri", "photo_uri", "id"):
@@ -261,9 +305,10 @@ class StylistCreateView(APIView):
         if style:
             # Her work tagged with it, or a service on her menu named after it.
             from apps.looks.models import Look, Style
+            from apps.looks.views import public_looks
 
             name = Style.objects.filter(slug=style).values_list("name", flat=True).first() or style
-            tagged = Look.objects.filter(styles__slug=style, status="live").values_list(
+            tagged = public_looks().filter(styles__slug=style, status="live").values_list(
                 "stylist_id", flat=True
             )
             qs = qs.filter(
@@ -292,7 +337,7 @@ class StylistCreateView(APIView):
             qs = qs.exclude(account=viewer)
         # Near someone: where they asked about, or where their hair profile says.
         origin = _origin(params, viewer)
-        qs = list(qs.order_by("-verification_tier", "-rating_count", "display_name")[: 200 if origin else 20])
+        qs = list(qs.order_by("featured", "-verification_tier", "-rating_count", "display_name")[: 200 if origin else 20])
         away = {}
         if origin:
             from apps.common.geo import miles
@@ -319,6 +364,7 @@ class StylistCreateView(APIView):
         if style or origin:
             # Their work in this style first, then the nearest, then checked and well rated.
             qs.sort(key=lambda p: (
+                p.featured,
                 not extra.get(p.pk, {}).get("photo_of_style"),
                 round(away.get(p.pk, 0)),
                 -p.verification_tier,
@@ -352,8 +398,8 @@ class StylistCreateView(APIView):
         serializer = StylistProfileDraftSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        if _someones_username(data["handle"], request.user):
-            return Response({"message": "That handle is taken."}, status=409)
+        if _taken(data["handle"], request.user):
+            return Response({"message": UNAVAILABLE}, status=409)
         proof = data.get("proof_photo_uri", "")
         if proof and own_media(request.user, proof, public=False) is None:
             return Response({"message": "Upload the photo first"}, status=400)
@@ -454,20 +500,17 @@ class StylistMeView(APIView):
         if "availability" in data:
             if not _valid_availability(data["availability"]):
                 return Response({"message": "Those working hours don’t look right"}, status=400)
-            profile.availability = data["availability"]
+            profile.availability = _merged_availability(profile, data["availability"])
             update_fields.append("availability")
 
         if "handle" in data:
-            new_handle = str(data["handle"] or "").lower().strip()
+            new_handle = normalise(data["handle"])
             if new_handle != profile.handle:
-                if (
-                    new_handle in NOT_HANDLES
-                    or _someones_username(new_handle, request.user)
-                    or StylistProfile.objects.filter(handle=new_handle)
-                    .exclude(pk=profile.pk)
-                    .exists()
-                ):
-                    return Response({"message": "That handle is taken."}, status=409)
+                problem = identifier_problem(new_handle, max_length=POLICY["handle_max"])
+                if problem:
+                    return Response({"message": problem}, status=400)
+                if _taken(new_handle, request.user):
+                    return Response({"message": UNAVAILABLE}, status=409)
                 profile.handle = new_handle
                 update_fields.append("handle")
 
@@ -496,8 +539,14 @@ class StylistMeView(APIView):
                     PaymentMethod.objects.create(stylist=profile, **m)
             if update_fields:
                 profile.save(update_fields=update_fields + ["updated_at"])
+            open_if_ready(profile)
         if {"base_area", "address"} & set(update_fields):
             _place(profile)
+        if "availability" in update_fields:
+            # Booking further ahead opens days someone may be waiting for.
+            from apps.bookings.held import open_new_days
+
+            open_new_days([profile])
 
         profile.refresh_from_db()
         return Response(StylistProfileSerializer(profile).data)
@@ -514,8 +563,12 @@ class StylistPublishView(APIView):
         if profile is None:
             return Response(NO_PROFILE, status=404)
         profile.published = True
-        profile.save(update_fields=["published", "updated_at"])
+        with transaction.atomic():
+            profile.save(update_fields=["published", "updated_at"])
+            open_if_ready(profile)
         return Response(StylistProfileSerializer(profile).data)
+
+
 
 
 @extend_schema_view(get=extend_schema(responses=StylistPageResponseSerializer))
@@ -536,10 +589,10 @@ class StylistByHandleView(APIView):
 
         if not viewer or viewer.pk != profile.account_id:
             PageView.objects.create(stylist=profile, viewer=viewer)
-        return Response(stylist_page(profile))
+        return Response(stylist_page(profile, viewer))
 
 
-def stylist_page(profile):
+def stylist_page(profile, viewer=None):
     """
     Her public page as the API sends it. The website inlines the same thing into her
     page's HTML (apps/web/views.py), so it opens on her page rather than a spinner.
@@ -560,7 +613,10 @@ def stylist_page(profile):
         ).order_by("-created_at")[:10]
     ]
 
+    from .models import FeaturedPage
+
     data = StylistProfileSerializer(profile).data
+    data["claimable"] = FeaturedPage.objects.filter(profile=profile, claimed_at=None).exists()
     # Exactly what was checked, so a badge never means more than it says.
     data["checks"] = sorted(
         "work" if c == "proof_photo" else c for c in held_checks(profile.account_id)
@@ -573,6 +629,7 @@ def stylist_page(profile):
 
     return {
         "profile": data,
+        **({"waitlist_joined": profile.waitlist.filter(client=viewer).exists()} if viewer else {}),
         "menu": MenuItemSerializer(profile.menu_items.all(), many=True).data,
         "photos": PortfolioPhotoSerializer(profile.portfolio_photos.all(), many=True).data,
         "confirmed_styles": profile.confirmed_styles_count,
@@ -640,7 +697,9 @@ class MenuListCreateView(APIView):
         draft, error = _menu_draft(request.data)
         if error:
             return Response({"message": error}, status=400)
-        item = MenuItem.objects.create(stylist=profile, **draft)
+        with transaction.atomic():
+            item = MenuItem.objects.create(stylist=profile, **draft)
+            open_if_ready(profile)
         return Response(MenuItemSerializer(item).data, status=201)
 
 
@@ -695,6 +754,7 @@ class MenuImportView(APIView):
             drafts.append(draft)
         with transaction.atomic():
             created = [MenuItem.objects.create(stylist=profile, **d) for d in drafts]
+            open_if_ready(profile)
         return Response(MenuItemSerializer(created, many=True).data, status=201)
 
 
@@ -814,9 +874,31 @@ class PortfolioDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@extend_schema_view(get=extend_schema(responses=FreeSlotsSerializer))
+def _day_param(value):
+    try:
+        return date.fromisoformat(value) if value else None
+    except ValueError:
+        return None
+
+
+@extend_schema_view(
+    get=extend_schema(
+        parameters=[
+            OpenApiParameter("service", str, description="The menu item"),
+            OpenApiParameter("options", str, description="Its chosen option ids, comma separated"),
+            OpenApiParameter("from", str, description="First day wanted, yyyy-MM-dd (today if left out)"),
+            OpenApiParameter("to", str, description="Last day wanted, yyyy-MM-dd (four weeks on if left out)"),
+            OpenApiParameter("booking", str, description="Her appointment to move: its length, its own time left free"),
+        ],
+        responses=FreeSlotsSerializer,
+    )
+)
 class StylistSlotsView(APIView):
-    """GET /api/stylists/by-handle/:handle/slots/?service=&options= — her free times."""
+    """
+    GET /api/stylists/by-handle/:handle/slots/?service=&options=&from=&to= — her free
+    times on the days asked for, two months at most. With ?booking= instead of a
+    service, the times the client could move that appointment to.
+    """
 
     permission_classes = [permissions.AllowAny]
 
@@ -824,18 +906,241 @@ class StylistSlotsView(APIView):
         profile = StylistProfile.objects.filter(handle=handle.lower(), published=True).first()
         if profile is None:
             return Response({"message": "No page at that address"}, status=404)
-        service_id = request.query_params.get("service")
-        service = (
-            profile.menu_items.filter(pk=service_id).first()
-            if service_id and _is_uuid(service_id)
-            else None
+        if profile.featured:
+            return Response({"message": not_booking_message(profile)}, status=400)
+        viewer = request.user if request.user.is_authenticated else None
+        moving = request.query_params.get("booking")
+        if moving:
+            booking = (
+                Booking.objects.filter(pk=moving, stylist_profile=profile, client=viewer, status="confirmed").first()
+                if viewer and _is_uuid(moving)
+                else None
+            )
+            if booking is None:
+                return Response({"message": "That appointment isn’t yours to move"}, status=404)
+            minutes, exclude = booking.duration_minutes or 120, booking.pk
+        else:
+            service_id = request.query_params.get("service")
+            service = (
+                profile.menu_items.filter(pk=service_id).first()
+                if service_id and _is_uuid(service_id)
+                else None
+            )
+            if service is None:
+                return Response({"message": "Pick a service from the menu"}, status=400)
+            option_ids = [
+                o.strip() for o in request.query_params.get("options", "").split(",") if o.strip()
+            ]
+            minutes, exclude = job_minutes(service, option_ids), None
+        params = request.query_params
+        return Response(
+            free_times(
+                profile,
+                minutes,
+                first=_day_param(params.get("from")),
+                last=_day_param(params.get("to")),
+                viewer_id=viewer.pk if viewer else None,
+                exclude_id=exclude,
+            )
         )
-        if service is None:
-            return Response({"message": "Pick a service from the menu"}, status=400)
-        option_ids = [
-            o.strip() for o in request.query_params.get("options", "").split(",") if o.strip()
+
+
+def _present_block(block):
+    return {
+        "id": str(block.pk),
+        "start": block.start,
+        "end": block.end,
+        "note": block.note,
+        "repeats": list(block.repeats),
+        # Only the ones still to come: the past ones are nobody's business.
+        "skips": [d.isoformat() for d in block.skips if d >= today_for(block.stylist_profile)],
+    }
+
+
+def _when_parsed(value):
+    from apps.common.timeparse import parse_iso
+
+    try:
+        return parse_iso(value) if value else None
+    except (TypeError, ValueError):
+        return None
+
+
+@extend_schema_view(
+    get=extend_schema(responses=TimeBlockSerializer(many=True)),
+    post=extend_schema(request=TimeBlockRequestSerializer, responses={201: TimeBlockSerializer}),
+)
+class TimeBlockListView(APIView):
+    """
+    GET / POST /api/stylists/me/blocks/ — part of a day she's taken out of her diary
+    (a client booked elsewhere, a school run). Clients see it as booked.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.bookings.models import TimeBlock
+
+        profile = _my_profile(request)
+        if profile is None:
+            return Response(NO_PROFILE, status=404)
+        blocks = TimeBlock.objects.filter(stylist_profile=profile).filter(
+            Q(end__gt=timezone.now()) | ~Q(repeats=[])
+        )
+        return Response([_present_block(b) for b in blocks])
+
+    def post(self, request):
+        from apps.bookings.held import diary_lock, held_ranges
+        from apps.bookings.models import TimeBlock
+
+        profile = _my_profile(request)
+        if profile is None:
+            return Response(NO_PROFILE, status=404)
+        start, end = _when_parsed(request.data.get("start")), _when_parsed(request.data.get("end"))
+        if start is None or end is None or end <= start:
+            return Response({"message": "Pick when it starts and when it ends"}, status=400)
+        repeats = request.data.get("repeats") or []
+        if not isinstance(repeats, list) or any(type(d) is not int or not 0 <= d <= 6 for d in repeats):
+            return Response({"message": "Say which days it repeats on"}, status=400)
+        repeats = sorted(set(repeats))
+        if end <= timezone.now() and not repeats:
+            return Response({"message": "That time has been and gone"}, status=400)
+        if end - start > timedelta(hours=24):
+            return Response({"message": "For whole days, add them as days away instead"}, status=400)
+        block = TimeBlock(stylist_profile=profile, start=start, end=end, repeats=repeats)
+        times = block.occurrences(zones.of(profile), today_for(profile), last_day(profile))
+        with diary_lock(profile.pk):
+            # Never over someone's appointment, or a time someone's waiting to hear about,
+            # on any day it comes round.
+            held = held_ranges(profile, blocks=False)
+            clash = next(
+                ((held_from, booking) for t_from, t_to in times for held_from, held_to, booking in held
+                 if t_from < held_to and t_to > held_from),
+                None,
+            )
+            if clash:
+                held_from, booking = clash
+                first = (booking.client_name or "A client").split(" ")[0]
+                at = held_from.astimezone(zones.of(profile))
+                asked = booking.status == "requested"
+                return Response(
+                    {
+                        "message": f"That covers {first}’s {'request' if asked else 'appointment'} "
+                        f"at {at:%H:%M} on {at:%a} {at.day} {at:%b}. "
+                        f"{'Answer it' if asked else 'Move or cancel it'} first."
+                    },
+                    status=409,
+                )
+            block.note = str(request.data.get("note") or "").strip()[:100]
+            block.save()
+        return Response(_present_block(block), status=201)
+
+
+@extend_schema_view(post=extend_schema(request=TimeBlockSkipRequestSerializer, responses=TimeBlockSerializer))
+class TimeBlockSkipView(APIView):
+    """
+    POST /api/stylists/me/blocks/:id/skip/ {date, skip} — one day a repeating block
+    doesn't come round (working through lunch next Tuesday), or does again.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        from apps.bookings.held import diary_lock, held_ranges, open_day
+        from apps.bookings.models import TimeBlock
+
+        profile = _my_profile(request)
+        block = TimeBlock.objects.filter(pk=pk, stylist_profile=profile).first() if profile else None
+        if block is None:
+            return Response({"message": "That block is gone"}, status=404)
+        day = _day_param(str(request.data.get("date") or ""))
+        zone = zones.of(profile)
+        weekday = (day.weekday() + 1) % 7 if day else None
+        if day is None or weekday not in block.repeats or day < block.start.astimezone(zone).date():
+            return Response({"message": "It doesn’t come round that day"}, status=400)
+        if day < today_for(profile):
+            return Response({"message": "That day has been and gone"}, status=400)
+        skip = request.data.get("skip", True) is not False
+        with diary_lock(profile.pk):
+            block = TimeBlock.objects.get(pk=block.pk)
+            if skip:
+                block.skips = sorted({*block.skips, day})
+            else:
+                # Back on, as long as nothing's been booked into the time meanwhile.
+                block.skips = [d for d in block.skips if d != day]
+                times = block.occurrences(zone, day, day)
+                if any(
+                    s < held_to and e > held_from
+                    for s, e in times
+                    for held_from, held_to, _ in held_ranges(profile, blocks=False)
+                ):
+                    return Response({"message": "That time has been booked since"}, status=409)
+            # Old skips go, so the list never grows.
+            block.skips = [d for d in block.skips if d >= today_for(profile)]
+            block.save(update_fields=["skips"])
+        if skip:
+            # Anyone waiting on that day hears it has room again.
+            open_day(profile, datetime.combine(day, time(12), tzinfo=zone))
+        return Response(_present_block(block))
+
+
+@extend_schema_view(delete=extend_schema(responses={204: None}))
+class TimeBlockDetailView(APIView):
+    """DELETE /api/stylists/me/blocks/:id/ — the time is hers to book again."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk):
+        from apps.bookings.held import open_day
+        from apps.bookings.models import TimeBlock
+
+        profile = _my_profile(request)
+        block = TimeBlock.objects.filter(pk=pk, stylist_profile=profile).first() if profile else None
+        if block is None:
+            return Response({"message": "Already gone"}, status=404)
+        upcoming = [
+            start
+            for start, end in block.occurrences(zones.of(profile), today_for(profile), last_day(profile))
+            if end > timezone.now()
         ]
-        return Response(compute_free_slots(profile, service, option_ids))
+        block.delete()
+        if upcoming:
+            # Anyone waiting on the next day it took hears that day has room again.
+            open_day(profile, max(upcoming[0], timezone.now()))
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(post=extend_schema(request=ClosedDayRequestSerializer, responses=StylistProfileSerializer))
+class ClosedDayView(APIView):
+    """
+    POST /api/stylists/me/closed-days/ {date, closed} — she has enough clients that day:
+    no new requests for it. Appointments already on it stay as they are. `closed: false`
+    opens it again.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        profile = _my_profile(request)
+        if profile is None:
+            return Response(NO_PROFILE, status=404)
+        day = _day_param(str(request.data.get("date") or ""))
+        if day is None:
+            return Response({"message": "Pick a day"}, status=400)
+        if day < today_for(profile):
+            return Response({"message": "That day has been and gone"}, status=400)
+        closed = request.data.get("closed", True) is not False
+        with transaction.atomic():
+            profile = StylistProfile.objects.select_for_update().get(pk=profile.pk)
+            availability = dict(profile.availability or {})
+            if not isinstance(availability.get("week"), list):
+                # Hours she never set are 9 to 6 every day; written down, so she sees them.
+                availability["week"] = [dict(DEFAULT_HOURS)] * 7
+            days = set(availability.get("closed") or [])
+            (days.add if closed else days.discard)(day.isoformat())
+            profile.availability = _merged_availability(profile, {**availability, "closed": sorted(days)})
+            profile.save(update_fields=["availability", "updated_at"])
+        return Response(StylistProfileSerializer(profile).data)
 
 
 @extend_schema_view(get=extend_schema(responses=NumbersSerializer))
@@ -875,3 +1180,140 @@ class StylistSummaryView(APIView):
                 ).count(),
             }
         )
+
+
+
+
+@extend_schema_view(put=extend_schema(request=None, responses=PageWaitlistSerializer),
+                    delete=extend_schema(responses=PageWaitlistSerializer))
+class PageWaitlistView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "waitlist"
+
+    @transaction.atomic
+    def _change(self, request, handle, joined):
+        profile = StylistProfile.objects.select_related("account").filter(handle__iexact=handle, published=True).first()
+        if profile is None:
+            return Response({"message": "No page at that address"}, status=404)
+        if profile.account_id == request.user.pk:
+            return Response({"message": "This is your page"}, status=400)
+        if not FeaturedPage.objects.filter(profile=profile).exists() or featured.takes_bookings(profile):
+            return Response({"message": f"{profile.display_name} already takes bookings. Book now."}, status=400)
+        if joined:
+            PageWaitlist.objects.get_or_create(stylist=profile, client=request.user)
+        else:
+            PageWaitlist.objects.filter(stylist=profile, client=request.user).delete()
+        return Response({"joined": joined})
+
+    def put(self, request, handle):
+        return self._change(request, handle, True)
+
+    def delete(self, request, handle):
+        return self._change(request, handle, False)
+
+
+@extend_schema_view(get=extend_schema(responses={200: ClaimPreviewSerializer}),
+                    post=extend_schema(request=None, responses=UserResponseSerializer))
+class FeaturedClaimView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "claim"
+
+    def get_permissions(self):
+        return [permissions.AllowAny()] if self.request.method == "GET" else [permissions.IsAuthenticated()]
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        response["Referrer-Policy"] = "no-referrer"
+        response["Cache-Control"] = "no-store"
+        return response
+
+    def get(self, request, code):
+        from apps.looks.models import Look
+
+        page = featured.page_for_code(code)
+        if page is None:
+            return Response({"message": featured.LINK_GONE}, status=410)
+        profile = page.profile
+        looks = Look.objects.filter(author_id=profile.account_id)
+        return Response({
+            "display_name": profile.display_name, "handle": profile.handle, "avatar_uri": profile.avatar_uri,
+            "look_count": looks.count(), "live": profile.published, "waiting": profile.waitlist.count(),
+            "photos": [{"uri": row["photo_uri"], "thumb_uri": row["thumb_uri"]}
+                       for row in looks.order_by("-created_at").values("photo_uri", "thumb_uri")[:6]],
+        })
+
+    def post(self, request, code):
+        page = featured.page_for_code(code)
+        if page is None:
+            return Response({"message": featured.LINK_GONE}, status=410)
+        try:
+            user = featured.claim(page, request.user)
+        except ValueError as error:
+            return Response({"message": str(error)}, status=410 if str(error) == featured.LINK_GONE else 409)
+        return Response(UserSerializer(user).data)
+
+
+def _claimed_profile(request):
+    return StylistProfile.objects.select_related("account", "featured_page").filter(
+        account=request.user, featured_page__claimed_at__isnull=False,
+    ).first()
+
+
+@extend_schema_view(get=extend_schema(responses=FinishSerializer))
+class FinishView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        profile = _claimed_profile(request)
+        return Response(featured.finish_state(profile)) if profile else Response(NO_PROFILE, status=404)
+
+
+@extend_schema_view(post=extend_schema(request=FinishPriceSerializer, responses=FinishSerializer))
+class FinishPriceView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        from apps.looks.models import Look, Style
+
+        profile = _claimed_profile(request)
+        if profile is None:
+            return Response(NO_PROFILE, status=404)
+        # Serialize prices for overlapping styles so one look is linked to one service.
+        profile = StylistProfile.objects.select_for_update().get(pk=profile.pk)
+        serializer = FinishPriceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        style = Style.objects.filter(slug=data["style"], looks__author_id=profile.account_id,
+                                     looks__created_at__lt=profile.featured_page.claimed_at).first()
+        if style is None:
+            return Response({"message": "Pick a style from your photos"}, status=400)
+        draft, error = _menu_draft({**data, "name": style.name})
+        if error:
+            return Response({"message": error}, status=400)
+        looks = Look.objects.filter(author_id=profile.account_id, styles=style, service_id="",
+                                    pk__in=profile.portfolio_photos.filter(service=None).values("look_id"))
+        if not looks.exists():
+            return Response(featured.finish_state(profile))
+        service = MenuItem.objects.create(stylist=profile, styles=[style.slug], **draft)
+        ids = list(looks.values_list("pk", flat=True))
+        PortfolioPhoto.objects.filter(stylist=profile, look_id__in=ids, service=None).update(service=service)
+        Look.objects.filter(pk__in=ids).update(service_id=str(service.pk), service_name=service.name,
+                                             price=service.price, from_price=service.from_price)
+        featured.open_if_ready(profile)
+        return Response(featured.finish_state(profile))
+
+
+@extend_schema_view(post=extend_schema(request=None, responses=FinishSerializer))
+class FinishTagsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        profile = _claimed_profile(request)
+        if profile is None:
+            return Response(NO_PROFILE, status=404)
+        FeaturedPage.objects.filter(profile=profile).update(tags_checked_at=timezone.now())
+        profile.featured_page.refresh_from_db()
+        return Response(featured.finish_state(profile))

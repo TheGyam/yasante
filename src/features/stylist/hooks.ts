@@ -150,6 +150,42 @@ export function useUpdateStylistProfile() {
   });
 }
 
+/** Closes a day to new bookings, or opens it again. */
+export function useCloseDay() {
+  const save = useSaveProfile();
+  return useMutation({
+    mutationFn: ({ date, closed }: { date: string; closed: boolean }) =>
+      stylistApi.closeDay(date, closed),
+    onSuccess: save,
+  });
+}
+
+/** Time she's blocked out of her diary, still to come. */
+export function useTimeBlocks() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: [KEY, 'blocks', user?.id],
+    queryFn: stylistApi.blocks,
+    enabled: !!user?.roles?.includes('stylist'),
+  });
+}
+
+function useBlockChange<A>(change: (args: A) => Promise<unknown>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: change,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [KEY, 'blocks'] });
+      // What clients can pick has changed.
+      queryClient.invalidateQueries({ queryKey: ['slots'] });
+    },
+  });
+}
+
+export const useAddTimeBlock = () => useBlockChange(stylistApi.addBlock);
+export const useRemoveTimeBlock = () => useBlockChange(stylistApi.removeBlock);
+export const useSkipTimeBlock = () => useBlockChange(stylistApi.skipBlock);
+
 /** Puts the page live. The server refuses until the phone is verified. */
 export function usePublishPage() {
   const save = useSaveProfile();

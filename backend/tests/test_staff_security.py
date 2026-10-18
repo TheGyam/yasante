@@ -68,14 +68,17 @@ def test_enrollment_gating_recovery_replay_and_audit(make_user):
     secret = enrollment["secret"].replace(" ", "")
     assert factor.secret != secret and factor.get_secret() == secret
     assert "issuer=Yasante" in enrollment["uri"]
-    result = client.post("/data/two-factor/", {"code":code(secret,int(time.time())//30)}).json()
+    first_code = code(secret, int(time.time()) // 30)
+    result = client.post("/data/two-factor/", {"code":first_code}).json()
     assert len(result["recoveryCodes"]) == 10
     assert client.get("/data/overview/").status_code == 200
     assert client.session.get_expiry_age() == 28800
     client.post("/data/session/", {"intent":"logout"})
     client.post("/data/session/", {"username":user.email,"password":"password123"})
     assert client.get("/data/session/").json()["phase"] == "verify"
-    assert client.post("/data/two-factor/", {"code":code(secret,int(time.time())//30)}).status_code == 403
+    # The same code again is a replay. Computing a fresh one here would fail whenever
+    # the test crosses a 30-second boundary, because that code is new and valid.
+    assert client.post("/data/two-factor/", {"code":first_code}).status_code == 403
     recovery = result["recoveryCodes"][0]
     assert client.post("/data/two-factor/", {"code":recovery}).status_code == 200
     factor.refresh_from_db()

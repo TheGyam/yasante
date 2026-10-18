@@ -32,7 +32,10 @@ def test_a_request_is_priced_by_the_server_and_hides_the_address(api, setup, boo
     assert booking["area"] == "Peckham"
     assert booking["policy"]["noticeHours"] == 48
     lapses = timezone.datetime.fromisoformat(booking["expiresAt"].replace("Z", "+00:00"))
-    assert timedelta(hours=47) < lapses - timezone.now() <= timedelta(hours=48)
+    start = timezone.datetime.fromisoformat(booking["requestedTimes"][0].replace("Z", "+00:00"))
+    # 48 hours to answer, but never later than 2 hours before the time asked for.
+    assert lapses == min(lapses, start - timedelta(hours=2))
+    assert lapses - timezone.now() <= timedelta(hours=48)
 
 
 def test_options_price_it_and_every_group_must_be_chosen(api, setup, book, slot):
@@ -99,7 +102,7 @@ def test_days_off_and_times_outside_working_hours_are_refused(api, setup):
     assert off.status_code == 400 and "doesn’t work" in off.json()["message"]
     monday_late = (sunday + timedelta(days=1)).replace(hour=17)
     late = api(client).post("/api/bookings/", {**body, "requestedTimes": [_iso(monday_late)]})
-    assert late.status_code == 400 and "outside the stylist’s hours" in late.json()["message"]
+    assert late.status_code == 400 and f"outside {profile.display_name}’s hours" in late.json()["message"]
 
 
 def test_the_same_time_can_only_be_asked_for_once(api, setup, make_user, book, slot):
@@ -186,7 +189,11 @@ def test_she_can_suggest_another_time_and_the_client_answers(api, setup, book, m
     assert taken["status"] == "confirmed" and "proposal" not in taken
 
     second = book(client, profile)
-    api(profile.account).post(f"/api/bookings/{second['id']}/propose/", {"scheduledFor": later})
+    # Never a time that's already booked.
+    taken_time = api(profile.account).post(f"/api/bookings/{second['id']}/propose/", {"scheduledFor": later})
+    assert taken_time.status_code == 409 and "already booked" in taken_time.json()["message"]
+    other = _iso(timezone.now() + timedelta(days=11))
+    api(profile.account).post(f"/api/bookings/{second['id']}/propose/", {"scheduledFor": other})
     no = api(client).post(f"/api/bookings/{second['id']}/proposal/", {"accept": False}).json()
     assert no["status"] == "declined"
 
@@ -463,3 +470,55 @@ def test_a_confirmed_booking_has_a_calendar_file(api, setup, book):
     assert response.status_code == 200 and response["Content-Type"].startswith("text/calendar")
     assert "BEGIN:VEVENT" in body and "DTSTART:" in body and profile.display_name in body
     assert api().client.get("/api/bookings/calendar/forged.ics").status_code == 404
+
+
+def test_her_notice_hides_times_too_soon_and_the_server_holds_to_it(api, setup, make_user):
+    from apps.stylists.models import StylistProfile
+
+    profile, client = setup
+    knotless = profile.menu_items.get(name="Knotless braids")
+    url = f"/api/stylists/by-handle/{profile.handle}/slots/"
+
+    def first_free(hours_notice=None):
+        if hours_notice:
+            StylistProfile.objects.filter(pk=profile.pk).update(
+                availability={**profile.availability, "lead_hours": hours_notice}
+            )
+        days = api().get(url, service=str(knotless.pk)).json()["days"]
+        return timezone.datetime.fromisoformat(days[0]["times"][0].replace("Z", "+00:00"))
+
+    # A day's notice unless she says otherwise; three days when she asks for that.
+    assert first_free() >= timezone.now() + timedelta(hours=24)
+    assert first_free(72) >= timezone.now() + timedelta(hours=72)
+
+    # A time inside her notice is refused, whatever an old page offered.
+    soon = (timezone.now() + timedelta(hours=30)).replace(minute=0, second=0, microsecond=0)
+    body = {
+        "stylistId": str(profile.account_id),
+        "serviceId": str(knotless.pk),
+        "bringingOwnHair": False,
+        "requestedTimes": [soon.isoformat()],
+        "policyVersion": "2026-09",
+    }
+    refused = api(client).post("/api/bookings/", body)
+    assert refused.status_code == 400 and "3 days’ notice" in refused.json()["message"]
+    # One of the usual choices or her own number of hours, from an hour to 30 days.
+    me = api(profile.account)
+    for wrong in (0, -3, 721, "12", True, 1.5):
+        assert me.patch("/api/stylists/me/", {"availability": {**profile.availability, "leadHours": wrong}}).status_code == 400
+    assert me.patch("/api/stylists/me/", {"availability": {**profile.availability, "leadHours": 36}}).status_code == 200
+    assert me.get("/api/stylists/me/").json()["availability"]["leadHours"] == 36
+    refused = api(client).post("/api/bookings/", body)
+    assert "36 hours’ notice" in refused.json()["message"]
+
+
+def test_a_time_already_gone_cant_be_accepted_or_suggested(api, setup, book):
+    from apps.bookings.models import Booking
+
+    profile, client = setup
+    booking = book(client, profile)
+    past = (timezone.now() - timedelta(hours=1)).isoformat()
+    Booking.objects.filter(pk=booking["id"]).update(requested_times=[timezone.now() - timedelta(hours=1)])
+    stylist = api(profile.account)
+    assert stylist.post(f"/api/bookings/{booking['id']}/accept/", {"scheduledFor": past}).status_code == 400
+    assert stylist.post(f"/api/bookings/{booking['id']}/propose/", {"scheduledFor": past}).status_code == 400

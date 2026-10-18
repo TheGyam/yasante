@@ -6,6 +6,7 @@ import logging
 
 from apps.common.timeparse import local_parts
 from apps.looks.models import Look
+from apps.looks.views import public_looks
 from django.db import transaction
 from django.db.models import Count, Prefetch
 from django.utils import timezone
@@ -202,7 +203,7 @@ class CollectionItemsView(APIView):
             from apps.common.blocks import is_blocked
 
             try:
-                look = Look.objects.select_related("author").filter(pk=ref_id).first()
+                look = public_looks().select_related("author").filter(pk=ref_id).first()
             except Exception:
                 look = None
             hidden = look is not None and (

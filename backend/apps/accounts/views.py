@@ -115,8 +115,12 @@ class SocialLoginView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        if (who.get("email") or "").lower().endswith("@yasante.invalid"):
+            return Response({"message": "Use your own email address"}, status=400)
         field = f"{provider}_id"
         user = User.objects.filter(**{field: who["sub"]}).first()
+        if user is not None and user.email.lower().endswith("@yasante.invalid"):
+            return Response({"message": "Use your own email address"}, status=400)
         if user is None and who["email"] and who["email_verified"]:
             user = User.objects.filter(email__iexact=who["email"]).first()
             if user is not None and not getattr(user, field):
@@ -242,6 +246,8 @@ class ForgotPasswordView(APIView):
         serializer = ForgotPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"].lower()
+        if email.endswith("@yasante.invalid"):
+            return Response({"message": "If that email is registered, you'll receive a reset link."})
 
         try:
             user = User.objects.get(email__iexact=email)
@@ -362,6 +368,8 @@ class EmailStartView(APIView):
         serializer.is_valid(raise_exception=True)
         user = request.user
         email = (serializer.validated_data.get("email") or user.email).strip().lower()
+        if email.endswith("@yasante.invalid") or user.email.lower().endswith("@yasante.invalid"):
+            return Response({"message": "Use your own email address"}, status=400)
         changed = email != user.email.lower()
 
         if email != user.email.lower():

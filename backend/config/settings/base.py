@@ -64,6 +64,7 @@ LOCAL_APPS = [
     "apps.shelf",
     "apps.content",
     "apps.web",
+    "apps.features",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -214,6 +215,7 @@ REST_FRAMEWORK = {
         "booking": "20/day",
         "reporting": "10/hour",
         "waitlist": "10/hour",
+        "claim": "10/min",
         "client_error": "30/hour",
         "default": "100/min",
     },
@@ -398,12 +400,32 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Stylists set their hours as local wall-clock times ("09:00") in this zone.
 STYLIST_TIME_ZONE = "Europe/London"
 
+# A username or handle someone gives up is held this long before anyone else can take it.
+NAME_HOLD_DAYS = 14
+
 # Booking timing
 BOOKING_REQUEST_LAPSE_HOURS = 48
 BOOKING_DEPOSIT_LAPSE_HOURS = 24
 BOOKING_AUTO_COMPLETE_HOURS = 24
+# What an older app sees when it asks for free times without saying which days.
 BOOKING_SLOT_LOOKAHEAD_DAYS = 28
-BOOKING_SLOT_MIN_LEAD_HOURS = 3
+# The most days one call for free times covers: two months side by side.
+BOOKING_SLOT_WINDOW_MAX_DAYS = 62
+# The notice a stylist needs before an appointment: one of these, or her own number of
+# hours up to the most, a day unless she says otherwise.
+BOOKING_NOTICE_CHOICES = (3, 12, 24, 48, 72)
+BOOKING_NOTICE_DEFAULT_HOURS = 24
+BOOKING_NOTICE_MAX_HOURS = 30 * 24
+# Requests and deposits lapse this long before the start.
+BOOKING_ANSWER_BEFORE_START_HOURS = 2
+# How far ahead clients can book her, in days (4, 8 or 12 weeks, or 6 months).
+BOOKING_AHEAD_CHOICES = (28, 56, 84, 182)
+BOOKING_AHEAD_DEFAULT_DAYS = 84
+# A gap she keeps between clients: to tidy up, or to travel to the next one.
+BOOKING_GAP_CHOICES = (0, 15, 30, 45, 60)
+# Unanswered requests one client can have with one stylist at a time, so nobody can
+# hold her diary with asks they won't keep.
+BOOKING_OPEN_REQUESTS_PER_STYLIST = 2
 
 # Phone verification
 VERIFICATION_CODE_LENGTH = 6

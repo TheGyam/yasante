@@ -50,6 +50,8 @@ const slots = {
   minutes: 420,
   timeZone: 'Europe/London',
   days: [{ date: '2026-11-03', times: ['2026-11-03T10:00:00Z', '2026-11-03T14:00:00Z'] }],
+  soonest: '2026-11-03T10:00:00Z',
+  lastDate: '2027-01-02',
 };
 
 const booking = {
@@ -85,6 +87,8 @@ beforeEach(() => {
 async function fillIn() {
   await userEvent.click(await screen.findByRole('radio', { name: /Knotless braids/ }));
   await userEvent.click(screen.getByRole('button', { name: 'Waist · +£40' }));
+  // Her soonest opens its day; another time that day is one tap more.
+  await userEvent.click(await screen.findByRole('button', { name: /Soonest/ }));
   await userEvent.click(await screen.findByRole('button', { name: '14:00' }));
   await userEvent.click(screen.getByRole('checkbox'));
 }
@@ -164,5 +168,16 @@ describe('booking on the website', () => {
     const { router } = renderSite('/bookings');
     await waitFor(() => expect(router.state.location.pathname).toBe('/auth/login'));
     expect(router.state.location.search).toBe('?next=%2Fbookings');
+  });
+
+  it('lets her sign out, from the header or her bookings', async () => {
+    startSession({ user: client, accessToken: 'a', refreshToken: 'r', expiresAt: 0 });
+    const calls = mockApi({ 'GET /api/bookings/': [], 'POST /api/auth/logout/': { status: 204 } });
+    const { router } = renderSite('/bookings');
+    expect(await screen.findByText(/Signed in as efua@example.com/)).toBeInTheDocument();
+    await userEvent.click(screen.getAllByRole('button', { name: 'Sign out' })[0]);
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    expect(calls.some(c => c.url.endsWith('/api/auth/logout/'))).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
   });
 });

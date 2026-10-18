@@ -349,3 +349,41 @@ it('signs in and signs out inside React and clears private content', async () =>
   expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument();
   expect(screen.queryByRole('navigation', { name: 'Workspace' })).not.toBeInTheDocument();
 });
+
+it('shows every photo of a reported look at once', async () => {
+  mockStaff({
+    '/data/overview/': {
+      ...overview,
+      queues: [
+        { key: 'reports', model: 'moderation.report', label: 'Reports', hint: '', count: 1, url: '/review/reports' },
+      ],
+    },
+    '/data/review/reports/': {
+      name: 'Reports',
+      key: 'reports',
+      items: [
+        {
+          id: 'report-1',
+          title: 'Reported look',
+          at: '2026-10-01T00:00:00Z',
+          facts: [],
+          text: '',
+          images: [
+            'https://x/1.jpg',
+            'https://x/2.jpg',
+            'https://x/3.jpg',
+            'https://x/4.jpg',
+            'https://x/5.jpg',
+          ],
+          url: '/records/looks/look-1',
+        },
+      ],
+      next: null,
+      actions: [{ key: 'dismiss', label: 'Dismiss', shortcut: 'd', reversible: true }],
+    },
+  });
+  renderStaff('/review/reports');
+  const heading = await screen.findByRole('heading', { name: 'Reported look' });
+  const article = heading.closest('article')!;
+  expect(article.querySelectorAll('img')).toHaveLength(5);
+});

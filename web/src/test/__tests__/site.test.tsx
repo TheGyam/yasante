@@ -36,6 +36,26 @@ const page = {
 };
 
 describe('the site', () => {
+  it('opens the branded bio page with its three destinations without fetching data', () => {
+    const calls = mockApi({});
+    renderSite('/links');
+    expect(screen.getByRole('heading', { name: 'yasante' })).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(3);
+    expect(screen.getByRole('link', { name: /Visit our website/ })).toHaveAttribute(
+      'href',
+      'https://yasante.com'
+    );
+    expect(screen.getByRole('link', { name: /Instagram/ })).toHaveAttribute(
+      'href',
+      'https://www.instagram.com/yasantebeauty/'
+    );
+    expect(screen.getByRole('link', { name: /TikTok/ })).toHaveAttribute(
+      'href',
+      'https://www.tiktok.com/@yasante_beauty'
+    );
+    expect(calls).toEqual([]);
+  });
+
   it('opens her page on the data the server sent with it, without asking again', () => {
     const calls = mockApi({});
     document.body.insertAdjacentHTML(
@@ -71,9 +91,9 @@ describe('the site', () => {
       '/api/looks/': { data: [] },
     });
     renderSite('/areas/peckham');
-    expect(await screen.findByRole('heading', { name: 'Braiders in Peckham' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Stylists in Peckham' })).toBeInTheDocument();
     renderSite('/areas/brixton');
-    expect(await screen.findByRole('heading', { name: 'Braiders in Brixton' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Stylists in Brixton' })).toBeInTheDocument();
 
     mockApi({ '/api/looks/areas/': ['Peckham'], '/api/stylists/': [] });
     renderSite('/areas/free-braids-call-0800-000-000');
@@ -117,5 +137,61 @@ describe('the site', () => {
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent('Email doesn’t look right.')
     );
+  });
+
+  const baseLook = {
+    id: 'look-1',
+    authorId: 'author-1',
+    authorName: 'Ama',
+    photoUri: 'https://x/1.jpg',
+    feedUri: 'https://x/1-feed.jpg',
+    photoAspect: 0.8,
+    styles: [],
+    products: [],
+    visibility: 'public',
+    likeCount: 0,
+    liked: false,
+    commentCount: 0,
+    saveCount: 0,
+    saved: false,
+    createdAt: '2026-01-01T00:00:00Z',
+    mine: false,
+    photos: [],
+  };
+
+  it('swipes through a look with several photos, with arrows and a counter', async () => {
+    mockApi({
+      '/api/looks/look-3/': {
+        ...baseLook,
+        id: 'look-3',
+        photos: [
+          { uri: 'https://x/1.jpg', feedUri: 'https://x/1-feed.jpg', aspect: 0.8 },
+          { uri: 'https://x/2.jpg', feedUri: 'https://x/2-feed.jpg', aspect: 0.8 },
+          { uri: 'https://x/3.jpg', feedUri: 'https://x/3-feed.jpg', aspect: 0.8 },
+        ],
+      },
+    });
+    renderSite('/looks/look-3');
+    expect(await screen.findByText('1 / 3')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Photos' })).toBeInTheDocument();
+    expect(screen.getAllByRole('img')).toHaveLength(3);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next photo' }));
+    expect(screen.getByText('2 / 3')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Previous photo' }));
+    expect(screen.getByText('1 / 3')).toBeInTheDocument();
+  });
+
+  it('shows a one-photo look with no buttons or dots', async () => {
+    mockApi({
+      '/api/looks/look-1/': {
+        ...baseLook,
+        photos: [{ uri: baseLook.photoUri, feedUri: baseLook.feedUri, aspect: 0.8 }],
+      },
+    });
+    renderSite('/looks/look-1');
+    await screen.findByRole('img');
+    expect(screen.queryByRole('region', { name: 'Photos' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next photo' })).not.toBeInTheDocument();
   });
 });

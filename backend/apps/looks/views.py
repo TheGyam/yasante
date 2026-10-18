@@ -17,6 +17,7 @@ from apps.common.people import person
 from apps.common.permissions import IsAuthenticatedOrReadOnly
 from apps.common.throttling import CommentThrottle, PostingThrottle, ReportThrottle
 from apps.common.uploads import media_url, own_media
+from apps.features.switches import is_on
 from apps.shelf.models import Product
 from apps.stylists.models import StylistProfile
 from django.contrib.contenttypes.models import ContentType
@@ -29,6 +30,7 @@ from django.db.models import (
     F,
     FloatField,
     OuterRef,
+    Prefetch,
     Q,
     Value,
     When,
@@ -47,6 +49,7 @@ from .models import (
     Look,
     LookComment,
     LookLike,
+    LookPhoto,
     ModerationAction,
     Report,
     Style,
@@ -84,15 +87,25 @@ def _viewer(request):
     return request.user if request.user.is_authenticated else None
 
 
+def public_looks(queryset=None):
+    """Keep work on draft Featured pages out of every public look lookup."""
+    queryset = Look.objects.all() if queryset is None else queryset
+    return queryset.exclude(author_id__in=StylistProfile.objects.filter(
+        featured=True, published=False,
+    ).values("account_id"))
+
+
 def _looks(viewer):
     return with_viewer_flags(
-        Look.objects.prefetch_related("styles", "products"), viewer
+        public_looks().prefetch_related(
+            "styles", "products", Prefetch("photos", queryset=LookPhoto.objects.order_by("position"))
+        ), viewer
     )
 
 
 def _visible_look(pk, viewer):
     """The look, or None when it's private (and not hers), blocked, or missing."""
-    look = Look.objects.filter(pk=pk).first()
+    look = public_looks().filter(pk=pk).first()
     if look is None:
         return None
     if look.visibility == "private" and (viewer is None or viewer.pk != look.author_id):
@@ -174,9 +187,24 @@ def create_look(request):
     """
     user = request.user
     body = request.data
-    photo = own_media(user, body.get("photo_uri"))
-    if photo is None:
+    uris = body.get("photo_uris", [body.get("photo_uri")] if body.get("photo_uri") else [])
+    if not isinstance(uris, list) or not uris:
         return Response({"message": "A look needs a photo"}, status=400)
+    if len(uris) > 1 and not is_on("multi_photo_looks", user):
+        return Response(
+            {"message": "Posting several photos in one look isn't open yet"}, status=400
+        )
+    if len(uris) > 5:
+        return Response({"message": "Up to 5 photos in a look"}, status=400)
+    photos = []
+    for uri in uris:
+        photo = own_media(user, uri) if isinstance(uri, str) else None
+        if photo is None:
+            return Response({"message": "That photo isn't one of yours"}, status=400)
+        if any(other.pk == photo.pk for other in photos):
+            return Response({"message": "That photo is in this look twice"}, status=400)
+        photos.append(photo)
+    photo = photos[0]
 
     wanted = body.get("styles") if isinstance(body.get("styles"), list) else []
     styles = list(Style.objects.filter(slug__in=[str(s) for s in wanted][:3]))
@@ -231,6 +259,16 @@ def create_look(request):
             from_price=service.from_price if service else False,
             area=stylist_profile.base_area if stylist_profile else "",
         )
+        LookPhoto.objects.bulk_create([
+            LookPhoto(
+                look=look, position=position,
+                photo_uri=media_url(request, photo, photo.full_path),
+                thumb_uri=media_url(request, photo, photo.thumb_path) if photo.thumb_path else "",
+                feed_uri=media_url(request, photo, photo.feed_path) if photo.feed_path else "",
+                aspect=round(photo.width / photo.height, 4) if photo.height else 1,
+            )
+            for position, photo in enumerate(photos)
+        ])
         look.styles.set(styles)
         if products:
             look.products.set(products)
@@ -250,6 +288,11 @@ class MyLooksView(APIView):
         return Response(present_looks(looks, request.user))
 
 
+class LookTagsRequestSerializer(serializers.Serializer):
+    styles = serializers.ListField(child=serializers.CharField(), required=False)
+    hair_texture = serializers.CharField(required=False, allow_blank=True)
+
+
 class LookDetailView(APIView):
     """GET / DELETE /api/looks/:id/"""
 
@@ -262,6 +305,34 @@ class LookDetailView(APIView):
             return _not_found()
         look = _looks(viewer).get(pk=pk)
         return Response(present_looks([look], viewer)[0])
+
+    @extend_schema(request=LookTagsRequestSerializer, responses=LookSerializer)
+    @transaction.atomic
+    def patch(self, request, pk):
+        look = Look.objects.select_for_update().filter(pk=pk).first()
+        if look is None:
+            return _not_found()
+        if look.author_id != request.user.pk:
+            return Response({"message": "That look isn’t yours"}, status=403)
+        if set(request.data) - {"styles", "hair_texture"}:
+            return Response({"message": "Only the style and hair type can be changed"}, status=400)
+        if "styles" in request.data:
+            wanted = request.data["styles"] if isinstance(request.data["styles"], list) else []
+            if len(wanted) > 3:
+                return Response({"message": "Pick up to 3 styles"}, status=400)
+            styles = list(Style.objects.filter(slug__in=[str(s) for s in wanted]))
+            if look.type == "look" and not styles:
+                return Response({"message": "Tag the style"}, status=400)
+            look.styles.set(styles)
+        if "hair_texture" in request.data:
+            look.hair_texture = str(request.data.get("hair_texture") or "")[:20]
+            look.save(update_fields=["hair_texture", "updated_at"])
+        # This response is private to the author, including work on a draft page.
+        look = with_viewer_flags(
+            Look.objects.filter(pk=look.pk, author=request.user).prefetch_related("styles", "products", "photos"),
+            request.user,
+        ).get()
+        return Response(present_looks([look], request.user)[0])
 
     @extend_schema(responses={204: None})
     def delete(self, request, pk):
@@ -543,7 +614,7 @@ class AreaListView(APIView):
     @extend_schema(responses=serializers.ListSerializer(child=serializers.CharField()))
     def get(self, request):
         areas = (
-            Look.objects.filter(visibility="public")
+            public_looks().filter(visibility="public")
             .exclude(area="")
             .values_list("area", flat=True)
             .distinct()
@@ -574,7 +645,7 @@ class LookReportView(APIView):
 
     @extend_schema(request=ReportRequestSerializer, responses={201: None})
     def post(self, request, pk):
-        if not Look.objects.filter(pk=pk).exists():
+        if not public_looks().filter(pk=pk).exists():
             return _not_found("That look is already gone")
         return _report(request, Look, pk, LOOK_REPORT_REASONS)
 
@@ -587,7 +658,7 @@ class CommentReportView(APIView):
 
     @extend_schema(request=ReportRequestSerializer, responses={201: None})
     def post(self, request, pk):
-        if not LookComment.objects.filter(pk=pk).exists():
+        if not LookComment.objects.filter(pk=pk, look_id__in=public_looks().values("pk")).exists():
             return Response({"message": "That comment is already gone"}, status=404)
         # A comment can't be stolen work.
         return _report(request, LookComment, pk, COMMENT_REPORT_REASONS)

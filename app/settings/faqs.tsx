@@ -19,7 +19,7 @@ const FAQS = [
   },
   {
     q: 'How do I book a stylist?',
-    a: 'Open their page from a look, choose Request a booking, then pick the service and a time they’re free. They have 48 hours to reply. Any deposit is paid straight to them; Yasante never handles money.',
+    a: 'Open their page from a look, choose Request a booking, then pick the service and a time they’re free: their soonest, a weekend, or one ready for a date that matters. Most stylists can be booked up to 12 weeks ahead; a time someone has asked for is held for them until the stylist answers. They have up to 48 hours to reply, less when the time is coming up soon. Any deposit is paid straight to them; Yasante never handles money.',
   },
   {
     q: 'When do I see the stylist’s address?',

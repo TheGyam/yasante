@@ -1,5 +1,5 @@
 import { globalStyle, style } from '@vanilla-extract/css';
-import { EASE_OUT, media, radius, space } from '@/shared/theme/tokens';
+import { EASE_OUT, media, radius, space, weight } from '@/shared/theme/tokens';
 import { vars } from '@/shared/theme/vars.css';
 import { HEADER_HEIGHT } from '@/shared/ui/SiteHeader.css';
 
@@ -27,6 +27,13 @@ export const identity = style({
 });
 
 export const names = style({ display: 'grid', gap: 2 });
+export const nameHeading = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexWrap: 'wrap',
+  gap: space.sm,
+});
 export const bio = style({ whiteSpace: 'pre-line' });
 
 export const book = style({
@@ -34,6 +41,46 @@ export const book = style({
   gap: space.sm,
   marginTop: space.xl,
   textAlign: 'center',
+});
+
+export const featuredButtons = style({
+  display: 'grid',
+  gap: space.sm,
+});
+
+export const claimFooter = style({
+  marginTop: space.xxxl,
+  textAlign: 'center',
+  paddingTop: space.lg,
+  borderTop: `1px solid ${vars.color.separator}`,
+});
+
+export const claimTrigger = style({
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  cursor: 'pointer',
+  color: vars.color.text.secondary,
+  fontSize: '0.875rem',
+  textDecoration: 'underline',
+  textUnderlineOffset: '3px',
+  transition: `color ${vars.time.state} ${EASE_OUT}`,
+  ':hover': {
+    color: vars.color.text.primary,
+  },
+});
+
+export const claimNote = style({
+  padding: `${space.sm}px ${space.md}px`,
+  maxWidth: 480,
+  margin: '0 auto',
+});
+
+export const inlineInstagramLink = style({
+  color: vars.color.text.primary,
+  fontWeight: weight.medium,
+  textDecoration: 'underline',
+  textUnderlineOffset: '2px',
 });
 
 export const main = style({});
@@ -56,6 +103,7 @@ export const work = style({
 });
 
 export const workLink = style({
+  position: 'relative',
   display: 'block',
   transition: `opacity ${vars.time.state} ${EASE_OUT}`,
   ':hover': { opacity: 0.88 },

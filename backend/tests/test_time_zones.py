@@ -9,16 +9,24 @@ pytestmark = pytest.mark.django_db
 
 
 def test_her_hours_are_on_her_own_clock(make_stylist):
-    from apps.stylists.slots import is_open_on, start_fits
+    from zoneinfo import ZoneInfo
+
+    from apps.stylists.slots import free_times
 
     profile = make_stylist()
     profile.time_zone = "America/New_York"
     profile.save()
-    # Tuesday 14:00 UTC is 10:00 in New York: inside 09:00–18:00 there.
-    assert start_fits(profile, datetime(2026, 10, 6, 14, 0, tzinfo=timezone.utc), 60)
-    # 22:30 UTC is 18:30 in New York: after she's finished (it'd be fine in London hours).
-    assert not start_fits(profile, datetime(2026, 10, 6, 22, 30, tzinfo=timezone.utc), 60)
-    assert is_open_on(profile, datetime(2026, 10, 6, 14, 0, tzinfo=timezone.utc))
+    found = free_times(profile, 60)
+    assert found["time_zone"] == "America/New_York"
+    new_york = ZoneInfo("America/New_York")
+    starts = [
+        datetime.fromisoformat(t.replace("Z", "+00:00")).astimezone(new_york)
+        for day in found["days"]
+        for t in day["times"]
+    ]
+    # 09:00 to 18:00 there, whatever the hour is in London: an hour's job starts by 17:00.
+    assert starts and min(s.hour for s in starts) == 9
+    assert max((s.hour, s.minute) for s in starts) == (17, 0)
 
 
 def test_a_time_is_marked_when_it_isnt_the_readers_own():

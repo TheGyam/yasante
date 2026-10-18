@@ -17,7 +17,6 @@ import { Chip } from '@/shared/ui/Chip';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Page } from '@/shared/ui/Page';
-import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Rise } from '@/shared/ui/Rise';
 import { Section } from '@/shared/ui/Section';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
@@ -26,6 +25,7 @@ import { Text } from '@/shared/ui/Text';
 import { useLook, useStyleNames } from '../hooks';
 import { lookAlt, lookPrice, lookTitle } from '../format';
 import { LookGrid } from './LookGrid';
+import { LookPhotos } from './LookPhotos';
 import * as styles from './LookScreen.css';
 
 /** One look: the photo, who did it, and a way to book it in the app. */
@@ -75,15 +75,25 @@ export function LookScreen({ id }: { id: string }) {
   const title = lookTitle(look);
   const price = lookPrice(look);
   const firstStyle = look.styles[0];
+  const photos =
+    look.photos.length > 0
+      ? look.photos
+      : [
+          {
+            uri: look.photoUri,
+            thumbUri: look.thumbUri,
+            feedUri: look.feedUri,
+            aspect: look.photoAspect ?? 4 / 5,
+          },
+        ];
 
   return (
     <Page title={title} description={look.caption?.slice(0, 150) || `${title}, on Yasante.`}>
       <div className={styles.layout}>
-        <RemoteImage
-          src={look.feedUri ?? look.photoUri}
+        <LookPhotos
+          photos={photos}
           alt={lookAlt(look)}
-          aspect={look.photoAspect ?? 4 / 5}
-          priority
+          aspect={photos[0].aspect}
           sizes="(min-width: 860px) 560px, 100vw"
           className={styles.photo}
         />
@@ -133,7 +143,7 @@ export function LookScreen({ id }: { id: string }) {
           )}
 
           <div className={styles.actions}>
-            {look.stylist?.handle && look.serviceId ? (
+            {look.stylist?.handle && look.serviceId && !look.stylistFeatured ? (
               <Button
                 label="Book this look"
                 icon={CalendarPlus}
@@ -152,7 +162,7 @@ export function LookScreen({ id }: { id: string }) {
             )}
           </div>
 
-          {(look.stylist || look.products.length > 0) && (
+          {(look.stylist || (look.products?.length ?? 0) > 0) && (
             <div>
               {look.stylist && (
                 <Section title="Done by">
@@ -160,13 +170,13 @@ export function LookScreen({ id }: { id: string }) {
                     icon={Scissors}
                     title={look.stylist.name}
                     subtitle={look.serviceName}
-                    value={price}
+                    value={look.stylistFeatured ? 'Featured' : price}
                     to={look.stylist.handle ? `/${look.stylist.handle}` : undefined}
                     preload={() => look.stylist?.handle && prefetchStylist(look.stylist.handle)}
                   />
                 </Section>
               )}
-              {look.products.length > 0 && (
+              {Boolean(look.products?.length) && (
                 <Section title="Products used">
                   {look.products.map(product => (
                     <ListRow

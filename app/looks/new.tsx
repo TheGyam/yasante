@@ -1,14 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Camera, Check, ImagePlus } from 'lucide-react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  type SharedValue,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
+import { Camera, ImagePlus, X } from 'lucide-react-native';
 import { errorMessage, useAuth } from '@/features/auth';
 import { dayLabel, useBookings } from '@/features/booking';
 import {
+  PhotoUploadError,
   styleForService,
   usePostLook,
   useStyleTaxonomy,
   type LookVisibility,
+  type UploadCache,
 } from '@/features/looks';
 import { useShelf } from '@/features/shelf';
 import {
@@ -19,15 +28,18 @@ import {
   type HairTexture,
 } from '@/features/profile';
 import { formatPrice, useActiveMode, useMenu, usePortfolio } from '@/features/stylist';
+import { useFeature } from '@/shared/config/features';
 import { useImagePicker } from '@/shared/hooks/useImagePicker';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
-import { makeStyles, radius, space } from '@/shared/theme';
+import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { Chip } from '@/shared/ui/Chip';
 import { notify } from '@/shared/ui/dialog';
+import { IconButton } from '@/shared/ui/IconButton';
 import { Input } from '@/shared/ui/Input';
 import { PressableScale } from '@/shared/ui/PressableScale';
+import { ProgressBar } from '@/shared/ui/ProgressBar';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Screen } from '@/shared/ui/Screen';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
@@ -40,23 +52,36 @@ const VISIBILITY = [
 ] as const;
 const TEXTURES = Object.keys(TEXTURE_LABELS) as HairTexture[];
 
+/** A chosen thumbnail's width, plus the gap after it — a drag moves in units of this.
+ * 5 of these plus their gaps must fit the narrowest phone we support (375pt). */
+const THUMB_WIDTH = 60;
+const THUMB_GAP = space.sm;
+const SLOT_WIDTH = THUMB_WIDTH + THUMB_GAP;
+
 const useStyles = makeStyles(t => ({
   body: { gap: space.xl },
+  // The switch off: one photo, square, no strip — exactly how this screen looked
+  // before several photos were possible.
   chosen: { aspectRatio: 0.8, borderRadius: radius.lg, overflow: 'hidden' },
-  strip: { flexDirection: 'row', gap: space.sm, paddingVertical: space.xs },
-  thumb: { width: 72, aspectRatio: 0.8, borderRadius: radius.sm },
+  strip: { flexDirection: 'row', gap: THUMB_GAP, paddingVertical: space.xs },
+  thumb: { width: THUMB_WIDTH, aspectRatio: 0.8, borderRadius: radius.sm },
   picked: { borderWidth: 2, borderColor: t.colors.accent },
-  tick: {
+  badge: {
     position: 'absolute',
     top: 4,
-    right: 4,
-    width: 20,
+    left: 4,
+    minWidth: 20,
     height: 20,
+    paddingHorizontal: 4,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: t.colors.accent,
   },
+  badgeText: { color: t.colors.text.onAccent },
+  remove: { position: 'absolute', top: -6, right: -6 },
+  chosenThumb: { width: THUMB_WIDTH, aspectRatio: 0.8, borderRadius: radius.sm, zIndex: 1 },
+  stripCount: { marginTop: -space.xs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   group: { gap: space.sm },
   footer: { gap: space.xs, paddingTop: space.lg },
@@ -77,7 +102,7 @@ export default function ComposeLookScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ bookingId?: string }>();
   const asStylist = useActiveMode() === 'stylist';
-  const { pickFromLibrary } = useImagePicker();
+  const { pickManyFromLibrary, error: pickError } = useImagePicker();
   const { data: portfolio = [] } = usePortfolio();
   const { data: services = [] } = useMenu();
   const { data: done = [] } = useBookings('client', ['completed']);
@@ -87,8 +112,16 @@ export default function ComposeLookScreen() {
   const needsUsername = useNeedsUsername();
   const ownTexture = useUserStore(s => s.hairProfile?.texture);
   const post = usePostLook();
+  // Lives for the composer's whole life, so a retry after a failed upload only
+  // re-sends the photos that didn't make it, not the ones that already did.
+  const uploadCache = useRef<UploadCache>(new Map()).current;
+  // Several photos in one look is a switch Yaw can turn off; off, this screen is
+  // exactly the one-photo composer it was before that feature existed.
+  const photoLimit = useFeature('multi_photo_looks') ? 5 : 1;
 
-  const [photoUri, setPhotoUri] = useState<string>();
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
+  const [progress, setProgress] = useState<{ done: number; total: number }>();
+  const [failedPhotoIndex, setFailedPhotoIndex] = useState<number>();
   const [serviceId, setServiceId] = useState<string>();
   const [bookingId, setBookingId] = useState(params.bookingId);
   const [picked, setPicked] = useState<string[]>([]);
@@ -119,11 +152,51 @@ export default function ComposeLookScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done.length, taxonomy.length]);
 
-  const choose = (uri: string, taggedWith?: string) => {
-    setPhotoUri(uri);
-    // A portfolio photo already knows what it is; don't make her say it twice.
+  // The list changed under it (removed, reordered, added to) — whatever failed before
+  // isn't necessarily at that index any more.
+  useEffect(() => setFailedPhotoIndex(undefined), [photoUris]);
+
+  // The switch turned off under her, mid-draft: say so, and keep only the cover photo.
+  useEffect(() => {
+    if (photoLimit === 1 && photoUris.length > 1) {
+      setPhotoUris(current => current.slice(0, 1));
+      notify({
+        title: 'Posting several photos isn’t open yet',
+        message: 'So we kept your first one.',
+      });
+    }
+    // Only when the limit itself drops, not on every photo change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [photoLimit]);
+
+  useEffect(() => {
+    if (pickError) {
+      notify({
+        title: 'No access to your photos',
+        message: 'Allow access in Settings to post a look.',
+      });
+    }
+  }, [pickError]);
+
+  // A portfolio photo tapped a second time comes back off; tapping it on tags its service.
+  // With one slot, tapping a different photo swaps it rather than being blocked.
+  const togglePortfolio = (uri: string, taggedWith?: string) => {
+    if (photoUris.includes(uri)) return setPhotoUris(current => current.filter(u => u !== uri));
+    if (photoLimit > 1 && photoUris.length >= photoLimit) return;
+    setPhotoUris(current => (photoLimit === 1 ? [uri] : [...current, uri]));
     if (taggedWith) tagService(taggedWith);
   };
+
+  const removeUri = (uri: string) => setPhotoUris(current => current.filter(u => u !== uri));
+
+  const reorder = (from: number, to: number) =>
+    setPhotoUris(current => {
+      if (from === to) return current;
+      const next = [...current];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
 
   const tagService = (id?: string) => {
     setServiceId(id);
@@ -147,57 +220,82 @@ export default function ComposeLookScreen() {
   };
 
   const addFromLibrary = async () => {
-    try {
-      const uri = await pickFromLibrary();
-      if (uri) choose(uri);
-    } catch {
-      await notify({
-        title: 'No access to your photos',
-        message: 'Allow access in Settings to post a look.',
-      });
-    }
+    const remaining = photoLimit === 1 ? 1 : photoLimit - photoUris.length;
+    const added = await pickManyFromLibrary(remaining);
+    if (!added.length) return;
+    setPhotoUris(current =>
+      photoLimit === 1 ? added.slice(0, 1) : [...current, ...added].slice(0, photoLimit)
+    );
   };
 
   const share = async () => {
-    if (!photoUri || !picked.length) return;
+    if (!photoUris.length || !picked.length) return;
     // The post shows her username: asked for first, and her draft waits here.
     if (needsUsername) return router.push('/username');
+    setFailedPhotoIndex(undefined);
     try {
       const look = await post.mutateAsync({
-        photoUri,
-        serviceId: asStylist ? serviceId : undefined,
-        bookingId: asStylist ? undefined : bookingId,
-        styles: picked,
-        hairTexture: profileTexture ?? texture,
-        productIds,
-        visibility,
-        caption: caption.trim() || undefined,
+        draft: {
+          photoUris,
+          serviceId: asStylist ? serviceId : undefined,
+          bookingId: asStylist ? undefined : bookingId,
+          styles: picked,
+          hairTexture: profileTexture ?? texture,
+          productIds,
+          visibility,
+          caption: caption.trim() || undefined,
+        },
+        cache: uploadCache,
+        onProgress: setProgress,
       });
       haptics.success();
       router.replace(`/looks/${look.id}`);
     } catch (error) {
       haptics.error();
-      await notify({
-        title: 'Couldn’t post that',
-        message: errorMessage(error, 'Check your connection and try again.'),
-      });
+      setProgress(undefined);
+      if (error instanceof PhotoUploadError) {
+        setFailedPhotoIndex(error.photoIndex);
+      } else {
+        await notify({
+          title: 'Couldn’t post that',
+          message: errorMessage(error, 'Check your connection and try again.'),
+        });
+      }
     }
   };
 
   return (
     <Screen title="Post a look" modal keyboard testID="look-compose">
       <View style={styles.body}>
-        {photoUri ? (
-          <View style={styles.chosen}>
-            <RemoteImage uri={photoUri} style={StyleSheet.absoluteFill} />
-          </View>
-        ) : (
+        {photoUris.length === 0 && (
           <Text variant="subhead" tone="secondary">
             {asStylist
-              ? 'Pick a photo of work you did. Clients see it with your name on it.'
+              ? photoLimit === 1
+                ? 'Pick a photo of work you did. Clients see it with your name on it.'
+                : 'Pick up to 5 photos of work you did. Clients see them with your name on it.'
               : 'Show off your hair. Tag who did it, and people can book the same look.'}
           </Text>
         )}
+
+        {photoLimit === 1
+          ? photoUris[0] && (
+              <View style={styles.chosen}>
+                <RemoteImage uri={photoUris[0]} style={StyleSheet.absoluteFill} />
+              </View>
+            )
+          : photoUris.length > 0 && (
+              <View style={styles.group}>
+                <Text variant="footnote" tone="secondary" style={styles.stripCount}>
+                  {photoUris.length}/{photoLimit}
+                </Text>
+                <ChosenStrip
+                  uris={photoUris}
+                  onRemove={removeUri}
+                  onReorder={reorder}
+                  failedIndex={failedPhotoIndex}
+                />
+              </View>
+            )}
 
         {asStylist && portfolio.length > 0 && (
           <View style={styles.group}>
@@ -206,36 +304,53 @@ export default function ComposeLookScreen() {
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.strip}>
-                {portfolio.map((photo, index) => (
-                  <PressableScale
-                    key={photo.id}
-                    onPress={() => choose(photo.uri, photo.serviceId)}
-                    accessibilityLabel={`Portfolio photo ${index + 1}`}
-                  >
-                    <View>
-                      <RemoteImage
-                        uri={photo.uri}
-                        style={[styles.thumb, photo.uri === photoUri && styles.picked]}
-                        recyclingKey={photo.id}
-                      />
-                      {photo.uri === photoUri && (
-                        <View style={styles.tick}>
-                          <Check size={12} color="#FFFFFF" strokeWidth={3} />
-                        </View>
-                      )}
-                    </View>
-                  </PressableScale>
-                ))}
+                {portfolio.map((photo, index) => {
+                  const order = photoUris.indexOf(photo.uri);
+                  return (
+                    <PressableScale
+                      key={photo.id}
+                      onPress={() => togglePortfolio(photo.uri, photo.serviceId)}
+                      disabled={order < 0 && photoLimit > 1 && photoUris.length >= photoLimit}
+                      accessibilityLabel={`Portfolio photo ${index + 1}${order >= 0 ? `, chosen as number ${order + 1}` : ''}`}
+                    >
+                      <View>
+                        <RemoteImage
+                          uri={photo.uri}
+                          style={[styles.thumb, order >= 0 && styles.picked]}
+                          recyclingKey={photo.id}
+                        />
+                        {order >= 0 && (
+                          <View style={styles.badge}>
+                            <Text variant="caption" style={styles.badgeText}>
+                              {order + 1}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </PressableScale>
+                  );
+                })}
               </View>
             </ScrollView>
           </View>
         )}
 
         <Button
-          label={photoUri ? 'Choose a different photo' : 'Choose a photo'}
-          icon={photoUri ? ImagePlus : Camera}
+          label={
+            photoUris.length === 0
+              ? photoLimit === 1
+                ? 'Choose a photo'
+                : 'Choose photos'
+              : photoLimit === 1
+                ? 'Choose a different photo'
+                : photoUris.length >= photoLimit
+                  ? `${photoLimit} of ${photoLimit}`
+                  : 'Add more photos'
+          }
+          icon={photoUris.length === 0 ? Camera : ImagePlus}
           variant="secondary"
           onPress={addFromLibrary}
+          disabled={photoLimit > 1 && photoUris.length >= photoLimit}
           fullWidth
           testID="look-pick"
         />
@@ -377,15 +492,23 @@ export default function ComposeLookScreen() {
         />
 
         <View style={styles.footer}>
+          {!!progress && (
+            <ProgressBar progress={progress.total ? progress.done / progress.total : 0} />
+          )}
+          {failedPhotoIndex !== undefined && (
+            <Text variant="caption" tone="danger" align="center">
+              Photo {failedPhotoIndex + 1} couldn’t be uploaded. Check your connection.
+            </Text>
+          )}
           <Button
-            label="Post it"
+            label={failedPhotoIndex !== undefined ? 'Try again' : 'Post it'}
             onPress={share}
-            disabled={!photoUri || !picked.length}
+            disabled={!photoUris.length || !picked.length}
             loading={post.isPending}
             fullWidth
             testID="look-post"
           />
-          {!!photoUri && !picked.length && (
+          {!!photoUris.length && !picked.length && (
             <Text variant="caption" tone="tertiary" align="center">
               Tag the style so people can find it.
             </Text>
@@ -394,5 +517,134 @@ export default function ComposeLookScreen() {
         </View>
       </View>
     </Screen>
+  );
+}
+
+/**
+ * The chosen photos, numbered in the order they'll post — the first is "Cover".
+ * Long-press and drag one to reorder; the cross removes it.
+ */
+function ChosenStrip({
+  uris,
+  onRemove,
+  onReorder,
+  failedIndex,
+}: {
+  uris: string[];
+  onRemove: (uri: string) => void;
+  onReorder: (from: number, to: number) => void;
+  failedIndex?: number;
+}) {
+  const styles = useStyles();
+  // Shared across every thumb, so dragging one tells its neighbours to make room.
+  const dragIndex = useSharedValue(-1);
+  const dragX = useSharedValue(0);
+  const targetIndex = useSharedValue(-1);
+
+  return (
+    <View style={styles.strip}>
+      {uris.map((uri, index) => (
+        <ChosenThumb
+          key={uri}
+          uri={uri}
+          index={index}
+          total={uris.length}
+          failed={index === failedIndex}
+          dragIndex={dragIndex}
+          dragX={dragX}
+          targetIndex={targetIndex}
+          onRemove={() => onRemove(uri)}
+          onReorder={onReorder}
+        />
+      ))}
+    </View>
+  );
+}
+
+function ChosenThumb({
+  uri,
+  index,
+  total,
+  failed,
+  dragIndex,
+  dragX,
+  targetIndex,
+  onRemove,
+  onReorder,
+}: {
+  uri: string;
+  index: number;
+  total: number;
+  failed?: boolean;
+  dragIndex: SharedValue<number>;
+  dragX: SharedValue<number>;
+  targetIndex: SharedValue<number>;
+  onRemove: () => void;
+  onReorder: (from: number, to: number) => void;
+}) {
+  const styles = useStyles();
+  const theme = useTheme();
+
+  const pan = Gesture.Pan()
+    .activateAfterLongPress(300)
+    .onStart(() => {
+      dragIndex.set(index);
+      targetIndex.set(index);
+    })
+    .onUpdate(e => {
+      dragX.set(e.translationX);
+      const raw = index + Math.round(e.translationX / SLOT_WIDTH);
+      targetIndex.set(Math.min(total - 1, Math.max(0, raw)));
+    })
+    .onEnd(() => {
+      const to = targetIndex.get();
+      dragIndex.set(-1);
+      dragX.set(0);
+      targetIndex.set(-1);
+      scheduleOnRN(onReorder, index, to);
+    });
+
+  const style = useAnimatedStyle(() => {
+    const dragging = dragIndex.get();
+    if (dragging === index) {
+      return { transform: [{ translateX: dragX.get() }, { scale: 1.05 }], zIndex: 10 };
+    }
+    if (dragging < 0) return { transform: [{ translateX: 0 }] };
+    // Slide out of the way while the dragged thumb passes over this slot.
+    const target = targetIndex.get();
+    const shift =
+      dragging < index && index <= target
+        ? -SLOT_WIDTH
+        : dragging > index && index >= target
+          ? SLOT_WIDTH
+          : 0;
+    return { transform: [{ translateX: shift }], zIndex: 1 };
+  });
+
+  return (
+    <GestureDetector gesture={pan}>
+      <Animated.View style={style}>
+        <RemoteImage
+          uri={uri}
+          style={[
+            styles.chosenThumb,
+            failed && { borderWidth: 2, borderColor: theme.colors.danger },
+          ]}
+        />
+        <View style={styles.badge}>
+          <Text variant="caption" style={styles.badgeText}>
+            {index === 0 ? 'Cover' : index + 1}
+          </Text>
+        </View>
+        <IconButton
+          icon={X}
+          variant="overlay"
+          size={22}
+          accessibilityLabel={`Remove photo ${index + 1}`}
+          onPress={onRemove}
+          style={styles.remove}
+        />
+      </Animated.View>
+    </GestureDetector>
   );
 }

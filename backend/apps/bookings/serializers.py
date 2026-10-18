@@ -159,6 +159,7 @@ def present_slot_interest(interest):
         "from": interest.from_date.isoformat(),
         "to": interest.to_date.isoformat(),
         "opened_on": interest.opened_on.isoformat() if interest.opened_on else None,
+        "opens": interest.opens,
         "created_at": interest.created_at,
     }
 
@@ -301,6 +302,7 @@ class SlotInterestSerializer(serializers.Serializer):
     stylist_name = serializers.CharField()
     stylist_handle = optional(serializers.CharField())
     opened_on = optional(serializers.DateField())
+    opens = serializers.BooleanField(help_text="Waiting for days she isn't taking bookings for yet")
     created_at = serializers.DateTimeField()
 
     def get_fields(self):

@@ -15,10 +15,21 @@ export {
   usePortfolio,
   useRemovePortfolioPhoto,
   useUpdateProfile,
+  useCloseDay,
 } from './hooks';
 export { uploadPhoto, addToPortfolio } from './api';
 export { formatPrice as formatServicePrice, hoursLabel } from './format';
 export type { StylistProfile, MenuItem, PortfolioPhoto } from './types';
-export { estimate, optionGroups, type ChosenOptions } from './menu';
+export { estimate, optionGroups, DURATIONS, type ChosenOptions } from './menu';
 export { formatDuration } from './format';
-export { useStylistPage } from './hooks';
+export { useStylistPage, useTogglePageWaitlist } from './hooks';
+export {
+  NOTICE_CHOICES,
+  DEFAULT_NOTICE_HOURS,
+  noticeLabel,
+  hoursOn,
+  bookingRulesLabel,
+  repeatChoices,
+  repeatLabel,
+} from './format';
+export type { Availability } from './types';

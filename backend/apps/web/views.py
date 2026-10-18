@@ -9,12 +9,14 @@ The query keys in `seeds` are the ones the site's features read with (web/src/fe
 """
 
 from django.conf import settings
+from django.db.models import Prefetch
 from django.http import Http404, HttpResponse, JsonResponse
 from django.urls import reverse
 from django.utils.text import slugify
 from django.views.decorators.cache import cache_control
 
-from apps.looks.models import Look, Style
+from apps.looks.models import Look, LookPhoto, Style
+from apps.looks.views import public_looks
 from apps.looks.serializers import present_looks, with_viewer_flags
 from apps.profiles.models import PolicyDocument
 from apps.profiles.views import present_policy
@@ -37,6 +39,17 @@ def _styles():
 def home(request):
     content, jsonld = seo.home()
     return page(request, content_template="web/content/home.html", content=content, jsonld=jsonld)
+
+
+@public
+def links(request):
+    return page(
+        request,
+        title="Our links",
+        description="Find Yasante on Instagram and TikTok, or explore our website. Everything for your hair, in one place.",
+        image="https://yasante.com/static/site/apple-touch-icon.png",
+        content_template="web/content/links.html",
+    )
 
 
 @public
@@ -64,7 +77,7 @@ def stylist(request, handle):
     if profile is None:
         return page(request, title="No page here", status=404)
     PageView.objects.create(stylist=profile, source="web")
-    data = stylist_page(profile)
+    data = stylist_page(profile, None)
     photos = list(profile.portfolio_photos.all()[:1])
     content, jsonld = seo.stylist(profile)
     return page(
@@ -77,12 +90,15 @@ def stylist(request, handle):
         content=content,
         jsonld=jsonld,
         og_type="profile",
+        noindex=profile.featured,
     )
 
 
 @public
 def look(request, pk):
-    item = with_viewer_flags(Look.objects.prefetch_related("styles", "products"), None).filter(
+    item = with_viewer_flags(public_looks().prefetch_related(
+        "styles", "products", Prefetch("photos", queryset=LookPhoto.objects.order_by("position"))
+    ), None).filter(
         pk=pk, **LIVE_LOOKS
     ).first()
     if item is None:
@@ -109,7 +125,7 @@ def style(request, slug):
     item = Style.objects.filter(slug=slug).first()
     if item is None:
         return page(request, title="Not found", status=404)
-    first = Look.objects.filter(styles=item, **LIVE_LOOKS).order_by("-like_count").first()
+    first = public_looks().filter(styles=item, **LIVE_LOOKS).order_by("-like_count").first()
     content, jsonld = seo.style(item)
     return page(
         request,
@@ -126,8 +142,8 @@ def style(request, slug):
 @public
 def area(request, slug):
     name = slug.replace("-", " ")
-    stylists = StylistProfile.objects.filter(published=True, base_area__iexact=name)
-    area_looks = Look.objects.filter(area__iexact=name, **LIVE_LOOKS)
+    stylists = StylistProfile.objects.filter(published=True, featured=False, base_area__iexact=name)
+    area_looks = public_looks().filter(area__iexact=name, **LIVE_LOOKS)
     if not stylists.exists() and not area_looks.exists():
         return page(request, title="Not found", status=404)
     first = stylists.first()
@@ -264,15 +280,15 @@ def sitemap(request):
 
     base = "https://yasante.com"
     entries = [(f"{base}/", None, []), (f"{base}/looks", None, [])]
-    for profile in StylistProfile.objects.filter(published=True).prefetch_related("portfolio_photos"):
+    for profile in StylistProfile.objects.filter(published=True, featured=False).prefetch_related("portfolio_photos"):
         photos = [p.uri for p in list(profile.portfolio_photos.all())[:20]]
         entries.append((f"{base}/{profile.handle}", profile.updated_at, photos))
     entries += [(f"{base}/styles/{slug}", None, []) for slug in Style.objects.values_list("slug", flat=True)]
-    areas = StylistProfile.objects.filter(published=True).values_list("base_area", flat=True).distinct()
+    areas = StylistProfile.objects.filter(published=True, featured=False).values_list("base_area", flat=True).distinct()
     entries += [(f"{base}/areas/{slugify(a)}", None, []) for a in areas if a]
     entries += [
         (f"{base}/looks/{pk}", made, [photo])
-        for pk, made, photo in Look.objects.filter(**LIVE_LOOKS)
+        for pk, made, photo in public_looks().filter(**LIVE_LOOKS)
         .order_by("-created_at")
         .values_list("pk", "created_at", "photo_uri")[:5000]
     ]
@@ -299,7 +315,7 @@ def indexnow_key(request):
 
 
 def _llms_sections():
-    stylists = list(StylistProfile.objects.filter(published=True).order_by("display_name"))
+    stylists = list(StylistProfile.objects.filter(published=True, featured=False).order_by("display_name"))
     styles = list(Style.objects.order_by("sort_order", "name"))
     areas = sorted({s.base_area for s in stylists if s.base_area})
     return stylists, styles, areas
@@ -402,7 +418,7 @@ def llms_full_txt(request):
 
 # Paths the app opens itself; everything else on the site stays in the browser.
 APP_PATHS = ["/looks/*", "/invite/*", "/waitlist/*", "/book/*", "/*"]
-NOT_APP_PATHS = ["/admin/*", "/api/*", "/static/*", "/media/*", "/terms", "/privacy", "/guidelines", "/delete-account"]
+NOT_APP_PATHS = ["/admin/*", "/api/*", "/static/*", "/media/*", "/terms", "/privacy", "/guidelines", "/delete-account", "/links", "/links/"]
 
 
 @cache_control(public=True, max_age=3600)
@@ -441,3 +457,13 @@ def apple_app_site_association(request):
             }
         }
     )
+
+
+def claim_page(request, code):
+    response = page(request, title="Make it yours", noindex=True)
+    response["Referrer-Policy"] = "no-referrer"
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+finish_page = account_page("Finish your page")

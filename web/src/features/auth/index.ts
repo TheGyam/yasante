@@ -5,6 +5,7 @@ export { LoginScreen } from './components/LoginScreen';
 export { VerifyEmailScreen } from './components/VerifyEmailScreen';
 export { RequireAccount } from './components/RequireAccount';
 export { SignedInAs } from './components/SignedInAs';
-export { useSession, endSession } from './session';
+export { useSession, endSession, updateUser } from './session';
 export type { Session, User } from './types';
 export { POLICY_VERSION, safeNext, withNext } from './rules';
+export { useSignOut } from './hooks';
