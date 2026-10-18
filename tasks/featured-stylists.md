@@ -57,13 +57,15 @@ The only thing she ever has to do before claiming is say "yes" in a message.
    files go too.
 
 **Is this you?** Anyone can tap it, so it must never hand over the page. It
-opens a short note: "Message @yasante on Instagram from @{handle} and we'll send
+opens a short note: "Message @yasantebeauty on Instagram from @{handle} and we'll send
 you a link to make this page yours." Staff check that the message really came
 from the Instagram account saved on the page, then send her a fresh link in
 that chat. There is no code to type; the proof is which account sent the
 message.
 
 ## Words we use
+
+Yasante's Instagram account is **@yasantebeauty** (`https://www.instagram.com/yasantebeauty/`, as in the site footer). Every "Message @yasantebeauty" line links there.
 
 Use exactly these words in every screen, button, message and error. Plain,
 friendly, short. Never use the words placeholder, unclaimed, claim token,
@@ -80,16 +82,16 @@ copy never guesses anyone's pronouns.
 | Under the waitlist button | We'll let you know when {name} takes bookings. |
 | Signed out, taps the waitlist | Sign in to join the waitlist |
 | Footer link | Is this you? Make this page yours. |
-| Footer note | Message @yasante on Instagram from @{handle} and we'll send you a link to make this page yours. |
+| Footer note | Message @yasantebeauty on Instagram from @{handle} and we'll send you a link to make this page yours. |
 | Her link, top | This is your page, {name} |
 | Her link, waiting count (only if more than 0) | 14 people are waiting to book you |
 | Her link, button | **Make it yours** |
 | Her link, signed out | Sign up or sign in, then this page is yours. |
 | Her link, done | It's yours. Next, add your prices. |
-| Link used or expired | This link has already been used or has run out. Message @yasante on Instagram for a new one. |
-| Already has a page | You already have a page on Yasante. Message @yasante on Instagram and we'll put the two together. |
+| Link used or expired | This link has already been used or has run out. Message @yasantebeauty on Instagram for a new one. |
+| Already has a page | You already have a page on Yasante. Message @yasantebeauty on Instagram and we'll put the two together. |
 | Checklist title | **Finish your page** |
-| Price step | {count} of your photos are {style}. What do you charge? |
+| Price step | {count} of your photos are {style}. What do you charge? (one photo: "1 of your photos is {style}.") |
 | Tags step | We tagged your photos for you. Fix any we got wrong. |
 | Notification to the waitlist | Title: {name} is taking bookings. Body: You joined the waitlist for {name}. Book now on Yasante. |
 | Staff section | **Featured stylists** |

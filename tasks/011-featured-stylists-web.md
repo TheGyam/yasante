@@ -60,7 +60,7 @@ from the generated `schema.d.ts`.
      this page, and after signing in the join happens without a second tap.
    - When `claimable`: at the very bottom, "Is this you? Make this page
      yours." Tapping it shows the footer note from the plan in place (no new
-     page), with `@yasante` linking to Yasante's Instagram.
+     page), with `@yasantebeauty` linking to Yasante's Instagram (`https://www.instagram.com/yasantebeauty/`, as in the site footer).
    - Use the same layout on a phone and a desktop as the rest of the page; the
      two buttons sit together where the booking button would be.
 
