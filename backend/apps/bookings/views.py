@@ -61,7 +61,9 @@ def _bookable_look(look_id):
     from apps.looks.models import Look
 
     try:
-        return Look.objects.filter(pk=look_id, visibility="public", status="live").first() if look_id else None
+        from apps.looks.views import public_looks
+
+        return public_looks().filter(pk=look_id, visibility="public", status="live").first() if look_id else None
     except (ValueError, DjangoValidationError):
         return None
 
@@ -212,6 +214,10 @@ class BookingListCreateView(APIView):
         )
         if profile is None:
             return _err("That stylist isn’t taking bookings", 404)
+        if profile.featured:
+            from apps.stylists.featured import not_booking_message
+
+            return _err(not_booking_message(profile), 400)
         if str(stylist_id) == str(user.pk):
             return _err("You can’t book yourself", 400)
 
@@ -742,6 +748,10 @@ class SlotInterestListCreateView(APIView):
         )
         if profile is None:
             return _err("No stylist to wait for", 404)
+        if profile.featured:
+            from apps.stylists.featured import not_booking_message
+
+            return _err(not_booking_message(profile), 400)
         start = _parse_time(request.data.get("from"))
         end = _parse_time(request.data.get("to"))
         if start is None or end is None or end < start:

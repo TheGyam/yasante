@@ -344,23 +344,36 @@ reused database).
 
 ## Report to the lead
 
-- **Changed:** Pulled master into the assigned branch with `git pull --no-rebase origin master`; the clarification merged without conflicts. The earlier questions about routes, waitlist responses, hiding draft looks and preview photos are resolved. Set status to in-progress, audited the look queries across `backend/apps`, then set status to blocked for the remaining caller scope gap below. No application code changed.
+- **Changed:**
+  - Pulled master into the assigned branch; the new visibility-caller scope merged without conflicts. Set status to in-progress, then blocked when the separate email-change scope gap below was found.
+  - Partial implementation only: added the page and waitlist models; page/link/claim/finish-state logic; waitlist, claiming and finish API views and shapes; menu/hours opening hooks; booking refusals; the shared draft-look filter and its public callers; look tag editing and the Featured flag; shared upload handling; notification fan-out; metrics/insights/digest exclusions; admin registration and website shell/SEO changes.
+  - This work is incomplete and not ready for review. Staff endpoints and their routes, the model migration, acceptance tests and generated schemas remain to be implemented. The latest code has not been tested.
+  - No dependencies were added to repository requirements. Installed the existing development requirements into the existing backend virtual environment. Started a separate temporary PostgreSQL cluster on local port 55439 for testing; no existing database was changed.
 - **Checks run:**
   - `git pull --no-rebase origin master`: passed; merged without conflicts.
-  - `git diff --check`: passed for this report.
-  - `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run`: not run; stopped before implementation.
-  - `python -m pytest -q -p no:cacheprovider --create-db`: not run; stopped before implementation.
-  - `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: not run; no API changes.
-  - `python manage.py spectacular --file ../openapi.yaml`: not run; no API changes.
-  - `npm run api:types` in `web/`: not run; no API changes.
-- **Every `published=True` use and booking entry point, and what you did with each:** Not yet fully audited. No entry points changed.
-- **Public look read audit:**
-  - In `apps/looks/views.py`, the feed uses `_looks`; look detail uses `_visible_look` and `_looks`; likes, comment reads/creation, replies and comment likes use `_visible_look`. The area list queries `Look.objects` directly. These can share the new filter within the clarified scope.
-  - Website look detail, style and area pages, sitemap look entries, and the SEO home/style/looks-index queries use `Look.objects` directly in `apps/web/views.py` and `apps/web/seo.py`. They will need to call the same shared visibility helper.
-  - Stylist style-search matching and style-result photos query `Look.objects` directly in `apps/stylists/views.py`. These will need the same helper as well.
-  - Saving a look in `CollectionItemListCreateView.post` (`apps/planner/views.py`, current line 205) reads the photo and caption directly from `Look.objects`. It checks private visibility and blocking, but never goes through `_looks` or `_visible_look`.
-  - `_public_look` (`apps/bookings/views.py`, current line 64) reads `Look.objects` directly and checks only public visibility and live moderation status. This helper can still return a draft look as the source of a booking with another stylist.
-  - Staff queries must remain unfiltered. No global model-manager changes were made or proposed.
-- **Unsure about:** Scope for routing the two last callers through the shared visibility helper.
-- **Skipped, and why:** Implementation, tests, schema generation, push and draft pull request. Step 4 requires all public paths, explicitly including saves, to hide draft looks, but two required caller changes are outside Scope. The brief requires a blocked report, commit and stop in that case.
-- **Question for the lead:** May Scope also allow (1) `backend/apps/planner/views.py`, solely to route the look lookup in `CollectionItemListCreateView.post` through the shared visibility helper, and (2) `_public_look` in `backend/apps/bookings/views.py`, solely to use that same helper? Scope currently omits the planner file entirely and restricts booking changes to step 9's refusals. The actual code has no existing shared queryset used by these callers, so adding the filter only in `apps/looks/views.py` leaves those paths able to read draft photos. The filter itself will still be defined once; these are only caller wiring changes.
+  - `pip install -r requirements-dev.txt`: passed using the existing backend virtual environment.
+  - `python manage.py check` with test settings and the isolated database URL: passed at an intermediate implementation state, before the latest endpoint/task/SEO edits. Not a validation of the final committed code.
+  - `git diff --check`: passed before writing this report; checked again before commit.
+  - `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run`: not run; migration not generated yet.
+  - `python -m pytest -q -p no:cacheprovider --create-db`: not run; acceptance tests not written yet.
+  - `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: not run; API implementation incomplete.
+  - `python manage.py spectacular --file ../openapi.yaml`: not run; API implementation incomplete.
+  - `npm run api:types` in `web/`: not run; API implementation incomplete.
+- **Every `published=True` use and booking entry point, and what you did with each:**
+  - Booking creation and slot-interest creation in `apps/bookings/views.py`, plus `StylistSlotsView.get` in `apps/stylists/views.py`: added the required Featured refusal before service/time processing. Not tested yet.
+  - `apps/common/metrics.py` activation and response metrics, and both published-page jobs in `apps/stylists/tasks.py`: exclude Featured pages.
+  - `apps/staff/insights.py` stylist growth, area supply and top-stylist rows: exclude Featured pages.
+  - Website sitemap profiles/areas and the generated text listings in `apps/web/views.py`, plus SEO home/area/style lists in `apps/web/seo.py`: exclude Featured profiles. Public stylist-page lookups keep published Featured profiles visible; their pages get noindex.
+  - Stylist search keeps published Featured profiles, ordered after other profiles. `_for_style` and style search use the shared draft-look filter.
+  - The published-profile lookup for normal look creation remains unchanged: the stand-in cannot sign in, and public reads use the draft filter. A full final audit remains to be completed.
+- **Public look read audit and wiring so far:**
+  - `public_looks` in `apps/looks/views.py` defines the one filter, excluding author ids selected by indexed Featured/draft profile flags.
+  - API feed and look detail, likes, comment reads/creation, replies, comment likes, area list and look reporting: use the shared helper directly or through `_looks`/`_visible_look`.
+  - `apps/planner/views.py`: only the look lookup while saving was routed through the helper.
+  - `apps/bookings/views.py`: `_public_look` was routed through the helper, in addition to the two separately authorized booking refusals.
+  - `apps/web/views.py`: look detail, style/area cover queries, area looks and sitemap look entries use the helper. `apps/web/seo.py`: home, style and look-index queries use it.
+  - `apps/stylists/views.py`: style search and result-photo queries use it.
+  - Staff preview and page-edit logic retain unfiltered reads. No model manager was changed. These caller changes are not tested yet; the required feed/detail/style tests and final audit remain outstanding.
+- **Unsure about:** Permission to add the required reserved-domain guard to the profile email-change serializer.
+- **Skipped, and why:** Further implementation, acceptance tests, migration/schema generation, full checks, push and draft pull request. The brief requires a blocked report, commit and stop for scope gaps other than public-look caller wiring.
+- **Question for the lead:** Step 3 requires every email change to refuse `@yasante.invalid`, but the profile email-change path is implemented by `UserUpdateSerializer.validate_email` in `backend/apps/profiles/serializers.py` (used by `PATCH /api/users/<id>/`). This serializer does not delegate email validation to the allowed account serializers and currently accepts that domain. May Scope also allow this one method to refuse the reserved domain, with no other changes to the file? Otherwise a real account can adopt a stand-in email through the profile endpoint despite the guards added to signup, social sign-in and email-code start.

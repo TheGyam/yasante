@@ -76,6 +76,8 @@ class StylistProfile(TimeStampedModel):
     proof_photo_uri = models.URLField(max_length=500, blank=True, default="")
     verification_tier = models.PositiveSmallIntegerField(default=0)
 
+    # Set up by Yasante and not taking bookings yet.
+    featured = models.BooleanField(default=False, db_index=True)
     published = models.BooleanField(default=False, db_index=True)
 
     # Precomputed stats (updated by signals/tasks)
@@ -310,3 +312,34 @@ def _hold_handle(sender, instance, **kwargs):
     from apps.accounts.models import ReleasedName
 
     ReleasedName.hold(instance.handle, instance.account_id)
+
+
+class FeaturedPage(TimeStampedModel):
+    profile = models.OneToOneField(StylistProfile, on_delete=models.CASCADE, related_name="featured_page")
+    instagram_handle = models.CharField(max_length=50)
+    agreed_at = models.DateTimeField(null=True, blank=True)
+    agreed_note = models.CharField(max_length=300, blank=True)
+    agreed_proof = models.ForeignKey("common.Media", null=True, blank=True, on_delete=models.SET_NULL)
+    added_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    code_hash = models.CharField(max_length=64, blank=True, db_index=True)
+    code_expires_at = models.DateTimeField(null=True, blank=True)
+    claimed_at = models.DateTimeField(null=True, blank=True)
+    claimed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+")
+    tags_checked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "featured stylist"
+        verbose_name_plural = "Featured stylists"
+
+    def __str__(self):
+        return f"@{self.instagram_handle}"
+
+
+class PageWaitlist(models.Model):
+    client = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="page_waitlists")
+    stylist = models.ForeignKey(StylistProfile, on_delete=models.CASCADE, related_name="waitlist")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["stylist", "client"], name="unique_page_waitlist_client")]
+        indexes = [models.Index(fields=["stylist", "created_at"])]

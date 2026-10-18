@@ -2,6 +2,8 @@
   "username_max": 30,
   "handle_max": 24,
   "routes": [
+    "claim",
+    "finish",
     "links",
     "manage",
     "admin",

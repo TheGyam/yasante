@@ -1,3 +1,4 @@
+from apps.looks.views import public_looks
 """
 Planner: collections (what she's saving) and care plans (how she looks after it).
 """
@@ -202,7 +203,7 @@ class CollectionItemsView(APIView):
             from apps.common.blocks import is_blocked
 
             try:
-                look = Look.objects.select_related("author").filter(pk=ref_id).first()
+                look = public_looks().select_related("author").filter(pk=ref_id).first()
             except Exception:
                 look = None
             hidden = look is not None and (

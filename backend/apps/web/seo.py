@@ -1,3 +1,4 @@
+from apps.looks.views import public_looks
 """
 What search engines and AI assistants read on yasante.com.
 
@@ -94,11 +95,11 @@ def graph(*nodes):
 
 def home():
     stylists = list(
-        StylistProfile.objects.filter(published=True).order_by("-updated_at")[:12]
+        StylistProfile.objects.filter(published=True, featured=False).order_by("-updated_at")[:12]
     )
     styles = list(Style.objects.order_by("sort_order", "name"))
-    areas = sorted({s.base_area for s in StylistProfile.objects.filter(published=True) if s.base_area})
-    looks = list(Look.objects.filter(**LIVE_LOOKS).order_by("-like_count", "-created_at")[:12])
+    areas = sorted({s.base_area for s in StylistProfile.objects.filter(published=True, featured=False) if s.base_area})
+    looks = list(public_looks().filter(**LIVE_LOOKS).order_by("-like_count", "-created_at")[:12])
     content = {
         "about": ABOUT,
         "stylists": [
@@ -259,9 +260,9 @@ def look(item, data):
 
 
 def style(item):
-    looks = list(Look.objects.filter(styles=item, **LIVE_LOOKS).order_by("-like_count", "-created_at")[:24])
+    looks = list(public_looks().filter(styles=item, **LIVE_LOOKS).order_by("-like_count", "-created_at")[:24])
     handles = {lk.stylist_handle for lk in looks if lk.stylist_handle}
-    stylists = list(StylistProfile.objects.filter(published=True, handle__in=handles))
+    stylists = list(StylistProfile.objects.filter(published=True, featured=False, handle__in=handles))
     path = f"/styles/{item.slug}"
     content = {
         "name": item.name,
@@ -290,7 +291,7 @@ def area(label, stylists, area_looks):
 
 
 def looks_index(style_filter=None):
-    qs = Look.objects.filter(**LIVE_LOOKS)
+    qs = public_looks().filter(**LIVE_LOOKS)
     if style_filter:
         qs = qs.filter(styles=style_filter)
     content = {

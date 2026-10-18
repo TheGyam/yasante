@@ -4,6 +4,8 @@ from django.urls import path, re_path
 from . import views
 
 urlpatterns = [
+    path("claim/<str:code>", views.claim_page, name="web-claim"),
+    path("finish", views.finish_page, name="web-finish"),
     path("", views.home, name="web-home"),
     path("links", views.links, name="web-links"),
     path("robots.txt", views.robots),

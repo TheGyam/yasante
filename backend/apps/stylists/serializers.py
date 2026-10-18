@@ -211,10 +211,11 @@ class StylistProfileSerializer(BlankIsOptional, serializers.ModelSerializer):
             "payment_methods",
             "proof_photo_uri",
             "verification_tier",
+            "featured",
             "published",
             "created_at",
         ]
-        read_only_fields = ["id", "account_id", "verification_tier", "created_at"]
+        read_only_fields = ["id", "account_id", "verification_tier", "featured", "created_at"]
 
 
 class StylistProfileDraftSerializer(serializers.Serializer):
@@ -324,6 +325,7 @@ class HandleCheckResponseSerializer(serializers.Serializer):
 class PublicProfileSerializer(StylistProfileSerializer):
     """Her page's profile: no proof photo, payment details or address, plus the checks held."""
 
+    claimable = serializers.BooleanField()
     checks = serializers.ListField(
         child=serializers.CharField(), help_text="phone, work, met_in_person, met_on_video, insurance"
     )
@@ -333,7 +335,7 @@ class PublicProfileSerializer(StylistProfileSerializer):
             f
             for f in StylistProfileSerializer.Meta.fields
             if f not in ("proof_photo_uri", "payment_methods", "address")
-        ] + ["checks"]
+        ] + ["checks", "claimable"]
 
 
 class PageReviewSerializer(serializers.Serializer):
@@ -359,6 +361,7 @@ class TimingLabelSerializer(serializers.Serializer):
 
 
 class StylistPageResponseSerializer(serializers.Serializer):
+    waitlist_joined = serializers.BooleanField(allow_null=True)
     profile = PublicProfileSerializer()
     menu = MenuItemSerializer(many=True)
     photos = PortfolioPhotoSerializer(many=True)
@@ -473,3 +476,43 @@ class PortfolioAddRequestSerializer(serializers.Serializer):
 
 class PortfolioPatchRequestSerializer(serializers.Serializer):
     service_id = serializers.CharField(allow_null=True)
+
+
+class PageWaitlistSerializer(serializers.Serializer):
+    joined = serializers.BooleanField()
+
+
+class ClaimPhotoSerializer(serializers.Serializer):
+    uri = serializers.CharField()
+    thumb_uri = serializers.CharField()
+
+
+class ClaimPreviewSerializer(serializers.Serializer):
+    display_name = serializers.CharField()
+    handle = serializers.CharField()
+    avatar_uri = serializers.CharField()
+    look_count = serializers.IntegerField()
+    live = serializers.BooleanField()
+    waiting = serializers.IntegerField()
+    photos = ClaimPhotoSerializer(many=True)
+
+
+class FinishStyleSerializer(serializers.Serializer):
+    slug = serializers.CharField()
+    name = serializers.CharField()
+    photo_count = serializers.IntegerField()
+    priced = serializers.BooleanField()
+
+
+class FinishSerializer(serializers.Serializer):
+    styles = FinishStyleSerializer(many=True)
+    hours_set = serializers.BooleanField()
+    tags_checked = serializers.BooleanField()
+    done = serializers.BooleanField()
+
+
+class FinishPriceSerializer(serializers.Serializer):
+    style = serializers.CharField()
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=Decimal("0.01"))
+    from_price = serializers.BooleanField(default=False)
+    duration_minutes = serializers.IntegerField(required=False, allow_null=True, min_value=1)

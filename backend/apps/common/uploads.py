@@ -18,6 +18,7 @@ from urllib.parse import urlsplit
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db import transaction
 from django.http import FileResponse, HttpResponse
 from PIL import Image, ImageOps, UnidentifiedImageError
 from rest_framework.authentication import SessionAuthentication
@@ -139,63 +140,73 @@ class UploadResponseSerializer(serializers.Serializer):
     photo_aspect = serializers.FloatField()
 
 
+@transaction.atomic
+def store_image(upload, *, owner, kind, source, private):
+    """Check and store one image through the same pipeline for people and staff."""
+    if upload is None:
+        return None, "Choose a photo to upload"
+    if upload.size > MAX_BYTES:
+        return None, "That photo is too large"
+    try:
+        image = Image.open(upload)
+        # Read from the header, before anything is decoded.
+        if image.width * image.height > MAX_PIXELS:
+            return None, "That photo is too large"
+        # Turn it the right way up before the orientation tag is dropped.
+        image = ImageOps.exif_transpose(image)
+    except Image.DecompressionBombError:
+        return None, "That photo is too large"
+    except (UnidentifiedImageError, OSError):
+        return None, "That file isn’t a photo"
+
+    kind = kind if kind in dict(Media.KIND_CHOICES) else "other"
+    source = source if source in dict(Media.SOURCE_CHOICES) else "camera_roll"
+    private = private or kind in PRIVATE_KINDS
+
+    folder = "private" if private else "uploads"
+    name = f"{folder}/{owner.pk}/{uuid.uuid4().hex}"
+    full = default_storage.save(f"{name}.jpg", _jpeg(image, max_edge=MAX_EDGE))
+    feed = default_storage.save(f"{name}_w{FEED_WIDTH}.jpg", _jpeg(image, FEED_WIDTH))
+    thumb = default_storage.save(f"{name}_w{THUMB_WIDTH}.jpg", _jpeg(image, THUMB_WIDTH))
+    phash = difference_hash(image)
+    duplicate = near_duplicate(phash, owner.pk) if kind in CHECKED_KINDS else None
+    media = Media.objects.create(
+        owner=owner,
+        kind=kind,
+        visibility="private" if private else "public",
+        source=source,
+        full_path=full,
+        feed_path=feed,
+        thumb_path=thumb,
+        width=image.width,
+        height=image.height,
+        phash=phash,
+        moderation_status="flagged" if duplicate else "ok",
+        duplicate_of_id=duplicate,
+    )
+    return media, None
+
+
 @extend_schema_view(post=extend_schema(request={"multipart/form-data": UploadRequestSerializer}, responses={201: UploadResponseSerializer}))
 class UploadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser]
 
     def post(self, request):
-        upload = request.FILES.get("file")
-        if upload is None:
-            return Response({"message": "Choose a photo to upload"}, status=400)
-        if upload.size > MAX_BYTES:
-            return Response({"message": "That photo is too large"}, status=400)
-        try:
-            image = Image.open(upload)
-            # Read from the header, before anything is decoded.
-            if image.width * image.height > MAX_PIXELS:
-                return Response({"message": "That photo is too large"}, status=400)
-            # Turn it the right way up before the orientation tag is dropped.
-            image = ImageOps.exif_transpose(image)
-        except Image.DecompressionBombError:
-            return Response({"message": "That photo is too large"}, status=400)
-        except (UnidentifiedImageError, OSError):
-            return Response({"message": "That file isn’t a photo"}, status=400)
-
-        kind = request.data.get("kind", "other")
-        kind = kind if kind in dict(Media.KIND_CHOICES) else "other"
-        source = request.data.get("source", "camera_roll")
-        source = source if source in dict(Media.SOURCE_CHOICES) else "camera_roll"
-        private = kind in PRIVATE_KINDS or request.data.get("visibility") == "private"
-
-        folder = "private" if private else "uploads"
-        name = f"{folder}/{request.user.pk}/{uuid.uuid4().hex}"
-        full = default_storage.save(f"{name}.jpg", _jpeg(image, max_edge=MAX_EDGE))
-        feed = default_storage.save(f"{name}_w{FEED_WIDTH}.jpg", _jpeg(image, FEED_WIDTH))
-        thumb = default_storage.save(f"{name}_w{THUMB_WIDTH}.jpg", _jpeg(image, THUMB_WIDTH))
-        phash = difference_hash(image)
-        duplicate = near_duplicate(phash, request.user.pk) if kind in CHECKED_KINDS else None
-        media = Media.objects.create(
-            owner=request.user,
-            kind=kind,
-            visibility="private" if private else "public",
-            source=source,
-            full_path=full,
-            feed_path=feed,
-            thumb_path=thumb,
-            width=image.width,
-            height=image.height,
-            phash=phash,
-            moderation_status="flagged" if duplicate else "ok",
-            duplicate_of_id=duplicate,
+        media, error = store_image(
+            request.FILES.get("file"), owner=request.user, kind=request.data.get("kind", "other"),
+            source=request.data.get("source", "camera_roll"), private=request.data.get("visibility") == "private",
         )
+        if error:
+            return Response({"message": error}, status=400)
+        private = media.visibility == "private"
         return Response(
             {
                 "id": str(media.pk),
-                "uri": media_url(request, media, full),
-                "feed_uri": None if private else media_url(request, media, feed),
-                "thumb_uri": None if private else media_url(request, media, thumb),
-                "photo_aspect": round(image.width / image.height, 4) if image.height else 1,
+                "uri": media_url(request, media, media.full_path),
+                "feed_uri": None if private else media_url(request, media, media.feed_path),
+                "thumb_uri": None if private else media_url(request, media, media.thumb_path),
+                "photo_aspect": round(media.width / media.height, 4) if media.height else 1,
             },
             status=201,
         )
