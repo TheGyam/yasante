@@ -53,6 +53,9 @@ def present_looks(looks, viewer):
     looks = list(looks)
     stylist_ids = [_uuid(look.stylist_id) for look in looks]
     people = load_people([look.author_id for look in looks] + stylist_ids)
+    from apps.stylists.models import StylistProfile
+
+    featured = set(StylistProfile.objects.filter(featured=True, account_id__in=[i for i in stylist_ids if i]).values_list("account_id", flat=True))
     out = []
     for look in looks:
         author = people.get(look.author_id, {})
@@ -89,6 +92,7 @@ def present_looks(looks, viewer):
                     if stylist
                     else None
                 ),
+                "stylist_featured": stylist_id in featured,
                 "service_id": look.service_id,
                 "service_name": look.service_name,
                 "price": float(look.price) if look.price is not None else None,
@@ -212,6 +216,7 @@ class LookPhotoSerializer(serializers.Serializer):
 
 
 class LookSerializer(serializers.Serializer):
+    stylist_featured = serializers.BooleanField()
     photos = LookPhotoSerializer(many=True)
     id = serializers.CharField()
     author_id = serializers.CharField()

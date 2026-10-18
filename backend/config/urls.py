@@ -14,6 +14,7 @@ from apps.content import compat as content
 from apps.looks.views import StylistReportView
 from apps.web.api import WaitlistView
 from apps.profiles.views import ConsentBatchView, EventBatchView
+from apps.stylists.views import FeaturedClaimView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path
@@ -42,6 +43,7 @@ API_DOCS = (
 )
 
 urlpatterns = API_DOCS + [
+    path("api/featured/claim/<str:code>/", FeaturedClaimView.as_view(), name="featured-claim"),
     # API
     path("api/auth/", include("apps.accounts.urls")),
     path("api/invites/<str:code>/", InviteDetailView.as_view(), name="invite-detail"),

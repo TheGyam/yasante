@@ -54,6 +54,8 @@ class UserUpdateSerializer(serializers.Serializer):
         from apps.accounts.models import User
 
         value = value.strip().lower()
+        if value.endswith("@yasante.invalid"):
+            raise serializers.ValidationError("Use your own email address")
         user = self.context.get("user")
         if User.objects.filter(email__iexact=value).exclude(pk=getattr(user, "pk", None)).exists():
             raise serializers.ValidationError("Another account already uses that email.")

@@ -1391,6 +1391,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/FavoriteState'
           description: ''
+  /api/featured/claim/{code}/:
+    get:
+      operationId: featured_claim_retrieve
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - featured
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClaimPreview'
+          description: ''
+    post:
+      operationId: featured_claim_create
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - featured
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+          description: ''
   /api/features/:
     get:
       operationId: features_retrieve
@@ -1610,6 +1650,32 @@ paths:
         required: true
       tags:
       - looks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Look'
+          description: ''
+    patch:
+      operationId: looks_partial_update
+      description: GET / DELETE /api/looks/:id/
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - looks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLookTagsRequestRequest'
       security:
       - jwtAuth: []
       responses:
@@ -2277,6 +2343,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/FreeSlots'
           description: ''
+  /api/stylists/by-handle/{handle}/waitlist/:
+    put:
+      operationId: stylists_by_handle_waitlist_update
+      parameters:
+      - in: path
+        name: handle
+        schema:
+          type: string
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageWaitlist'
+          description: ''
+    delete:
+      operationId: stylists_by_handle_waitlist_destroy
+      parameters:
+      - in: path
+        name: handle
+        schema:
+          type: string
+        required: true
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/stylists/handle-available/:
     get:
       operationId: stylists_handle_available_retrieve
@@ -2440,6 +2541,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StylistProfile'
+          description: ''
+  /api/stylists/me/finish/:
+    get:
+      operationId: stylists_me_finish_retrieve
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Finish'
+          description: ''
+  /api/stylists/me/finish/price/:
+    post:
+      operationId: stylists_me_finish_price_create
+      tags:
+      - stylists
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinishPriceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Finish'
+          description: ''
+  /api/stylists/me/finish/tags-checked/:
+    post:
+      operationId: stylists_me_finish_tags_checked_create
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Finish'
           description: ''
   /api/stylists/me/menu/:
     get:
@@ -3495,6 +3644,42 @@ components:
         * `colour` - Colour
         * `bleach` - Bleach
         * `keratin` - Keratin
+    ClaimPhoto:
+      type: object
+      properties:
+        uri:
+          type: string
+        thumbUri:
+          type: string
+      required:
+      - thumbUri
+      - uri
+    ClaimPreview:
+      type: object
+      properties:
+        displayName:
+          type: string
+        handle:
+          type: string
+        avatarUri:
+          type: string
+        lookCount:
+          type: integer
+        live:
+          type: boolean
+        waiting:
+          type: integer
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClaimPhoto'
+      required:
+      - displayName
+      - handle
+      - live
+      - lookCount
+      - photos
+      - waiting
     ClientErrorKindEnum:
       enum:
       - crash
@@ -4040,6 +4225,62 @@ components:
             type: boolean
       required:
       - features
+    Finish:
+      type: object
+      properties:
+        styles:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinishStyle'
+        hoursSet:
+          type: boolean
+        tagsChecked:
+          type: boolean
+        done:
+          type: boolean
+      required:
+      - done
+      - hoursSet
+      - styles
+      - tagsChecked
+    FinishPriceRequest:
+      type: object
+      properties:
+        style:
+          type: string
+          minLength: 1
+        price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: 0.01
+          exclusiveMaximum: true
+        fromPrice:
+          type: boolean
+          default: false
+        durationMinutes:
+          type: integer
+          minimum: 1
+          nullable: true
+      required:
+      - price
+      - style
+    FinishStyle:
+      type: object
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        photoCount:
+          type: integer
+        priced:
+          type: boolean
+      required:
+      - name
+      - photoCount
+      - priced
+      - slug
     ForgotPasswordRequest:
       type: object
       description: POST /api/auth/forgot-password/
@@ -4489,6 +4730,8 @@ components:
     Look:
       type: object
       properties:
+        stylistFeatured:
+          type: boolean
         photos:
           type: array
           items:
@@ -4570,6 +4813,7 @@ components:
       - saveCount
       - saved
       - styles
+      - stylistFeatured
       - visibility
     LookCreateRequestRequest:
       type: object
@@ -4970,6 +5214,13 @@ components:
       - rating
       - serviceName
       - status
+    PageWaitlist:
+      type: object
+      properties:
+        joined:
+          type: boolean
+      required:
+      - joined
     PatchedCarePlanRequestRequest:
       type: object
       properties:
@@ -5053,6 +5304,16 @@ components:
           type: string
           format: date-time
           nullable: true
+    PatchedLookTagsRequestRequest:
+      type: object
+      properties:
+        styles:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        hairTexture:
+          type: string
     PatchedMenuItemDraftRequest:
       type: object
       description: For creating/updating menu items.
@@ -5484,6 +5745,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/VerificationTierEnum'
           readOnly: true
+        featured:
+          type: boolean
+          readOnly: true
         published:
           type: boolean
         createdAt:
@@ -5495,12 +5759,16 @@ components:
           items:
             type: string
           description: phone, work, met_in_person, met_on_video, insurance
+        claimable:
+          type: boolean
       required:
       - accountId
       - baseArea
       - checks
+      - claimable
       - createdAt
       - displayName
+      - featured
       - handle
       - id
       - policies
@@ -5963,6 +6231,8 @@ components:
     StylistPageResponse:
       type: object
       properties:
+        waitlistJoined:
+          type: boolean
         profile:
           $ref: '#/components/schemas/PublicProfile'
         menu:
@@ -6065,6 +6335,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/VerificationTierEnum'
           readOnly: true
+        featured:
+          type: boolean
+          readOnly: true
         published:
           type: boolean
         createdAt:
@@ -6076,6 +6349,7 @@ components:
       - baseArea
       - createdAt
       - displayName
+      - featured
       - handle
       - id
       - paymentMethods

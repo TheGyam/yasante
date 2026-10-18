@@ -5,6 +5,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("by-handle/<str:handle>/waitlist/", views.PageWaitlistView.as_view(), name="page-waitlist"),
+    path("me/finish/", views.FinishView.as_view(), name="stylist-finish"),
+    path("me/finish/price/", views.FinishPriceView.as_view(), name="stylist-finish-price"),
+    path("me/finish/tags-checked/", views.FinishTagsView.as_view(), name="stylist-finish-tags"),
     path("handle-available/", views.HandleCheckView.as_view(), name="handle-check"),
     path("", views.StylistCreateView.as_view(), name="stylist-create"),
     path("me/", views.StylistMeView.as_view(), name="stylist-me"),

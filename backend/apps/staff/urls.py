@@ -1,8 +1,13 @@
 from django.urls import path
 from .views import session, overview, records, forms, actions, quick_edit, metrics
-from .views import browser, review, errors, insights, privacy, broadcasts
+from .views import browser, review, errors, insights, privacy, broadcasts, featured
 
 urlpatterns = [
+    path("featured/", featured.pages),
+    path("featured/<uuid:pk>/", featured.detail),
+    path("featured/<uuid:pk>/looks/", featured.looks),
+    path("featured/<uuid:pk>/looks/<uuid:look_id>/", featured.remove_look),
+    path("featured/<uuid:pk>/<slug:action>/", featured.action),
     path("insights/<slug:name>/", insights.insight),
     path("errors/", errors.issues),
     path("errors/<int:pk>/", errors.issue_detail),

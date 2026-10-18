@@ -2,7 +2,7 @@
 id: 009
 slug: featured-stylists-backend
 assignee: codex # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+status: review # draft | ready | in-progress | review | blocked | done
 branch: agent/codex/009-featured-stylists-backend
 depends_on: []
 ---
@@ -346,11 +346,84 @@ reused database).
 
 ## Report to the lead
 
-_Filled in by the assignee when it sets `status: review` or `blocked`._
-
 - **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
-- **Every `published=True` use and booking entry point, and what you did with each:**
-- **Unsure about:**
-- **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+  - Added the stylist flag, staff facts, client waitlist and one migration. Staff can build a page with 1–5-photo looks, record permission, put it live, replace its seven-day private link and take it down. Writes use staff sign-in, the model permission, CSRF and audit events.
+  - Added locked, single-use claiming. Only a hash is stored. Ownership moves with bulk updates; unexpected reverse relations roll the transaction back before deleting the stand-in. Existing client photos and data stay separate from staff views and style pricing.
+  - Added Finish your page, style pricing, tag editing and readiness hooks after menu creation/import, hours updates, publishing and claiming. Readiness refreshes the locked profile so nearby menu and hours saves use current data. The waitlist task runs after commit, rechecks readiness, iterates in batches of 500 and uses unique notification keys.
+  - Refused the reserved domain at signup, social sign-in, email-code start and profile email changes. Password sign-in fails; forgot-password sends nothing and matches an unknown address.
+  - Added the shared indexed draft-look exclusion, the batched look flag, search ordering, Featured booking refusals, noindex/private-link headers, sitemap/area exclusions and honest metrics/insights/digests.
+  - Regenerated openapi.yaml and both schema.d.ts files with the existing generators. Added acceptance tests in backend/tests/test_featured.py. No tests were weakened or skipped. No dependencies were added.
+
+- **Initial implementation checks (before review):**
+  - `pip install -r requirements-dev.txt`: passed in the existing backend virtual environment.
+  - `DJANGO_SETTINGS_MODULE=config.settings.test python manage.py makemigrations --check --dry-run`: passed; no changes detected. PowerShell supplied the settings and isolated local PostgreSQL URL through environment variables.
+  - `python -m pytest -q -p no:cacheprovider --create-db`: passed for the entire backend, 519 tests including the new acceptance cases. Every full run used --create-db.
+  - Focused runs of `python -m pytest -q -p no:cacheprovider --create-db tests/test_featured.py`: used while implementing. Early failures in upload URLs/fixtures, schema annotations and the bulk pricing query were corrected; the final whole-suite run passes all acceptance cases, including concurrent claims, hidden reverse relations, private client-data preservation and current readiness state.
+  - `python manage.py spectacular --file ../openapi.yaml`: passed; seven warnings, zero errors.
+  - Root `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: passed after staging the generated files and rerunning the generator; no additional drift.
+  - Website `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: passed with the same regeneration check.
+  - Root `npm ci`, `npx tsc --noEmit` and `npm run lint`: passed. Lint reports 108 warnings and zero errors in the existing code.
+  - Root `npx jest --ci`: the first run failed with a shared temporary-cache EPERM error and incorrectly included website Vitest files. After the portable exclusion fix, `npx jest --ci --cacheDirectory <task temporary cache>` passed: 47 suites, 232 tests, exit 0. It still reports a worker open-handle warning. An intermediate serial run passed its assertions but stayed alive on open handles; that completed runner was stopped after the successful normal-worker run.
+  - Website `npm ci`, `npx tsc --noEmit` and `npm run lint`: passed.
+  - Website `npm test`: the first concurrent run had two timing failures. `npm test -- --maxWorkers=1` then passed every test: 17 files, 83 tests, unchanged assertions and timeouts.
+  - Website `npx vite build`: passed.
+  - `python -m ruff check apps/stylists/featured.py apps/staff/views/featured.py tests/test_featured.py`: passed. Only the three new Python files were formatted.
+  - `git diff --check`: passed.
+  - Existing lockfile audit output from npm ci: the app reported 90 vulnerabilities (one critical); the website reported one high-severity vulnerability. No dependencies or lockfiles were changed and no automatic audit fixes were applied.
+
+- **Every published=True use on StylistProfile and booking entry point:**
+  - apps/stylists/views.py: StylistCreateView.get keeps live Featured pages and orders them after other pages (including the later style/distance sort). StylistByHandleView.get keeps them visible with the new flags and private waitlist state. StylistSlotsView.get keeps the published lookup, then returns the required Featured refusal. PageWaitlistView keeps the published lookup and rejects joining once the page takes bookings.
+  - apps/bookings/views.py: BookingListCreateView.post and SlotInterestListCreateView.post keep the published lookup, then refuse Featured profiles before services or times are processed. These and StylistSlotsView.get are the three booking/free-times/slot-interest entry points changed.
+  - apps/looks/views.py: create_look's existing published-profile lookup still credits the owner; stand-ins cannot sign in and all public reads use the draft exclusion.
+  - apps/common/throttling.py: PostingThrottle's published-profile lookup stays unchanged. This is a posting allowance for a signed-in stylist, not a business count; stand-ins cannot sign in.
+  - apps/common/metrics.py: activated_stylists and response_median exclude Featured profiles.
+  - apps/stylists/tasks.py: nightly_stats and monthly_recap exclude Featured profiles.
+  - apps/staff/insights.py: area supply excludes Featured profiles. Stylist growth and top-stylist results also exclude them.
+  - apps/web/views.py: the normal stylist lookup still serves published Featured pages with noindex. The area stylist list, sitemap profiles/areas and _llms_sections exclude Featured profiles.
+  - apps/web/seo.py: the home stylist list, home area list and style-page stylist list exclude Featured profiles.
+  - Other published=True hits in the audit belong to content and policy models, not StylistProfile, and were left alone.
+
+- **Public look reads confirmed through the shared filter:**
+  - apps/looks/views.py: feed/search and ordinary look reads through _looks; look detail, likes, comments, replies and comment likes through _visible_look; area listing and look/comment reporting through the same filter.
+  - apps/planner/views.py: the lookup while saving a look. Nothing else in that file changed beyond the supporting import.
+  - apps/bookings/views.py: the actual helper is named _bookable_look; its lookup now uses the filter.
+  - apps/stylists/views.py: style-search matches and result photos. apps/stylists/serializers.py: portfolio look-photo expansion uses look ids from the filter.
+  - apps/web/views.py: look detail and its inlined data, style/area cover queries, area looks and sitemap look entries. apps/web/seo.py: home, style and look-index queries.
+  - Owner-only writes and their private responses, claiming, pricing and staff previews retain scoped owner/staff queries. A tag edit can return its result to the owner before publication without exposing that look through public GET.
+
+- **Small supporting changes under the standing rule:**
+  - apps/common/renderers.py, apps/common/schema.py and apps/web/site.py: the initial null-preservation changes have been removed in response to review point 5. These files now match master.
+  - apps/common/uploads.py: the shared URL helper accepts a request-free call from the new page-building functions; the existing upload endpoint still uses its request.
+  - apps/profiles/serializers.py: only the now-authorized reserved-domain guard. The regression test covers the profile PATCH endpoint.
+  - config/urls.py: one new claim path and its supporting import; existing paths are unchanged.
+  - jest.config.js: replaced the existing website exclusion with its portable form. On Windows the old root-path expression failed to exclude Vitest files from Jest. All 47 app suites and all 17 website suites were run under their intended runners; no assertions or test timeouts changed.
+
+- **Unsure about:** No unanswered implementation questions. The review settled publication: claiming now puts the page live in the handover transaction. Schema generation reports seven choice-name/operation-name warnings and zero errors.
+- **Skipped, and why:** No acceptance tests skipped. Staff UI, website UI and app UI remain for their separate tasks; only their generated schemas changed. No test was found that requires the backend route reservations to equal the app's NOT_HANDLES list; the app source was not edited.
+
+
+### Review fixes for pull request #51
+
+1. Removed `@public` from the Make it yours page. The shell test now requires `Cache-Control` to equal `no-store` exactly, as well as the existing no-referrer and noindex checks.
+2. Claiming sets `published=True` in the same transaction as ownership changes. A new test claims a draft with no staff yes, then reads the stylist page and look publicly. The private-owner tag-edit test now explicitly unpublishes after claiming, preserving its original private-read assertions.
+3. Staff can correct a draft Instagram handle using the creation rules. All three saved handle fields change together. Tests cover normalisation, reserved, invalid and taken handles, and the exact live-page refusal. Removed the owner-side refusal; a separate test proves the stylist can edit Instagram after claiming while still Featured.
+4. Removed the transaction and profile lock from `tell_waitlist`. Processed ids are deleted once per 500 rows, with one final partial batch. A 1,001-client test proves three DELETE queries and no profile locking. The existing real-notification repeat-run test still proves no duplicate delivery records.
+5. Removed the custom renderer, null-preservation schema exception and configurable seed renderer. Signed-out responses omit `waitlistJoined`; signed-in responses send true or false. Tests cover all three states and signed-out HTML. Regenerated OpenAPI and both clients: the field is now an optional boolean.
+6. Rooted the Jest website exclusion at `<rootDir>` and matched both path separators. Jest also mishandles an unescaped Windows root containing `.codex`, so the config resolves and escapes the root before Jest normalises it. A regression test evaluates the config with Unix and Windows roots, including an ancestor named `web` and a dot folder, and proves app tests remain included. The resolved Windows Jest configuration was also checked directly against a website path.
+7. `open_if_ready` returns before starting a transaction or taking a lock for a profile whose Featured flag is false. A regression test requires zero database queries and no queued notification task for an ordinary stylist.
+8. Staff look upload and owner look PATCH refuse more than three styles with exactly `Pick up to 3 styles`. A regression test checks both endpoints and proves the rejected upload creates no media/look and the rejected PATCH changes neither styles nor hair type.
+9. The private screenshot of the yes belongs to the staff uploader. Claim coverage proves it stays with staff while the stylist's media move. A separate endpoint test uses an uploader different from `added_by`, then proves taking down the page deletes the screenshot row and files while keeping the staff account.
+
+Review checks:
+
+- `python -m pytest -q -p no:cacheprovider --create-db`: passed for the entire backend, all 528 tests. Rerun after the final Jest configuration and regression-test update; every whole-suite run used `--create-db`.
+- `python manage.py makemigrations --check --dry-run` with test settings: passed, no changes detected.
+- Focused `python -m pytest -q -p no:cacheprovider --create-db tests/test_featured.py`: passed, 55 tests. The first run exposed a fixture mistake and a Windows text-encoding mistake in the edited test file; both were corrected without changing the expected behavior.
+- `python manage.py spectacular --file ../openapi.yaml`: passed, seven existing warnings and zero errors.
+- Root and website `npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts`: passed after staging the regenerated contracts and rerunning each generator; no additional drift. Neither client was edited by hand.
+- App `npx tsc --noEmit` and `npm run lint`: passed; lint retains 108 existing warnings and zero errors.
+- App `npx jest --ci --cacheDirectory <task temporary cache>`: passed, all 47 suites and 232 tests, exit 0. The first review run included website files because Jest mishandled the Windows dot-folder root; resolving and escaping the root fixed that. The final run still reports the existing worker open-handle warning.
+- Website `npx tsc --noEmit`, `npm run lint`, `npm test -- --maxWorkers=1` and `npx vite build`: passed; all 17 files and 83 tests pass with unchanged assertions and timeouts.
+- `python -m ruff check apps/stylists/featured.py apps/staff/views/featured.py tests/test_featured.py`: passed.
+- `git diff --check` and `git diff --cached --check`: passed.
+- Dependency installation commands were not rerun in this review round: the existing installations were reused, and no dependency or lockfile changed. No acceptance test was skipped or weakened. Status remains `review`.

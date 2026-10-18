@@ -50,7 +50,7 @@ def calculate(name, sources, start, end):
         kind = "bar"
     elif name == "growth":
         clients = buckets(source.filter(roles__contains=["client"]), "created_at", start, end)
-        stylists = buckets(sources["stylists.stylistprofile"], "created_at", start, end)
+        stylists = buckets(sources["stylists.stylistprofile"].filter(featured=False), "created_at", start, end)
         days = sorted({row["day"] for row in clients+stylists})
         lookup = [{row["day"]: row["value"] for row in group} for group in (clients, stylists)]
         rows = [{"label": str(day), "values": [group.get(day, 0) for group in lookup], "url": f"/records/accounts/user?created_at__date={day}"} for day in days]
@@ -61,7 +61,7 @@ def calculate(name, sources, start, end):
         kind = "heatmap"
     elif name == "areas":
         demand = list(source.exclude(area="").values("area").annotate(value=Count("pk")).order_by("-value")[:12])
-        supply = {row["base_area"]: row["value"] for row in sources["stylists.stylistprofile"].filter(published=True).values("base_area").annotate(value=Count("pk"))}
+        supply = {row["base_area"]: row["value"] for row in sources["stylists.stylistprofile"].filter(published=True, featured=False).values("base_area").annotate(value=Count("pk"))}
         rows = [{"label": row["area"], "values": [row["value"], supply.get(row["area"], 0)], "url": "/records/stylists/stylistprofile?" + __import__('urllib.parse', fromlist=['urlencode']).urlencode({"base_area__exact": row["area"]})} for row in demand]
         labels, kind = ["People in area", "Active stylists"], "bar"
         meta["note"] = "Current hair-profile areas and published stylists; these are current totals, not historical snapshots."
@@ -74,7 +74,7 @@ def calculate(name, sources, start, end):
         rows = [{"label": f"{row['cohort'].date()} · week {(row['week'].date()-row['cohort'].date()).days//7}", "values": [round(100*row["value"]/cohorts[row["cohort"].date()], 1)], "x": (row["week"].date()-row["cohort"].date()).days//7, "y": sorted(cohorts).index(row["cohort"].date()), "active": row["value"], "cohort": cohorts[row["cohort"].date()]} for row in active if row["week"] >= row["cohort"]]
         labels, kind = ["Active %"], "heatmap"
     elif name == "top-stylists":
-        top = qs.filter(status="completed", stylist_profile__isnull=False).values("stylist_profile_id", "stylist_name", "stylist_profile__rating_average", "stylist_profile__response_hours").annotate(value=Count("pk"), total=Sum(Coalesce("actual_price", "price"))).order_by("-value")[:10]
+        top = qs.filter(status="completed", stylist_profile__isnull=False, stylist_profile__featured=False).values("stylist_profile_id", "stylist_name", "stylist_profile__rating_average", "stylist_profile__response_hours").annotate(value=Count("pk"), total=Sum(Coalesce("actual_price", "price"))).order_by("-value")[:10]
         rows = [{"label": row["stylist_name"], "values": [row["value"], float(row["total"] or 0), float(row["stylist_profile__rating_average"] or 0), row["stylist_profile__response_hours"]], "url": f"/records/stylists/stylistprofile/{row['stylist_profile_id']}"} for row in top]
         labels, kind = ["Bookings", "Value (£)", "Rating", "Response (h)"], "table"
     elif name == "community":

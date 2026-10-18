@@ -6,6 +6,7 @@ import logging
 import uuid
 from datetime import date, datetime, time, timedelta
 
+from apps.accounts.serializers import UserResponseSerializer, UserSerializer
 from apps.bookings.models import Booking, Review
 from apps.common import zones
 from apps.common.identifiers import POLICY, UNAVAILABLE, identifier_problem, normalise
@@ -20,8 +21,13 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.throttling import ScopedRateThrottle
 
+from . import featured
+from .featured import open_if_ready, not_booking_message
 from .models import (
+    FeaturedPage,
+    PageWaitlist,
     held_checks,
     record_check,
     MenuItem,
@@ -33,6 +39,10 @@ from .models import (
 from .numbers import numbers_for, timing_label_for
 from .pricing import clean_options
 from .serializers import (
+    ClaimPreviewSerializer,
+    FinishPriceSerializer,
+    FinishSerializer,
+    PageWaitlistSerializer,
     ClosedDayRequestSerializer,
     TimeBlockSkipRequestSerializer,
     TimeBlockRequestSerializer,
@@ -220,6 +230,7 @@ def _for_style(profiles, slug, name, viewer):
     them at once.
     """
     from apps.looks.models import Look
+    from apps.looks.views import public_looks
 
     ids = [p.pk for p in profiles]
     services = {}
@@ -228,7 +239,7 @@ def _for_style(profiles, slug, name, viewer):
     ).order_by("price"):
         services.setdefault(item.stylist_id, item)
     photos = {}
-    for look in Look.objects.filter(
+    for look in public_looks().filter(
         stylist_id__in=[str(p.account_id) for p in profiles], styles__slug=slug, status="live",
         visibility="public",
     ).order_by("-like_count", "-created_at").only("stylist_id", "thumb_uri", "photo_uri", "id"):
@@ -294,9 +305,10 @@ class StylistCreateView(APIView):
         if style:
             # Her work tagged with it, or a service on her menu named after it.
             from apps.looks.models import Look, Style
+            from apps.looks.views import public_looks
 
             name = Style.objects.filter(slug=style).values_list("name", flat=True).first() or style
-            tagged = Look.objects.filter(styles__slug=style, status="live").values_list(
+            tagged = public_looks().filter(styles__slug=style, status="live").values_list(
                 "stylist_id", flat=True
             )
             qs = qs.filter(
@@ -325,7 +337,7 @@ class StylistCreateView(APIView):
             qs = qs.exclude(account=viewer)
         # Near someone: where they asked about, or where their hair profile says.
         origin = _origin(params, viewer)
-        qs = list(qs.order_by("-verification_tier", "-rating_count", "display_name")[: 200 if origin else 20])
+        qs = list(qs.order_by("featured", "-verification_tier", "-rating_count", "display_name")[: 200 if origin else 20])
         away = {}
         if origin:
             from apps.common.geo import miles
@@ -352,6 +364,7 @@ class StylistCreateView(APIView):
         if style or origin:
             # Their work in this style first, then the nearest, then checked and well rated.
             qs.sort(key=lambda p: (
+                p.featured,
                 not extra.get(p.pk, {}).get("photo_of_style"),
                 round(away.get(p.pk, 0)),
                 -p.verification_tier,
@@ -526,6 +539,7 @@ class StylistMeView(APIView):
                     PaymentMethod.objects.create(stylist=profile, **m)
             if update_fields:
                 profile.save(update_fields=update_fields + ["updated_at"])
+            open_if_ready(profile)
         if {"base_area", "address"} & set(update_fields):
             _place(profile)
         if "availability" in update_fields:
@@ -549,8 +563,12 @@ class StylistPublishView(APIView):
         if profile is None:
             return Response(NO_PROFILE, status=404)
         profile.published = True
-        profile.save(update_fields=["published", "updated_at"])
+        with transaction.atomic():
+            profile.save(update_fields=["published", "updated_at"])
+            open_if_ready(profile)
         return Response(StylistProfileSerializer(profile).data)
+
+
 
 
 @extend_schema_view(get=extend_schema(responses=StylistPageResponseSerializer))
@@ -571,10 +589,10 @@ class StylistByHandleView(APIView):
 
         if not viewer or viewer.pk != profile.account_id:
             PageView.objects.create(stylist=profile, viewer=viewer)
-        return Response(stylist_page(profile))
+        return Response(stylist_page(profile, viewer))
 
 
-def stylist_page(profile):
+def stylist_page(profile, viewer=None):
     """
     Her public page as the API sends it. The website inlines the same thing into her
     page's HTML (apps/web/views.py), so it opens on her page rather than a spinner.
@@ -595,7 +613,10 @@ def stylist_page(profile):
         ).order_by("-created_at")[:10]
     ]
 
+    from .models import FeaturedPage
+
     data = StylistProfileSerializer(profile).data
+    data["claimable"] = FeaturedPage.objects.filter(profile=profile, claimed_at=None).exists()
     # Exactly what was checked, so a badge never means more than it says.
     data["checks"] = sorted(
         "work" if c == "proof_photo" else c for c in held_checks(profile.account_id)
@@ -608,6 +629,7 @@ def stylist_page(profile):
 
     return {
         "profile": data,
+        **({"waitlist_joined": profile.waitlist.filter(client=viewer).exists()} if viewer else {}),
         "menu": MenuItemSerializer(profile.menu_items.all(), many=True).data,
         "photos": PortfolioPhotoSerializer(profile.portfolio_photos.all(), many=True).data,
         "confirmed_styles": profile.confirmed_styles_count,
@@ -675,7 +697,9 @@ class MenuListCreateView(APIView):
         draft, error = _menu_draft(request.data)
         if error:
             return Response({"message": error}, status=400)
-        item = MenuItem.objects.create(stylist=profile, **draft)
+        with transaction.atomic():
+            item = MenuItem.objects.create(stylist=profile, **draft)
+            open_if_ready(profile)
         return Response(MenuItemSerializer(item).data, status=201)
 
 
@@ -730,6 +754,7 @@ class MenuImportView(APIView):
             drafts.append(draft)
         with transaction.atomic():
             created = [MenuItem.objects.create(stylist=profile, **d) for d in drafts]
+            open_if_ready(profile)
         return Response(MenuItemSerializer(created, many=True).data, status=201)
 
 
@@ -881,6 +906,8 @@ class StylistSlotsView(APIView):
         profile = StylistProfile.objects.filter(handle=handle.lower(), published=True).first()
         if profile is None:
             return Response({"message": "No page at that address"}, status=404)
+        if profile.featured:
+            return Response({"message": not_booking_message(profile)}, status=400)
         viewer = request.user if request.user.is_authenticated else None
         moving = request.query_params.get("booking")
         if moving:
@@ -1153,3 +1180,140 @@ class StylistSummaryView(APIView):
                 ).count(),
             }
         )
+
+
+
+
+@extend_schema_view(put=extend_schema(request=None, responses=PageWaitlistSerializer),
+                    delete=extend_schema(responses=PageWaitlistSerializer))
+class PageWaitlistView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "waitlist"
+
+    @transaction.atomic
+    def _change(self, request, handle, joined):
+        profile = StylistProfile.objects.select_related("account").filter(handle__iexact=handle, published=True).first()
+        if profile is None:
+            return Response({"message": "No page at that address"}, status=404)
+        if profile.account_id == request.user.pk:
+            return Response({"message": "This is your page"}, status=400)
+        if not FeaturedPage.objects.filter(profile=profile).exists() or featured.takes_bookings(profile):
+            return Response({"message": f"{profile.display_name} already takes bookings. Book now."}, status=400)
+        if joined:
+            PageWaitlist.objects.get_or_create(stylist=profile, client=request.user)
+        else:
+            PageWaitlist.objects.filter(stylist=profile, client=request.user).delete()
+        return Response({"joined": joined})
+
+    def put(self, request, handle):
+        return self._change(request, handle, True)
+
+    def delete(self, request, handle):
+        return self._change(request, handle, False)
+
+
+@extend_schema_view(get=extend_schema(responses={200: ClaimPreviewSerializer}),
+                    post=extend_schema(request=None, responses=UserResponseSerializer))
+class FeaturedClaimView(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "claim"
+
+    def get_permissions(self):
+        return [permissions.AllowAny()] if self.request.method == "GET" else [permissions.IsAuthenticated()]
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        response["Referrer-Policy"] = "no-referrer"
+        response["Cache-Control"] = "no-store"
+        return response
+
+    def get(self, request, code):
+        from apps.looks.models import Look
+
+        page = featured.page_for_code(code)
+        if page is None:
+            return Response({"message": featured.LINK_GONE}, status=410)
+        profile = page.profile
+        looks = Look.objects.filter(author_id=profile.account_id)
+        return Response({
+            "display_name": profile.display_name, "handle": profile.handle, "avatar_uri": profile.avatar_uri,
+            "look_count": looks.count(), "live": profile.published, "waiting": profile.waitlist.count(),
+            "photos": [{"uri": row["photo_uri"], "thumb_uri": row["thumb_uri"]}
+                       for row in looks.order_by("-created_at").values("photo_uri", "thumb_uri")[:6]],
+        })
+
+    def post(self, request, code):
+        page = featured.page_for_code(code)
+        if page is None:
+            return Response({"message": featured.LINK_GONE}, status=410)
+        try:
+            user = featured.claim(page, request.user)
+        except ValueError as error:
+            return Response({"message": str(error)}, status=410 if str(error) == featured.LINK_GONE else 409)
+        return Response(UserSerializer(user).data)
+
+
+def _claimed_profile(request):
+    return StylistProfile.objects.select_related("account", "featured_page").filter(
+        account=request.user, featured_page__claimed_at__isnull=False,
+    ).first()
+
+
+@extend_schema_view(get=extend_schema(responses=FinishSerializer))
+class FinishView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        profile = _claimed_profile(request)
+        return Response(featured.finish_state(profile)) if profile else Response(NO_PROFILE, status=404)
+
+
+@extend_schema_view(post=extend_schema(request=FinishPriceSerializer, responses=FinishSerializer))
+class FinishPriceView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        from apps.looks.models import Look, Style
+
+        profile = _claimed_profile(request)
+        if profile is None:
+            return Response(NO_PROFILE, status=404)
+        # Serialize prices for overlapping styles so one look is linked to one service.
+        profile = StylistProfile.objects.select_for_update().get(pk=profile.pk)
+        serializer = FinishPriceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        style = Style.objects.filter(slug=data["style"], looks__author_id=profile.account_id,
+                                     looks__created_at__lt=profile.featured_page.claimed_at).first()
+        if style is None:
+            return Response({"message": "Pick a style from your photos"}, status=400)
+        draft, error = _menu_draft({**data, "name": style.name})
+        if error:
+            return Response({"message": error}, status=400)
+        looks = Look.objects.filter(author_id=profile.account_id, styles=style, service_id="",
+                                    pk__in=profile.portfolio_photos.filter(service=None).values("look_id"))
+        if not looks.exists():
+            return Response(featured.finish_state(profile))
+        service = MenuItem.objects.create(stylist=profile, styles=[style.slug], **draft)
+        ids = list(looks.values_list("pk", flat=True))
+        PortfolioPhoto.objects.filter(stylist=profile, look_id__in=ids, service=None).update(service=service)
+        Look.objects.filter(pk__in=ids).update(service_id=str(service.pk), service_name=service.name,
+                                             price=service.price, from_price=service.from_price)
+        featured.open_if_ready(profile)
+        return Response(featured.finish_state(profile))
+
+
+@extend_schema_view(post=extend_schema(request=None, responses=FinishSerializer))
+class FinishTagsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        profile = _claimed_profile(request)
+        if profile is None:
+            return Response(NO_PROFILE, status=404)
+        FeaturedPage.objects.filter(profile=profile).update(tags_checked_at=timezone.now())
+        profile.featured_page.refresh_from_db()
+        return Response(featured.finish_state(profile))

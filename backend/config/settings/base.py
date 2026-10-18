@@ -215,6 +215,7 @@ REST_FRAMEWORK = {
         "booking": "20/day",
         "reporting": "10/hour",
         "waitlist": "10/hour",
+        "claim": "10/min",
         "client_error": "30/hour",
         "default": "100/min",
     },

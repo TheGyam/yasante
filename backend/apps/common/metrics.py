@@ -29,7 +29,7 @@ def activated_stylists():
     from apps.stylists.models import StylistProfile
 
     return (
-        StylistProfile.objects.filter(published=True, verification_tier__gte=1)
+        StylistProfile.objects.filter(featured=False, published=True, verification_tier__gte=1)
         .annotate(
             photos=Count("portfolio_photos", distinct=True),
             priced=Count("menu_items", filter=Q(menu_items__price__gt=0), distinct=True),
@@ -94,7 +94,7 @@ def response_median():
 
     hours = [
         h
-        for h in StylistProfile.objects.filter(published=True).values_list("response_hours", flat=True)
+        for h in StylistProfile.objects.filter(featured=False, published=True).values_list("response_hours", flat=True)
         if h is not None
     ]
     return f"{median(hours):.1f}h" if hours else "–"

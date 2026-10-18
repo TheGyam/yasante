@@ -1,10 +1,13 @@
+// Escape the root before Jest normalizes patterns; Windows roots can contain dots.
+const rootDirForPattern = __dirname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 module.exports = {
   preset: 'jest-expo',
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|styled-components)',
   ],
   // The website (web/) has its own tests, run with Vitest.
-  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/web/'],
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>[\\\\/]web[\\\\/]'.replace('<rootDir>', rootDirForPattern)],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
