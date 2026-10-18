@@ -1,5 +1,6 @@
-import { Outlet, ScrollRestoration, useLocation } from 'react-router';
-import { useSession } from '@/features/auth';
+import { Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router';
+import { useSession, useSignOut } from '@/features/auth';
+import { Button } from '@/shared/ui/Button';
 import { SiteFooter } from '@/shared/ui/SiteFooter';
 import { SiteHeader } from '@/shared/ui/SiteHeader';
 
@@ -13,6 +14,8 @@ const POLICIES = [
 /** The frame around every page. */
 export default function Layout() {
   const session = useSession();
+  const signOut = useSignOut();
+  const navigate = useNavigate();
   const stylist = session?.user.roles.includes('stylist');
   // The home page opens on its hero, and the header floats inside it.
   const home = useLocation().pathname === '/';
@@ -32,6 +35,18 @@ export default function Layout() {
         ]}
         appTo="/#waitlist"
         overlay={home}
+        account={
+          session && (
+            <Button
+              label="Sign out"
+              size="sm"
+              variant="ghost"
+              disabled={signOut.isPending}
+              // Off any page that needs an account, so nothing private stays on screen.
+              onClick={() => signOut.mutate(undefined, { onSettled: () => navigate('/') })}
+            />
+          )
+        }
       />
       <main id="main">
         <Outlet />

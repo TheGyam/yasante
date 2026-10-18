@@ -169,4 +169,15 @@ describe('booking on the website', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/auth/login'));
     expect(router.state.location.search).toBe('?next=%2Fbookings');
   });
+
+  it('lets her sign out, from the header or her bookings', async () => {
+    startSession({ user: client, accessToken: 'a', refreshToken: 'r', expiresAt: 0 });
+    const calls = mockApi({ 'GET /api/bookings/': [], 'POST /api/auth/logout/': { status: 204 } });
+    const { router } = renderSite('/bookings');
+    expect(await screen.findByText(/Signed in as efua@example.com/)).toBeInTheDocument();
+    await userEvent.click(screen.getAllByRole('button', { name: 'Sign out' })[0]);
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    expect(calls.some(c => c.url.endsWith('/api/auth/logout/'))).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
+  });
 });

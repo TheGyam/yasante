@@ -78,7 +78,13 @@ export const brand = style({
   '@media': { [media.large]: { justifySelf: 'center' } },
 });
 
-export const end = style({ order: 3, justifySelf: 'end' });
+export const end = style({
+  order: 3,
+  justifySelf: 'end',
+  display: 'flex',
+  alignItems: 'center',
+  gap: space.sm,
+});
 
 export const pill = style({
   display: 'inline-flex',

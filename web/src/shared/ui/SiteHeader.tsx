@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { BrandMark } from './BrandMark';
 import { Button } from './Button';
 import { Glass } from './Glass';
@@ -10,9 +11,11 @@ export interface SiteHeaderProps {
   appTo: string;
   /** Float over the page's first screen (the home page's hero) instead of above it. */
   overlay?: boolean;
+  /** Beside "Get the app": a way to sign out, when someone is signed in. */
+  account?: ReactNode;
 }
 
-export function SiteHeader({ links, appTo, overlay = false }: SiteHeaderProps) {
+export function SiteHeader({ links, appTo, overlay = false, account }: SiteHeaderProps) {
   return (
     <header className={overlay ? styles.overlay : styles.header}>
       <Glass variant="chrome" radius="none" className={styles.glass} />
@@ -31,6 +34,7 @@ export function SiteHeader({ links, appTo, overlay = false }: SiteHeaderProps) {
           <BrandMark />
         </Link>
         <span className={`${styles.end} ${styles.wide}`}>
+          {account}
           <Button label="Get the app" size="sm" to={appTo} />
         </span>
       </div>
