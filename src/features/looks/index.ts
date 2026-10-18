@@ -4,14 +4,16 @@ export type {
   LookComment,
   LookDraft,
   LookFilters,
+  LookPhoto,
   LookVisibility,
   TaggedProduct,
   LooksPage,
   ReportReason,
   Style,
 } from './types';
-export { REPORT_REASONS } from './types';
-export { looksApi } from './api';
+export { lookPhotos, REPORT_REASONS } from './types';
+export { looksApi, PhotoUploadError } from './api';
+export type { UploadCache, UploadProgress } from './api';
 export { useLookFilters } from './filters';
 export * from './format';
 export * from './hooks';

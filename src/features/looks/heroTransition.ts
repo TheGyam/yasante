@@ -11,6 +11,8 @@ export interface Hero {
   lookId: string;
   /** The copy the tile already shows, so the photo moves without waiting to load. */
   uri: string;
+  /** Which of the look's photos was on screen when it was tapped. */
+  photoIndex?: number;
   /** Where the tile's photo sits on screen, in window coordinates. */
   from: HeroRect;
 }

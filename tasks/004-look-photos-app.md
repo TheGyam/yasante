@@ -2,7 +2,7 @@
 id: 004
 slug: look-photos-app
 assignee: sonnet # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+status: review # draft | ready | in-progress | review | blocked | done
 branch: agent/sonnet/004-look-photos-app
 depends_on: [003]
 ---
@@ -115,8 +115,18 @@ npx jest --ci
 
 _Filled in by the assignee when it sets `status: review` or `blocked`._
 
-- **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
-- **Unsure about:**
-- **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+- **Changed:** Fixed every item from the lead's review:
+  1. `LookCard`'s photo frame is a fixed 0.8 aspect ratio again, for every look; `frameAspect` and its clamp constants are gone from `LookPhotos.tsx`. Cropping to that frame is still `contentFit="cover"` on the photo itself, as before.
+  2. In `LookPhotos.tsx`: the single-photo `Photo` component's `accessibilityHint` now reads "Opens the look" in the feed and "Double tap to like" on the look's own page (it was dropping the feed hint entirely). The multi-photo `Swiper`'s adjustable element gained an `activate` accessibility action (opens the look, or likes it on the look's own page) and its label is now `"<caption>, photo 2 of 5"`.
+  3. In `app/looks/new.tsx`: `useImagePicker()`'s `error` is now read, and a "No access to your photos" / "Allow access in Settings to post a look." dialog shows when `pickManyFromLibrary` comes back empty with that error set (it can't throw, since the hook catches internally) — the same message the single-photo composer used to show.
+  4. `THUMB_WIDTH` in the composer went from 72 to 60, so 5 thumbs plus their gaps (332pt) fit a 375pt phone.
+  5. A `useEffect` on `photoUris` clears `failedPhotoIndex` whenever the chosen list changes (remove, reorder or add), so a stale failure mark can't point at the wrong photo.
+  6. `Look.photos` is now `photos?: LookPhoto[]` in `types.ts`, matching that `lookPhotos()` exists because older and cached responses don't have it.
+  7. Added tests under `src/features/looks/__tests__/`: `lookPhotos.test.ts` (the fallback to the cover, with and without an empty `photos` array), `api.test.ts` (uploads cap at 3 concurrent and keep order; the composer's remove/reorder order is what gets sent; a photo that fails twice throws `PhotoUploadError` with its index and posts nothing; a second call with the same cache only re-uploads the photo that failed), and `LookPhotos.test.tsx` (one photo renders no list/dots/counter; three photos show dots and an adjustable element with a "1/3" counter).
+  Also dropped an unused `StyleSheet` import from `LookCard.tsx` that the lint run flagged while I was in the file.
+- **Checks run:**
+  - `npx tsc --noEmit` — passed, no errors.
+  - `npm run lint` — 0 errors, 109 warnings (all pre-existing elsewhere in the codebase, plus 2 new prettier-only warnings in `api.test.ts` that I then formatted away with `npx prettier --write`; 0 new warnings remain in the files this task touches).
+  - `npx jest --ci` — passed: 45 suites, 224 tests (the 215 from before, plus 9 new).
+- **Unsure about:** The "at most 3 at a time" test in `api.test.ts` asserts on synchronous worker start-up order rather than wall-clock concurrency (there's no fake-timer concurrency primitive in this codebase to reach for) — it's deterministic, but it is relying on `uploadLookPhotos`'s worker loop starting each of its 3 workers synchronously before its first `await`, which is how the implementation works today but is an implementation detail rather than part of its public contract.
+- **Skipped, and why:** Nothing from the review list. I didn't touch `src/shared/hooks/useImagePicker.ts` (out of scope for this task) to make `pickManyFromLibrary` throw — the fix reads its `error` state instead, same as the review asked for.

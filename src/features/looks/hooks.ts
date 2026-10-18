@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { prefetchImages } from '@/shared/ui/RemoteImage';
-import { looksApi } from './api';
+import { looksApi, type UploadCache, type UploadProgress } from './api';
 import type {
   CommentsPage,
   Look,
@@ -186,7 +186,11 @@ function useRefreshFeed() {
 export function usePostLook() {
   const onSuccess = useRefreshFeed();
   return useMutation({
-    mutationFn: (draft: LookDraft) => looksApi.create(draft),
+    mutationFn: (vars: {
+      draft: LookDraft;
+      cache?: UploadCache;
+      onProgress?: (progress: UploadProgress) => void;
+    }) => looksApi.create(vars.draft, vars),
     onSuccess: look => {
       track('post_look', { styles: look.styles.join(','), creditsStylist: !!look.stylist });
       return onSuccess();
