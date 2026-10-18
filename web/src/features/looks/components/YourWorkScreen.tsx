@@ -1,10 +1,13 @@
+import { Fragment, useState } from 'react';
 import { useLocation } from 'react-router';
-import { ImagePlus, Trash2 } from 'lucide-react';
+import { ImagePlus, PenLine, Trash2 } from 'lucide-react';
+import { useCheckFinishTags, useFinishState } from '@/features/claim';
 import { usePortfolio, useRemovePortfolioPhoto } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
 import { plural } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { Glass } from '@/shared/ui/Glass';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
 import { Link } from '@/shared/ui/Link';
 import { Page } from '@/shared/ui/Page';
@@ -13,8 +16,9 @@ import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
-import { useDeleteLook, useMyLooks } from '../hooks';
-import { lookAlt } from '../format';
+import { useDeleteLook, useMyLooks, useStyles, useUpdateLook } from '../hooks';
+import { HAIR_TEXTURES, lookAlt } from '../format';
+import type { Look } from '../types';
 import * as styles from './YourWork.css';
 
 /** What she's posted: her looks in the feed, and the photos on her page. */
@@ -24,8 +28,23 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
   const portfolio = usePortfolio(accountId);
   const deleteLook = useDeleteLook();
   const removePhoto = useRemovePortfolioPhoto(accountId);
+  const finish = useFinishState();
+  const checkTags = useCheckFinishTags();
+  const { data: styleList = [] } = useStyles();
+  const updateLook = useUpdateLook();
+
+  const [editingLookId, setEditingLookId] = useState<string | null>(null);
+  const [editStyles, setEditStyles] = useState<string[]>([]);
+  const [editHair, setEditHair] = useState<Look['hairTexture'] | undefined>(undefined);
+  const [editError, setEditError] = useState<string | undefined>(undefined);
 
   const live = (looks.data ?? []).filter(l => l.visibility === 'public');
+  const checking = !!finish.data && !finish.data.tagsChecked;
+  const styleNames = (look: Look) =>
+    (look.styles ?? [])
+      .map(slug => styleList.find(s => s.id === slug)?.name)
+      .filter(Boolean)
+      .join(', ');
   const photos = portfolio.data ?? [];
 
   return (
@@ -45,9 +64,27 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
           message={`Posted ${plural(posted, 'photo')}. They’re in the feed now.`}
         />
       )}
-      {(deleteLook.isError || removePhoto.isError) && (
+      {finish.data && !finish.data.tagsChecked && (
+        <Glass padded radius="lg" className={styles.tagsCheckBanner}>
+          <div>
+            <Text variant="title3">Check your tags</Text>
+            <Text variant="subhead" tone="secondary">
+              We tagged your photos for you. Fix any we got wrong.
+            </Text>
+          </div>
+          <Button
+            label="These look right"
+            loading={checkTags.isPending}
+            onClick={() => checkTags.mutate()}
+          />
+        </Glass>
+      )}
+      {(deleteLook.isError || removePhoto.isError || checkTags.isError) && (
         <InlineAlert
-          message={errorMessage(deleteLook.error ?? removePhoto.error, 'Couldn’t remove that.')}
+          message={errorMessage(
+            deleteLook.error ?? removePhoto.error ?? checkTags.error,
+            'Couldn’t update that.'
+          )}
         />
       )}
 
@@ -66,32 +103,142 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
       ) : (
         <ul className={styles.grid}>
           {live.map(look => (
-            <li key={look.id} className={styles.tile}>
-              <Link to={`/looks/${look.id}`}>
-                <RemoteImage
-                  src={look.thumbUri ?? look.photoUri}
-                  alt={lookAlt(look)}
-                  aspect={4 / 5}
-                />
-                {look.photos.length > 1 && (
-                  <PhotoCount count={look.photos.length} className={styles.count} />
-                )}
-              </Link>
-              <button
-                type="button"
-                className={styles.remove}
-                aria-label={`Remove ${lookAlt(look)}`}
-                onClick={() => {
-                  if (window.confirm('Remove this look from the feed? It goes for good.')) {
-                    deleteLook.mutate(look.id);
-                    // Its photo on her page goes with it: that photo linked here.
-                    photos.filter(p => p.lookId === look.id).forEach(p => removePhoto.mutate(p.id));
-                  }
-                }}
-              >
-                <Trash2 size={16} aria-hidden />
-              </button>
-            </li>
+            <Fragment key={look.id}>
+              <li className={styles.tile}>
+                <Link to={`/looks/${look.id}`}>
+                  <RemoteImage
+                    src={look.thumbUri ?? look.photoUri}
+                    alt={lookAlt(look)}
+                    aspect={4 / 5}
+                  />
+                  {look.photos.length > 1 && (
+                    <PhotoCount count={look.photos.length} className={styles.count} />
+                  )}
+                </Link>
+                <button
+                  type="button"
+                  className={styles.editButton}
+                  aria-label={`Edit tags for ${lookAlt(look)}`}
+                  onClick={() => {
+                    if (editingLookId === look.id) {
+                      setEditingLookId(null);
+                    } else {
+                      setEditingLookId(look.id);
+                      setEditStyles(look.styles ?? []);
+                      setEditHair(look.hairTexture);
+                      setEditError(undefined);
+                    }
+                  }}
+                >
+                  <PenLine size={12} aria-hidden />
+                  {/* While she's checking our tags, each photo says what it's tagged. */}
+                  {checking ? styleNames(look) || 'No style' : 'Edit tags'}
+                </button>
+                <button
+                  type="button"
+                  className={styles.remove}
+                  aria-label={`Remove ${lookAlt(look)}`}
+                  onClick={() => {
+                    if (window.confirm('Remove this look from the feed? It goes for good.')) {
+                      deleteLook.mutate(look.id);
+                      // Its photo on her page goes with it: that photo linked here.
+                      photos
+                        .filter(p => p.lookId === look.id)
+                        .forEach(p => removePhoto.mutate(p.id));
+                    }
+                  }}
+                >
+                  <Trash2 size={16} aria-hidden />
+                </button>
+              </li>
+              {editingLookId === look.id && (
+                <li className={styles.tagEditor}>
+                  <Glass padded radius="lg">
+                    <div className={styles.editorBody}>
+                      <div>
+                        <Text variant="title3">Style (pick up to 3)</Text>
+                        <Text variant="caption" tone="secondary">
+                          Tap to choose what kind of style this is.
+                        </Text>
+                      </div>
+                      <div className={styles.chipList}>
+                        {styleList.map(s => {
+                          const selected = editStyles.includes(s.id);
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              className={`${styles.chip} ${selected ? styles.chipActive : ''}`}
+                              onClick={() => {
+                                if (selected) {
+                                  setEditStyles(prev => prev.filter(x => x !== s.id));
+                                } else if (editStyles.length < 3) {
+                                  setEditStyles(prev => [...prev, s.id]);
+                                }
+                              }}
+                            >
+                              {s.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div>
+                        <Text variant="title3">Hair type</Text>
+                        <Text variant="caption" tone="secondary">
+                          Optional texture for this look.
+                        </Text>
+                      </div>
+                      <div className={styles.chipList}>
+                        {HAIR_TEXTURES.map(t => {
+                          const selected = editHair === t.id;
+                          return (
+                            <button
+                              key={t.id}
+                              type="button"
+                              className={`${styles.chip} ${selected ? styles.chipActive : ''}`}
+                              onClick={() => {
+                                setEditHair(selected ? undefined : t.id);
+                              }}
+                            >
+                              {t.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {editError && <InlineAlert message={editError} />}
+                      <div className={styles.editorActions}>
+                        <Button
+                          label="Save tags"
+                          size="sm"
+                          loading={updateLook.isPending}
+                          onClick={async () => {
+                            if (editStyles.length === 0) {
+                              setEditError('Tag at least one style.');
+                              return;
+                            }
+                            try {
+                              await updateLook.mutateAsync({
+                                id: look.id,
+                                patch: { styles: editStyles, hairTexture: editHair ?? null },
+                              });
+                              setEditingLookId(null);
+                            } catch (err) {
+                              setEditError(errorMessage(err, 'Couldn’t save tags. Try again.'));
+                            }
+                          }}
+                        />
+                        <Button
+                          label="Cancel"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingLookId(null)}
+                        />
+                      </div>
+                    </div>
+                  </Glass>
+                </li>
+              )}
+            </Fragment>
           ))}
         </ul>
       )}

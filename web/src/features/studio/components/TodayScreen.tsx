@@ -20,6 +20,7 @@ import {
   useNumbers,
   type StylistProfile,
 } from '@/features/stylist';
+import { useFinishState } from '@/features/claim';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Glass } from '@/shared/ui/Glass';
@@ -70,6 +71,7 @@ export function TodayScreen({ accountId }: { accountId: string }) {
   const { data: looks } = useMyLooks();
   const { data: numbers } = useNumbers(accountId);
   const { data: confirmed = [] } = useBookings(['confirmed']);
+  const { data: finish } = useFinishState();
   if (!profile) return null;
 
   const now = new Date();
@@ -83,6 +85,13 @@ export function TodayScreen({ accountId }: { accountId: string }) {
   const days = [...new Set(later.map(b => dayOf(new Date(b.scheduledFor!))))];
   const closed = new Set(profile.availability?.closed ?? []);
 
+  const allPriced = finish
+    ? finish.styles.length === 0 || finish.styles.every(s => s.priced)
+    : false;
+  const finishDoneCount = finish
+    ? [allPriced, finish.hoursSet, finish.tagsChecked].filter(Boolean).length
+    : 0;
+
   return (
     <Page title="Today">
       <div className={styles.head}>
@@ -91,6 +100,17 @@ export function TodayScreen({ accountId }: { accountId: string }) {
           {today.format(now)}
         </Text>
       </div>
+      {finish && !finish.done && (
+        <Glass padded radius="xl" className={styles.finish}>
+          <div>
+            <Text variant="title3">Finish your page</Text>
+            <Text variant="subhead" tone="secondary">
+              {finishDoneCount} of 3 done
+            </Text>
+          </div>
+          <Button label="Continue" variant="secondary" size="md" to="/finish" />
+        </Glass>
+      )}
       <div className={styles.columns}>
         <div>
           <PageCard profile={profile} />

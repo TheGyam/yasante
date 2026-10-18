@@ -42,7 +42,7 @@ function withQuery(path: string, params?: Params) {
   return text ? `${path}?${text}` : path;
 }
 
-type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 async function send(method: Method, url: string, body: unknown, token: string | undefined) {
   const form = body instanceof FormData;
@@ -76,8 +76,9 @@ async function request<T>(method: Method, path: string, body?: unknown, params?:
 export const api = {
   get: <T>(path: string, params?: Params) => request<T>('GET', path, undefined, params),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),
+  put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body ?? {}),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
-  delete: (path: string) => request<void>('DELETE', path),
+  delete: <T = void>(path: string) => request<T>('DELETE', path),
   /** A file, as multipart form data. */
   upload: <T>(path: string, form: FormData) => request<T>('POST', path, form),
 };

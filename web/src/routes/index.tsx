@@ -31,6 +31,8 @@ import {
 import VerifyEmailRoute from './verify-email';
 import StyleRoute from './style';
 import StylistRoute from './stylist';
+import ClaimRoute from './claim';
+import FinishRoute from './finish';
 
 /**
  * Every page on yasante.com. The addresses match the app's (a shared link opens the
@@ -81,6 +83,8 @@ export const routes = [
           { path: '/account', element: <AccountRoute /> },
         ],
       },
+      { path: '/claim/:code', element: <ClaimRoute /> },
+      { path: '/finish', element: <FinishRoute /> },
       // Last: her bio link, yasante.com/{handle}.
       { path: '/:handle', element: <StylistRoute /> },
       { path: '*', element: <NotFoundRoute /> },

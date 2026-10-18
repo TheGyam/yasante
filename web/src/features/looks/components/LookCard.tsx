@@ -22,6 +22,7 @@ export function LookCard({ look, priority }: { look: Look; priority?: boolean })
         className={styles.photo}
       />
       {look.photos.length > 1 && <PhotoCount count={look.photos.length} />}
+      {look.stylistFeatured && <span className={styles.featuredBadge}>Featured</span>}
       <span className={styles.shade} aria-hidden>
         <span className={styles.title}>{lookTitle(look)}</span>
         <span className={styles.meta}>

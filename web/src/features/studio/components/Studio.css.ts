@@ -15,6 +15,15 @@ export const columns = style({
 });
 
 export const card = style({ display: 'grid', gap: space.md });
+/** "Finish your page" at the top of Today, for a page Yasante set up. */
+export const finish = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+  gap: space.md,
+  marginBottom: space.lg,
+});
 export const link = style({
   display: 'flex',
   flexWrap: 'wrap',

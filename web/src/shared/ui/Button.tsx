@@ -27,7 +27,7 @@ type AsButton = Common &
 /** A page on this site. */
 type AsLink = Common & { to: string; preload?: () => void; href?: undefined };
 /** Somewhere else: the app, another site. */
-type AsAnchor = Common & { href: string; to?: undefined };
+type AsAnchor = Common & { href: string; to?: undefined; target?: string; rel?: string };
 
 export type ButtonProps = AsButton | AsLink | AsAnchor;
 
@@ -74,7 +74,7 @@ export function Button(props: ButtonProps) {
   }
   if (props.href !== undefined) {
     return (
-      <a href={props.href} className={classes}>
+      <a href={props.href} target={props.target} rel={props.rel} className={classes}>
         {content}
       </a>
     );

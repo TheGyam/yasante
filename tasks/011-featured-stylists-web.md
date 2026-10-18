@@ -2,7 +2,7 @@
 id: 011
 slug: featured-stylists-web
 assignee: codex # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+status: review # draft | ready | in-progress | review | blocked | done
 branch: agent/codex/011-featured-stylists-web
 depends_on: [009]
 ---
@@ -142,10 +142,26 @@ npm ci && npx tsc --noEmit && npm run lint && npm test && npx vite build
 
 ## Report to the lead
 
-_Filled in by the assignee when it sets `status: review` or `blocked`._
-
-- **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
-- **Unsure about:**
-- **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+- **Changed:** Built first by Gemini, then reviewed and finished by the lead (the
+  review is on the pull request). The lead's round fixed: the robots tag (`Page.tsx`
+  now sets `noindex` only for a page that needs it and puts the server's tag back),
+  Yasante's Instagram (@yasantebeauty) on the stylist page note and the used-link
+  screen, waitlist taps no longer re-reading her page (each read counted as a visit),
+  signed-in visitors read the page once more instead of being sent to sign in, the
+  signed-out label ("Sign in to join the waitlist"), her @handle kept under her name,
+  one Featured label per feed card with the area kept, the Today card ("1 of 3 done",
+  Continue) with its styles in `.css.ts`, "1 of your photos is…", style names on each
+  tile while tags are being checked, clearing a look's hair type, no address line on a
+  featured page, the claim screen's photo strip, Prettier on every changed file, and
+  the brief put back as written.
+- **Outside the listed scope, and why:** `shared/ui/Page.tsx` (the noindex prop),
+  `shared/ui/Button.tsx` (`target` and `rel` on links), `shared/lib/api/client.ts`
+  (`put`, and a typed `delete`), `features/auth/index.ts` (exports `updateUser`),
+  `features/looks/components/LookScreen.tsx` (no booking on a featured look's page),
+  `features/stylist/format.ts` (`serviceModels` may be missing),
+  `features/studio/components/Studio.css.ts` (the Today card's style).
+- **Checks run:** `npm ci`, `npx tsc --noEmit`, `npm run lint`, `npm test` and
+  `npx vite build`, all passed (see the pull request for the run). The whole journey
+  was also tried by hand against the real server on a phone-sized screen.
+- **Unsure about:** nothing open.
+- **Skipped, and why:** nothing.

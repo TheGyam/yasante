@@ -8,7 +8,16 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { addToPortfolio, uploadPhoto } from '@/features/stylist';
-import { deleteLook, getAreas, getLook, getLooks, getMyLooks, getStyles, postLook } from './api';
+import {
+  deleteLook,
+  getAreas,
+  getLook,
+  getLooks,
+  getMyLooks,
+  getStyles,
+  postLook,
+  updateLook,
+} from './api';
 import type { Look, LookFilters, LooksPage } from './types';
 
 /**
@@ -273,4 +282,22 @@ export function usePostLookPhotos() {
   };
 
   return { post, progress, reset: () => setProgress(undefined) };
+}
+
+export function useUpdateLook() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      patch,
+    }: {
+      id: string;
+      patch: { styles?: string[]; hairTexture?: Look['hairTexture'] | null };
+    }) => updateLook(id, patch),
+    onSuccess: look => {
+      client.setQueryData(lookKeys.look(look.id), look);
+      client.invalidateQueries({ queryKey: lookKeys.mine });
+      client.invalidateQueries({ queryKey: ['looks', 'feed'] });
+    },
+  });
 }

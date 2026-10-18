@@ -93,3 +93,10 @@ export function uploadPhoto(file: File, kind: 'look' | 'portfolio') {
 export const addToPortfolio = (
   photos: { uri: string; thumbUri?: string; serviceId?: string; lookId?: string }[]
 ) => api.post<PortfolioPhoto[]>('/stylists/me/portfolio/', { photos });
+
+/** Join or leave the waitlist for a featured stylist. */
+export const joinPageWaitlist = (handle: string) =>
+  api.put<{ joined: boolean }>(`/stylists/by-handle/${encodeURIComponent(handle)}/waitlist/`);
+
+export const leavePageWaitlist = (handle: string) =>
+  api.delete<{ joined: boolean }>(`/stylists/by-handle/${encodeURIComponent(handle)}/waitlist/`);

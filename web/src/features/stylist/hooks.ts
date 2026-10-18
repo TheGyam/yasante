@@ -23,9 +23,17 @@ import {
   updateMenuItem,
   updateProfile,
   uploadProof,
+  joinPageWaitlist,
+  leavePageWaitlist,
 } from './api';
 import { handleProblem } from './handle';
-import type { MenuItemDraft, StylistFilters, StylistProfile, StylistProfileDraft } from './types';
+import type {
+  MenuItemDraft,
+  StylistFilters,
+  StylistPage,
+  StylistProfile,
+  StylistProfileDraft,
+} from './types';
 
 /**
  * Query keys. `['stylist', handle]` (lower case) is also what the server inlines her
@@ -211,5 +219,30 @@ export function useSummary(accountId: string) {
     queryFn: getSummary,
     // Requests arrive while she's looking: check again every minute.
     refetchInterval: 60_000,
+  });
+}
+
+/**
+ * Joins or leaves a featured stylist's waitlist, showing the change at once. The
+ * answer sets the button; the page isn't read again, since every read of her page
+ * counts as a visit in her numbers.
+ */
+export function useTogglePageWaitlist(handle: string) {
+  const client = useQueryClient();
+  const key = stylistKeys.page(handle);
+  const set = (joined: boolean) =>
+    client.setQueryData<StylistPage>(key, old => (old ? { ...old, waitlistJoined: joined } : old));
+  return useMutation({
+    mutationFn: (join: boolean) => (join ? joinPageWaitlist(handle) : leavePageWaitlist(handle)),
+    onMutate: async (join: boolean) => {
+      await client.cancelQueries({ queryKey: key });
+      const previous = client.getQueryData<StylistPage>(key)?.waitlistJoined;
+      set(join);
+      return { previous };
+    },
+    onSuccess: answer => set(answer.joined),
+    onError: (_error, _join, context) => {
+      if (context) set(context.previous === true);
+    },
   });
 }

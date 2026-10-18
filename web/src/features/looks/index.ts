@@ -6,4 +6,4 @@ export { HAIR_TEXTURES } from './format';
 export type { Look, LookFilters, Style } from './types';
 export { PostWorkScreen } from './components/PostWorkScreen';
 export { YourWorkScreen } from './components/YourWorkScreen';
-export { useMyLooks } from './hooks';
+export { useMyLooks, useUpdateLook } from './hooks';
