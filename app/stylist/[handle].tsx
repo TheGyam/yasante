@@ -28,7 +28,7 @@ import {
 } from '@/features/stylist';
 import { useAuth } from '@/features/auth';
 import { ReviewCard } from '@/features/booking';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatDistance, formatMoney } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
@@ -46,6 +46,7 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { StarRating } from '@/shared/ui/StarRating';
 import { Text } from '@/shared/ui/Text';
 import { track } from '@/shared/lib/analytics';
+import { usesMiles } from '@/shared/lib/region';
 
 /** A page opens on a few of each, and grows a step at a time. */
 const PHOTOS_STEP = 6;
@@ -112,6 +113,7 @@ export default function StylistPageScreen() {
     data;
   // Set up by Yasante and not taking bookings yet: only what's real, and no booking.
   const featured = !!profile.featured;
+  const currency = profile.currency ?? DEFAULT_CURRENCY;
   const reply = replyLabel(responseHours);
   const timing = timingLabelText(timingLabel);
   const deposit =
@@ -119,7 +121,7 @@ export default function StylistPageScreen() {
       ? 'No deposit'
       : profile.policies.depositType === 'percent'
         ? `${profile.policies.depositAmount}% deposit`
-        : `${formatMoney(profile.policies.depositAmount ?? 0)} deposit`;
+        : `${formatMoney(profile.policies.depositAmount ?? 0, currency)} deposit`;
 
   return (
     <Screen
@@ -203,7 +205,7 @@ export default function StylistPageScreen() {
               featured
                 ? undefined
                 : profile.serviceModels.includes('mobile') && profile.travelRadiusMiles
-                  ? `Travels up to ${profile.travelRadiusMiles} miles`
+                  ? `Travels up to ${formatDistance(profile.travelRadiusMiles, usesMiles)}`
                   : 'District only — the address comes with a confirmed booking'
             }
             icon={MapPin}
@@ -252,7 +254,7 @@ export default function StylistPageScreen() {
                     .filter(Boolean)
                     .join(' · ') || undefined
                 }
-                value={formatPrice(item)}
+                value={formatPrice(item, currency)}
                 icon={Scissors}
               />
             ))}

@@ -47,6 +47,8 @@ class StylistProfile(TimeStampedModel):
         default=list,
     )
     base_area = models.CharField(max_length=100)
+    # Where she works (ISO 3166 code). Her prices are always in its currency.
+    country = models.CharField(max_length=2, default="GB", db_index=True)
     # Private: copied onto a booking and shown to her client only once confirmed.
     address = models.CharField(max_length=500, blank=True, default="")
     travel_radius_miles = models.FloatField(null=True, blank=True)
@@ -114,6 +116,13 @@ class StylistProfile(TimeStampedModel):
         return result
 
     @property
+    def currency(self) -> str:
+        """Her country's currency (ISO 4217): every price on her page is in it."""
+        from apps.common.countries import currency_of
+
+        return currency_of(self.country)
+
+    @property
     def policies(self) -> dict:
         return {
             "notice_hours": self.notice_hours,
@@ -174,7 +183,9 @@ class MenuItem(TimeStampedModel):
         ordering = ["sort_order", "created_at"]
 
     def __str__(self):
-        return f"{self.name} — £{self.price}"
+        from apps.common.countries import money
+
+        return f"{self.name} — {money(self.price, self.stylist.currency)}"
 
 
 class PortfolioPhoto(TimeStampedModel):

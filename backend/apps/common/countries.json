@@ -1,0 +1,1478 @@
+[
+ {
+  "code": "AF",
+  "name": "Afghanistan",
+  "currency": "AFN",
+  "units": "km"
+ },
+ {
+  "code": "AX",
+  "name": "Åland Islands",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "AL",
+  "name": "Albania",
+  "currency": "ALL",
+  "units": "km"
+ },
+ {
+  "code": "DZ",
+  "name": "Algeria",
+  "currency": "DZD",
+  "units": "km"
+ },
+ {
+  "code": "AS",
+  "name": "American Samoa",
+  "currency": "USD",
+  "units": "mi"
+ },
+ {
+  "code": "AD",
+  "name": "Andorra",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "AO",
+  "name": "Angola",
+  "currency": "AOA",
+  "units": "km"
+ },
+ {
+  "code": "AI",
+  "name": "Anguilla",
+  "currency": "XCD",
+  "units": "km"
+ },
+ {
+  "code": "AG",
+  "name": "Antigua & Barbuda",
+  "currency": "XCD",
+  "units": "km"
+ },
+ {
+  "code": "AR",
+  "name": "Argentina",
+  "currency": "ARS",
+  "units": "km"
+ },
+ {
+  "code": "AM",
+  "name": "Armenia",
+  "currency": "AMD",
+  "units": "km"
+ },
+ {
+  "code": "AW",
+  "name": "Aruba",
+  "currency": "AWG",
+  "units": "km"
+ },
+ {
+  "code": "AU",
+  "name": "Australia",
+  "currency": "AUD",
+  "units": "km"
+ },
+ {
+  "code": "AT",
+  "name": "Austria",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "AZ",
+  "name": "Azerbaijan",
+  "currency": "AZN",
+  "units": "km"
+ },
+ {
+  "code": "BS",
+  "name": "Bahamas",
+  "currency": "BSD",
+  "units": "km"
+ },
+ {
+  "code": "BH",
+  "name": "Bahrain",
+  "currency": "BHD",
+  "units": "km"
+ },
+ {
+  "code": "BD",
+  "name": "Bangladesh",
+  "currency": "BDT",
+  "units": "km"
+ },
+ {
+  "code": "BB",
+  "name": "Barbados",
+  "currency": "BBD",
+  "units": "km"
+ },
+ {
+  "code": "BY",
+  "name": "Belarus",
+  "currency": "BYN",
+  "units": "km"
+ },
+ {
+  "code": "BE",
+  "name": "Belgium",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "BZ",
+  "name": "Belize",
+  "currency": "BZD",
+  "units": "km"
+ },
+ {
+  "code": "BJ",
+  "name": "Benin",
+  "currency": "XOF",
+  "units": "km"
+ },
+ {
+  "code": "BM",
+  "name": "Bermuda",
+  "currency": "BMD",
+  "units": "km"
+ },
+ {
+  "code": "BT",
+  "name": "Bhutan",
+  "currency": "BTN",
+  "units": "km"
+ },
+ {
+  "code": "BO",
+  "name": "Bolivia",
+  "currency": "BOB",
+  "units": "km"
+ },
+ {
+  "code": "BA",
+  "name": "Bosnia & Herzegovina",
+  "currency": "BAM",
+  "units": "km"
+ },
+ {
+  "code": "BW",
+  "name": "Botswana",
+  "currency": "BWP",
+  "units": "km"
+ },
+ {
+  "code": "BR",
+  "name": "Brazil",
+  "currency": "BRL",
+  "units": "km"
+ },
+ {
+  "code": "IO",
+  "name": "British Indian Ocean Territory",
+  "currency": "USD",
+  "units": "km"
+ },
+ {
+  "code": "VG",
+  "name": "British Virgin Islands",
+  "currency": "USD",
+  "units": "km"
+ },
+ {
+  "code": "BN",
+  "name": "Brunei",
+  "currency": "BND",
+  "units": "km"
+ },
+ {
+  "code": "BG",
+  "name": "Bulgaria",
+  "currency": "BGN",
+  "units": "km"
+ },
+ {
+  "code": "BF",
+  "name": "Burkina Faso",
+  "currency": "XOF",
+  "units": "km"
+ },
+ {
+  "code": "BI",
+  "name": "Burundi",
+  "currency": "BIF",
+  "units": "km"
+ },
+ {
+  "code": "KH",
+  "name": "Cambodia",
+  "currency": "KHR",
+  "units": "km"
+ },
+ {
+  "code": "CM",
+  "name": "Cameroon",
+  "currency": "XAF",
+  "units": "km"
+ },
+ {
+  "code": "CA",
+  "name": "Canada",
+  "currency": "CAD",
+  "units": "km"
+ },
+ {
+  "code": "CV",
+  "name": "Cape Verde",
+  "currency": "CVE",
+  "units": "km"
+ },
+ {
+  "code": "BQ",
+  "name": "Caribbean Netherlands",
+  "currency": "USD",
+  "units": "km"
+ },
+ {
+  "code": "KY",
+  "name": "Cayman Islands",
+  "currency": "KYD",
+  "units": "km"
+ },
+ {
+  "code": "CF",
+  "name": "Central African Republic",
+  "currency": "XAF",
+  "units": "km"
+ },
+ {
+  "code": "TD",
+  "name": "Chad",
+  "currency": "XAF",
+  "units": "km"
+ },
+ {
+  "code": "CL",
+  "name": "Chile",
+  "currency": "CLP",
+  "units": "km"
+ },
+ {
+  "code": "CN",
+  "name": "China",
+  "currency": "CNY",
+  "units": "km"
+ },
+ {
+  "code": "CX",
+  "name": "Christmas Island",
+  "currency": "AUD",
+  "units": "km"
+ },
+ {
+  "code": "CC",
+  "name": "Cocos (Keeling) Islands",
+  "currency": "AUD",
+  "units": "km"
+ },
+ {
+  "code": "CO",
+  "name": "Colombia",
+  "currency": "COP",
+  "units": "km"
+ },
+ {
+  "code": "KM",
+  "name": "Comoros",
+  "currency": "KMF",
+  "units": "km"
+ },
+ {
+  "code": "CG",
+  "name": "Congo - Brazzaville",
+  "currency": "XAF",
+  "units": "km"
+ },
+ {
+  "code": "CD",
+  "name": "Congo - Kinshasa",
+  "currency": "CDF",
+  "units": "km"
+ },
+ {
+  "code": "CK",
+  "name": "Cook Islands",
+  "currency": "NZD",
+  "units": "km"
+ },
+ {
+  "code": "CR",
+  "name": "Costa Rica",
+  "currency": "CRC",
+  "units": "km"
+ },
+ {
+  "code": "CI",
+  "name": "Côte d’Ivoire",
+  "currency": "XOF",
+  "units": "km"
+ },
+ {
+  "code": "HR",
+  "name": "Croatia",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "CU",
+  "name": "Cuba",
+  "currency": "CUP",
+  "units": "km"
+ },
+ {
+  "code": "CW",
+  "name": "Curaçao",
+  "currency": "ANG",
+  "units": "km"
+ },
+ {
+  "code": "CY",
+  "name": "Cyprus",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "CZ",
+  "name": "Czechia",
+  "currency": "CZK",
+  "units": "km"
+ },
+ {
+  "code": "DK",
+  "name": "Denmark",
+  "currency": "DKK",
+  "units": "km"
+ },
+ {
+  "code": "DJ",
+  "name": "Djibouti",
+  "currency": "DJF",
+  "units": "km"
+ },
+ {
+  "code": "DM",
+  "name": "Dominica",
+  "currency": "XCD",
+  "units": "km"
+ },
+ {
+  "code": "DO",
+  "name": "Dominican Republic",
+  "currency": "DOP",
+  "units": "km"
+ },
+ {
+  "code": "EC",
+  "name": "Ecuador",
+  "currency": "USD",
+  "units": "km"
+ },
+ {
+  "code": "EG",
+  "name": "Egypt",
+  "currency": "EGP",
+  "units": "km"
+ },
+ {
+  "code": "SV",
+  "name": "El Salvador",
+  "currency": "USD",
+  "units": "km"
+ },
+ {
+  "code": "GQ",
+  "name": "Equatorial Guinea",
+  "currency": "XAF",
+  "units": "km"
+ },
+ {
+  "code": "ER",
+  "name": "Eritrea",
+  "currency": "ERN",
+  "units": "km"
+ },
+ {
+  "code": "EE",
+  "name": "Estonia",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "SZ",
+  "name": "Eswatini",
+  "currency": "SZL",
+  "units": "km"
+ },
+ {
+  "code": "ET",
+  "name": "Ethiopia",
+  "currency": "ETB",
+  "units": "km"
+ },
+ {
+  "code": "FK",
+  "name": "Falkland Islands",
+  "currency": "FKP",
+  "units": "km"
+ },
+ {
+  "code": "FO",
+  "name": "Faroe Islands",
+  "currency": "DKK",
+  "units": "km"
+ },
+ {
+  "code": "FJ",
+  "name": "Fiji",
+  "currency": "FJD",
+  "units": "km"
+ },
+ {
+  "code": "FI",
+  "name": "Finland",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "FR",
+  "name": "France",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "GF",
+  "name": "French Guiana",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "PF",
+  "name": "French Polynesia",
+  "currency": "XPF",
+  "units": "km"
+ },
+ {
+  "code": "TF",
+  "name": "French Southern Territories",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "GA",
+  "name": "Gabon",
+  "currency": "XAF",
+  "units": "km"
+ },
+ {
+  "code": "GM",
+  "name": "Gambia",
+  "currency": "GMD",
+  "units": "km"
+ },
+ {
+  "code": "GE",
+  "name": "Georgia",
+  "currency": "GEL",
+  "units": "km"
+ },
+ {
+  "code": "DE",
+  "name": "Germany",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "GH",
+  "name": "Ghana",
+  "currency": "GHS",
+  "units": "km"
+ },
+ {
+  "code": "GI",
+  "name": "Gibraltar",
+  "currency": "GIP",
+  "units": "km"
+ },
+ {
+  "code": "GR",
+  "name": "Greece",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "GL",
+  "name": "Greenland",
+  "currency": "DKK",
+  "units": "km"
+ },
+ {
+  "code": "GD",
+  "name": "Grenada",
+  "currency": "XCD",
+  "units": "km"
+ },
+ {
+  "code": "GP",
+  "name": "Guadeloupe",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "GU",
+  "name": "Guam",
+  "currency": "USD",
+  "units": "mi"
+ },
+ {
+  "code": "GT",
+  "name": "Guatemala",
+  "currency": "GTQ",
+  "units": "km"
+ },
+ {
+  "code": "GG",
+  "name": "Guernsey",
+  "currency": "GBP",
+  "units": "mi"
+ },
+ {
+  "code": "GN",
+  "name": "Guinea",
+  "currency": "GNF",
+  "units": "km"
+ },
+ {
+  "code": "GW",
+  "name": "Guinea-Bissau",
+  "currency": "XOF",
+  "units": "km"
+ },
+ {
+  "code": "GY",
+  "name": "Guyana",
+  "currency": "GYD",
+  "units": "km"
+ },
+ {
+  "code": "HT",
+  "name": "Haiti",
+  "currency": "HTG",
+  "units": "km"
+ },
+ {
+  "code": "HN",
+  "name": "Honduras",
+  "currency": "HNL",
+  "units": "km"
+ },
+ {
+  "code": "HK",
+  "name": "Hong Kong SAR China",
+  "currency": "HKD",
+  "units": "km"
+ },
+ {
+  "code": "HU",
+  "name": "Hungary",
+  "currency": "HUF",
+  "units": "km"
+ },
+ {
+  "code": "IS",
+  "name": "Iceland",
+  "currency": "ISK",
+  "units": "km"
+ },
+ {
+  "code": "IN",
+  "name": "India",
+  "currency": "INR",
+  "units": "km"
+ },
+ {
+  "code": "ID",
+  "name": "Indonesia",
+  "currency": "IDR",
+  "units": "km"
+ },
+ {
+  "code": "IR",
+  "name": "Iran",
+  "currency": "IRR",
+  "units": "km"
+ },
+ {
+  "code": "IQ",
+  "name": "Iraq",
+  "currency": "IQD",
+  "units": "km"
+ },
+ {
+  "code": "IE",
+  "name": "Ireland",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "IM",
+  "name": "Isle of Man",
+  "currency": "GBP",
+  "units": "mi"
+ },
+ {
+  "code": "IL",
+  "name": "Israel",
+  "currency": "ILS",
+  "units": "km"
+ },
+ {
+  "code": "IT",
+  "name": "Italy",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "JM",
+  "name": "Jamaica",
+  "currency": "JMD",
+  "units": "km"
+ },
+ {
+  "code": "JP",
+  "name": "Japan",
+  "currency": "JPY",
+  "units": "km"
+ },
+ {
+  "code": "JE",
+  "name": "Jersey",
+  "currency": "GBP",
+  "units": "mi"
+ },
+ {
+  "code": "JO",
+  "name": "Jordan",
+  "currency": "JOD",
+  "units": "km"
+ },
+ {
+  "code": "KZ",
+  "name": "Kazakhstan",
+  "currency": "KZT",
+  "units": "km"
+ },
+ {
+  "code": "KE",
+  "name": "Kenya",
+  "currency": "KES",
+  "units": "km"
+ },
+ {
+  "code": "KI",
+  "name": "Kiribati",
+  "currency": "AUD",
+  "units": "km"
+ },
+ {
+  "code": "XK",
+  "name": "Kosovo",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "KW",
+  "name": "Kuwait",
+  "currency": "KWD",
+  "units": "km"
+ },
+ {
+  "code": "KG",
+  "name": "Kyrgyzstan",
+  "currency": "KGS",
+  "units": "km"
+ },
+ {
+  "code": "LA",
+  "name": "Laos",
+  "currency": "LAK",
+  "units": "km"
+ },
+ {
+  "code": "LV",
+  "name": "Latvia",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "LB",
+  "name": "Lebanon",
+  "currency": "LBP",
+  "units": "km"
+ },
+ {
+  "code": "LS",
+  "name": "Lesotho",
+  "currency": "LSL",
+  "units": "km"
+ },
+ {
+  "code": "LR",
+  "name": "Liberia",
+  "currency": "LRD",
+  "units": "mi"
+ },
+ {
+  "code": "LY",
+  "name": "Libya",
+  "currency": "LYD",
+  "units": "km"
+ },
+ {
+  "code": "LI",
+  "name": "Liechtenstein",
+  "currency": "CHF",
+  "units": "km"
+ },
+ {
+  "code": "LT",
+  "name": "Lithuania",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "LU",
+  "name": "Luxembourg",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "MO",
+  "name": "Macao SAR China",
+  "currency": "MOP",
+  "units": "km"
+ },
+ {
+  "code": "MG",
+  "name": "Madagascar",
+  "currency": "MGA",
+  "units": "km"
+ },
+ {
+  "code": "MW",
+  "name": "Malawi",
+  "currency": "MWK",
+  "units": "km"
+ },
+ {
+  "code": "MY",
+  "name": "Malaysia",
+  "currency": "MYR",
+  "units": "km"
+ },
+ {
+  "code": "MV",
+  "name": "Maldives",
+  "currency": "MVR",
+  "units": "km"
+ },
+ {
+  "code": "ML",
+  "name": "Mali",
+  "currency": "XOF",
+  "units": "km"
+ },
+ {
+  "code": "MT",
+  "name": "Malta",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "MH",
+  "name": "Marshall Islands",
+  "currency": "USD",
+  "units": "km"
+ },
+ {
+  "code": "MQ",
+  "name": "Martinique",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "MR",
+  "name": "Mauritania",
+  "currency": "MRU",
+  "units": "km"
+ },
+ {
+  "code": "MU",
+  "name": "Mauritius",
+  "currency": "MUR",
+  "units": "km"
+ },
+ {
+  "code": "YT",
+  "name": "Mayotte",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "MX",
+  "name": "Mexico",
+  "currency": "MXN",
+  "units": "km"
+ },
+ {
+  "code": "FM",
+  "name": "Micronesia",
+  "currency": "USD",
+  "units": "km"
+ },
+ {
+  "code": "MD",
+  "name": "Moldova",
+  "currency": "MDL",
+  "units": "km"
+ },
+ {
+  "code": "MC",
+  "name": "Monaco",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "MN",
+  "name": "Mongolia",
+  "currency": "MNT",
+  "units": "km"
+ },
+ {
+  "code": "ME",
+  "name": "Montenegro",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "MS",
+  "name": "Montserrat",
+  "currency": "XCD",
+  "units": "km"
+ },
+ {
+  "code": "MA",
+  "name": "Morocco",
+  "currency": "MAD",
+  "units": "km"
+ },
+ {
+  "code": "MZ",
+  "name": "Mozambique",
+  "currency": "MZN",
+  "units": "km"
+ },
+ {
+  "code": "MM",
+  "name": "Myanmar (Burma)",
+  "currency": "MMK",
+  "units": "mi"
+ },
+ {
+  "code": "NA",
+  "name": "Namibia",
+  "currency": "NAD",
+  "units": "km"
+ },
+ {
+  "code": "NR",
+  "name": "Nauru",
+  "currency": "AUD",
+  "units": "km"
+ },
+ {
+  "code": "NP",
+  "name": "Nepal",
+  "currency": "NPR",
+  "units": "km"
+ },
+ {
+  "code": "NL",
+  "name": "Netherlands",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "NC",
+  "name": "New Caledonia",
+  "currency": "XPF",
+  "units": "km"
+ },
+ {
+  "code": "NZ",
+  "name": "New Zealand",
+  "currency": "NZD",
+  "units": "km"
+ },
+ {
+  "code": "NI",
+  "name": "Nicaragua",
+  "currency": "NIO",
+  "units": "km"
+ },
+ {
+  "code": "NE",
+  "name": "Niger",
+  "currency": "XOF",
+  "units": "km"
+ },
+ {
+  "code": "NG",
+  "name": "Nigeria",
+  "currency": "NGN",
+  "units": "km"
+ },
+ {
+  "code": "NU",
+  "name": "Niue",
+  "currency": "NZD",
+  "units": "km"
+ },
+ {
+  "code": "NF",
+  "name": "Norfolk Island",
+  "currency": "AUD",
+  "units": "km"
+ },
+ {
+  "code": "KP",
+  "name": "North Korea",
+  "currency": "KPW",
+  "units": "km"
+ },
+ {
+  "code": "MK",
+  "name": "North Macedonia",
+  "currency": "MKD",
+  "units": "km"
+ },
+ {
+  "code": "MP",
+  "name": "Northern Mariana Islands",
+  "currency": "USD",
+  "units": "mi"
+ },
+ {
+  "code": "NO",
+  "name": "Norway",
+  "currency": "NOK",
+  "units": "km"
+ },
+ {
+  "code": "OM",
+  "name": "Oman",
+  "currency": "OMR",
+  "units": "km"
+ },
+ {
+  "code": "PK",
+  "name": "Pakistan",
+  "currency": "PKR",
+  "units": "km"
+ },
+ {
+  "code": "PW",
+  "name": "Palau",
+  "currency": "USD",
+  "units": "km"
+ },
+ {
+  "code": "PS",
+  "name": "Palestinian Territories",
+  "currency": "ILS",
+  "units": "km"
+ },
+ {
+  "code": "PA",
+  "name": "Panama",
+  "currency": "PAB",
+  "units": "km"
+ },
+ {
+  "code": "PG",
+  "name": "Papua New Guinea",
+  "currency": "PGK",
+  "units": "km"
+ },
+ {
+  "code": "PY",
+  "name": "Paraguay",
+  "currency": "PYG",
+  "units": "km"
+ },
+ {
+  "code": "PE",
+  "name": "Peru",
+  "currency": "PEN",
+  "units": "km"
+ },
+ {
+  "code": "PH",
+  "name": "Philippines",
+  "currency": "PHP",
+  "units": "km"
+ },
+ {
+  "code": "PN",
+  "name": "Pitcairn Islands",
+  "currency": "NZD",
+  "units": "km"
+ },
+ {
+  "code": "PL",
+  "name": "Poland",
+  "currency": "PLN",
+  "units": "km"
+ },
+ {
+  "code": "PT",
+  "name": "Portugal",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "PR",
+  "name": "Puerto Rico",
+  "currency": "USD",
+  "units": "mi"
+ },
+ {
+  "code": "QA",
+  "name": "Qatar",
+  "currency": "QAR",
+  "units": "km"
+ },
+ {
+  "code": "RE",
+  "name": "Réunion",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "RO",
+  "name": "Romania",
+  "currency": "RON",
+  "units": "km"
+ },
+ {
+  "code": "RU",
+  "name": "Russia",
+  "currency": "RUB",
+  "units": "km"
+ },
+ {
+  "code": "RW",
+  "name": "Rwanda",
+  "currency": "RWF",
+  "units": "km"
+ },
+ {
+  "code": "WS",
+  "name": "Samoa",
+  "currency": "WST",
+  "units": "km"
+ },
+ {
+  "code": "SM",
+  "name": "San Marino",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "ST",
+  "name": "São Tomé & Príncipe",
+  "currency": "STN",
+  "units": "km"
+ },
+ {
+  "code": "SA",
+  "name": "Saudi Arabia",
+  "currency": "SAR",
+  "units": "km"
+ },
+ {
+  "code": "SN",
+  "name": "Senegal",
+  "currency": "XOF",
+  "units": "km"
+ },
+ {
+  "code": "RS",
+  "name": "Serbia",
+  "currency": "RSD",
+  "units": "km"
+ },
+ {
+  "code": "SC",
+  "name": "Seychelles",
+  "currency": "SCR",
+  "units": "km"
+ },
+ {
+  "code": "SL",
+  "name": "Sierra Leone",
+  "currency": "SLE",
+  "units": "km"
+ },
+ {
+  "code": "SG",
+  "name": "Singapore",
+  "currency": "SGD",
+  "units": "km"
+ },
+ {
+  "code": "SX",
+  "name": "Sint Maarten",
+  "currency": "ANG",
+  "units": "km"
+ },
+ {
+  "code": "SK",
+  "name": "Slovakia",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "SI",
+  "name": "Slovenia",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "SB",
+  "name": "Solomon Islands",
+  "currency": "SBD",
+  "units": "km"
+ },
+ {
+  "code": "SO",
+  "name": "Somalia",
+  "currency": "SOS",
+  "units": "km"
+ },
+ {
+  "code": "ZA",
+  "name": "South Africa",
+  "currency": "ZAR",
+  "units": "km"
+ },
+ {
+  "code": "KR",
+  "name": "South Korea",
+  "currency": "KRW",
+  "units": "km"
+ },
+ {
+  "code": "SS",
+  "name": "South Sudan",
+  "currency": "SSP",
+  "units": "km"
+ },
+ {
+  "code": "ES",
+  "name": "Spain",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "LK",
+  "name": "Sri Lanka",
+  "currency": "LKR",
+  "units": "km"
+ },
+ {
+  "code": "BL",
+  "name": "St. Barthélemy",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "SH",
+  "name": "St. Helena",
+  "currency": "SHP",
+  "units": "km"
+ },
+ {
+  "code": "KN",
+  "name": "St. Kitts & Nevis",
+  "currency": "XCD",
+  "units": "km"
+ },
+ {
+  "code": "LC",
+  "name": "St. Lucia",
+  "currency": "XCD",
+  "units": "km"
+ },
+ {
+  "code": "MF",
+  "name": "St. Martin",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "PM",
+  "name": "St. Pierre & Miquelon",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "VC",
+  "name": "St. Vincent & Grenadines",
+  "currency": "XCD",
+  "units": "km"
+ },
+ {
+  "code": "SD",
+  "name": "Sudan",
+  "currency": "SDG",
+  "units": "km"
+ },
+ {
+  "code": "SR",
+  "name": "Suriname",
+  "currency": "SRD",
+  "units": "km"
+ },
+ {
+  "code": "SJ",
+  "name": "Svalbard & Jan Mayen",
+  "currency": "NOK",
+  "units": "km"
+ },
+ {
+  "code": "SE",
+  "name": "Sweden",
+  "currency": "SEK",
+  "units": "km"
+ },
+ {
+  "code": "CH",
+  "name": "Switzerland",
+  "currency": "CHF",
+  "units": "km"
+ },
+ {
+  "code": "SY",
+  "name": "Syria",
+  "currency": "SYP",
+  "units": "km"
+ },
+ {
+  "code": "TW",
+  "name": "Taiwan",
+  "currency": "TWD",
+  "units": "km"
+ },
+ {
+  "code": "TJ",
+  "name": "Tajikistan",
+  "currency": "TJS",
+  "units": "km"
+ },
+ {
+  "code": "TZ",
+  "name": "Tanzania",
+  "currency": "TZS",
+  "units": "km"
+ },
+ {
+  "code": "TH",
+  "name": "Thailand",
+  "currency": "THB",
+  "units": "km"
+ },
+ {
+  "code": "TL",
+  "name": "Timor-Leste",
+  "currency": "USD",
+  "units": "km"
+ },
+ {
+  "code": "TG",
+  "name": "Togo",
+  "currency": "XOF",
+  "units": "km"
+ },
+ {
+  "code": "TK",
+  "name": "Tokelau",
+  "currency": "NZD",
+  "units": "km"
+ },
+ {
+  "code": "TO",
+  "name": "Tonga",
+  "currency": "TOP",
+  "units": "km"
+ },
+ {
+  "code": "TT",
+  "name": "Trinidad & Tobago",
+  "currency": "TTD",
+  "units": "km"
+ },
+ {
+  "code": "TN",
+  "name": "Tunisia",
+  "currency": "TND",
+  "units": "km"
+ },
+ {
+  "code": "TR",
+  "name": "Türkiye",
+  "currency": "TRY",
+  "units": "km"
+ },
+ {
+  "code": "TM",
+  "name": "Turkmenistan",
+  "currency": "TMT",
+  "units": "km"
+ },
+ {
+  "code": "TC",
+  "name": "Turks & Caicos Islands",
+  "currency": "USD",
+  "units": "km"
+ },
+ {
+  "code": "TV",
+  "name": "Tuvalu",
+  "currency": "AUD",
+  "units": "km"
+ },
+ {
+  "code": "UM",
+  "name": "U.S. Outlying Islands",
+  "currency": "USD",
+  "units": "km"
+ },
+ {
+  "code": "VI",
+  "name": "U.S. Virgin Islands",
+  "currency": "USD",
+  "units": "mi"
+ },
+ {
+  "code": "UG",
+  "name": "Uganda",
+  "currency": "UGX",
+  "units": "km"
+ },
+ {
+  "code": "UA",
+  "name": "Ukraine",
+  "currency": "UAH",
+  "units": "km"
+ },
+ {
+  "code": "AE",
+  "name": "United Arab Emirates",
+  "currency": "AED",
+  "units": "km"
+ },
+ {
+  "code": "GB",
+  "name": "United Kingdom",
+  "currency": "GBP",
+  "units": "mi"
+ },
+ {
+  "code": "US",
+  "name": "United States",
+  "currency": "USD",
+  "units": "mi"
+ },
+ {
+  "code": "UY",
+  "name": "Uruguay",
+  "currency": "UYU",
+  "units": "km"
+ },
+ {
+  "code": "UZ",
+  "name": "Uzbekistan",
+  "currency": "UZS",
+  "units": "km"
+ },
+ {
+  "code": "VU",
+  "name": "Vanuatu",
+  "currency": "VUV",
+  "units": "km"
+ },
+ {
+  "code": "VA",
+  "name": "Vatican City",
+  "currency": "EUR",
+  "units": "km"
+ },
+ {
+  "code": "VE",
+  "name": "Venezuela",
+  "currency": "VES",
+  "units": "km"
+ },
+ {
+  "code": "VN",
+  "name": "Vietnam",
+  "currency": "VND",
+  "units": "km"
+ },
+ {
+  "code": "WF",
+  "name": "Wallis & Futuna",
+  "currency": "XPF",
+  "units": "km"
+ },
+ {
+  "code": "EH",
+  "name": "Western Sahara",
+  "currency": "MAD",
+  "units": "km"
+ },
+ {
+  "code": "YE",
+  "name": "Yemen",
+  "currency": "YER",
+  "units": "km"
+ },
+ {
+  "code": "ZM",
+  "name": "Zambia",
+  "currency": "ZMW",
+  "units": "km"
+ },
+ {
+  "code": "ZW",
+  "name": "Zimbabwe",
+  "currency": "USD",
+  "units": "km"
+ }
+]

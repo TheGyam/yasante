@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { CalendarDays, Check, Clock, PartyPopper, PoundSterling, Tags } from 'lucide-react-native';
+import { CalendarDays, Check, Clock, PartyPopper, Banknote, Tags } from 'lucide-react-native';
 import { looksApi, useMyLooks, useStyleTaxonomy, type Look } from '@/features/looks';
 import { TEXTURE_LABELS } from '@/features/profile';
 import {
@@ -123,7 +123,7 @@ function PriceStyle({ style }: { style: FinishStyle }) {
       </Text>
       <Input
         label="Price"
-        icon={PoundSterling}
+        icon={Banknote}
         value={price}
         onChangeText={setPrice}
         placeholder="120"

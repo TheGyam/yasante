@@ -35,7 +35,7 @@ import {
   type ChosenOptions,
 } from '@/features/stylist';
 import { POLICY_VERSION } from '@/shared/config/policies';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatDistance, formatMoney } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -54,6 +54,7 @@ import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
 import { track } from '@/shared/lib/analytics';
 import { joinAddress, POSTCODE, splitAddress } from '@/shared/utils/postcode';
+import { usesMiles } from '@/shared/lib/region';
 
 const useStyles = makeStyles(t => ({
   body: { gap: space.xl },
@@ -254,6 +255,7 @@ export default function RequestBookingScreen() {
   }
 
   const { profile, menu } = data;
+  const currency = profile.currency ?? DEFAULT_CURRENCY;
   const quote = service ? estimate(service, chosen) : undefined;
   const groups = service ? optionGroups(service) : [];
   const depositDue =
@@ -317,7 +319,7 @@ export default function RequestBookingScreen() {
                 key={item.id}
                 title={item.name}
                 subtitle={item.durationMinutes ? formatDuration(item.durationMinutes) : item.note}
-                value={formatPrice(item)}
+                value={formatPrice(item, currency)}
                 icon={Scissors}
                 iconTone={serviceId === item.id ? 'accent' : 'neutral'}
                 // A choice, not a link: a tick where a chevron would promise another page.
@@ -355,7 +357,9 @@ export default function RequestBookingScreen() {
                 <Chip
                   key={choice.id}
                   label={
-                    index === 0 ? choice.label : `${choice.label} · +${formatMoney(choice.add)}`
+                    index === 0
+                      ? choice.label
+                      : `${choice.label} · +${formatMoney(choice.add, currency)}`
                   }
                   selected={chosen[group] === choice.id}
                   onPress={() => {
@@ -390,7 +394,7 @@ export default function RequestBookingScreen() {
               }
               trailing={
                 <RollingText variant="callout" tone="secondary">
-                  {`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price)}`}
+                  {`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price, currency)}`}
                 </RollingText>
               }
               icon={CalendarClock}
@@ -399,7 +403,7 @@ export default function RequestBookingScreen() {
               <ListRow
                 title="Deposit to confirm"
                 subtitle="Paid straight to them, once they accept"
-                value={formatMoney(depositDue)}
+                value={formatMoney(depositDue, currency)}
               />
             )}
           </Section>
@@ -471,7 +475,7 @@ export default function RequestBookingScreen() {
                   autoComplete="postal-code"
                   textContentType="postalCode"
                   maxLength={8}
-                  hint={`They see your postcode area first${profile.travelRadiusMiles ? ` (they travel up to ${profile.travelRadiusMiles} miles from ${profile.baseArea})` : ''}, and your street once they confirm.`}
+                  hint={`They see your postcode area first${profile.travelRadiusMiles ? ` (they travel up to ${formatDistance(profile.travelRadiusMiles, usesMiles)} from ${profile.baseArea})` : ''}, and your street once they confirm.`}
                   testID="booking-postcode"
                 />
               </>

@@ -48,7 +48,7 @@ import {
   useUpdateStylistProfile,
   type PaymentMethodDraft,
 } from '@/features/stylist';
-import { formatMoney, parseMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, parseMoney } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { zoneMark } from '@/shared/lib/timeZone';
 import { useRouter } from '@/shared/lib/navigation';
@@ -225,7 +225,7 @@ export default function RequestScreen() {
             {serviceLine(booking)}
           </Text>
           <Text variant="subhead" tone="secondary">
-            {`${booking.fromPrice ? 'from ' : ''}${formatMoney(booking.price)}`}
+            {`${booking.fromPrice ? 'from ' : ''}${formatMoney(booking.price, booking.currency ?? DEFAULT_CURRENCY)}`}
             {status !== 'requested' && status !== 'awaiting_deposit' && status !== 'confirmed'
               ? ` · ${STYLIST_STATUS_LABELS[status]}`
               : ''}
@@ -410,7 +410,7 @@ export default function RequestScreen() {
           <>
             <InlineAlert
               tone="info"
-              message={`Accepted for ${inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))}. They’ve been asked for ${formatMoney(booking.deposit?.amount ?? 0)}${booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Marking it received confirms the booking and ${booking.atClient ? 'sends you their address' : 'shares your address'}.`}
+              message={`Accepted for ${inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))}. They’ve been asked for ${formatMoney(booking.deposit?.amount ?? 0, booking.currency ?? DEFAULT_CURRENCY)}${booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Marking it received confirms the booking and ${booking.atClient ? 'sends you their address' : 'shares your address'}.`}
             />
             <View style={styles.footer}>
               <Button
@@ -527,7 +527,11 @@ export default function RequestScreen() {
               icon={ClipboardCheck}
             />
             {!!booking.actualPrice && (
-              <ListRow title="Paid" value={formatMoney(booking.actualPrice)} icon={Banknote} />
+              <ListRow
+                title="Paid"
+                value={formatMoney(booking.actualPrice, booking.currency ?? DEFAULT_CURRENCY)}
+                icon={Banknote}
+              />
             )}
           </Section>
         )}

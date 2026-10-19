@@ -88,6 +88,8 @@ class Booking(TimeStampedModel):
         models.CharField(max_length=100), default=list, blank=True
     )
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    # The stylist's currency when it was booked: a booking's money never changes meaning.
+    currency = models.CharField(max_length=3, default="GBP")
     from_price = models.BooleanField(default=False)
     duration_minutes = models.PositiveIntegerField(null=True, blank=True)
     bringing_own_hair = models.BooleanField(default=False)

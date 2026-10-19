@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Banknote, CalendarClock, Clock, MapPin, Scissors, UserRound } from 'lucide-react';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
-import { formatMoney, formatPrice } from '@/shared/lib/format';
+import { currencySymbol, DEFAULT_CURRENCY, formatMoney, formatPrice } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { Chip } from '@/shared/ui/Chip';
 import { EmptyState } from '@/shared/ui/EmptyState';
@@ -142,7 +142,11 @@ function Request({
                 .filter(Boolean)
                 .join(' · ') || undefined
             }
-            value={formatPrice(booking.price, booking.fromPrice)}
+            value={formatPrice(
+              booking.price,
+              booking.currency ?? DEFAULT_CURRENCY,
+              booking.fromPrice
+            )}
           />
           {booking.atClient && (
             <ListRow
@@ -178,7 +182,11 @@ function Request({
         {status === 'completed' && (
           <Section title="How it went">
             {booking.actualPrice !== undefined && (
-              <ListRow icon={Banknote} title="Paid" value={formatMoney(booking.actualPrice)} />
+              <ListRow
+                icon={Banknote}
+                title="Paid"
+                value={formatMoney(booking.actualPrice, booking.currency ?? DEFAULT_CURRENCY)}
+              />
             )}
           </Section>
         )}
@@ -261,7 +269,7 @@ function Answer({
         />
       )}
       <Input
-        label="Deposit to confirm (£)"
+        label={`Deposit to confirm (${currencySymbol(booking.currency ?? DEFAULT_CURRENCY)})`}
         inputMode="decimal"
         value={deposit}
         placeholder="0"
@@ -319,7 +327,8 @@ function AwaitingDeposit({ booking }: { booking: Booking }) {
     <Glass padded radius="xl" className={styles.card}>
       <Text variant="body">
         Accepted for {inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))}. They’ve
-        been asked for {formatMoney(booking.deposit?.amount ?? 0)}
+        been asked for{' '}
+        {formatMoney(booking.deposit?.amount ?? 0, booking.currency ?? DEFAULT_CURRENCY)}
         {booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}.
         Marking it received confirms the booking and{' '}
         {booking.atClient ? 'sends you their address' : 'shares your address'}.
@@ -429,7 +438,7 @@ function CloseOut({ booking }: { booking: Booking }) {
       {came && (
         <>
           <Input
-            label="What they paid (£)"
+            label={`What they paid (${currencySymbol(booking.currency ?? DEFAULT_CURRENCY)})`}
             inputMode="decimal"
             value={paid}
             onChange={e => setPaid(e.target.value)}

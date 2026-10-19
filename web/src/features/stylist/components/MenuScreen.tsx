@@ -7,12 +7,13 @@ import { Page } from '@/shared/ui/Page';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
-import { useMenu } from '../hooks';
+import { useMenu, useMyCurrency } from '../hooks';
 import { formatPrice, serviceDetails } from '../format';
 import * as styles from './StudioScreens.css';
 
 /** Her services and prices: what clients choose from when they ask. */
 export function MenuScreen({ accountId }: { accountId: string }) {
+  const currency = useMyCurrency(accountId);
   const menu = useMenu(accountId);
   return (
     <Page title="Your menu">
@@ -57,7 +58,7 @@ export function MenuScreen({ accountId }: { accountId: string }) {
               icon={Scissors}
               title={item.name}
               subtitle={serviceDetails(item)}
-              value={formatPrice(item)}
+              value={formatPrice(item, currency)}
               to={`/menu/${item.id}`}
             />
           ))}

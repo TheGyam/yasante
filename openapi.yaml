@@ -1276,6 +1276,24 @@ paths:
                 items:
                   $ref: '#/components/schemas/ContentResponse'
           description: ''
+  /api/countries/:
+    get:
+      operationId: countries_list
+      description: 'Every country, its currency and its distance units: for the country
+        pickers.'
+      tags:
+      - countries
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Country'
+          description: ''
   /api/devices/:
     post:
       operationId: devices_create
@@ -3244,6 +3262,9 @@ components:
         price:
           type: number
           format: double
+        currency:
+          type: string
+          description: 'ISO 4217: the stylist''s, when it was booked'
         fromPrice:
           type: boolean
         durationMinutes:
@@ -3328,6 +3349,7 @@ components:
       - bringingOwnHair
       - clientName
       - createdAt
+      - currency
       - fromPrice
       - id
       - moves
@@ -4017,6 +4039,30 @@ components:
           type: boolean
         timing:
           type: boolean
+    Country:
+      type: object
+      properties:
+        code:
+          type: string
+          description: ISO 3166
+        name:
+          type: string
+        currency:
+          type: string
+          description: ISO 4217
+        units:
+          allOf:
+          - $ref: '#/components/schemas/UnitsEnum'
+          description: |-
+            How distances are given there
+
+            * `km` - km
+            * `mi` - mi
+      required:
+      - code
+      - currency
+      - name
+      - units
     CurrentStyle:
       type: object
       properties:
@@ -4592,6 +4638,9 @@ components:
         spent:
           type: number
           format: double
+        currency:
+          type: string
+          description: 'ISO 4217: what `spent` is in'
         styles:
           type: array
           items:
@@ -4732,6 +4781,9 @@ components:
       properties:
         stylistFeatured:
           type: boolean
+        currency:
+          type: string
+          description: ISO 4217, with a price
         photos:
           type: array
           items:
@@ -5387,6 +5439,11 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          default: GB
+          maxLength: 2
         address:
           type: string
           default: ''
@@ -5728,6 +5785,13 @@ components:
         baseArea:
           type: string
           maxLength: 100
+        country:
+          type: string
+          maxLength: 2
+        currency:
+          type: string
+          readOnly: true
+          description: 'ISO 4217: every price on her page is in it'
         travelRadiusMiles:
           type: number
           format: double
@@ -5773,7 +5837,9 @@ components:
       - baseArea
       - checks
       - claimable
+      - country
       - createdAt
+      - currency
       - displayName
       - featured
       - handle
@@ -6306,6 +6372,13 @@ components:
         baseArea:
           type: string
           maxLength: 100
+        country:
+          type: string
+          maxLength: 2
+        currency:
+          type: string
+          readOnly: true
+          description: 'ISO 4217: every price on her page is in it'
         address:
           type: string
           maxLength: 500
@@ -6357,7 +6430,9 @@ components:
       required:
       - accountId
       - baseArea
+      - country
       - createdAt
+      - currency
       - displayName
       - featured
       - handle
@@ -6391,6 +6466,11 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          default: GB
+          maxLength: 2
         address:
           type: string
           default: ''
@@ -6446,6 +6526,8 @@ components:
           type: string
         baseArea:
           type: string
+        currency:
+          type: string
         serviceId:
           type: string
         fromPrice:
@@ -6470,6 +6552,7 @@ components:
       required:
       - accountId
       - baseArea
+      - currency
       - displayName
       - handle
     StylistSummary:
@@ -6708,6 +6791,14 @@ components:
         * `growth` - Growth
         * `health` - Health
         * `tips` - Tips
+    UnitsEnum:
+      enum:
+      - km
+      - mi
+      type: string
+      description: |-
+        * `km` - km
+        * `mi` - mi
     UploadRequestKindEnum:
       enum:
       - look

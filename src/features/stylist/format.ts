@@ -55,9 +55,14 @@ export function formatDuration(minutes: number) {
   return rest ? `${spoken} ${rest} mins` : spoken;
 }
 
-/** "£120" or "from £120". Never a range: the low end plus "from" is what clients read. */
-export function formatPrice(item: Pick<MenuItem, 'price' | 'fromPrice'>) {
-  return item.fromPrice ? `from ${formatMoney(item.price)}` : formatMoney(item.price);
+/**
+ * "£120" or "from £120", in the stylist's currency. Never a range: the low end plus
+ * "from" is what clients read.
+ */
+export function formatPrice(item: Pick<MenuItem, 'price' | 'fromPrice'>, currency: string) {
+  return item.fromPrice
+    ? `from ${formatMoney(item.price, currency)}`
+    : formatMoney(item.price, currency);
 }
 
 export function sharePage(profile: Pick<StylistProfile, 'handle' | 'displayName'>) {

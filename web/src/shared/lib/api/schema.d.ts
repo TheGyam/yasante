@@ -803,6 +803,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/countries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every country, its currency and its distance units: for the country pickers. */
+        get: operations["countries_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/devices/": {
         parameters: {
             query?: never;
@@ -2074,6 +2091,8 @@ export interface components {
             optionLabels?: string[];
             /** Format: double */
             price: number;
+            /** @description ISO 4217: the stylist's, when it was booked */
+            currency: string;
             fromPrice: boolean;
             durationMinutes?: number;
             bringingOwnHair: boolean;
@@ -2424,6 +2443,20 @@ export interface components {
             noShow?: boolean;
             timing?: boolean;
         };
+        Country: {
+            /** @description ISO 3166 */
+            code: string;
+            name: string;
+            /** @description ISO 4217 */
+            currency: string;
+            /**
+             * @description How distances are given there
+             *
+             *     * `km` - km
+             *     * `mi` - mi
+             */
+            units: components["schemas"]["UnitsEnum"];
+        };
         CurrentStyle: {
             name: string;
             /** Format: date-time */
@@ -2708,6 +2741,8 @@ export interface components {
             appointments: number;
             /** Format: double */
             spent: number;
+            /** @description ISO 4217: what `spent` is in */
+            currency?: string;
             styles: string[];
             stylists: number;
             currentStyle?: components["schemas"]["CurrentStyle"];
@@ -2775,6 +2810,8 @@ export interface components {
         };
         Look: {
             stylistFeatured: boolean;
+            /** @description ISO 4217, with a price */
+            currency?: string;
             photos: components["schemas"]["LookPhoto"][];
             id: string;
             authorId: string;
@@ -3042,6 +3079,8 @@ export interface components {
             bio: string;
             serviceModels?: components["schemas"]["ServiceModelEnum"][];
             baseArea?: string;
+            /** @default GB */
+            country: string;
             /** @default  */
             address: string;
             /** @default  */
@@ -3194,6 +3233,9 @@ export interface components {
             avatarUri?: string;
             serviceModels: components["schemas"]["ServiceModelsBafEnum"][];
             baseArea: string;
+            country: string;
+            /** @description ISO 4217: every price on her page is in it */
+            readonly currency: string;
             /** Format: double */
             travelRadiusMiles?: number;
             timeZone?: string;
@@ -3450,6 +3492,9 @@ export interface components {
             avatarUri?: string;
             serviceModels: components["schemas"]["ServiceModelsBafEnum"][];
             baseArea: string;
+            country: string;
+            /** @description ISO 4217: every price on her page is in it */
+            readonly currency: string;
             address?: string;
             /** Format: double */
             travelRadiusMiles?: number;
@@ -3474,6 +3519,8 @@ export interface components {
             bio: string;
             serviceModels: components["schemas"]["ServiceModelEnum"][];
             baseArea: string;
+            /** @default GB */
+            country: string;
             /** @default  */
             address: string;
             /** @default  */
@@ -3497,6 +3544,7 @@ export interface components {
             displayName: string;
             avatarUri?: string;
             baseArea: string;
+            currency: string;
             serviceId?: string;
             /** Format: double */
             fromPrice?: number;
@@ -3623,6 +3671,12 @@ export interface components {
          * @enum {string}
          */
         TopicEnum: "care" | "styling" | "products" | "treatments" | "color" | "growth" | "health" | "tips";
+        /**
+         * @description * `km` - km
+         *     * `mi` - mi
+         * @enum {string}
+         */
+        UnitsEnum: "km" | "mi";
         /**
          * @description * `look` - look
          *     * `portfolio` - portfolio
@@ -5017,6 +5071,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContentResponse"][];
+                };
+            };
+        };
+    };
+    countries_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Country"][];
                 };
             };
         };

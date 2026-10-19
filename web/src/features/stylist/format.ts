@@ -2,7 +2,7 @@
  * How her page is worded: the same sentences as the app's stylist page
  * (src/features/stylist/format.ts at the repo root), so she reads the same everywhere.
  */
-import { formatMoney } from '@/shared/lib/format';
+import { formatDistance, formatMoney } from '@/shared/lib/format';
 import type { Availability, MenuItem, PublicProfile } from './types';
 
 /** "Usually replies within an hour" — rounded the way a person would say it. */
@@ -42,9 +42,14 @@ export function formatDuration(minutes: number) {
   return rest ? `${spoken} ${rest} mins` : spoken;
 }
 
-/** "£120" or "from £120". Never a range: the low end plus "from" is what clients read. */
-export function formatPrice(item: Pick<MenuItem, 'price' | 'fromPrice'>) {
-  return item.fromPrice ? `from ${formatMoney(item.price)}` : formatMoney(item.price);
+/**
+ * "£120" or "from £120", in the stylist's currency. Never a range: the low end plus
+ * "from" is what clients read.
+ */
+export function formatPrice(item: Pick<MenuItem, 'price' | 'fromPrice'>, currency: string) {
+  return item.fromPrice
+    ? `from ${formatMoney(item.price, currency)}`
+    : formatMoney(item.price, currency);
 }
 
 /** The line under a service: how long, what it's priced by, what's included. */
@@ -98,14 +103,14 @@ export function hoursOn(availability: Availability | undefined, day: string) {
 /** Where she works: "Travels up to 5 miles", or why the address isn't shown. */
 export function whereLabel(profile: Pick<PublicProfile, 'serviceModels' | 'travelRadiusMiles'>) {
   return profile.serviceModels?.includes('mobile') && profile.travelRadiusMiles
-    ? `Travels up to ${profile.travelRadiusMiles} miles`
+    ? `Travels up to ${formatDistance(profile.travelRadiusMiles)}`
     : 'District only — the address comes with a confirmed booking';
 }
 
-export function depositLabel(policies: PublicProfile['policies']) {
+export function depositLabel(policies: PublicProfile['policies'], currency: string) {
   if (policies.depositType === 'none') return 'No deposit';
   if (policies.depositType === 'percent') return `${policies.depositAmount}% deposit`;
-  return `${formatMoney(policies.depositAmount ?? 0)} deposit`;
+  return `${formatMoney(policies.depositAmount ?? 0, currency)} deposit`;
 }
 
 /**

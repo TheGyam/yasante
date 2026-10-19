@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useSession, withNext } from '@/features/auth';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
-import { formatMonth, plural } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMonth, plural } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
@@ -85,6 +85,7 @@ export function StylistScreen({ handle }: { handle: string }) {
 function Stylist({ page }: { page: StylistPage }) {
   const { profile, menu, photos, confirmedStyles, reviews, rating, responseHours, timingLabel } =
     page;
+  const currency = profile.currency ?? DEFAULT_CURRENCY;
   const [photosShown, setPhotosShown] = useState(PHOTOS_STEP);
   const [reviewsShown, setReviewsShown] = useState(REVIEWS_STEP);
   const [showClaimNote, setShowClaimNote] = useState(false);
@@ -195,7 +196,7 @@ function Stylist({ page }: { page: StylistPage }) {
                   icon={Scissors}
                   title={item.name}
                   subtitle={serviceDetails(item)}
-                  value={formatPrice(item)}
+                  value={formatPrice(item, currency)}
                 />
               ))}
             </Section>
@@ -297,7 +298,7 @@ function Stylist({ page }: { page: StylistPage }) {
               <ListRow
                 icon={Store}
                 iconTone="neutral"
-                title={depositLabel(profile.policies)}
+                title={depositLabel(profile.policies, currency)}
                 subtitle="Paid straight to them — Yasante never handles it"
               />
             </Section>

@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { Timer } from 'lucide-react-native';
 import {
   formatDuration,
+  useMyCurrency,
   useStylistNumbers,
   type ServiceTiming,
   type WeekCounts,
@@ -43,11 +44,17 @@ const useStyles = makeStyles(t => ({
   over: { backgroundColor: t.colors.gold },
 }));
 
-function change(now: number, before: number, money?: boolean, lowerIsBetter?: boolean) {
+function change(
+  now: number,
+  before: number,
+  currency: string,
+  money?: boolean,
+  lowerIsBetter?: boolean
+) {
   if (now === before) return { text: 'Same as last week', tone: 'tertiary' as const };
   const diff = now - before;
   const better = lowerIsBetter ? diff < 0 : diff > 0;
-  const amount = money ? formatMoney(Math.abs(diff)) : String(Math.abs(diff));
+  const amount = money ? formatMoney(Math.abs(diff), currency) : String(Math.abs(diff));
   return {
     text: `${diff > 0 ? '+' : '−'}${amount} on last week`,
     tone: better ? ('success' as const) : ('secondary' as const),
@@ -62,6 +69,7 @@ export default function NumbersScreen() {
   const styles = useStyles();
   const router = useRouter();
   const { data, isLoading, refetch, isRefetching } = useStylistNumbers();
+  const currency = useMyCurrency();
 
   const timingRow = (t: ServiceTiming) => {
     const off =
@@ -130,7 +138,13 @@ export default function NumbersScreen() {
           <View style={styles.grid}>
             {TILES.map((tile, index) => {
               const now = data.thisWeek[tile.key];
-              const delta = change(now, data.lastWeek[tile.key], tile.money, tile.lowerIsBetter);
+              const delta = change(
+                now,
+                data.lastWeek[tile.key],
+                currency,
+                tile.money,
+                tile.lowerIsBetter
+              );
               return (
                 <Rise key={tile.key} index={index} style={styles.tile}>
                   <Card accessibilityLabel={`${tile.label}: ${now}. ${delta.text}`}>
@@ -138,7 +152,7 @@ export default function NumbersScreen() {
                       <Text variant="caption" tone="tertiary">
                         {tile.label}
                       </Text>
-                      <Text variant="numeric">{tile.money ? formatMoney(now) : now}</Text>
+                      <Text variant="numeric">{tile.money ? formatMoney(now, currency) : now}</Text>
                       <Text variant="caption" tone={delta.tone}>
                         {delta.text}
                       </Text>

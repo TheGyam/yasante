@@ -6,7 +6,9 @@ import { errorMessage, useAuth, useAuthStore } from '@/features/auth';
 import {
   HandleField,
   PolicyFields,
+  CountryField,
   LocationField,
+  useCountries,
   ServiceModelField,
   pageUrl,
   toHandle,
@@ -32,6 +34,7 @@ import { ProgressBar } from '@/shared/ui/ProgressBar';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Text } from '@/shared/ui/Text';
+import { DEFAULT_CURRENCY, fromMiles, toMiles } from '@/shared/lib/format';
 
 const STEPS = [
   {
@@ -89,6 +92,9 @@ export default function StylistSetupScreen() {
   const step = STEPS[index];
   const isLast = index === STEPS.length - 1;
   const set = (changes: Partial<SetupDraft>) => update(changes);
+  const { data: countries = [] } = useCountries();
+  // Her distances in her country's units: miles in the UK and the US, km elsewhere.
+  const inMiles = (countries.find(c => c.code === (draft.country ?? 'GB'))?.units ?? 'mi') === 'mi';
 
   const ready = [
     !!draft.displayName.trim() && availability.available === true,
@@ -208,7 +214,12 @@ export default function StylistSetupScreen() {
                 value={draft.serviceModels}
                 onChange={serviceModels => set({ serviceModels })}
               />
+              <CountryField
+                value={draft.country ?? 'GB'}
+                onChange={country => set({ country: country.code })}
+              />
               <LocationField
+                country={draft.country ?? 'GB'}
                 baseArea={draft.baseArea}
                 address={draft.address}
                 needsStreet={draft.serviceModels.some(m => m !== 'mobile')}
@@ -217,20 +228,33 @@ export default function StylistSetupScreen() {
               {draft.serviceModels.includes('mobile') && (
                 <Input
                   label="How far you travel"
-                  value={draft.travelRadiusMiles ? String(draft.travelRadiusMiles) : ''}
-                  onChangeText={text =>
-                    set({ travelRadiusMiles: Number(text.replace(/\D/g, '')) || 0 })
+                  value={
+                    draft.travelRadiusMiles
+                      ? String(fromMiles(draft.travelRadiusMiles, inMiles))
+                      : ''
                   }
-                  placeholder="5"
+                  onChangeText={text =>
+                    set({
+                      travelRadiusMiles: toMiles(Number(text.replace(/\D/g, '')) || 0, inMiles),
+                    })
+                  }
+                  placeholder={inMiles ? '5' : '8'}
                   keyboardType="number-pad"
-                  hint="Miles from your area"
+                  hint={inMiles ? 'Miles from your area' : 'Kilometres from your area'}
                 />
               )}
             </>
           )}
 
           {index === 2 && (
-            <PolicyFields value={draft.policies} onChange={policies => set({ policies })} />
+            <PolicyFields
+              value={draft.policies}
+              onChange={policies => set({ policies })}
+              currency={
+                countries.find(c => c.code === (draft.country ?? 'GB'))?.currency ??
+                DEFAULT_CURRENCY
+              }
+            />
           )}
 
           {index === 3 && (

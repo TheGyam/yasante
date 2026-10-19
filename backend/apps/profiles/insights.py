@@ -34,7 +34,12 @@ def insights(user, period="month", now=None):
     # Appointments
     done = Booking.objects.filter(client=user, status="completed", scheduled_for__isnull=False)
     done_in_period = list(in_period(done, "scheduled_for").order_by("scheduled_for"))
-    spent = sum(float(b.actual_price or b.price or 0) for b in done_in_period)
+    # Money never mixes currencies: spending is counted in the one she's spent most often
+    # in (nearly always her own country's), and other currencies are left out of it.
+    from collections import Counter
+
+    currency = Counter(b.currency for b in done_in_period).most_common(1)[0][0] if done_in_period else None
+    spent = sum(float(b.actual_price or b.price or 0) for b in done_in_period if b.currency == currency)
 
     # The hair log, all of it (it's small): trims, washes, take-downs.
     log = list(user.hair_log.all().order_by("at"))
@@ -89,6 +94,7 @@ def insights(user, period="month", now=None):
         "since": since,
         "appointments": len(done_in_period),
         "spent": round(spent, 2),
+        "currency": currency,
         "styles": [b.service_name for b in done_in_period],
         "stylists": len({b.stylist_id for b in done_in_period}),
         "current_style": current,

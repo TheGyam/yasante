@@ -36,11 +36,10 @@ def _start(booking):
     return booking.scheduled_for or (booking.requested_times or [None])[0]
 
 
-def _money(amount):
-    if amount is None:
-        return ""
-    value = float(amount)
-    return f"£{value:.0f}" if value.is_integer() else f"£{value:.2f}"
+def _money(amount, currency="GBP"):
+    from apps.common.countries import money
+
+    return money(amount, currency)
 
 
 def to_client(booking, event, title, body, category="booking_updates", **kw):
@@ -86,7 +85,7 @@ def on_status(booking, before):
             booking,
             "accepted",
             f"{booking.stylist_name} accepted",
-            f"Send {_money(booking.deposit_amount)} to confirm {_when(start, booking, booking.client)}. The details are inside.",
+            f"Send {_money(booking.deposit_amount, booking.currency)} to confirm {_when(start, booking, booking.client)}. The details are inside.",
         )
     elif status == "confirmed" and before in ("requested", "awaiting_deposit"):
         to_client(

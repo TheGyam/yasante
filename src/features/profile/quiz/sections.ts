@@ -1,5 +1,6 @@
 import { differenceInDays } from 'date-fns';
-import type { HairLength, HairProfile } from '../types';
+import { deviceCurrency } from '@/shared/lib/region';
+import type { HairLength, HairProfile, StyleBudget } from '../types';
 
 export type SectionKey =
   | 'texture'
@@ -154,12 +155,21 @@ const CHEMICAL_WORDS = {
   bleach: 'Bleach',
   keratin: 'Keratin',
 } as const;
-const BUDGET_WORDS = {
-  under_50: 'Under £50',
-  '50_100': '£50–100',
-  '100_150': '£100–150',
-  '150_plus': '£150 or more',
-} as const;
+/** A style budget in words: amounts where the phone uses pounds, plain words elsewhere. */
+export const BUDGET_WORDS: Record<StyleBudget, string> =
+  deviceCurrency === 'GBP'
+    ? {
+        under_50: 'Under £50',
+        '50_100': '£50–100',
+        '100_150': '£100–150',
+        '150_plus': '£150 or more',
+      }
+    : {
+        under_50: 'Keeping it affordable',
+        '50_100': 'Mid-range',
+        '100_150': 'Higher-end',
+        '150_plus': 'Whatever it takes',
+      };
 const GOAL_WORDS = {
   growth: 'Length',
   health: 'Health',

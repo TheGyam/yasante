@@ -55,6 +55,8 @@ export interface Booking {
   /** The length and size she chose, as the stylist named them. */
   optionLabels?: string[];
   price: number;
+  /** The stylist's currency when it was booked (ISO 4217). */
+  currency?: string;
   fromPrice: boolean;
   durationMinutes?: number;
   bringingOwnHair: boolean;

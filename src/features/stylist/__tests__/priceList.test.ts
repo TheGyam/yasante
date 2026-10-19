@@ -81,3 +81,25 @@ describe('headings', () => {
     expect(parsed.map(p => !!p.heading)).toEqual([true, false, false]);
   });
 });
+
+describe('other currencies', () => {
+  it('reads Naira, Cedi and dollar lines, grouped thousands included', () => {
+    expect(parseLine('Knotless braids ₦25,000 (5 hrs)')).toMatchObject({
+      name: 'Knotless braids',
+      price: 25000,
+      durationMinutes: 300,
+    });
+    expect(parseLine('Box braids GH₵350-GH₵500')).toMatchObject({
+      name: 'Box braids',
+      price: 350,
+      fromPrice: true,
+    });
+    expect(parseLine('Silk press $85')).toMatchObject({ name: 'Silk press', price: 85 });
+    expect(parseLine('Cornrows €45,50')).toMatchObject({ name: 'Cornrows', price: 45.5 });
+  });
+
+  it('takes a grouped bare number as a price, but not a year', () => {
+    expect(parseLine('Passion twists 18,000')).toMatchObject({ price: 18000 });
+    expect(parseLine('PRICES 2026')).toMatchObject({ price: undefined });
+  });
+});

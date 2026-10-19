@@ -1,10 +1,18 @@
-import { formatMoney, formatPrice, plural, slugify } from '../format';
+import { formatDistance, formatMoney, formatPrice, plural, slugify } from '../format';
 
 describe('format', () => {
-  it('writes money the way the app does', () => {
-    expect(formatMoney(45)).toBe('£45');
-    expect(formatMoney(12.5)).toBe('£12.50');
-    expect(formatPrice(80, true)).toBe('from £80');
+  it('writes money in its own currency, the way the app does', () => {
+    expect(formatMoney(45, 'GBP')).toBe('£45');
+    expect(formatMoney(12.5, 'GBP')).toBe('£12.50');
+    expect(formatPrice(80, 'GBP', true)).toBe('from £80');
+    expect(formatMoney(240000, 'NGN')).toBe('₦240,000');
+    expect(formatMoney(45, 'USD')).toBe('$45');
+  });
+
+  it('gives distances in the reader’s units', () => {
+    expect(formatDistance(5, true)).toBe('5 miles');
+    expect(formatDistance(5, false)).toBe('8 km');
+    expect(formatDistance(1, true)).toBe('1 mile');
   });
 
   it('writes counts in words', () => {

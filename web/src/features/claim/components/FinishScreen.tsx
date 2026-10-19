@@ -16,6 +16,7 @@ import { Text } from '@/shared/ui/Text';
 import { useFinishState, useSaveFinishPrice } from '../hooks';
 import type { FinishStyle } from '../types';
 import * as styles from './FinishScreen.css';
+import { currencySymbol, DEFAULT_CURRENCY } from '@/shared/lib/format';
 
 export function FinishScreen() {
   const session = useSession();
@@ -93,7 +94,11 @@ export function FinishScreen() {
             </div>
 
             {data.styles.map(style => (
-              <StylePricingCard key={style.slug} item={style} />
+              <StylePricingCard
+                key={style.slug}
+                item={style}
+                currency={profile?.currency ?? DEFAULT_CURRENCY}
+              />
             ))}
           </Glass>
 
@@ -146,7 +151,7 @@ export function FinishScreen() {
   );
 }
 
-function StylePricingCard({ item }: { item: FinishStyle }) {
+function StylePricingCard({ item, currency }: { item: FinishStyle; currency: string }) {
   const save = useSaveFinishPrice();
   const [price, setPrice] = useState('');
   const [fromPrice, setFromPrice] = useState(false);
@@ -195,7 +200,7 @@ function StylePricingCard({ item }: { item: FinishStyle }) {
       {error && <InlineAlert message={error} />}
 
       <Input
-        label="Price (£)"
+        label={`Price (${currencySymbol(currency)})`}
         inputMode="decimal"
         placeholder="120"
         value={price}

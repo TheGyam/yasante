@@ -336,7 +336,7 @@ def llms_txt(request):
         seo.ABOUT,
         "",
         "Key facts:",
-        "- Where: London, UK. Prices are in pounds (GBP).",
+        "- Where: starting in London, UK, for stylists anywhere. Each stylist's prices are in their own currency.",
         "- For clients: browse real hairstyles, see the braider who did each one, book them, and keep "
         "care plans, collections and a product shelf.",
         "- For stylists: a free page with work, prices, hours and policies; requests to accept, "
@@ -389,7 +389,7 @@ def llms_full_txt(request):
         "",
         seo.ABOUT,
         "",
-        "All prices in GBP. 'from' means the price depends on length, size or options.",
+        "Each stylist's prices are in their own currency. 'from' means the price depends on length, size or options.",
         "",
     ]
     for profile in stylists:

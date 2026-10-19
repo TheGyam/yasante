@@ -6,25 +6,26 @@ import {
   addTimeBlock,
   checkHandle,
   closeDay,
-  getTimeBlocks,
-  removeTimeBlock,
-  skipTimeBlock,
   createProfile,
+  getCountries,
   getMenu,
   getMyProfile,
   getNumbers,
   getPortfolio,
   getStylistPage,
   getSummary,
+  getTimeBlocks,
+  joinPageWaitlist,
+  leavePageWaitlist,
   publishProfile,
   removeMenuItem,
   removePortfolioPhoto,
+  removeTimeBlock,
   searchStylists,
+  skipTimeBlock,
   updateMenuItem,
   updateProfile,
   uploadProof,
-  joinPageWaitlist,
-  leavePageWaitlist,
 } from './api';
 import { handleProblem } from './handle';
 import type {
@@ -34,6 +35,7 @@ import type {
   StylistProfile,
   StylistProfileDraft,
 } from './types';
+import { DEFAULT_CURRENCY } from '@/shared/lib/format';
 
 /**
  * Query keys. `['stylist', handle]` (lower case) is also what the server inlines her
@@ -244,5 +246,20 @@ export function useTogglePageWaitlist(handle: string) {
     onError: (_error, _join, context) => {
       if (context) set(context.previous === true);
     },
+  });
+}
+
+/** Her own currency, from her page: what she prices her menu in. */
+export function useMyCurrency(accountId: string) {
+  const { data } = useMyProfile(accountId);
+  return data?.currency ?? DEFAULT_CURRENCY;
+}
+
+/** Every country (rarely changes: kept a day, and shared by every picker). */
+export function useCountries() {
+  return useQuery({
+    queryKey: ['countries'],
+    queryFn: getCountries,
+    staleTime: 24 * 60 * 60 * 1000,
   });
 }

@@ -27,17 +27,82 @@ const useStyles = makeStyles(() => ({
  * home, she adds the street too, kept back until she confirms a booking.
  */
 export function LocationField({
+  country = 'GB',
   baseArea,
   address,
   needsStreet,
   onChange,
 }: {
+  /** Her country (ISO 3166). The postcode lookup is the UK's; elsewhere she types it. */
+  country?: string;
   baseArea: string;
   address?: string;
   /** Clients come to her, so they'll need the street once a booking is confirmed. */
   needsStreet: boolean;
   onChange: (changes: { baseArea?: string; address?: string }) => void;
 }) {
+  if (country !== 'GB')
+    return (
+      <WorldLocation
+        baseArea={baseArea}
+        address={address}
+        needsStreet={needsStreet}
+        onChange={onChange}
+      />
+    );
+  return (
+    <UkLocation
+      baseArea={baseArea}
+      address={address}
+      needsStreet={needsStreet}
+      onChange={onChange}
+    />
+  );
+}
+
+interface LocationProps {
+  baseArea: string;
+  address?: string;
+  needsStreet: boolean;
+  onChange: (changes: { baseArea?: string; address?: string }) => void;
+}
+
+/** Outside the UK: her area and, when clients come to her, her address, as she writes them. */
+function WorldLocation({ baseArea, address, needsStreet, onChange }: LocationProps) {
+  const styles = useStyles();
+  return (
+    <View style={styles.group}>
+      <Input
+        label="Your area"
+        icon={MapPin}
+        value={baseArea}
+        onChangeText={text => onChange({ baseArea: text })}
+        placeholder="East Legon, Accra"
+        autoCapitalize="words"
+        hint="A neighbourhood and city clients know. Never your address."
+        testID="setup-area"
+      />
+      {needsStreet && (
+        <Input
+          label="Your address"
+          icon={House}
+          value={address ?? ''}
+          onChangeText={text => onChange({ address: text })}
+          placeholder="House number, street and city"
+          autoCapitalize="words"
+          autoComplete="street-address"
+          textContentType="fullStreetAddress"
+          multiline
+          hint="Private. Only clients whose booking you’ve confirmed get it."
+          testID="setup-street"
+        />
+      )}
+    </View>
+  );
+}
+
+/** In the UK: a postcode names her area, and the street finishes her address. */
+function UkLocation({ baseArea, address, needsStreet, onChange }: LocationProps) {
   const styles = useStyles();
   const theme = useTheme();
   const [postcode, setPostcode] = useState(() => split(address).postcode);

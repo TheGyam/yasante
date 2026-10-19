@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { ExternalLink, MapPin, Store } from 'lucide-react';
 import { errorMessage } from '@/shared/lib/errors';
+import { DEFAULT_CURRENCY, fromMiles, toMiles } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Glass } from '@/shared/ui/Glass';
@@ -13,10 +14,16 @@ import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { toHandle } from '../handle';
-import { useGoLive, useHandleAvailability, useMyProfile } from '../hooks';
+import { useCountries, useGoLive, useHandleAvailability, useMyProfile } from '../hooks';
 import { draftFromProfile, useSetupDraft, type SetupDraft } from '../setupDraft';
 import type { StylistProfile } from '../types';
-import { HandleField, PolicyFields, ProofPhotoField, ServiceModelField } from './SetupFields';
+import {
+  CountryField,
+  HandleField,
+  PolicyFields,
+  ProofPhotoField,
+  ServiceModelField,
+} from './SetupFields';
 import * as styles from './StylistSetupScreen.css';
 
 /** The app's steps, in the app's words (app/stylist-setup.tsx). */
@@ -102,6 +109,10 @@ function Setup({
   const step = STEPS[index];
   const isLast = index === STEPS.length - 1;
   const set = (changes: Partial<SetupDraft>) => update(changes);
+  const { data: countries = [] } = useCountries();
+  const country = countries.find(c => c.code === (draft.country ?? 'GB'));
+  // Her distances in her country's units: miles in the UK and the US, km elsewhere.
+  const inMiles = (country?.units ?? 'mi') === 'mi';
   const editingLive = !!existing?.published;
 
   const ready = [
@@ -213,6 +224,10 @@ function Setup({
                   value={draft.serviceModels}
                   onChange={serviceModels => set({ serviceModels })}
                 />
+                <CountryField
+                  value={draft.country ?? 'GB'}
+                  onChange={country => set({ country: country.code })}
+                />
                 <Input
                   label="Your area"
                   value={draft.baseArea}
@@ -224,12 +239,21 @@ function Setup({
                 {draft.serviceModels.includes('mobile') && (
                   <Input
                     label="How far you travel"
-                    value={draft.travelRadiusMiles ? String(draft.travelRadiusMiles) : ''}
-                    placeholder="5"
+                    value={
+                      draft.travelRadiusMiles
+                        ? String(fromMiles(draft.travelRadiusMiles, inMiles))
+                        : ''
+                    }
+                    placeholder={inMiles ? '5' : '8'}
                     inputMode="numeric"
-                    hint="Miles from your area"
+                    hint={inMiles ? 'Miles from your area' : 'Kilometres from your area'}
                     onChange={event =>
-                      set({ travelRadiusMiles: Number(event.target.value.replace(/\D/g, '')) || 0 })
+                      set({
+                        travelRadiusMiles: toMiles(
+                          Number(event.target.value.replace(/\D/g, '')) || 0,
+                          inMiles
+                        ),
+                      })
                     }
                   />
                 )}
@@ -237,7 +261,11 @@ function Setup({
             )}
 
             {index === 2 && draft.policies && (
-              <PolicyFields value={draft.policies} onChange={policies => set({ policies })} />
+              <PolicyFields
+                value={draft.policies}
+                onChange={policies => set({ policies })}
+                currency={country?.currency ?? DEFAULT_CURRENCY}
+              />
             )}
 
             {index === 3 && (

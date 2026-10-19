@@ -12,6 +12,12 @@ export interface SetupDraft extends StylistProfileDraft {
   step: number;
 }
 
+/** "GB" from "en-GB": the country the browser is set to, else the UK. */
+function browserCountry() {
+  const region = (typeof navigator !== 'undefined' && navigator.language.split('-')[1]) || '';
+  return /^[A-Za-z]{2}$/.test(region) ? region.toUpperCase() : 'GB';
+}
+
 function browserZone() {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -28,6 +34,8 @@ export const EMPTY_DRAFT: SetupDraft = {
   bio: '',
   serviceModels: [],
   baseArea: '',
+  // The browser's country to start with; she can change it. Her prices are in its currency.
+  country: browserCountry(),
   address: '',
   // Her working hours are on this computer's clock.
   timeZone: browserZone(),
@@ -49,6 +57,7 @@ export function draftFromProfile(profile: StylistProfile): SetupDraft {
     bio: profile.bio ?? '',
     serviceModels: profile.serviceModels,
     baseArea: profile.baseArea,
+    country: profile.country ?? 'GB',
     address: profile.address ?? '',
     timeZone: browserZone(),
     travelRadiusMiles: profile.travelRadiusMiles ?? EMPTY_DRAFT.travelRadiusMiles,

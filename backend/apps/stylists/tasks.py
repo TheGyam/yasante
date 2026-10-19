@@ -38,7 +38,9 @@ def monthly_recap(now=None):
             continue
         parts = [_count(n["views"], "page view"), _count(n["completed"], "appointment")]
         if n["earned"]:
-            parts.append(f"£{n['earned']:.0f} earned")
+            from apps.common.countries import money
+
+            parts.append(f"{money(round(n['earned']), profile.currency)} earned")
         notify(
             profile.account_id,
             "weekly_digest",

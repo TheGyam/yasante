@@ -193,6 +193,7 @@ class InsightsSerializer(serializers.Serializer):
     since = optional(serializers.DateTimeField())
     appointments = serializers.IntegerField()
     spent = serializers.FloatField()
+    currency = optional(serializers.CharField(help_text="ISO 4217: what `spent` is in"))
     styles = serializers.ListField(child=serializers.CharField())
     stylists = serializers.IntegerField()
     current_style = optional(CurrentStyleSerializer())
