@@ -25,10 +25,15 @@ export const deleteLook = (id: string) => api.delete(`/looks/${id}/`);
 
 export const updateLook = (
   id: string,
-  patch: { styles?: string[]; hairTexture?: Look['hairTexture'] | null }
+  patch: {
+    styles?: string[];
+    hairTexture?: Look['hairTexture'] | null;
+    visibility?: Look['visibility'];
+  }
 ) => {
-  const body: { styles?: string[]; hair_texture?: string } = {};
+  const body: { styles?: string[]; hair_texture?: string; visibility?: Look['visibility'] } = {};
   if (patch.styles !== undefined) body.styles = patch.styles;
+  if (patch.visibility !== undefined) body.visibility = patch.visibility;
   if (patch.hairTexture !== undefined) body.hair_texture = patch.hairTexture ?? '';
   return api.patch<Look>(`/looks/${id}/`, body);
 };

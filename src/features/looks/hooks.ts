@@ -18,6 +18,7 @@ import type {
   LookFilters,
   LooksPage,
   ReportReason,
+  LookVisibility,
 } from './types';
 import { track } from '@/shared/lib/analytics';
 
@@ -195,6 +196,16 @@ export function usePostLook() {
       track('post_look', { styles: look.styles.join(','), creditsStylist: !!look.stylist });
       return onSuccess();
     },
+  });
+}
+
+/** Her own look, shown to everyone or just her. It keeps its date either way. */
+export function useSetLookVisibility() {
+  const onSuccess = useRefreshFeed();
+  return useMutation({
+    mutationFn: (vars: { id: string; visibility: LookVisibility }) =>
+      looksApi.setVisibility(vars.id, vars.visibility),
+    onSuccess,
   });
 }
 

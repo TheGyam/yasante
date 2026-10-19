@@ -9,6 +9,7 @@ import type {
   LooksPage,
   ReportReason,
   Style,
+  LookVisibility,
 } from './types';
 
 /** Uploads this many of a look's photos at once. */
@@ -88,7 +89,11 @@ export const looksApi = {
   /** GET /api/looks/mine/ — her own, private ones included. */
   mine: async () => (await apiClient.get<Look[]>('/api/looks/mine/')).data,
 
-  /** PATCH /api/looks/:id/ — her own look's styles and hair type, and nothing else. */
+  /** PATCH /api/looks/:id/ — who sees her own look: everyone, or just her. */
+  setVisibility: async (id: string, visibility: LookVisibility) =>
+    (await apiClient.patch<Look>(`/api/looks/${id}/`, { visibility })).data,
+
+  /** PATCH /api/looks/:id/ — her own look's styles and hair type. */
   updateTags: async (id: string, tags: { styles?: string[]; hairTexture?: string | null }) =>
     (
       await apiClient.patch<Look>(`/api/looks/${id}/`, {

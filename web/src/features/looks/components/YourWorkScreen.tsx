@@ -1,6 +1,6 @@
 import { Fragment, useState } from 'react';
 import { useLocation } from 'react-router';
-import { ImagePlus, PenLine, Trash2 } from 'lucide-react';
+import { Globe, ImagePlus, Lock, PenLine, Trash2 } from 'lucide-react';
 import { useCheckFinishTags, useFinishState } from '@/features/claim';
 import { usePortfolio, useRemovePortfolioPhoto } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
@@ -39,6 +39,9 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
   const [editError, setEditError] = useState<string | undefined>(undefined);
 
   const live = (looks.data ?? []).filter(l => l.visibility === 'public');
+  const hidden = (looks.data ?? []).filter(l => l.visibility === 'private');
+  const show = (look: Look, visibility: Look['visibility']) =>
+    updateLook.mutate({ id: look.id, patch: { visibility } });
   const checking = !!finish.data && !finish.data.tagsChecked;
   const styleNames = (look: Look) =>
     (look.styles ?? [])
@@ -79,10 +82,10 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
           />
         </Glass>
       )}
-      {(deleteLook.isError || removePhoto.isError || checkTags.isError) && (
+      {(deleteLook.isError || removePhoto.isError || checkTags.isError || updateLook.isError) && (
         <InlineAlert
           message={errorMessage(
-            deleteLook.error ?? removePhoto.error ?? checkTags.error,
+            deleteLook.error ?? removePhoto.error ?? checkTags.error ?? updateLook.error,
             'Couldn’t update that.'
           )}
         />
@@ -133,6 +136,15 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
                   <PenLine size={12} aria-hidden />
                   {/* While she's checking our tags, each photo says what it's tagged. */}
                   {checking ? styleNames(look) || 'No style' : 'Edit tags'}
+                </button>
+                <button
+                  type="button"
+                  className={styles.lock}
+                  aria-label={`Make ${lookAlt(look)} just for you`}
+                  title="Make it just for you: it leaves the feed, and its likes and comments come back if you show it again"
+                  onClick={() => show(look, 'private')}
+                >
+                  <Lock size={15} aria-hidden />
                 </button>
                 <button
                   type="button"
@@ -241,6 +253,41 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
             </Fragment>
           ))}
         </ul>
+      )}
+
+      {hidden.length > 0 && (
+        <>
+          <SectionHeader title="Just for you" />
+          <Text variant="subhead" tone="secondary">
+            Only you can see these. Shown to everyone, a look goes in the feed at the date you
+            posted it.
+          </Text>
+          <ul className={styles.grid}>
+            {hidden.map(look => (
+              <li key={look.id} className={styles.tile}>
+                <Link to={`/looks/${look.id}`}>
+                  <RemoteImage
+                    src={look.thumbUri ?? look.photoUri}
+                    alt={lookAlt(look)}
+                    aspect={4 / 5}
+                  />
+                </Link>
+                <button
+                  type="button"
+                  className={styles.editButton}
+                  onClick={() => {
+                    if (window.confirm('Show this look to everyone? It goes in the feed.')) {
+                      show(look, 'public');
+                    }
+                  }}
+                >
+                  <Globe size={12} aria-hidden />
+                  Show to everyone
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <SectionHeader title={`On your page${photos.length ? `${SEP}${photos.length}` : ''}`} />

@@ -3069,6 +3069,7 @@ export interface components {
         PatchedLookTagsRequestRequest: {
             styles?: string[];
             hairTexture?: string;
+            visibility?: components["schemas"]["VisibilityEnum"];
         };
         /** @description For creating/updating menu items. */
         PatchedMenuItemDraftRequest: {

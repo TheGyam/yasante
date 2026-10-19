@@ -5407,6 +5407,8 @@ components:
             minLength: 1
         hairTexture:
           type: string
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
     PatchedMenuItemDraftRequest:
       type: object
       description: For creating/updating menu items.
