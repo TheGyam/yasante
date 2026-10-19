@@ -445,6 +445,25 @@ def test_coming_to_the_client_needs_a_postcode_and_a_stylist_who_travels(api, ma
     assert "postcode" in as_client.post("/api/bookings/", body).json()["message"]
 
 
+def test_outside_the_uk_a_home_visit_needs_a_street_and_an_area_not_a_postcode(api, make_user, make_stylist, slot):
+    profile = make_stylist(country="GH")
+    profile.service_models = ["mobile"]
+    profile.save()
+    service = profile.menu_items.get(name="Knotless braids")
+    as_client = api(make_user())
+    body = {
+        "stylistId": str(profile.account_id), "serviceId": str(service.pk), "bringingOwnHair": False,
+        "requestedTimes": [slot(as_client, profile, service)], "policyVersion": "2026-09", "atClient": True,
+        "clientAddress": "12 Lagos Avenue",
+    }
+    assert "your area" in as_client.post("/api/bookings/", body).json()["message"]
+    body["clientAddress"] = "House 12, Lagos Avenue, East Legon"
+    booking = as_client.post("/api/bookings/", body).json()
+    # She sees the area first, and the street only once she's confirmed.
+    seen = api(profile.account).get(f"/api/bookings/{booking['id']}/").json()
+    assert seen["area"] == "East Legon" and "address" not in seen
+
+
 def test_a_move_lands_on_a_working_day_and_never_on_another_booking(api, setup, book, make_user):
     profile, client = setup
     booking_id = _confirmed(api, profile, client, book)

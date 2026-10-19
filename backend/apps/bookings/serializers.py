@@ -339,7 +339,7 @@ class BookingCreateRequestSerializer(serializers.Serializer):
     policy_version = serializers.CharField()
     look_id = serializers.CharField(required=False, help_text="The look the booking is from")
     at_client = serializers.BooleanField(required=False, help_text="The stylist comes to the client")
-    client_address = serializers.CharField(required=False, help_text="Street and postcode, when at_client")
+    client_address = serializers.CharField(required=False, help_text="When at_client: street and postcode in the UK, else street then area (\"12 Lagos Avenue, East Legon\")")
 
 
 class AcceptRequestSerializer(serializers.Serializer):

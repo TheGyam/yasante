@@ -53,7 +53,7 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
 import { track } from '@/shared/lib/analytics';
-import { joinAddress, POSTCODE, splitAddress } from '@/shared/utils/postcode';
+import { joinAddress, POSTCODE, splitAddress, splitArea } from '@/shared/utils/postcode';
 import { usesMiles } from '@/shared/lib/region';
 
 const useStyles = makeStyles(t => ({
@@ -143,20 +143,22 @@ export default function RequestBookingScreen() {
   // travels always comes to the client.
   const [atClient, setAtClient] = useState(false);
   const [street, setStreet] = useState('');
+  // A UK postcode, or outside the UK the area clients name ("East Legon").
   const [postcode, setPostcode] = useState('');
+  const inUk = (data?.profile.country ?? 'GB') === 'GB';
   const offers = data?.profile.serviceModels ?? [];
   const comesToMe = offers.includes('mobile') && (atClient || offers.every(m => m === 'mobile'));
   // The address from their last home visit, so it's typed once.
   const { data: past = [] } = useBookings('client');
   const lastHome = past.find(b => b.atClient && b.address)?.address;
   useEffect(() => {
-    if (!lastHome || street || postcode) return;
-    const known = splitAddress(lastHome);
+    if (!lastHome || !data || street || postcode) return;
+    const known = inUk ? splitAddress(lastHome) : splitArea(lastHome);
     setStreet(known.street);
     setPostcode(known.postcode);
-    // Once, when it arrives.
+    // Once, when it and her page (so her country) have arrived.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastHome]);
+  }, [lastHome, data]);
 
   // Booking the same again: once both are here, the same style with the same choices,
   // matched by name, as long as the stylist still offers them.
@@ -209,7 +211,11 @@ export default function RequestBookingScreen() {
         policyVersion: POLICY_VERSION,
         lookId: fromLook?.id,
         atClient: comesToMe,
-        clientAddress: comesToMe ? joinAddress(street, postcode) : undefined,
+        clientAddress: comesToMe
+          ? inUk
+            ? joinAddress(street, postcode)
+            : `${street.trim()}, ${postcode.trim()}`
+          : undefined,
       });
       haptics.success();
       // A beat to see it went, then the booking itself.
@@ -267,7 +273,8 @@ export default function RequestBookingScreen() {
 
   const travels = profile.serviceModels.includes('mobile');
   const hosts = profile.serviceModels.some(m => m !== 'mobile');
-  const addressReady = !!street.trim() && POSTCODE.test(postcode.trim());
+  const addressReady =
+    !!street.trim() && (inUk ? POSTCODE.test(postcode.trim()) : !!postcode.trim());
 
   // The button stays off until everything's there; say what's left, so it never
   // just looks broken.
@@ -278,7 +285,7 @@ export default function RequestBookingScreen() {
       : !time
         ? 'Pick a time to send your request.'
         : comesToMe && !addressReady
-          ? 'Add your street and postcode so they can get to you.'
+          ? `Add your street and ${inUk ? 'postcode' : 'area'} so they can get to you.`
           : !accepted
             ? 'Tick their terms above to send.'
             : undefined;
@@ -459,23 +466,23 @@ export default function RequestBookingScreen() {
                   icon={MapPin}
                   value={street}
                   onChangeText={setStreet}
-                  placeholder="4 Choumert Grove"
+                  placeholder={inUk ? '4 Choumert Grove' : '12 Lagos Avenue'}
                   autoCapitalize="words"
                   autoComplete="street-address"
                   textContentType="streetAddressLine1"
                   testID="booking-street"
                 />
                 <Input
-                  label="Your postcode"
+                  label={inUk ? 'Your postcode' : 'Your area'}
                   value={postcode}
                   onChangeText={setPostcode}
-                  placeholder="SE15 4RB"
-                  autoCapitalize="characters"
+                  placeholder={inUk ? 'SE15 4RB' : 'East Legon'}
+                  autoCapitalize={inUk ? 'characters' : 'words'}
                   autoCorrect={false}
-                  autoComplete="postal-code"
-                  textContentType="postalCode"
-                  maxLength={8}
-                  hint={`They see your postcode area first${profile.travelRadiusMiles ? ` (they travel up to ${formatDistance(profile.travelRadiusMiles, usesMiles)} from ${profile.baseArea})` : ''}, and your street once they confirm.`}
+                  autoComplete={inUk ? 'postal-code' : 'address-line2'}
+                  textContentType={inUk ? 'postalCode' : 'sublocality'}
+                  maxLength={inUk ? 8 : 100}
+                  hint={`They see your ${inUk ? 'postcode area' : 'area'} first${profile.travelRadiusMiles ? ` (they travel up to ${formatDistance(profile.travelRadiusMiles, usesMiles)} from ${profile.baseArea})` : ''}, and your street once they confirm.`}
                   testID="booking-postcode"
                 />
               </>
