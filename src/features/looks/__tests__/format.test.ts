@@ -1,4 +1,4 @@
-import { postedLabel } from '../format';
+import { bookable, postedLabel } from '../format';
 
 const now = new Date('2026-09-21T12:00:00Z');
 const ago = (ms: number) => new Date(now.getTime() - ms).toISOString();
@@ -34,5 +34,13 @@ describe('styleForService', () => {
     expect(styleForService('Boho knotless', taxonomy)).toBe('knotless');
     expect(styleForService('Cornrows', taxonomy)).toBe('cornrows');
     expect(styleForService('Take down and wash', taxonomy)).toBeUndefined();
+  });
+});
+
+describe('booking from a look', () => {
+  it('never offers to book a look by a featured stylist', () => {
+    const look = { stylist: { id: 'a', name: 'Ama', handle: 'ama' }, serviceId: 's1' };
+    expect(bookable(look)).toBe(true);
+    expect(bookable({ ...look, stylistFeatured: true })).toBe(false);
   });
 });

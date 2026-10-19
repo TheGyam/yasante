@@ -328,9 +328,11 @@ function RootNavigator() {
           <Stack.Screen name="edit-profile" options={modal} />
           <Stack.Screen name="insights" />
           <Stack.Screen name="username" options={modal} />
+          <Stack.Screen name="finish" />
         </Stack.Protected>
 
         <Stack.Screen name="invite/[code]" />
+        <Stack.Screen name="claim/[code]" />
 
         <Stack.Protected guard={inAuthFlow}>
           <Stack.Screen name="auth" options={modal} />

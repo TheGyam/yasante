@@ -136,9 +136,12 @@ export const LookCard = memo(function LookCard({
 }: LookCardProps) {
   const styles = useStyles();
   const theme = useTheme();
-  const price = look.price
-    ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
-    : undefined;
+  // A featured stylist isn't taking bookings yet: "Featured" stands where a price would.
+  const price = look.stylistFeatured
+    ? 'Featured'
+    : look.price
+      ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
+      : undefined;
 
   // In a feed the photo grows out of this card into the look's page.
   const ownPhoto = useRef<View>(null);
@@ -147,8 +150,10 @@ export const LookCard = memo(function LookCard({
     (l: Look, photoIndex: number) => {
       if (!onOpen) return;
       const photo = lookPhotos(l)[photoIndex] ?? lookPhotos(l)[0];
-      openWithHero(media.current, { lookId: l.id, uri: photo.thumbUri ?? photo.uri, photoIndex }, () =>
-        onOpen(l)
+      openWithHero(
+        media.current,
+        { lookId: l.id, uri: photo.thumbUri ?? photo.uri, photoIndex },
+        () => onOpen(l)
       );
     },
     [onOpen, media]
@@ -357,14 +362,16 @@ export const LookCard = memo(function LookCard({
               style={styles.save}
             />
           )}
-          {!!look.serviceName && (
+          {(!!look.serviceName || !!look.stylistFeatured) && (
             <View style={styles.service} pointerEvents="none">
-              <Text variant="footnote" style={styles.serviceText} numberOfLines={1}>
-                {look.serviceName}
-              </Text>
+              {!!look.serviceName && (
+                <Text variant="footnote" style={styles.serviceText} numberOfLines={1}>
+                  {look.serviceName}
+                </Text>
+              )}
               {!!price && (
                 <Text variant="footnote" style={styles.serviceText}>
-                  · {price}
+                  {look.serviceName ? `· ${price}` : price}
                 </Text>
               )}
             </View>

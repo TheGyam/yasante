@@ -79,6 +79,11 @@ export interface StylistProfile {
   timeZone?: string;
   travelRadiusMiles?: number;
   instagramHandle?: string;
+  tiktokHandle?: string;
+  /** Set up by Yasante, with their yes, and not taking bookings on Yasante yet. */
+  featured?: boolean;
+  /** Still Yasante's to hand over: the stylist can make it theirs. */
+  claimable?: boolean;
   policies: StylistPolicies;
   /** When she works. Absent until she sets it; until then, every day 9 to 6. */
   availability?: Availability;
@@ -104,6 +109,7 @@ export type StylistProfileDraft = Pick<
   | 'timeZone'
   | 'travelRadiusMiles'
   | 'instagramHandle'
+  | 'tiktokHandle'
   | 'policies'
   | 'proofPhotoUri'
   | 'availability'
@@ -164,6 +170,8 @@ export type PortfolioPhotoDraft = Pick<PortfolioPhoto, 'uri' | 'serviceId'>;
  */
 export interface StylistPage {
   profile: StylistProfile;
+  /** On a featured page, for someone signed in: whether they're on its waitlist. */
+  waitlistJoined?: boolean;
   menu: MenuItem[];
   photos: PortfolioPhoto[];
   /** Styles clients confirmed she did — a count she can't type in herself. */

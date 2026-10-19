@@ -15,6 +15,8 @@ import {
   WifiOff,
 } from 'lucide-react-native';
 import {
+  ClaimNote,
+  FeaturedActions,
   VERIFICATION_LABELS,
   formatDuration,
   formatPrice,
@@ -30,6 +32,7 @@ import { formatMoney } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
+import { Badge } from '@/shared/ui/Badge';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -58,6 +61,7 @@ const useStyles = makeStyles(() => ({
   reviews: { gap: space.sm },
   reviewsHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   average: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+  featured: { alignItems: 'center', gap: space.xs, marginTop: space.xs },
 }));
 
 /**
@@ -106,6 +110,8 @@ export default function StylistPageScreen() {
 
   const { profile, menu, photos, confirmedStyles, reviews, rating, responseHours, timingLabel } =
     data;
+  // Set up by Yasante and not taking bookings yet: only what's real, and no booking.
+  const featured = !!profile.featured;
   const reply = replyLabel(responseHours);
   const timing = timingLabelText(timingLabel);
   const deposit =
@@ -148,6 +154,14 @@ export default function StylistPageScreen() {
             <Text variant="subhead" tone="secondary">
               @{profile.handle}
             </Text>
+            {featured && (
+              <View style={styles.featured}>
+                <Badge label="Featured" />
+                <Text variant="footnote" tone="secondary">
+                  Not taking bookings on Yasante yet
+                </Text>
+              </View>
+            )}
           </View>
           {!!profile.bio && (
             <Text variant="body" tone="secondary" align="center">
@@ -156,52 +170,64 @@ export default function StylistPageScreen() {
           )}
         </View>
 
-        <Button
-          label="Request a booking"
-          icon={CalendarPlus}
-          onPress={() => router.push(`/book/${profile.handle}${look ? `?look=${look}` : ''}`)}
-          disabled={!menu.length}
-          fullWidth
-          testID="stylist-page-book"
-        />
-        {profile.accountId !== user?.id && (
-          <Button
-            label="Tell me if a slot opens"
-            icon={BellRing}
-            variant="ghost"
-            onPress={() => router.push(`/waitlist/${profile.handle}`)}
-            fullWidth
-            style={{ marginTop: -space.lg }}
-            testID="stylist-page-waitlist"
-          />
+        {featured ? (
+          <FeaturedActions page={data} />
+        ) : (
+          <>
+            <Button
+              label="Request a booking"
+              icon={CalendarPlus}
+              onPress={() => router.push(`/book/${profile.handle}${look ? `?look=${look}` : ''}`)}
+              disabled={!menu.length}
+              fullWidth
+              testID="stylist-page-book"
+            />
+            {profile.accountId !== user?.id && (
+              <Button
+                label="Tell me if a slot opens"
+                icon={BellRing}
+                variant="ghost"
+                onPress={() => router.push(`/waitlist/${profile.handle}`)}
+                fullWidth
+                style={{ marginTop: -space.lg }}
+                testID="stylist-page-waitlist"
+              />
+            )}
+          </>
         )}
 
         <Section>
           <ListRow
             title={profile.baseArea}
             subtitle={
-              profile.serviceModels.includes('mobile') && profile.travelRadiusMiles
-                ? `Travels up to ${profile.travelRadiusMiles} miles`
-                : 'District only — the address comes with a confirmed booking'
+              featured
+                ? undefined
+                : profile.serviceModels.includes('mobile') && profile.travelRadiusMiles
+                  ? `Travels up to ${profile.travelRadiusMiles} miles`
+                  : 'District only — the address comes with a confirmed booking'
             }
             icon={MapPin}
             iconTone="neutral"
           />
-          <ListRow
-            title={VERIFICATION_LABELS[profile.verificationTier]}
-            subtitle={
-              confirmedStyles
-                ? `${confirmedStyles} ${confirmedStyles === 1 ? 'style' : 'styles'} confirmed by clients`
-                : undefined
-            }
-            icon={BadgeCheck}
-            iconTone={profile.verificationTier > 0 ? 'success' : 'neutral'}
-          />
-          {!!hoursLabel(profile.availability) && (
+          {!featured && (
+            <ListRow
+              title={VERIFICATION_LABELS[profile.verificationTier]}
+              subtitle={
+                confirmedStyles
+                  ? `${confirmedStyles} ${confirmedStyles === 1 ? 'style' : 'styles'} confirmed by clients`
+                  : undefined
+              }
+              icon={BadgeCheck}
+              iconTone={profile.verificationTier > 0 ? 'success' : 'neutral'}
+            />
+          )}
+          {!featured && !!hoursLabel(profile.availability) && (
             <ListRow title={hoursLabel(profile.availability)!} icon={Clock} iconTone="neutral" />
           )}
-          {!!reply && <ListRow title={reply} icon={MessageCircleReply} iconTone="neutral" />}
-          {!!timing && (
+          {!featured && !!reply && (
+            <ListRow title={reply} icon={MessageCircleReply} iconTone="neutral" />
+          )}
+          {!featured && !!timing && (
             <ListRow
               title={timing}
               subtitle="Only counts the times that were down to them"
@@ -211,7 +237,7 @@ export default function StylistPageScreen() {
           )}
         </Section>
 
-        {menu.length > 0 && (
+        {!featured && menu.length > 0 && (
           <Section title="Menu" footer="Prices are theirs, and what you'd be quoted.">
             {menu.map(item => (
               <ListRow
@@ -278,64 +304,70 @@ export default function StylistPageScreen() {
           </View>
         )}
 
-        <View style={styles.reviews}>
-          <View style={styles.reviewsHead}>
-            <Text variant="overline" tone="tertiary">
-              Reviews
-            </Text>
-            {!!rating && (
-              <View style={styles.average}>
-                <StarRating value={Math.round(rating.average)} size={12} />
-                <Text variant="footnote" tone="secondary">
-                  {rating.average.toFixed(1)} · {rating.count}{' '}
-                  {rating.count === 1 ? 'review' : 'reviews'}
-                </Text>
-              </View>
+        {!featured && (
+          <View style={styles.reviews}>
+            <View style={styles.reviewsHead}>
+              <Text variant="overline" tone="tertiary">
+                Reviews
+              </Text>
+              {!!rating && (
+                <View style={styles.average}>
+                  <StarRating value={Math.round(rating.average)} size={12} />
+                  <Text variant="footnote" tone="secondary">
+                    {rating.average.toFixed(1)} · {rating.count}{' '}
+                    {rating.count === 1 ? 'review' : 'reviews'}
+                  </Text>
+                </View>
+              )}
+            </View>
+            {reviews.length ? (
+              reviews
+                .slice(0, reviewsShown)
+                .map(review => (
+                  <ReviewCard
+                    key={review.id}
+                    review={review}
+                    onReport={r =>
+                      router.push(
+                        `/review/report?id=${r.id}&author=${encodeURIComponent(r.authorName)}`
+                      )
+                    }
+                  />
+                ))
+            ) : (
+              <Text variant="subhead" tone="secondary">
+                No reviews yet. Only clients who’ve had a completed appointment can leave one.
+              </Text>
+            )}
+            {reviews.length > reviewsShown && (
+              <Button
+                label={`Show more reviews (${reviews.length - reviewsShown})`}
+                variant="ghost"
+                onPress={() => setReviewsShown(n => n + REVIEWS_STEP)}
+                fullWidth
+              />
             )}
           </View>
-          {reviews.length ? (
-            reviews
-              .slice(0, reviewsShown)
-              .map(review => (
-                <ReviewCard
-                  key={review.id}
-                  review={review}
-                  onReport={r =>
-                    router.push(
-                      `/review/report?id=${r.id}&author=${encodeURIComponent(r.authorName)}`
-                    )
-                  }
-                />
-              ))
-          ) : (
-            <Text variant="subhead" tone="secondary">
-              No reviews yet. Only clients who’ve had a completed appointment can leave one.
-            </Text>
-          )}
-          {reviews.length > reviewsShown && (
-            <Button
-              label={`Show more reviews (${reviews.length - reviewsShown})`}
-              variant="ghost"
-              onPress={() => setReviewsShown(n => n + REVIEWS_STEP)}
-              fullWidth
-            />
-          )}
-        </View>
+        )}
 
-        <Section title="Their terms" footer="You'll be asked to accept these when you book.">
-          <ListRow
-            title={`${profile.policies.noticeHours} hours' notice to cancel`}
-            subtitle="Cancel inside that window and it counts against you"
-            icon={Clock}
-            iconTone="neutral"
-          />
-          <ListRow
-            title={deposit}
-            subtitle="Paid straight to them — Yasante never handles it"
-            icon={Store}
-            iconTone="neutral"
-          />
-        </Section>
+        {!featured && (
+          <Section title="Their terms" footer="You'll be asked to accept these when you book.">
+            <ListRow
+              title={`${profile.policies.noticeHours} hours' notice to cancel`}
+              subtitle="Cancel inside that window and it counts against you"
+              icon={Clock}
+              iconTone="neutral"
+            />
+            <ListRow
+              title={deposit}
+              subtitle="Paid straight to them — Yasante never handles it"
+              icon={Store}
+              iconTone="neutral"
+            />
+          </Section>
+        )}
+
+        <ClaimNote page={data} />
       </View>
     </Screen>
   );

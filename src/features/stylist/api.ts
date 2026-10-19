@@ -48,6 +48,15 @@ export const stylistApi = {
   getPage: async (handle: string) =>
     (await apiClient.get<StylistPage>(`/api/stylists/by-handle/${handle}/`)).data,
 
+  /** PUT / DELETE /api/stylists/by-handle/:handle/waitlist/ — a featured stylist's waitlist. */
+  setWaitlist: async (handle: string, join: boolean) =>
+    (
+      await apiClient.request<{ joined: boolean }>({
+        method: join ? 'PUT' : 'DELETE',
+        url: `/api/stylists/by-handle/${encodeURIComponent(handle)}/waitlist/`,
+      })
+    ).data,
+
   /** GET /api/stylists/me/numbers/ — this week against last, and how her services really run. */
   getNumbers: async () => (await apiClient.get<StylistNumbers>('/api/stylists/me/numbers/')).data,
 

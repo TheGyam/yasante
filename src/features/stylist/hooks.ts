@@ -7,6 +7,7 @@ import { handleProblem } from './handle';
 import type {
   MenuItemDraft,
   PortfolioPhotoDraft,
+  StylistPage,
   StylistProfile,
   StylistProfileDraft,
 } from './types';
@@ -297,4 +298,30 @@ export function useUpdatePhoto() {
 export function useRemovePhoto() {
   const onSuccess = useRefreshPortfolio();
   return useMutation({ mutationFn: (id: string) => stylistApi.removePhoto(id), onSuccess });
+}
+
+/**
+ * Joins or leaves a featured stylist's waitlist, shown at once. The answer sets the
+ * button; her page isn't read again, since every read of it counts as a visit.
+ */
+export function useTogglePageWaitlist(handle: string) {
+  const queryClient = useQueryClient();
+  const key = pageQuery(handle).queryKey;
+  const set = (joined: boolean) =>
+    queryClient.setQueryData<StylistPage>(key, old =>
+      old ? { ...old, waitlistJoined: joined } : old
+    );
+  return useMutation({
+    mutationFn: (join: boolean) => stylistApi.setWaitlist(handle, join),
+    onMutate: async (join: boolean) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<StylistPage>(key)?.waitlistJoined;
+      set(join);
+      return { previous };
+    },
+    onSuccess: answer => set(answer.joined),
+    onError: (_error, _join, context) => {
+      if (context) set(context.previous === true);
+    },
+  });
 }

@@ -11,6 +11,8 @@ export const NOT_HANDLES = new Set([
   'manage',
   'looks',
   'invite',
+  'claim',
+  'finish',
   'auth',
   'settings',
   'terms',
