@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Clock, Plus, PoundSterling, Scissors, Trash2, X, ListPlus } from 'lucide-react-native';
+import { Clock, Plus, Banknote, Scissors, Trash2, X, ListPlus } from 'lucide-react-native';
 import {
   DURATION_PICKS,
   OPTION_GROUPS,
@@ -14,6 +14,7 @@ import {
   serviceKey,
   useAddMenuItem,
   useMenu,
+  useMyCurrency,
   useRemoveMenuItem,
   useUpdateMenuItem,
   type MenuItemDraft,
@@ -21,7 +22,7 @@ import {
   type PriceOption,
 } from '@/features/stylist';
 import { errorMessage } from '@/features/auth';
-import { formatMoney, parseMoney } from '@/shared/lib/format';
+import { currencySymbol, formatMoney, parseMoney } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, space } from '@/shared/theme';
@@ -62,6 +63,7 @@ export default function MenuItemScreen() {
   const isNew = id === 'new';
 
   const { data: menu } = useMenu();
+  const currency = useMyCurrency();
   const existing = menu?.find(item => item.id === id);
 
   const [name, setName] = useState('');
@@ -224,7 +226,7 @@ export default function MenuItemScreen() {
         />
         <Input
           label="Price"
-          icon={PoundSterling}
+          icon={Banknote}
           value={price}
           onChangeText={setPrice}
           placeholder="120"
@@ -259,7 +261,7 @@ export default function MenuItemScreen() {
         <Section footer="Braids priced by length and size are nearly always a starting price.">
           <ListRow
             title="This is a starting price"
-            subtitle="Shows as “from £120”"
+            subtitle={`Shows as “from ${formatMoney(120, currency)}”`}
             trailing={
               <Toggle
                 value={fromPrice}
@@ -304,14 +306,14 @@ export default function MenuItemScreen() {
                     </View>
                     <View style={styles.optionAdd}>
                       <Input
-                        label="Adds £"
+                        label={`Adds ${currencySymbol(currency)}`}
                         value={option.add}
                         onChangeText={add => changeOption(option.id, { add })}
                         placeholder="0"
                         keyboardType="decimal-pad"
                         hint={
                           amount && parseMoney(option.add)
-                            ? formatMoney(amount + parseMoney(option.add))
+                            ? formatMoney(amount + parseMoney(option.add), currency)
                             : undefined
                         }
                       />
@@ -364,14 +366,14 @@ export default function MenuItemScreen() {
             title="On your page"
             footer={
               top && top.labels.length
-                ? `${top.labels.join(', ')} comes to ${formatPrice({ price: top.price, fromPrice: false })}.`
+                ? `${top.labels.join(', ')} comes to ${formatPrice({ price: top.price, fromPrice: false }, currency)}.`
                 : undefined
             }
           >
             <ListRow
               title={preview.name}
               subtitle={minutes ? formatDuration(minutes) : note.trim() || undefined}
-              value={formatPrice(preview)}
+              value={formatPrice(preview, currency)}
               icon={Scissors}
             />
           </Section>

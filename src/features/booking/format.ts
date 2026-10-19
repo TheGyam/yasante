@@ -1,5 +1,5 @@
 import { differenceInHours, format, isToday, isTomorrow } from 'date-fns';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney } from '@/shared/lib/format';
 import { wallTime, zoneMark } from '@/shared/lib/timeZone';
 import {
   TIMING_BUCKETS,
@@ -187,11 +187,13 @@ export function calendarLink(booking: Booking) {
  * What's left to pay on the day once the deposit is in, in words ("£45 left to pay on the
  * day"), or undefined when there's no deposit or nothing left.
  */
-export function balanceLine(booking: Pick<Booking, 'price' | 'fromPrice' | 'deposit'>) {
+export function balanceLine(
+  booking: Pick<Booking, 'price' | 'fromPrice' | 'deposit' | 'currency'>
+) {
   const left = booking.deposit ? booking.price - booking.deposit.amount : 0;
   if (left <= 0) return undefined;
   const paid = booking.deposit!.status === 'received';
-  return `${booking.fromPrice ? 'From ' : ''}${formatMoney(left)} left to pay on the day${paid ? '' : ', after the deposit'}`;
+  return `${booking.fromPrice ? 'From ' : ''}${formatMoney(left, booking.currency ?? DEFAULT_CURRENCY)} left to pay on the day${paid ? '' : ', after the deposit'}`;
 }
 
 /** Directions in the phone's own maps app. */

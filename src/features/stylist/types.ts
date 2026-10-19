@@ -73,6 +73,10 @@ export interface StylistProfile {
   serviceModels: ServiceModel[];
   /** District only. The full address is shared once a booking is confirmed. */
   baseArea: string;
+  /** Where she works (ISO 3166). */
+  country?: string;
+  /** Her country's currency (ISO 4217): every price on her page is in it. */
+  currency?: string;
   /** Her own page only: where clients go, shared with a booking once it's confirmed. */
   address?: string;
   /** Where her working hours are (IANA), from her phone. */
@@ -105,6 +109,7 @@ export type StylistProfileDraft = Pick<
   | 'bio'
   | 'serviceModels'
   | 'baseArea'
+  | 'country'
   | 'address'
   | 'timeZone'
   | 'travelRadiusMiles'
@@ -196,7 +201,10 @@ export interface WeekCounts {
   noShows: number;
   lateCancellations: number;
   /** What she was paid for completed appointments, where she recorded it. */
+  /** Paid, in her own currency (for the week-on-week change). */
   earned: number;
+  /** Every currency she was paid in, each on its own. */
+  earnings?: { currency: string; amount: number }[];
 }
 
 /** How a service really runs against what she quotes. Private: no threshold. */
@@ -229,6 +237,8 @@ export interface StylistSearchResult {
   displayName: string;
   avatarUri?: string;
   baseArea: string;
+  /** The currency her prices are in (ISO 4217). */
+  currency?: string;
   /** Searching by style: their service for it, what it starts at, and their work in it. */
   serviceId?: string;
   fromPrice?: number;

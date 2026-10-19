@@ -38,9 +38,20 @@ def absolute(path):
     return f"{SITE}{path}"
 
 
-def money(value, from_price=False):
-    amount = f"£{value:,.0f}" if value == int(value) else f"£{value:,.2f}"
+def money(value, from_price=False, currency="GBP"):
+    from apps.common.countries import money as written
+
+    amount = written(value, currency)
     return f"from {amount}" if from_price else amount
+
+
+def _currency_of_stylist(account_id):
+    """The currency a look's price is in: its stylist's."""
+    from apps.common.countries import currency_of
+    from apps.stylists.models import StylistProfile
+
+    country = StylistProfile.objects.filter(account_id=account_id).values_list("country", flat=True).first() if account_id else None
+    return currency_of(country)
 
 
 def duration(minutes):
@@ -138,7 +149,7 @@ def stylist(profile):
         "area": profile.base_area,
         "travels": profile.travel_radius_miles if "mobile" in (profile.service_models or []) else None,
         "menu": [
-            {"name": m.name, "price": money(m.price, m.from_price), "duration": duration(m.duration_minutes), "note": m.note}
+            {"name": m.name, "price": money(m.price, m.from_price, profile.currency), "duration": duration(m.duration_minutes), "note": m.note}
             for m in menu
         ],
         "photos": [
@@ -158,9 +169,9 @@ def stylist(profile):
         "description": profile.bio or f"Braider in {profile.base_area}, on Yasante.",
         "image": [p["src"] for p in content["photos"][:6]] or ([profile.avatar_uri] if profile.avatar_uri else []),
         # The district only: the full address is shared once an appointment is confirmed.
-        "address": {"@type": "PostalAddress", "addressLocality": profile.base_area, "addressRegion": "London", "addressCountry": "GB"},
+        "address": {"@type": "PostalAddress", "addressLocality": profile.base_area, "addressCountry": profile.country},
         "areaServed": profile.base_area,
-        "currenciesAccepted": "GBP",
+        "currenciesAccepted": profile.currency,
         "openingHoursSpecification": [
             {"@type": "OpeningHoursSpecification", "dayOfWeek": f"https://schema.org/{h['day']}", "opens": h["opens"], "closes": h["closes"]}
             for h in hours
@@ -174,7 +185,7 @@ def stylist(profile):
                     "itemOffered": {"@type": "Service", "name": m.name, "description": m.note or None},
                     "priceSpecification": {
                         "@type": "PriceSpecification",
-                        "priceCurrency": "GBP",
+                        "priceCurrency": profile.currency,
                         ("minPrice" if m.from_price else "price"): float(m.price),
                     },
                 }
@@ -221,7 +232,7 @@ def look(item, data):
         "styles": [{"name": s.name, "path": f"/styles/{s.slug}"} for s in item.styles.all()],
         "stylist": {"name": stylist_name, "path": f"/{stylist_handle}"} if stylist_handle else None,
         "area": item.area,
-        "price": money(item.price, item.from_price) if item.price else "",
+        "price": money(item.price, item.from_price, _currency_of_stylist(item.stylist_id)) if item.price else "",
         "posted": item.created_at,
     }
     image = {

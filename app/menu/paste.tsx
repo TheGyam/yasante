@@ -8,10 +8,11 @@ import {
   serviceKey,
   useImportMenu,
   useMenu,
+  useMyCurrency,
   type MenuItemDraft,
   type ParsedService,
 } from '@/features/stylist';
-import { formatMoney, parseMoney } from '@/shared/lib/format';
+import { currencySymbol, formatMoney, parseMoney } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { fonts, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -106,6 +107,7 @@ const PastedRow = memo(function PastedRow({
 }) {
   const styles = useStyles();
   const theme = useTheme();
+  const currency = useMyCurrency();
   const unpriced = !parseMoney(row.price);
   const detail = [
     row.service.durationMinutes ? formatDuration(row.service.durationMinutes) : undefined,
@@ -143,7 +145,7 @@ const PastedRow = memo(function PastedRow({
         )}
       </View>
       <TextInput
-        value={row.price ? `£${row.price}` : ''}
+        value={row.price ? `${currencySymbol(currency)}${row.price}` : ''}
         onChangeText={text =>
           onEdit(row.key, {
             price: text.replace(/[^\d.,]/g, ''),
@@ -151,7 +153,7 @@ const PastedRow = memo(function PastedRow({
             include: parseMoney(text) > 0 ? true : row.include,
           })
         }
-        placeholder="£"
+        placeholder={currencySymbol(currency)}
         placeholderTextColor={theme.colors.text.tertiary}
         keyboardType="decimal-pad"
         style={[styles.price, unpriced && styles.needsPrice]}
@@ -172,6 +174,7 @@ export default function PastePriceListScreen() {
   const [edits, setEdits] = useState<Record<string, RowEdit>>({});
   const importMenu = useImportMenu();
   const { data: menu = [] } = useMenu();
+  const currency = useMyCurrency();
 
   const parsed = useMemo(() => parsePriceList(text), [text]);
   // Pasting the same list twice is the normal way to add the two services she
@@ -292,9 +295,9 @@ export default function PastePriceListScreen() {
           />
           {chosen.length > 1 && (
             <Text variant="caption" tone="tertiary" align="center">
-              From {formatMoney(Math.min(...chosen.map(r => parseMoney(r.price))))} to{' '}
-              {formatMoney(Math.max(...chosen.map(r => parseMoney(r.price))))} · you can edit any of
-              them afterwards
+              From {formatMoney(Math.min(...chosen.map(r => parseMoney(r.price))), currency)} to{' '}
+              {formatMoney(Math.max(...chosen.map(r => parseMoney(r.price))), currency)} · you can
+              edit any of them afterwards
             </Text>
           )}
           <Button label="Cancel" variant="ghost" onPress={() => router.back()} fullWidth />

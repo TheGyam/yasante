@@ -9,7 +9,7 @@ import {
   Flame,
   Leaf,
   Palette,
-  PoundSterling,
+  Banknote,
   Snowflake,
   Sun,
   Wind,
@@ -20,9 +20,11 @@ import { makeStyles, space, useTheme } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
 import { Input } from '@/shared/ui/Input';
 import { Text } from '@/shared/ui/Text';
+import { deviceRegion } from '@/shared/lib/region';
 import { areasFor, POSTCODE, tidyPostcode } from '@/shared/utils/postcode';
 import type { ChemicalTreatment, ScalpType, StyleBudget } from '../types';
 import { ChoiceCard } from './ChoiceCard';
+import { BUDGET_WORDS } from './sections';
 
 const useStyles = makeStyles(() => ({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
@@ -151,10 +153,10 @@ export function ChemicalStep({
 }
 
 const BUDGETS: readonly { value: StyleBudget; label: string; icon: LucideIcon }[] = [
-  { value: 'under_50', label: 'Under £50', icon: PoundSterling },
-  { value: '50_100', label: '£50–100', icon: PoundSterling },
-  { value: '100_150', label: '£100–150', icon: PoundSterling },
-  { value: '150_plus', label: '£150 or more', icon: PoundSterling },
+  { value: 'under_50', label: BUDGET_WORDS.under_50, icon: Banknote },
+  { value: '50_100', label: BUDGET_WORDS['50_100'], icon: Banknote },
+  { value: '100_150', label: BUDGET_WORDS['100_150'], icon: Banknote },
+  { value: '150_plus', label: BUDGET_WORDS['150_plus'], icon: Banknote },
 ];
 
 export function BudgetStep({
@@ -171,6 +173,38 @@ export function BudgetStep({
 const AREAS = ['Peckham', 'Brixton', 'Dalston', 'Hackney', 'Lewisham', 'Croydon', 'Tottenham'];
 
 export function AreaStep({
+  value,
+  postcode,
+  onChange,
+  onPostcode,
+}: {
+  value?: string;
+  postcode?: string;
+  onChange: (value: string) => void;
+  onPostcode: (value: string) => void;
+}) {
+  const styles = useStyles();
+  // The postcode lookup is the UK's; on a phone set to anywhere else she just types it.
+  if (deviceRegion !== 'GB')
+    return (
+      <View style={styles.body}>
+        <Input
+          label="Your area"
+          value={value ?? ''}
+          onChangeText={onChange}
+          placeholder="e.g. East Legon, Accra"
+          autoCapitalize="words"
+          maxLength={60}
+          hint="So we can show stylists near you. It’s never shown to anyone."
+        />
+      </View>
+    );
+  return (
+    <UkAreaStep value={value} postcode={postcode} onChange={onChange} onPostcode={onPostcode} />
+  );
+}
+
+function UkAreaStep({
   value,
   postcode,
   onChange,

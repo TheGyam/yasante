@@ -1,3 +1,4 @@
+import { parseMoney } from '@/shared/lib/format';
 /**
  * Reading a price list she already wrote.
  *
@@ -24,14 +25,23 @@ export interface ParsedService {
 /** "4 hrs", "1.5hr", "2 hrs 30", "2h30". A bare number after the hours is minutes. */
 const HOURS = /(\d+(?:[.,]\d+)?)\s*(?:hrs?|hours?|h)(?![a-z])\.?(\s*(\d{1,2})(?!\d))?/i;
 const MINUTES = /(\d+)\s*(?:mins?|minutes?|m)(?![a-z])\.?/i;
+/** A currency symbol stylists write: £45, $60, €50, ₦25,000, GH₵300, KSh 2,000. */
+const SYMBOL = String.raw`(?:GH₵|GH¢|CA\$|A\$|NZ\$|US\$|KSh|[£$€₦₵¢¥₹])`;
+/** An amount: "45", "45.50", "45,50", and grouped thousands like "25,000" or "1,250.50". */
+const AMOUNT = String.raw`\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:[.,]\d{1,2})?`;
 /** "£45-£60", "45 to 60" — the low end is the price, and it's a "from". */
-const RANGE = /(£?\s*\d+(?:[.,]\d{1,2})?)\s*(?:-|–|—|to)\s*£?\s*\d+(?:[.,]\d{1,2})?/i;
-const POUNDS = /£\s*(\d+(?:[.,]\d{1,2})?)/;
+const RANGE = new RegExp(
+  String.raw`(${SYMBOL}?\s*(?:${AMOUNT}))\s*(?:-|–|—|to)\s*${SYMBOL}?\s*(?:${AMOUNT})`,
+  'i'
+);
+const PRICED = new RegExp(String.raw`${SYMBOL}\s*(${AMOUNT})`);
 /** No currency anywhere: the last number on the line is the price. */
-const LAST_NUMBER = /(\d+(?:[.,]\d{1,2})?)(?!.*\d)/;
+const LAST_NUMBER = new RegExp(String.raw`(${AMOUNT})(?!.*\d)`);
+/** "25,000" is grouped like money, not like a year or a phone number. */
+const GROUPED = /^\d{1,3}(?:,\d{3})+/;
 const FROM = /\bfrom\b|\bstarting\b|\bonwards\b|\d\s*\+/i;
 
-const number = (text: string) => Number.parseFloat(text.replace(/[£\s]/g, '').replace(',', '.'));
+const number = (text: string) => parseMoney(text);
 
 /** Cut a match out of the line, leaving a space so words either side don't join up. */
 const cut = (text: string, at: number, length: number) =>
@@ -71,20 +81,22 @@ const BARE_PRICE_MAX = 1000;
 
 /** The price, and what's left of the line without it. */
 function readPrice(text: string) {
-  const priced = POUNDS.exec(text);
+  const priced = PRICED.exec(text);
   const found = priced ?? LAST_NUMBER.exec(text);
   if (!found) return { price: undefined, rest: text };
   const price = number(found[1]);
   if (!Number.isFinite(price) || price <= 0) return { price: undefined, rest: text };
-  // "PRICES 2026 ✨" is a heading. Without a £ in front, we don't call it a price.
-  if (!priced && price >= BARE_PRICE_MAX) return { price: undefined, rest: text };
+  // "PRICES 2026 ✨" is a heading. Without a currency in front, a big bare number isn't
+  // a price, unless it's grouped like one ("25,000").
+  if (!priced && price >= BARE_PRICE_MAX && !GROUPED.test(found[1]))
+    return { price: undefined, rest: text };
   return { price, rest: cut(text, found.index, found[0].length) };
 }
 
 function cleanName(text: string) {
   const name = text
     // Leftovers of a range we already collapsed, and the words that made it a "from".
-    .replace(/£\s*\d+(?:[.,]\d{1,2})?/g, ' ')
+    .replace(new RegExp(String.raw`${SYMBOL}\s*(?:${AMOUNT})`, 'g'), ' ')
     .replace(/\bfrom\b|\bstarting (?:at|from)\b|\bonwards\b|\bapprox\.?\b/gi, ' ')
     .replace(/\(\s*\)/g, ' ')
     .replace(/^[^A-Za-z0-9]+/, '')

@@ -34,7 +34,10 @@ def insights(user, period="month", now=None):
     # Appointments
     done = Booking.objects.filter(client=user, status="completed", scheduled_for__isnull=False)
     done_in_period = list(in_period(done, "scheduled_for").order_by("scheduled_for"))
-    spent = sum(float(b.actual_price or b.price or 0) for b in done_in_period)
+    # Money is never added across currencies: what she spent in each, kept apart.
+    from apps.common.countries import totals
+
+    spending = totals((b.currency, b.actual_price or b.price or 0) for b in done_in_period)
 
     # The hair log, all of it (it's small): trims, washes, take-downs.
     log = list(user.hair_log.all().order_by("at"))
@@ -88,7 +91,7 @@ def insights(user, period="month", now=None):
         "period": period,
         "since": since,
         "appointments": len(done_in_period),
-        "spent": round(spent, 2),
+        "spending": spending,
         "styles": [b.service_name for b in done_in_period],
         "stylists": len({b.stylist_id for b in done_in_period}),
         "current_style": current,

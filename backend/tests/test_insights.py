@@ -31,7 +31,7 @@ def test_the_month_and_the_long_view(api, make_user, make_stylist, book):
     HairProfileSnapshot.objects.create(user=client, length="shoulder", length_cm=26)
 
     ever = api(client).get("/api/insights/?period=all").json()
-    assert ever["appointments"] == 2 and ever["spent"] == 210
+    assert ever["appointments"] == 2 and ever["spending"] == [{"currency": "GBP", "amount": 210.0}]
     assert ever["styleLastsDays"] == 40
     assert ever["currentStyle"]["days"] == 10 and ever["currentStyle"]["name"] == second.service_name
     assert ever["usualWashDay"] == "Sunday" and ever["washEveryDays"] == 7
@@ -46,3 +46,18 @@ def test_someone_new_gets_empty_numbers_not_an_error(api, make_user):
     body = api(make_user()).get("/api/insights/").json()
     # Empty values are left out, as everywhere in the API.
     assert body["appointments"] == 0 and "currentStyle" not in body and "length" not in body
+
+
+def test_spending_in_several_currencies_is_never_added_up(api, make_user, make_stylist, book):
+    from apps.bookings.models import Booking
+
+    client = make_user()
+    for country, price in (("GB", 60), ("GB", 40), ("DE", 45), ("GH", 300)):
+        made = book(client, make_stylist(country=country))
+        Booking.objects.filter(pk=made["id"]).update(status="completed", price=price, scheduled_for=timezone.now() - timedelta(days=2))
+    body = api(client).get("/api/insights/?period=all").json()
+    assert body["spending"] == [
+        {"currency": "GBP", "amount": 100.0},
+        {"currency": "EUR", "amount": 45.0},
+        {"currency": "GHS", "amount": 300.0},
+    ]

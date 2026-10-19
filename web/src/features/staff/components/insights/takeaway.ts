@@ -1,4 +1,4 @@
-import { formatMoney, formatNumber, percent } from '../../format';
+import { formatMoney, formatMoneyList, formatNumber, percent } from '../../format';
 import type { Insight, InsightRow } from '../../types';
 
 const sum = (rows: InsightRow[], index = 0) =>
@@ -22,7 +22,12 @@ export function takeaway(insight: Insight): string {
     case 'money': {
       const total = Number(meta.total ?? 0);
       if (!total) return 'No completed bookings in this period yet';
-      return `${formatMoney(total)} from completed bookings${versus(total, previous ? sum(previous, 0) + sum(previous, 1) : null)}`;
+      const currencies = (meta.currencies ?? []) as unknown as {
+        currency: string;
+        amount: number;
+      }[];
+      if (currencies.length > 1) return `${formatMoneyList(currencies)} from completed bookings`;
+      return `${formatMoney(total, String(meta.currency ?? 'GBP'))} from completed bookings${versus(total, previous ? sum(previous, 0) + sum(previous, 1) : null)}`;
     }
     case 'funnel': {
       const requested = Number(meta.requested ?? 0);

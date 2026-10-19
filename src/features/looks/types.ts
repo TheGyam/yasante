@@ -30,6 +30,8 @@ export interface Look {
   serviceId?: string;
   serviceName?: string;
   price?: number;
+  /** The currency the price is in: the stylist's (ISO 4217). */
+  currency?: string;
   fromPrice?: boolean;
   /** Style ids from the taxonomy. */
   styles: string[];

@@ -27,7 +27,13 @@ import {
   useUserStore,
   type HairTexture,
 } from '@/features/profile';
-import { formatPrice, useActiveMode, useMenu, usePortfolio } from '@/features/stylist';
+import {
+  formatPrice,
+  useActiveMode,
+  useMenu,
+  useMyCurrency,
+  usePortfolio,
+} from '@/features/stylist';
 import { useFeature } from '@/shared/config/features';
 import { useImagePicker } from '@/shared/hooks/useImagePicker';
 import { haptics } from '@/shared/lib/haptics';
@@ -105,6 +111,7 @@ export default function ComposeLookScreen() {
   const { pickManyFromLibrary, error: pickError } = useImagePicker();
   const { data: portfolio = [] } = usePortfolio();
   const { data: services = [] } = useMenu();
+  const currency = useMyCurrency();
   const { data: done = [] } = useBookings('client', ['completed']);
   const { data: taxonomy = [] } = useStyleTaxonomy();
   const { user } = useAuth();
@@ -364,7 +371,7 @@ export default function ComposeLookScreen() {
               {services.map(service => (
                 <Chip
                   key={service.id}
-                  label={`${service.name} · ${formatPrice(service)}`}
+                  label={`${service.name} · ${formatPrice(service, currency)}`}
                   selected={serviceId === service.id}
                   onPress={() => tagService(serviceId === service.id ? undefined : service.id)}
                 />

@@ -8,6 +8,7 @@ import {
   formatPrice,
   PhotoTagSheet,
   useMenu,
+  useMyCurrency,
   usePortfolio,
   useRemovePhoto,
   useStylistPage,
@@ -62,6 +63,7 @@ export default function WorkViewer() {
   const { data: page } = useStylistPage(mine ? undefined : handle);
   const { data: ownPhotos } = usePortfolio();
   const { data: ownMenu = [] } = useMenu();
+  const ownCurrency = useMyCurrency();
   const data = mine ? ownPhotos && { photos: ownPhotos, menu: ownMenu, profile: undefined } : page;
   const retag = useUpdatePhoto();
   const remove = useRemovePhoto();
@@ -155,8 +157,8 @@ export default function WorkViewer() {
                 <Text variant="title3">{service.name}</Text>
                 <Text variant="subhead" tone="secondary">
                   {data.profile
-                    ? `${formatPrice(service)} with ${data.profile.displayName}`
-                    : formatPrice(service)}
+                    ? `${formatPrice(service, data.profile.currency ?? ownCurrency)} with ${data.profile.displayName}`
+                    : formatPrice(service, ownCurrency)}
                 </Text>
               </View>
             )}

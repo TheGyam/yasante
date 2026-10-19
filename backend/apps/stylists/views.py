@@ -386,6 +386,7 @@ class StylistCreateView(APIView):
                     "display_name": p.display_name,
                     "avatar_uri": p.avatar_uri,
                     "base_area": p.base_area,
+                    "currency": p.currency,
                     **extra.get(p.pk, {}),
                 }
                 for p in qs
@@ -422,6 +423,7 @@ class StylistCreateView(APIView):
                     time_zone=data.get("time_zone", ""),
                     travel_radius_miles=data.get("travel_radius_miles"),
                     instagram_handle=data.get("instagram_handle", ""),
+                    country=data.get("country", "GB"),
                     tiktok_handle=data.get("tiktok_handle", ""),
                     notice_hours=policies.get("notice_hours", 24),
                     deposit_type=policies.get("deposit_type", "none"),
@@ -470,6 +472,12 @@ class StylistMeView(APIView):
             value = str(data.get(field) or "").strip()
             if value and value != getattr(profile, field) and own_media(request.user, value, public=public) is None:
                 return Response({"message": "Upload the photo first"}, status=400)
+        if "country" in data:
+            from apps.common.countries import is_country
+
+            if not is_country(str(data["country"] or "").upper()):
+                return Response({"message": "Pick the country you work in"}, status=400)
+            data = {**data, "country": str(data["country"]).upper()}
         for field in (
             "display_name",
             "bio",
@@ -479,6 +487,7 @@ class StylistMeView(APIView):
             "instagram_handle",
             "tiktok_handle",
             "proof_photo_uri",
+            "country",
         ):
             if field in data:
                 setattr(profile, field, str(data[field] or "").strip())

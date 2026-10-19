@@ -17,6 +17,7 @@ export interface StylistFilters {
 }
 
 /** Her own page, as she sees it (drafts included). */
+export type Country = Schemas['Country'];
 export type StylistProfile = Schemas['StylistProfile'];
 export type StylistProfileDraft = Schemas['StylistProfileDraftRequest'];
 export type StylistPolicies = Schemas['PoliciesRequest'];

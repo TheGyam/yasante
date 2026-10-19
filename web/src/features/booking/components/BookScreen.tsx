@@ -14,7 +14,7 @@ import {
   type ChosenOptions,
 } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatDistance, formatMoney } from '@/shared/lib/format';
 import { POSTCODE, joinAddress, splitAddress } from '@/shared/lib/postcode';
 import { readJson, writeJson } from '@/shared/lib/storage';
 import { Button } from '@/shared/ui/Button';
@@ -126,6 +126,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
   }
 
   const { profile } = page.data;
+  const currency = profile.currency ?? DEFAULT_CURRENCY;
 
   if (sent) {
     return (
@@ -266,7 +267,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                   type="button"
                   role="radio"
                   aria-checked={on}
-                  aria-label={`${item.name}, ${formatServicePrice(item)}`}
+                  aria-label={`${item.name}, ${formatServicePrice(item, currency)}`}
                   className={styles.service}
                   onClick={() => {
                     if (on) return;
@@ -282,7 +283,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                       </Text>
                     )}
                   </span>
-                  <span className={styles.price}>{formatServicePrice(item)}</span>
+                  <span className={styles.price}>{formatServicePrice(item, currency)}</span>
                   {on ? (
                     <CircleCheck size={20} className={styles.tick} aria-hidden />
                   ) : (
@@ -304,7 +305,9 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                 <Chip
                   key={choice.id}
                   label={
-                    index === 0 ? choice.label : `${choice.label} · +${formatMoney(choice.add)}`
+                    index === 0
+                      ? choice.label
+                      : `${choice.label} · +${formatMoney(choice.add, currency)}`
                   }
                   selected={draft.chosen[group] === choice.id}
                   // A longer job may not fit the time picked for a shorter one.
@@ -337,13 +340,13 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                   .filter(Boolean)
                   .join(' · ') || undefined
               }
-              value={`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price)}`}
+              value={`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price, currency)}`}
             />
             {depositDue > 0 && (
               <ListRow
                 title="Deposit to confirm"
                 subtitle="Paid straight to them, once they accept"
-                value={formatMoney(depositDue)}
+                value={formatMoney(depositDue, currency)}
               />
             )}
           </Section>
@@ -420,7 +423,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                   maxLength={8}
                   value={postcode}
                   onChange={event => set({ postcode: event.target.value })}
-                  hint={`They see your postcode area first${profile.travelRadiusMiles ? ` (they travel up to ${profile.travelRadiusMiles} miles from ${profile.baseArea})` : ''}, and your street once they confirm.`}
+                  hint={`They see your postcode area first${profile.travelRadiusMiles ? ` (they travel up to ${formatDistance(profile.travelRadiusMiles)} from ${profile.baseArea})` : ''}, and your street once they confirm.`}
                 />
               </>
             )}

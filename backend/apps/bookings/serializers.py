@@ -89,6 +89,7 @@ def present_booking(booking, viewer):
         "from_look": present_from_look(booking.from_look),
         "option_labels": booking.option_labels or None,
         "price": _money(booking.price),
+        "currency": booking.currency,
         "from_price": booking.from_price,
         "duration_minutes": booking.duration_minutes,
         "bringing_own_hair": booking.bringing_own_hair,
@@ -264,6 +265,7 @@ class BookingSerializer(serializers.Serializer):
     from_look = optional(FromLookSerializer())
     option_labels = optional(serializers.ListField(child=serializers.CharField()))
     price = serializers.FloatField()
+    currency = serializers.CharField(help_text="ISO 4217: the stylist's, when it was booked")
     from_price = serializers.BooleanField()
     duration_minutes = optional(serializers.IntegerField())
     bringing_own_hair = serializers.BooleanField()

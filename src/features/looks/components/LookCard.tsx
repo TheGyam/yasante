@@ -11,7 +11,7 @@ import {
   Share,
 } from 'lucide-react-native';
 import { TEXTURE_LABELS } from '@/features/profile';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney } from '@/shared/lib/format';
 import { HIT_TARGET, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -140,7 +140,7 @@ export const LookCard = memo(function LookCard({
   const price = look.stylistFeatured
     ? 'Featured'
     : look.price
-      ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
+      ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price, look.currency ?? DEFAULT_CURRENCY)}`
       : undefined;
 
   // In a feed the photo grows out of this card into the look's page.

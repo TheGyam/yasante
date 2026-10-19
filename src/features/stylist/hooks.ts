@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
+import { DEFAULT_CURRENCY } from '@/shared/lib/format';
 import { stylistApi, type Within } from './api';
 import { handleProblem } from './handle';
 import type {
@@ -323,5 +324,21 @@ export function useTogglePageWaitlist(handle: string) {
     onError: (_error, _join, context) => {
       if (context) set(context.previous === true);
     },
+  });
+}
+
+/** Her own currency, from her page: what she prices her menu and records takings in. */
+export function useMyCurrency() {
+  const { data } = useMyStylistProfile();
+  return data?.currency ?? DEFAULT_CURRENCY;
+}
+
+/** Every country (rarely changes: kept a day, and shared by every picker). */
+export function useCountries() {
+  return useQuery({
+    queryKey: ['countries'],
+    queryFn: stylistApi.countries,
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
   });
 }

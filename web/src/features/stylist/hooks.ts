@@ -6,25 +6,27 @@ import {
   addTimeBlock,
   checkHandle,
   closeDay,
-  getTimeBlocks,
-  removeTimeBlock,
-  skipTimeBlock,
   createProfile,
+  getCountries,
+  suggestPlaces,
   getMenu,
   getMyProfile,
   getNumbers,
   getPortfolio,
   getStylistPage,
   getSummary,
+  getTimeBlocks,
+  joinPageWaitlist,
+  leavePageWaitlist,
   publishProfile,
   removeMenuItem,
   removePortfolioPhoto,
+  removeTimeBlock,
   searchStylists,
+  skipTimeBlock,
   updateMenuItem,
   updateProfile,
   uploadProof,
-  joinPageWaitlist,
-  leavePageWaitlist,
 } from './api';
 import { handleProblem } from './handle';
 import type {
@@ -34,6 +36,7 @@ import type {
   StylistProfile,
   StylistProfileDraft,
 } from './types';
+import { DEFAULT_CURRENCY } from '@/shared/lib/format';
 
 /**
  * Query keys. `['stylist', handle]` (lower case) is also what the server inlines her
@@ -244,5 +247,40 @@ export function useTogglePageWaitlist(handle: string) {
     onError: (_error, _join, context) => {
       if (context) set(context.previous === true);
     },
+  });
+}
+
+/** Her own currency, from her page: what she prices her menu in. */
+export function useMyCurrency(accountId: string) {
+  const { data } = useMyProfile(accountId);
+  return data?.currency ?? DEFAULT_CURRENCY;
+}
+
+/** Every country (rarely changes: kept a day, and shared by every picker). */
+/** "Osu, Accra" from Osu in "Accra, Greater Accra, Ghana"; a city on its own stays as it is. */
+export const areaName = (place: { name: string; context: string }) => {
+  const city = place.context.split(',')[0]?.trim();
+  return city && city !== place.name ? `${place.name}, ${city}` : place.name;
+};
+
+/** Area names to offer while she types hers, in her country. */
+export function usePlaceSuggestions(text: string, country: string) {
+  const typed = useDebouncedValue(text.trim(), 300);
+  const query = useQuery({
+    queryKey: ['places', country, typed],
+    queryFn: () => suggestPlaces(typed, country),
+    enabled: typed.length >= 2,
+    staleTime: 60_000,
+    retry: false,
+  });
+  // Once she's picked one, it's no longer a suggestion.
+  return (query.data ?? []).map(areaName).filter(name => name !== text);
+}
+
+export function useCountries() {
+  return useQuery({
+    queryKey: ['countries'],
+    queryFn: getCountries,
+    staleTime: 24 * 60 * 60 * 1000,
   });
 }

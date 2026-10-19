@@ -37,8 +37,10 @@ def monthly_recap(now=None):
         if not (n["views"] or n["requests"] or n["completed"]):
             continue
         parts = [_count(n["views"], "page view"), _count(n["completed"], "appointment")]
-        if n["earned"]:
-            parts.append(f"£{n['earned']:.0f} earned")
+        if n["earnings"]:
+            from apps.common.countries import money_list
+
+            parts.append(f"{money_list(n['earnings'])} earned")
         notify(
             profile.account_id,
             "weekly_digest",

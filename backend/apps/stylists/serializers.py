@@ -187,6 +187,7 @@ class StylistProfileSerializer(BlankIsOptional, serializers.ModelSerializer):
 
     verification_tier = TierField(read_only=True)
     availability = AvailabilityField(read_only=True)
+    currency = serializers.CharField(read_only=True, help_text="ISO 4217: every price on her page is in it")
 
     account_id = serializers.UUIDField(source="account.id", read_only=True)
     policies = PoliciesSerializer(source="*", read_only=True)
@@ -203,6 +204,8 @@ class StylistProfileSerializer(BlankIsOptional, serializers.ModelSerializer):
             "avatar_uri",
             "service_models",
             "base_area",
+            "country",
+            "currency",
             "address",
             "travel_radius_miles",
             "time_zone",
@@ -217,7 +220,7 @@ class StylistProfileSerializer(BlankIsOptional, serializers.ModelSerializer):
             "published",
             "created_at",
         ]
-        read_only_fields = ["id", "account_id", "verification_tier", "featured", "created_at"]
+        read_only_fields = ["id", "account_id", "verification_tier", "featured", "currency", "created_at"]
 
 
 class StylistProfileDraftSerializer(serializers.Serializer):
@@ -232,10 +235,20 @@ class StylistProfileDraftSerializer(serializers.Serializer):
         child=serializers.ChoiceField(choices=["salon", "home", "mobile"])
     )
     base_area = serializers.CharField(max_length=100)
+    # Where she works (ISO 3166). Her prices are always in its currency.
+    country = serializers.CharField(max_length=2, required=False, default="GB")
     # Private: shared with a booking once it's confirmed.
     address = serializers.CharField(max_length=500, required=False, allow_blank=True, default="")
     # Where her working hours are: her phone's zone (IANA).
     time_zone = serializers.CharField(max_length=64, required=False, allow_blank=True, default="")
+
+    def validate_country(self, value):
+        from apps.common.countries import is_country
+
+        value = str(value or "").upper()
+        if not is_country(value):
+            raise serializers.ValidationError("Pick the country you work in")
+        return value
 
     def validate_time_zone(self, value):
         from apps.common.zones import is_zone
@@ -308,6 +321,8 @@ class StylistSearchResultSerializer(serializers.Serializer):
     display_name = serializers.CharField()
     avatar_uri = optional(serializers.CharField())
     base_area = serializers.CharField()
+    # Her country's currency (ISO 4217): the price below is in it.
+    currency = serializers.CharField()
     # With ?style=: their service for it and its price, a photo of their work in it.
     service_id = optional(serializers.CharField())
     from_price = optional(serializers.FloatField())
@@ -357,6 +372,11 @@ class PageReviewSerializer(serializers.Serializer):
 class RatingSerializer(serializers.Serializer):
     average = serializers.FloatField()
     count = serializers.IntegerField()
+
+
+class MoneySerializer(serializers.Serializer):
+    currency = serializers.CharField(help_text="ISO 4217")
+    amount = serializers.FloatField()
 
 
 class TimingLabelSerializer(serializers.Serializer):
@@ -443,7 +463,8 @@ class WeekCountsSerializer(serializers.Serializer):
     completed = serializers.IntegerField()
     no_shows = serializers.IntegerField()
     late_cancellations = serializers.IntegerField()
-    earned = serializers.FloatField()
+    earned = serializers.FloatField(help_text="In her own currency")
+    earnings = MoneySerializer(many=True, help_text="Each currency she was paid in, never added across them")
 
 
 class ServiceTimingSerializer(serializers.Serializer):

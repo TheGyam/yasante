@@ -1276,6 +1276,24 @@ paths:
                 items:
                   $ref: '#/components/schemas/ContentResponse'
           description: ''
+  /api/countries/:
+    get:
+      operationId: countries_list
+      description: 'Every country, its currency and its distance units: for the country
+        pickers.'
+      tags:
+      - countries
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Country'
+          description: ''
   /api/devices/:
     post:
       operationId: devices_create
@@ -1901,6 +1919,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationPreferences'
+          description: ''
+  /api/places/suggest/:
+    get:
+      operationId: places_suggest_list
+      description: Areas for the area field outside the UK. Signed in only, so the
+        free quota is ours.
+      parameters:
+      - in: query
+        name: country
+        schema:
+          type: string
+        description: ISO 3166, her country
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: What she's typed so far
+      tags:
+      - places
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Place'
           description: ''
   /api/policies/:
     get:
@@ -3244,6 +3291,9 @@ components:
         price:
           type: number
           format: double
+        currency:
+          type: string
+          description: 'ISO 4217: the stylist''s, when it was booked'
         fromPrice:
           type: boolean
         durationMinutes:
@@ -3328,6 +3378,7 @@ components:
       - bringingOwnHair
       - clientName
       - createdAt
+      - currency
       - fromPrice
       - id
       - moves
@@ -4017,6 +4068,30 @@ components:
           type: boolean
         timing:
           type: boolean
+    Country:
+      type: object
+      properties:
+        code:
+          type: string
+          description: ISO 3166
+        name:
+          type: string
+        currency:
+          type: string
+          description: ISO 4217
+        units:
+          allOf:
+          - $ref: '#/components/schemas/UnitsEnum'
+          description: |-
+            How distances are given there
+
+            * `km` - km
+            * `mi` - mi
+      required:
+      - code
+      - currency
+      - name
+      - units
     CurrentStyle:
       type: object
       properties:
@@ -4589,9 +4664,11 @@ components:
           format: date-time
         appointments:
           type: integer
-        spent:
-          type: number
-          format: double
+        spending:
+          type: array
+          items:
+            $ref: '#/components/schemas/Money'
+          description: What she spent in each currency, never added across them
         styles:
           type: array
           items:
@@ -4623,7 +4700,7 @@ components:
       - looksSaved
       - period
       - productsAdded
-      - spent
+      - spending
       - styles
       - stylists
       - washes
@@ -4732,6 +4809,9 @@ components:
       properties:
         stylistFeatured:
           type: boolean
+        currency:
+          type: string
+          description: ISO 4217, with a price
         photos:
           type: array
           items:
@@ -5021,6 +5101,18 @@ components:
           type: string
       required:
       - message
+    Money:
+      type: object
+      properties:
+        currency:
+          type: string
+          description: ISO 4217
+        amount:
+          type: number
+          format: double
+      required:
+      - amount
+      - currency
     MoneyMethod:
       type: object
       properties:
@@ -5387,6 +5479,11 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          default: GB
+          maxLength: 2
         address:
           type: string
           default: ''
@@ -5496,6 +5593,18 @@ components:
       description: |-
         * `month` - month
         * `all` - all
+    Place:
+      type: object
+      properties:
+        name:
+          type: string
+          description: What to save if she picks it
+        context:
+          type: string
+          description: Where it is, to tell same-named places apart
+      required:
+      - context
+      - name
     Policies:
       type: object
       properties:
@@ -5728,6 +5837,13 @@ components:
         baseArea:
           type: string
           maxLength: 100
+        country:
+          type: string
+          maxLength: 2
+        currency:
+          type: string
+          readOnly: true
+          description: 'ISO 4217: every price on her page is in it'
         travelRadiusMiles:
           type: number
           format: double
@@ -5773,7 +5889,9 @@ components:
       - baseArea
       - checks
       - claimable
+      - country
       - createdAt
+      - currency
       - displayName
       - featured
       - handle
@@ -6306,6 +6424,13 @@ components:
         baseArea:
           type: string
           maxLength: 100
+        country:
+          type: string
+          maxLength: 2
+        currency:
+          type: string
+          readOnly: true
+          description: 'ISO 4217: every price on her page is in it'
         address:
           type: string
           maxLength: 500
@@ -6357,7 +6482,9 @@ components:
       required:
       - accountId
       - baseArea
+      - country
       - createdAt
+      - currency
       - displayName
       - featured
       - handle
@@ -6391,6 +6518,11 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          default: GB
+          maxLength: 2
         address:
           type: string
           default: ''
@@ -6446,6 +6578,8 @@ components:
           type: string
         baseArea:
           type: string
+        currency:
+          type: string
         serviceId:
           type: string
         fromPrice:
@@ -6470,6 +6604,7 @@ components:
       required:
       - accountId
       - baseArea
+      - currency
       - displayName
       - handle
     StylistSummary:
@@ -6708,6 +6843,14 @@ components:
         * `growth` - Growth
         * `health` - Health
         * `tips` - Tips
+    UnitsEnum:
+      enum:
+      - km
+      - mi
+      type: string
+      description: |-
+        * `km` - km
+        * `mi` - mi
     UploadRequestKindEnum:
       enum:
       - look
@@ -6928,10 +7071,17 @@ components:
         earned:
           type: number
           format: double
+          description: In her own currency
+        earnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Money'
+          description: Each currency she was paid in, never added across them
       required:
       - completed
       - confirmed
       - earned
+      - earnings
       - lateCancellations
       - noShows
       - requests

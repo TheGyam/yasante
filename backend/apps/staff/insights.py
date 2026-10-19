@@ -29,15 +29,22 @@ def buckets(qs, field, start, end, value=None, weekly=False):
                 .annotate(value=value if value is not None else Count("pk")).order_by("day"))
 
 
-def calculate(name, sources, start, end):
+def calculate(name, sources, start, end, currency=None):
     source = sources[SOURCES[name][0]]
     field = "updated_at" if name == "areas" else "created_at"
     qs = source.filter(**{f"{field}__gte": start, f"{field}__lt": end})
     rows, labels, kind, meta = [], ["Total"], "line", {}
     if name == "money":
-        paid = qs.filter(status="completed")
+        completed = qs.filter(status="completed")
+        # Money is never added across currencies. Each currency's total is listed, and the
+        # chart shows one currency at a time: the one asked for, else the busiest.
+        per = list(completed.values("currency").annotate(total=Sum(Coalesce("actual_price", "price")), n=Count("pk")).order_by("-n", "currency"))
+        currencies = [{"currency": row["currency"], "amount": float(row["total"] or 0)} for row in per]
+        shown = currency if any(c["currency"] == currency for c in currencies) else (currencies[0]["currency"] if currencies else "GBP")
+        paid = completed.filter(currency=shown)
         totals = paid.aggregate(total=Sum(Coalesce("actual_price", "price")), average=Avg(Coalesce("actual_price", "price")), deposits=Sum("deposit_amount", filter=Q(deposit_status="paid")))
         meta = {key: float(value or 0) for key, value in totals.items()}
+        meta.update({"currency": shown, "currencies": currencies})
         rows = list(paid.annotate(day=TruncWeek("created_at", tzinfo=UK)).values("day").annotate(value=Sum(Coalesce("actual_price", "price")), deposit=Sum("deposit_amount", filter=Q(deposit_status="paid"))).order_by("day"))
         rows = [{"label": str(row["day"].date()), "values": [float(row["value"] or 0)-float(row["deposit"] or 0), float(row["deposit"] or 0)], "url": f"{workspace_url('bookings.booking')}?status__exact=completed&created_at__gte={row['day'].date()}&created_at__lt={(row['day']+timedelta(days=7)).date()}"} for row in rows]
         labels, kind = ["Booking value excluding deposit", "Deposits collected"], "stacked-bar"
@@ -75,8 +82,13 @@ def calculate(name, sources, start, end):
         labels, kind = ["Active %"], "heatmap"
     elif name == "top-stylists":
         top = qs.filter(status="completed", stylist_profile__isnull=False, stylist_profile__featured=False).values("stylist_profile_id", "stylist_name", "stylist_profile__rating_average", "stylist_profile__response_hours").annotate(value=Count("pk"), total=Sum(Coalesce("actual_price", "price"))).order_by("-value")[:10]
-        rows = [{"label": row["stylist_name"], "values": [row["value"], float(row["total"] or 0), float(row["stylist_profile__rating_average"] or 0), row["stylist_profile__response_hours"]], "url": f"/records/stylists/stylistprofile/{row['stylist_profile_id']}"} for row in top]
-        labels, kind = ["Bookings", "Value (£)", "Rating", "Response (h)"], "table"
+        # Each stylist's value in her own currency (her bookings are in it).
+        from apps.common.countries import currency_of
+        from apps.stylists.models import StylistProfile
+
+        countries = dict(StylistProfile.objects.filter(pk__in=[row["stylist_profile_id"] for row in top]).values_list("pk", "country"))
+        rows = [{"label": row["stylist_name"], "values": [row["value"], float(row["total"] or 0), float(row["stylist_profile__rating_average"] or 0), row["stylist_profile__response_hours"]], "currency": currency_of(countries.get(row["stylist_profile_id"])), "url": f"/records/stylists/stylistprofile/{row['stylist_profile_id']}"} for row in top]
+        labels, kind = ["Bookings", "Value", "Rating", "Response (h)"], "table"
     elif name == "community":
         looks = buckets(source, "created_at", start, end)
         comments = buckets(sources["looks.lookcomment"], "created_at", start, end)

@@ -186,13 +186,18 @@ class LengthInsightSerializer(serializers.Serializer):
     grew_steps = optional(serializers.IntegerField())
 
 
+class MoneySerializer(serializers.Serializer):
+    currency = serializers.CharField(help_text="ISO 4217")
+    amount = serializers.FloatField()
+
+
 class InsightsSerializer(serializers.Serializer):
     """GET /api/insights/ — a client's hair in numbers."""
 
     period = serializers.ChoiceField(choices=["month", "all"])
     since = optional(serializers.DateTimeField())
     appointments = serializers.IntegerField()
-    spent = serializers.FloatField()
+    spending = MoneySerializer(many=True, help_text="What she spent in each currency, never added across them")
     styles = serializers.ListField(child=serializers.CharField())
     stylists = serializers.IntegerField()
     current_style = optional(CurrentStyleSerializer())

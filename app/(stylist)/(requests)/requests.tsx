@@ -23,7 +23,7 @@ import {
   type BookingStatus,
 } from '@/features/booking';
 import { useRouter } from '@/shared/lib/navigation';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney } from '@/shared/lib/format';
 import { makeStyles, space } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
 import { EmptyState } from '@/shared/ui/EmptyState';
@@ -100,7 +100,7 @@ export default function BookingsScreen() {
       }
       value={
         booking.status === 'awaiting_deposit' && booking.deposit
-          ? formatMoney(booking.deposit.amount)
+          ? formatMoney(booking.deposit.amount, booking.currency ?? DEFAULT_CURRENCY)
           : undefined
       }
       icon={booking.status === 'awaiting_deposit' ? Banknote : UserRound}
@@ -117,7 +117,7 @@ export default function BookingsScreen() {
       subtitle={`${whenLabel(when(booking), booking.timeZone)} · ${STYLIST_STATUS_LABELS[booking.status]}`}
       value={
         booking.status === 'completed'
-          ? formatMoney(booking.actualPrice ?? booking.price)
+          ? formatMoney(booking.actualPrice ?? booking.price, booking.currency ?? DEFAULT_CURRENCY)
           : undefined
       }
       icon={OUTCOME[booking.status]?.icon}

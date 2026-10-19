@@ -803,6 +803,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/countries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every country, its currency and its distance units: for the country pickers. */
+        get: operations["countries_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/devices/": {
         parameters: {
             query?: never;
@@ -1204,6 +1221,23 @@ export interface paths {
         get: operations["notifications_preferences_retrieve"];
         /** @description GET/PUT /api/notifications/preferences/ — which kinds of notification she gets. */
         put: operations["notifications_preferences_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/places/suggest/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Areas for the area field outside the UK. Signed in only, so the free quota is ours. */
+        get: operations["places_suggest_list"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -2074,6 +2108,8 @@ export interface components {
             optionLabels?: string[];
             /** Format: double */
             price: number;
+            /** @description ISO 4217: the stylist's, when it was booked */
+            currency: string;
             fromPrice: boolean;
             durationMinutes?: number;
             bringingOwnHair: boolean;
@@ -2424,6 +2460,20 @@ export interface components {
             noShow?: boolean;
             timing?: boolean;
         };
+        Country: {
+            /** @description ISO 3166 */
+            code: string;
+            name: string;
+            /** @description ISO 4217 */
+            currency: string;
+            /**
+             * @description How distances are given there
+             *
+             *     * `km` - km
+             *     * `mi` - mi
+             */
+            units: components["schemas"]["UnitsEnum"];
+        };
         CurrentStyle: {
             name: string;
             /** Format: date-time */
@@ -2706,8 +2756,8 @@ export interface components {
             /** Format: date-time */
             since?: string;
             appointments: number;
-            /** Format: double */
-            spent: number;
+            /** @description What she spent in each currency, never added across them */
+            spending: components["schemas"]["Money"][];
             styles: string[];
             stylists: number;
             currentStyle?: components["schemas"]["CurrentStyle"];
@@ -2775,6 +2825,8 @@ export interface components {
         };
         Look: {
             stylistFeatured: boolean;
+            /** @description ISO 4217, with a price */
+            currency?: string;
             photos: components["schemas"]["LookPhoto"][];
             id: string;
             authorId: string;
@@ -2886,6 +2938,12 @@ export interface components {
         };
         Message: {
             message: string;
+        };
+        Money: {
+            /** @description ISO 4217 */
+            currency: string;
+            /** Format: double */
+            amount: number;
         };
         MoneyMethod: {
             /** Format: double */
@@ -3042,6 +3100,8 @@ export interface components {
             bio: string;
             serviceModels?: components["schemas"]["ServiceModelEnum"][];
             baseArea?: string;
+            /** @default GB */
+            country: string;
             /** @default  */
             address: string;
             /** @default  */
@@ -3092,6 +3152,12 @@ export interface components {
          * @enum {string}
          */
         PeriodEnum: "month" | "all";
+        Place: {
+            /** @description What to save if she picks it */
+            name: string;
+            /** @description Where it is, to tell same-named places apart */
+            context: string;
+        };
         Policies: {
             noticeHours: number;
             depositType: components["schemas"]["DepositTypeEnum"];
@@ -3194,6 +3260,9 @@ export interface components {
             avatarUri?: string;
             serviceModels: components["schemas"]["ServiceModelsBafEnum"][];
             baseArea: string;
+            country: string;
+            /** @description ISO 4217: every price on her page is in it */
+            readonly currency: string;
             /** Format: double */
             travelRadiusMiles?: number;
             timeZone?: string;
@@ -3450,6 +3519,9 @@ export interface components {
             avatarUri?: string;
             serviceModels: components["schemas"]["ServiceModelsBafEnum"][];
             baseArea: string;
+            country: string;
+            /** @description ISO 4217: every price on her page is in it */
+            readonly currency: string;
             address?: string;
             /** Format: double */
             travelRadiusMiles?: number;
@@ -3474,6 +3546,8 @@ export interface components {
             bio: string;
             serviceModels: components["schemas"]["ServiceModelEnum"][];
             baseArea: string;
+            /** @default GB */
+            country: string;
             /** @default  */
             address: string;
             /** @default  */
@@ -3497,6 +3571,7 @@ export interface components {
             displayName: string;
             avatarUri?: string;
             baseArea: string;
+            currency: string;
             serviceId?: string;
             /** Format: double */
             fromPrice?: number;
@@ -3624,6 +3699,12 @@ export interface components {
          */
         TopicEnum: "care" | "styling" | "products" | "treatments" | "color" | "growth" | "health" | "tips";
         /**
+         * @description * `km` - km
+         *     * `mi` - mi
+         * @enum {string}
+         */
+        UnitsEnum: "km" | "mi";
+        /**
          * @description * `look` - look
          *     * `portfolio` - portfolio
          *     * `avatar` - avatar
@@ -3718,8 +3799,13 @@ export interface components {
             completed: number;
             noShows: number;
             lateCancellations: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description In her own currency
+             */
             earned: number;
+            /** @description Each currency she was paid in, never added across them */
+            earnings: components["schemas"]["Money"][];
         };
         /**
          * @description * `2` - 2
@@ -5021,6 +5107,25 @@ export interface operations {
             };
         };
     };
+    countries_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Country"][];
+                };
+            };
+        };
+    };
     devices_create: {
         parameters: {
             query?: never;
@@ -5677,6 +5782,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationPreferences"];
+                };
+            };
+        };
+    };
+    places_suggest_list: {
+        parameters: {
+            query?: {
+                /** @description ISO 3166, her country */
+                country?: string;
+                /** @description What she's typed so far */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Place"][];
                 };
             };
         };

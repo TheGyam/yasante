@@ -284,6 +284,7 @@ class BookingListCreateView(APIView):
                 service_name=service.name,
                 option_labels=priced["labels"],
                 price=priced["price"],
+                currency=profile.currency,
                 from_price=priced["from_price"],
                 duration_minutes=minutes,
                 bringing_own_hair=bool(data.get("bringing_own_hair")),

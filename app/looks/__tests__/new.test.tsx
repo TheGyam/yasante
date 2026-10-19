@@ -39,6 +39,7 @@ jest.mock('@/features/stylist', () => ({
   formatPrice: () => '',
   useActiveMode: () => 'client',
   useMenu: () => ({ data: [] }),
+  useMyCurrency: () => 'GBP',
   usePortfolio: () => ({ data: [] }),
 }));
 

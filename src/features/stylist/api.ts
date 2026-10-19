@@ -15,6 +15,15 @@ import type {
   StylistSummary,
 } from './types';
 
+export interface Country {
+  /** ISO 3166, e.g. "GH". */
+  code: string;
+  name: string;
+  /** ISO 4217, e.g. "GHS": every price a stylist there sets is in it. */
+  currency: string;
+  units: 'km' | 'mi';
+}
+
 export interface HandleCheck {
   handle: string;
   available: boolean;
@@ -35,6 +44,17 @@ export const stylistApi = {
     (
       await apiClient.get<StylistSearchResult[]>('/api/stylists/', {
         params: { style, ...(within !== undefined && { near: 'me', within }) },
+      })
+    ).data,
+
+  /** GET /api/countries/ — every country, its currency and its distance units. */
+  countries: async () => (await apiClient.get<Country[]>('/api/countries/')).data,
+
+  /** GET /api/places/suggest/ — areas matching what she's typed, outside the UK. Never kept. */
+  places: async (q: string, country: string) =>
+    (
+      await apiClient.get<{ name: string; context: string }[]>('/api/places/suggest/', {
+        params: { q, country },
       })
     ).data,
 

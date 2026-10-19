@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { deviceRegion } from '@/shared/lib/region';
 import type { StylistProfileDraft } from './types';
 
 /**
@@ -19,6 +20,8 @@ export const EMPTY_DRAFT: SetupDraft = {
   bio: '',
   serviceModels: [],
   baseArea: '',
+  // The phone's region to start with; she can change it. Her prices are in its currency.
+  country: deviceRegion,
   address: '',
   travelRadiusMiles: 5,
   instagramHandle: '',

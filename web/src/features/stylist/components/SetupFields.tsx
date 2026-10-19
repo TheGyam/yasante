@@ -3,11 +3,12 @@ import type { LucideIcon } from 'lucide-react';
 import { Building2, Camera, Car, Check, House, LoaderCircle } from 'lucide-react';
 import { Checkbox } from '@/shared/ui/Checkbox';
 import { Chip } from '@/shared/ui/Chip';
-import { Input } from '@/shared/ui/Input';
+import { Input, Select } from '@/shared/ui/Input';
 import { Text } from '@/shared/ui/Text';
 import { toHandle } from '../handle';
-import type { useHandleAvailability } from '../hooks';
-import type { ServiceModel, StylistPolicies } from '../types';
+import { useCountries, type useHandleAvailability } from '../hooks';
+import type { Country, ServiceModel, StylistPolicies } from '../types';
+import { currencySymbol } from '@/shared/lib/format';
 import * as styles from './SetupFields.css';
 
 /** Her page's address, checked as she types, with free alternatives when it's taken. */
@@ -145,9 +146,12 @@ const DEPOSITS = [
 export function PolicyFields({
   value,
   onChange,
+  currency,
 }: {
   value: StylistPolicies;
   onChange: (policies: StylistPolicies) => void;
+  /** Her currency (ISO 4217): a fixed deposit is in it. */
+  currency: string;
 }) {
   const set = (changes: Partial<StylistPolicies>) => onChange({ ...value, ...changes });
   return (
@@ -183,7 +187,11 @@ export function PolicyFields({
         </div>
         {value.depositType !== 'none' && (
           <Input
-            label={value.depositType === 'fixed' ? 'Amount (£)' : 'Share of the price (%)'}
+            label={
+              value.depositType === 'fixed'
+                ? `Amount (${currencySymbol(currency)})`
+                : 'Share of the price (%)'
+            }
             placeholder={value.depositType === 'fixed' ? '20' : '20'}
             inputMode="decimal"
             value={value.depositAmount ? String(value.depositAmount) : ''}
@@ -257,5 +265,46 @@ export function ProofPhotoField({
         work.
       </Text>
     </div>
+  );
+}
+
+/** 🇬🇭 from "GH": two regional-indicator letters make the flag. */
+const flagOf = (code: string) =>
+  String.fromCodePoint(...[...code.toUpperCase()].map(c => 0x1f1a5 + c.charCodeAt(0)));
+
+/**
+ * Where she works. Her prices are always in its currency, and the hint says so. A
+ * native list: the browser lets her type to jump to her country.
+ */
+export function CountryField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (country: Country) => void;
+}) {
+  const { data: countries = [] } = useCountries();
+  const chosen = countries.find(c => c.code === value);
+  return (
+    <Select
+      label="The country you work in"
+      value={value}
+      onChange={event => {
+        const next = countries.find(c => c.code === event.target.value);
+        if (next) onChange(next);
+      }}
+      hint={
+        chosen
+          ? `Your prices are in ${chosen.currency} (${currencySymbol(chosen.currency)})`
+          : undefined
+      }
+    >
+      {!chosen && <option value={value}>{value}</option>}
+      {countries.map(country => (
+        <option key={country.code} value={country.code}>
+          {flagOf(country.code)} {country.name}
+        </option>
+      ))}
+    </Select>
   );
 }
