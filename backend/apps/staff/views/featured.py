@@ -325,6 +325,7 @@ def looks(request, pk):
         styles=styles,
         hair_texture=body.get("hair_texture", ""),
         caption=body.get("caption", ""),
+        request=request,
     )
     security_event(
         request, "featured_look_added", user=request.user, email=page.profile.handle

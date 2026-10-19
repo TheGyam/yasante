@@ -1345,3 +1345,18 @@ def test_stylists_can_add_their_tiktok_to_their_own_page(make_stylist):
     assert profile.tiktok_handle == "ama.tok"
     page = client.get(f"/api/stylists/by-handle/{profile.handle}/").json()
     assert page["profile"]["tiktokHandle"] == "ama.tok"
+
+
+def test_staff_added_photos_have_whole_addresses_without_a_public_base(
+    page, make_user, styles, settings, tmp_path
+):
+    settings.MEDIA_ROOT = tmp_path
+    settings.PUBLIC_BASE_URL = ""
+    client, _ = staff_client(make_user, superuser=True)
+    response = client.post(
+        f"/data/featured/{page.pk}/looks/",
+        {"files": [image_file()], "styles": ["knotless"]},
+    )
+    assert response.status_code == 201, response.content
+    look = Look.objects.get(pk=response.json()["id"])
+    assert look.photo_uri.startswith("http://") and look.thumb_uri.startswith("http://")

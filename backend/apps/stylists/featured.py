@@ -139,8 +139,9 @@ def _lock_editable(page):
 
 
 @transaction.atomic
-def add_look(page, *, photos, styles, hair_texture="", caption=""):
-    """Add one look and its cover to this stylist's portfolio."""
+def add_look(page, *, photos, styles, hair_texture="", caption="", request=None):
+    """Add one look and its cover to this stylist's portfolio. The request, when there is
+    one, makes its photo addresses whole even where PUBLIC_BASE_URL isn't set (locally)."""
     _lock_editable(page)
     profile = page.profile
     if not 1 <= len(photos) <= 5:
@@ -157,11 +158,11 @@ def add_look(page, *, photos, styles, hair_texture="", caption=""):
     def picture(photo):
         """Use the upload itself for every photo size."""
         return {
-            "photo_uri": media_url(None, photo, photo.full_path),
-            "thumb_uri": media_url(None, photo, photo.thumb_path)
+            "photo_uri": media_url(request, photo, photo.full_path),
+            "thumb_uri": media_url(request, photo, photo.thumb_path)
             if photo.thumb_path
             else "",
-            "feed_uri": media_url(None, photo, photo.feed_path)
+            "feed_uri": media_url(request, photo, photo.feed_path)
             if photo.feed_path
             else "",
         }
