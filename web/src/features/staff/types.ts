@@ -127,6 +127,7 @@ export interface Decision {
 export interface InsightRow {
   label: string;
   values: number[];
+  currency?: string;
   url?: string;
   x?: number;
   y?: number;

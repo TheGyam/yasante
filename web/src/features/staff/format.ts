@@ -3,20 +3,23 @@
 const UK = 'Europe/London';
 const number = new Intl.NumberFormat('en-GB');
 const compact = new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 });
-const pounds = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
-const wholePounds = new Intl.NumberFormat('en-GB', {
-  style: 'currency',
-  currency: 'GBP',
-  maximumFractionDigits: 0,
-});
 
 export const formatNumber = (value: number) => number.format(value);
 export const formatCompact = (value: number) =>
   Math.abs(value) >= 10_000 ? compact.format(value) : number.format(value);
 
-/** No pence above £1,000: nobody reads them at that size. */
-export const formatMoney = (value: number) =>
-  (Math.abs(value) >= 1000 ? wholePounds : pounds).format(value);
+/** No pence above 1,000: nobody reads them at that size. Never converted between currencies. */
+export const formatMoney = (value: number, currency = 'GBP') =>
+  new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+    maximumFractionDigits: Math.abs(value) >= 1000 ? 0 : undefined,
+  }).format(value);
+
+/** Each currency's own total side by side, never added together: "$60 · €45 · GH₵300". */
+export const formatMoneyList = (amounts: readonly { currency: string; amount: number }[]) =>
+  amounts.map(m => formatMoney(m.amount, m.currency)).join(' · ');
 
 export const formatDate = (value: string | Date) =>
   new Date(value).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: UK });

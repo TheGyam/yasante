@@ -30,15 +30,17 @@ def insight(request, name):
         raise BadRequest("Choose a date range of up to 12 months.")
     start, end = (datetime.combine(day, time.min, ZoneInfo("Europe/London")) for day in (first, last+timedelta(days=1)))
     compare = request.GET.get("compare") == "1"
-    key = "staff:insight:" + hashlib.sha256(f"{request.user.pk}:{name}:{first}:{last}:{compare}".encode()).hexdigest()
+    currency = request.GET.get("currency", "").upper()
+    currency = currency if len(currency) == 3 and currency.isalpha() else None
+    key = "staff:insight:" + hashlib.sha256(f"{request.user.pk}:{name}:{first}:{last}:{compare}:{currency}".encode()).hexdigest()
     result = cache.get(key)
     if result is None:
         sources = {key: admins[key].get_queryset(request) for key in SOURCES[name]}
-        result = calculate(name, sources, start, end)
+        result = calculate(name, sources, start, end, currency)
         result.update({"from": str(first), "to": str(last), "previous": None})
         if compare:
             days = (last-first).days+1
             previous_start = datetime.combine(first-timedelta(days=days), time.min, ZoneInfo("Europe/London"))
-            result["previous"] = calculate(name, sources, previous_start, start)["rows"]
+            result["previous"] = calculate(name, sources, previous_start, start, result["meta"].get("currency") or currency)["rows"]
         cache.set(key, result, 300)
     return result

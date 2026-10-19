@@ -374,6 +374,11 @@ class RatingSerializer(serializers.Serializer):
     count = serializers.IntegerField()
 
 
+class MoneySerializer(serializers.Serializer):
+    currency = serializers.CharField(help_text="ISO 4217")
+    amount = serializers.FloatField()
+
+
 class TimingLabelSerializer(serializers.Serializer):
     outcome = serializers.ChoiceField(choices=["on_time", "early", "over"])
     count = serializers.IntegerField()
@@ -458,7 +463,8 @@ class WeekCountsSerializer(serializers.Serializer):
     completed = serializers.IntegerField()
     no_shows = serializers.IntegerField()
     late_cancellations = serializers.IntegerField()
-    earned = serializers.FloatField()
+    earned = serializers.FloatField(help_text="In her own currency")
+    earnings = MoneySerializer(many=True, help_text="Each currency she was paid in, never added across them")
 
 
 class ServiceTimingSerializer(serializers.Serializer):

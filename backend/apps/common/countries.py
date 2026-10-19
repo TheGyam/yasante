@@ -37,6 +37,29 @@ def money(amount, currency):
     return f"{symbol}{number}" if symbol else f"{number} {currency}"
 
 
+def totals(amounts):
+    """
+    Money in several currencies, never added across them: [(currency, amount), …] →
+    [{"currency", "amount"}, …], the currency used most often first.
+    """
+    by = {}
+    count = {}
+    for currency, amount in amounts:
+        if amount is None or not currency:
+            continue
+        by[currency] = by.get(currency, 0) + float(amount)
+        count[currency] = count.get(currency, 0) + 1
+    return [
+        {"currency": c, "amount": round(by[c], 2)}
+        for c in sorted(by, key=lambda c: (-count[c], c))
+    ]
+
+
+def money_list(amounts):
+    """"$60 · €45 · GH₵300": each currency on its own, never added together."""
+    return " · ".join(money(t["amount"], t["currency"]) for t in amounts)
+
+
 # Symbols for the currencies people meet most; the rest are written as a code after the
 # number ("12,500 XOF"), which reads clearly everywhere.
 SYMBOLS = {

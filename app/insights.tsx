@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Sparkles } from 'lucide-react-native';
 import { useInsights, type InsightsPeriod } from '@/features/profile';
-import { DEFAULT_CURRENCY, formatMoney } from '@/shared/lib/format';
+import { formatMoneyList } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
@@ -37,7 +37,11 @@ export default function InsightsScreen() {
   const tiles = i
     ? [
         { label: 'Appointments', value: String(i.appointments) },
-        { label: 'Spent', value: formatMoney(i.spent, i.currency ?? DEFAULT_CURRENCY) },
+        {
+          label: 'Spent',
+          // Each currency on its own: "$60 · €45 · GH₵300", never converted or added.
+          value: i.spending.length ? formatMoneyList(i.spending) : 'Nothing yet',
+        },
         { label: 'Wash days', value: String(i.washes) },
         { label: 'Looks saved', value: String(i.looksSaved) },
       ]

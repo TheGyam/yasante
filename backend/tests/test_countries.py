@@ -2,7 +2,7 @@
 
 import pytest
 
-from apps.common.countries import COUNTRIES, currency_of, money
+from apps.common.countries import COUNTRIES, currency_of, money, money_list, totals
 
 pytestmark = pytest.mark.django_db
 
@@ -71,3 +71,30 @@ def test_a_booking_keeps_the_currency_it_was_made_in(make_stylist, make_user, bo
     profile.country = "NG"
     profile.save(update_fields=["country"])
     assert Booking.objects.get(pk=made["id"]).currency == "GHS"
+
+
+def test_totals_keep_each_currency_apart():
+    amounts = [("USD", 60), ("EUR", 45), ("GHS", 300), ("EUR", None), (None, 5)]
+    assert totals(amounts) == [
+        {"currency": "EUR", "amount": 45.0},
+        {"currency": "GHS", "amount": 300.0},
+        {"currency": "USD", "amount": 60.0},
+    ]
+    assert money_list(totals([("USD", 60), ("USD", 1), ("GHS", 300)])) == "$61 · GH₵300"
+
+
+def test_staff_money_lists_every_currency_and_charts_one(make_user, make_stylist, book):
+    from django.utils import timezone
+
+    from apps.bookings.models import Booking
+    from tests.test_staff import staff_client
+
+    client, _ = staff_client(make_user, superuser=True)
+    for country, price in (("GB", 80), ("GB", 20), ("GH", 300)):
+        made = book(make_user(), make_stylist(country=country))
+        Booking.objects.filter(pk=made["id"]).update(status="completed", price=price, scheduled_for=timezone.now())
+    data = client.get("/data/insights/money/").json()
+    assert data["meta"]["currencies"] == [{"currency": "GBP", "amount": 100.0}, {"currency": "GHS", "amount": 300.0}]
+    assert data["meta"]["currency"] == "GBP" and data["meta"]["total"] == 100
+    ghana = client.get("/data/insights/money/?currency=GHS").json()
+    assert ghana["meta"]["currency"] == "GHS" and ghana["meta"]["total"] == 300

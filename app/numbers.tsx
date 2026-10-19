@@ -8,7 +8,7 @@ import {
   type ServiceTiming,
   type WeekCounts,
 } from '@/features/stylist';
-import { formatMoney } from '@/shared/lib/format';
+import { formatMoney, formatMoneyList } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
@@ -19,7 +19,12 @@ import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 
-const TILES: { key: keyof WeekCounts; label: string; money?: boolean; lowerIsBetter?: boolean }[] =
+const TILES: {
+  key: Exclude<keyof WeekCounts, 'earnings'>;
+  label: string;
+  money?: boolean;
+  lowerIsBetter?: boolean;
+}[] =
   [
     { key: 'views', label: 'Page views' },
     { key: 'requests', label: 'Requests' },
@@ -138,6 +143,13 @@ export default function NumbersScreen() {
           <View style={styles.grid}>
             {TILES.map((tile, index) => {
               const now = data.thisWeek[tile.key];
+              // Paid in more than her own currency this week: each on its own, never added.
+              const earnings = data.thisWeek.earnings ?? [];
+              const shown = !tile.money
+                ? String(now)
+                : earnings.length > 1 || (earnings.length === 1 && earnings[0].currency !== currency)
+                  ? formatMoneyList(earnings)
+                  : formatMoney(now, currency);
               const delta = change(
                 now,
                 data.lastWeek[tile.key],
@@ -147,12 +159,12 @@ export default function NumbersScreen() {
               );
               return (
                 <Rise key={tile.key} index={index} style={styles.tile}>
-                  <Card accessibilityLabel={`${tile.label}: ${now}. ${delta.text}`}>
+                  <Card accessibilityLabel={`${tile.label}: ${shown}. ${delta.text}`}>
                     <View style={styles.tileInner}>
                       <Text variant="caption" tone="tertiary">
                         {tile.label}
                       </Text>
-                      <Text variant="numeric">{tile.money ? formatMoney(now, currency) : now}</Text>
+                      <Text variant="numeric">{shown}</Text>
                       <Text variant="caption" tone={delta.tone}>
                         {delta.text}
                       </Text>

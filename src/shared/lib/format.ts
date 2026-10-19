@@ -81,3 +81,8 @@ export const toMiles = (amount: number, inMiles: boolean) =>
 /** Miles as she'd type them, in her units. */
 export const fromMiles = (miles: number, inMiles: boolean) =>
   inMiles ? miles : Math.round(miles * KM_PER_MILE);
+
+/** "$60 · €45 · GH₵300": money in several currencies, each on its own, never added. */
+export function formatMoneyList(amounts: readonly { currency: string; amount: number }[]) {
+  return amounts.map(m => formatMoney(m.amount, m.currency)).join(' · ');
+}

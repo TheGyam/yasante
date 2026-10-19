@@ -201,7 +201,10 @@ export interface WeekCounts {
   noShows: number;
   lateCancellations: number;
   /** What she was paid for completed appointments, where she recorded it. */
+  /** Paid, in her own currency (for the week-on-week change). */
   earned: number;
+  /** Every currency she was paid in, each on its own. */
+  earnings?: { currency: string; amount: number }[];
 }
 
 /** How a service really runs against what she quotes. Private: no threshold. */

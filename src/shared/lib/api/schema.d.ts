@@ -2739,10 +2739,8 @@ export interface components {
             /** Format: date-time */
             since?: string;
             appointments: number;
-            /** Format: double */
-            spent: number;
-            /** @description ISO 4217: what `spent` is in */
-            currency?: string;
+            /** @description What she spent in each currency, never added across them */
+            spending: components["schemas"]["Money"][];
             styles: string[];
             stylists: number;
             currentStyle?: components["schemas"]["CurrentStyle"];
@@ -2923,6 +2921,12 @@ export interface components {
         };
         Message: {
             message: string;
+        };
+        Money: {
+            /** @description ISO 4217 */
+            currency: string;
+            /** Format: double */
+            amount: number;
         };
         MoneyMethod: {
             /** Format: double */
@@ -3772,8 +3776,13 @@ export interface components {
             completed: number;
             noShows: number;
             lateCancellations: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description In her own currency
+             */
             earned: number;
+            /** @description Each currency she was paid in, never added across them */
+            earnings: components["schemas"]["Money"][];
         };
         /**
          * @description * `2` - 2

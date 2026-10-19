@@ -4635,12 +4635,11 @@ components:
           format: date-time
         appointments:
           type: integer
-        spent:
-          type: number
-          format: double
-        currency:
-          type: string
-          description: 'ISO 4217: what `spent` is in'
+        spending:
+          type: array
+          items:
+            $ref: '#/components/schemas/Money'
+          description: What she spent in each currency, never added across them
         styles:
           type: array
           items:
@@ -4672,7 +4671,7 @@ components:
       - looksSaved
       - period
       - productsAdded
-      - spent
+      - spending
       - styles
       - stylists
       - washes
@@ -5073,6 +5072,18 @@ components:
           type: string
       required:
       - message
+    Money:
+      type: object
+      properties:
+        currency:
+          type: string
+          description: ISO 4217
+        amount:
+          type: number
+          format: double
+      required:
+      - amount
+      - currency
     MoneyMethod:
       type: object
       properties:
@@ -7019,10 +7030,17 @@ components:
         earned:
           type: number
           format: double
+          description: In her own currency
+        earnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Money'
+          description: Each currency she was paid in, never added across them
       required:
       - completed
       - confirmed
       - earned
+      - earnings
       - lateCancellations
       - noShows
       - requests
