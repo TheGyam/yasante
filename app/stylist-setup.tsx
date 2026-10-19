@@ -34,7 +34,7 @@ import { ProgressBar } from '@/shared/ui/ProgressBar';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Text } from '@/shared/ui/Text';
-import { DEFAULT_CURRENCY, fromMiles, toMiles } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, fromMiles, toMiles, SEP } from '@/shared/lib/format';
 
 const STEPS = [
   {
@@ -292,7 +292,7 @@ export default function StylistSetupScreen() {
                 />
                 <ListRow
                   title={draft.baseArea}
-                  subtitle={draft.serviceModels.join(' · ')}
+                  subtitle={draft.serviceModels.join(SEP)}
                   icon={MapPin}
                   iconTone="neutral"
                 />

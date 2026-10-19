@@ -10,7 +10,7 @@ import {
   useMyStylistProfile,
 } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
-import { parseMoney } from '@/shared/lib/format';
+import { parseMoney, SEP } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -110,7 +110,7 @@ function PriceStyle({ style }: { style: FinishStyle }) {
     return (
       <ListRow
         title={style.name}
-        subtitle={`${style.photoCount} ${style.photoCount === 1 ? 'photo' : 'photos'} · priced`}
+        subtitle={`${style.photoCount} ${style.photoCount === 1 ? 'photo' : 'photos'}${SEP}priced`}
         icon={Check}
         iconTone="success"
       />

@@ -22,6 +22,7 @@ import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
+import { SEP } from '@/shared/lib/format';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
@@ -135,7 +136,9 @@ export default function TodayScreen() {
             </Text>
             <Text variant="bodyStrong" style={{ marginTop: space.xs }}>
               {numbers.thisWeek.requests} {numbers.thisWeek.requests === 1 ? 'request' : 'requests'}{' '}
-              · {numbers.thisWeek.confirmed} confirmed · {numbers.thisWeek.views} page views
+              {SEP}
+              {numbers.thisWeek.confirmed} confirmed{SEP}
+              {numbers.thisWeek.views} page views
             </Text>
             <Text variant="footnote" tone="accent" style={{ marginTop: space.xs }}>
               See your numbers
@@ -152,8 +155,8 @@ export default function TodayScreen() {
                 return (
                   <ListRow
                     key={booking.id}
-                    title={`${booking.clientName} · ${booking.serviceName}`}
-                    subtitle={`${whenLabel(booking.scheduledFor!, booking.timeZone)} · ${state.text}`}
+                    title={`${booking.clientName}${SEP}${booking.serviceName}`}
+                    subtitle={`${whenLabel(booking.scheduledFor!, booking.timeZone)}${SEP}${state.text}`}
                     icon={state.icon}
                     iconTone={state.tone}
                     onPress={() => router.push(`/requests/${booking.id}`)}
@@ -178,13 +181,13 @@ export default function TodayScreen() {
             {days.map(({ day, bookings }) => (
               <Section
                 key={day}
-                title={`${format(new Date(`${day}T12:00:00`), 'EEEE d MMMM')} · ${bookings.length} booked`}
+                title={`${format(new Date(`${day}T12:00:00`), 'EEEE d MMMM')}${SEP}${bookings.length} booked`}
               >
                 {bookings.map(booking => (
                   <ListRow
                     key={booking.id}
-                    title={`${booking.clientName} · ${booking.serviceName}`}
-                    subtitle={`${whenLabel(booking.scheduledFor!, booking.timeZone)} · ${attendance(booking).text}`}
+                    title={`${booking.clientName}${SEP}${booking.serviceName}`}
+                    subtitle={`${whenLabel(booking.scheduledFor!, booking.timeZone)}${SEP}${attendance(booking).text}`}
                     icon={CalendarClock}
                     onPress={() => router.push(`/requests/${booking.id}`)}
                   />

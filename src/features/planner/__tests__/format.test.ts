@@ -1,3 +1,4 @@
+import { plain } from '@/shared/lib/format';
 import { describePlan, dueLabel, nextDue, parsePlannerLink } from '../format';
 
 describe('planner links', () => {
@@ -16,12 +17,14 @@ describe('planner links', () => {
 
 describe('describing a care plan', () => {
   it('says how often and when', () => {
-    expect(describePlan({ frequency: 'weekly', timeOfDay: 'evening' })).toBe(
+    expect(plain(describePlan({ frequency: 'weekly', timeOfDay: 'evening' }))).toBe(
       'Every week · Evening'
     );
     // Sunday = 0, and the days read in week order however they were picked.
     expect(
-      describePlan({ frequency: 'specific-days', specificDays: [3, 0], timeOfDay: 'morning' })
+      plain(
+        describePlan({ frequency: 'specific-days', specificDays: [3, 0], timeOfDay: 'morning' })
+      )
     ).toBe('Sun, Wed · Morning');
   });
 });

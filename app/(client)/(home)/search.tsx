@@ -36,6 +36,7 @@ import {
   removeFromSearchHistory,
 } from '@/shared/utils/searchHistory';
 import { track } from '@/shared/lib/analytics';
+import { SEP } from '@/shared/lib/format';
 
 type Filter = 'all' | 'looks' | 'stylists' | 'learn';
 
@@ -342,7 +343,9 @@ function StylistRow({
           {stylist.displayName}
         </Text>
         <Text variant="footnote" tone="secondary" numberOfLines={1}>
-          @{stylist.handle} · {stylist.baseArea}
+          @{stylist.handle}
+          {SEP}
+          {stylist.baseArea}
         </Text>
       </View>
     </PressableScale>

@@ -1,3 +1,4 @@
+import { SEP } from '@/shared/lib/format';
 import {
   fromSalonInput,
   inSentence,
@@ -40,7 +41,7 @@ describe('how a booking reads', () => {
       '4 styles, never missed one'
     );
     expect(recordLabel({ attended: 1, noShows: 1, lateCancellations: 2 })).toBe(
-      '1 style · 1 no-show, 2 late cancellations'
+      `1 style${SEP}1 no-show, 2 late cancellations`
     );
   });
 

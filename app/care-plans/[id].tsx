@@ -41,6 +41,7 @@ import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { SEP } from '@/shared/lib/format';
 
 /** History arrives five at a time: the recent ones matter, the rest are a tap away. */
 const PAGE = 5;
@@ -347,7 +348,7 @@ export default function CarePlanScreen() {
         Done for today
       </Text>
       <Text variant="subhead" tone="secondary" align="center">
-        {stats.done} {stats.done === 1 ? 'time' : 'times'} in 30 days ·{' '}
+        {stats.done} {stats.done === 1 ? 'time' : 'times'} in 30 days{SEP}
         {dueLabel(plan).replace('Due', 'next')}
       </Text>
     </Glass>

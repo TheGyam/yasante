@@ -12,7 +12,7 @@ import {
   type MenuItemDraft,
   type ParsedService,
 } from '@/features/stylist';
-import { currencySymbol, formatMoney, parseMoney } from '@/shared/lib/format';
+import { currencySymbol, formatMoney, parseMoney, SEP } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { fonts, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -116,7 +116,7 @@ const PastedRow = memo(function PastedRow({
     unpriced ? 'add a price' : undefined,
   ]
     .filter(Boolean)
-    .join(' · ');
+    .join(SEP);
 
   return (
     <Glass style={[styles.row, !row.include && styles.off]}>
@@ -268,7 +268,9 @@ export default function PastePriceListScreen() {
           <View style={styles.rows}>
             <Text variant="overline" tone="tertiary">
               {rows.length} {rows.length === 1 ? 'line' : 'lines'} found
-              {headings ? ` · ${headings} ${headings === 1 ? 'heading' : 'headings'} skipped` : ''}
+              {headings
+                ? `${SEP}${headings} ${headings === 1 ? 'heading' : 'headings'} skipped`
+                : ''}
             </Text>
             {rows.map(row => (
               <PastedRow key={row.key} row={row} onEdit={onEdit} />
@@ -296,8 +298,8 @@ export default function PastePriceListScreen() {
           {chosen.length > 1 && (
             <Text variant="caption" tone="tertiary" align="center">
               From {formatMoney(Math.min(...chosen.map(r => parseMoney(r.price))), currency)} to{' '}
-              {formatMoney(Math.max(...chosen.map(r => parseMoney(r.price))), currency)} · you can
-              edit any of them afterwards
+              {formatMoney(Math.max(...chosen.map(r => parseMoney(r.price))), currency)}
+              {SEP}you can edit any of them afterwards
             </Text>
           )}
           <Button label="Cancel" variant="ghost" onPress={() => router.back()} fullWidth />

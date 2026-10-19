@@ -1,0 +1,16 @@
+/*
+ * The plait (U+E000) is part of Instrument Sans for that one character, so it draws
+ * wherever text does. The font is inside this file: no request, no flash.
+ * Made by scripts/marks-font.py; don't edit by hand.
+ */
+@font-face {
+  font-family: 'Instrument Sans';
+  src: url(data:font/woff2;base64,d09GMgABAAAAAAIMAAoAAAAABQQAAAHBAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmAANAqFHIR3ATYCJAMICwYABCAFbwcsGycEQJ4FORlvatFYZCHir3e4tAciDhFA4/AeMxroEuQYF5NYytJCkuZ/nP0/sJpR1AEObYnplKA6l7q0d5nVWewaFgCDp2rPxw96rWI1K54PFsA+aukJ9G9DeDQcyEgHNgzCcNDn2e8UovTit0EUonH3qVJOwya0TEo16AoAnkKeWv/1ygvuiGv1joiEeklAvawVWRZ48v9P3RoE8KJnGYWEVkIXvQ0oHMW0TG6g02mkiJdIKCKDwSSlKrGYTLZTbAn1HGiwJTYB2Hjsd+cMRTB4JpPqEkLQHWk0UpbaBBvjJSeggZBfnt8BRE5vrqvyEF3z7e7kq8VqDvoyqlV+eps+e77Pi2puFt88uen1hw+jp/P62VrB0IsrokwZRAbHz9P/xF9VrfuC5mXu16TbnnchoPzg2iDi5E9RsMWyucLaWf38afQw7PduWk18cyr7Z/VlagMhf+nxJbweVplfcRD5Cc/fP57a9YZOEiCJ44IjcCOvgZP7NGiU0G+FiIGncCFSmU0L1EE5LRAVRSSNMh4EzeroRJUGtmf3b1n/DWT447GHoDC7P7t1sBhBu7e+nyyXDzf6NiCoEQkR/TVXdgAAAAA=) format('woff2');
+  unicode-range: U+E000;
+  font-weight: 100 900;
+  font-display: block;
+}
+
+.yasante-mark {
+  color: var(--accent);
+}

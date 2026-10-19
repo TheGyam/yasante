@@ -1,5 +1,5 @@
 import { Share } from 'react-native';
-import { formatMoney } from '@/shared/lib/format';
+import { formatMoney, SEP } from '@/shared/lib/format';
 import type {
   Availability,
   DayHours,
@@ -36,7 +36,7 @@ export function timingLabelText(label?: {
   sample: number;
 }) {
   if (!label) return undefined;
-  return `Usually ${TIMING_WORDS[label.outcome]} · ${label.count} of ${label.sample} appointments`;
+  return `Usually ${TIMING_WORDS[label.outcome]}${SEP}${label.count} of ${label.sample} appointments`;
 }
 
 /** Every badge says exactly what was checked — never a generic "verified". */

@@ -1,5 +1,5 @@
 import { differenceInHours, format, isToday, isTomorrow } from 'date-fns';
-import { DEFAULT_CURRENCY, formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, plain, SEP } from '@/shared/lib/format';
 import { wallTime, zoneMark } from '@/shared/lib/timeZone';
 import {
   TIMING_BUCKETS,
@@ -99,7 +99,7 @@ export function recordLabel(record?: ClientRecord) {
     lateCancellations &&
       `${lateCancellations} late ${lateCancellations === 1 ? 'cancellation' : 'cancellations'}`,
   ].filter(Boolean);
-  return `${styles} · ${misses.join(', ')}`;
+  return `${styles}${SEP}${misses.join(', ')}`;
 }
 
 /**
@@ -134,7 +134,7 @@ export function timingText(timing?: BookingTiming) {
     reason,
   ]
     .filter(Boolean)
-    .join(' · ');
+    .join(SEP);
 }
 
 /** Whether a timing record puts the delay on the client, which is what she may contest. */
@@ -156,7 +156,7 @@ export const inSentence = (label: string) =>
 
 /** "Knotless braids · Waist · Small" — the service as she chose it. */
 export const serviceLine = (booking: Pick<Booking, 'serviceName' | 'optionLabels'>) =>
-  [booking.serviceName, ...(booking.optionLabels ?? [])].join(' · ');
+  [booking.serviceName, ...(booking.optionLabels ?? [])].join(SEP);
 
 const icsTime = (date: Date) =>
   date
@@ -175,7 +175,7 @@ export function calendarLink(booking: Booking) {
   const end = new Date(start.getTime() + (booking.durationMinutes ?? 120) * 60_000);
   const params = new URLSearchParams({
     action: 'TEMPLATE',
-    text: `${serviceLine(booking)} with ${booking.stylistName}`,
+    text: plain(`${serviceLine(booking)} with ${booking.stylistName}`),
     dates: `${icsTime(start)}/${icsTime(end)}`,
     details: 'Booked on Yasante',
     location: booking.address ?? booking.area,

@@ -21,6 +21,7 @@ import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
+import { SEP } from '@/shared/lib/format';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
@@ -40,11 +41,11 @@ export default function BookingsScreen() {
   const row = (booking: Booking) => (
     <ListRow
       key={booking.id}
-      title={`${booking.serviceName} · ${booking.stylistName}`}
+      title={`${booking.serviceName}${SEP}${booking.stylistName}`}
       subtitle={
         booking.scheduledFor
           ? whenLabel(booking.scheduledFor, booking.timeZone)
-          : booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(' · ')
+          : booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(SEP)
       }
       value={STATUS_LABELS[booking.status]}
       icon={CalendarClock}

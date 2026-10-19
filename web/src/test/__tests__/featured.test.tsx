@@ -419,9 +419,9 @@ describe('featured stylists', () => {
     await userEv.click(saveBtn);
 
     expect(await screen.findByText('1 of 3 done')).toBeInTheDocument();
-    expect(screen.getByText(/Knotless braids · 4 photos/)).toBeInTheDocument();
+    expect(screen.getByText(/Knotless braids\s+4 photos/)).toBeInTheDocument();
 
-    expect(screen.getByText(/Twists · 1 photo$/)).toBeInTheDocument();
+    expect(screen.getByText(/Twists\s+1 photo$/)).toBeInTheDocument();
 
     // When all done
     finishState = {

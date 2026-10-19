@@ -35,7 +35,7 @@ import {
   type ChosenOptions,
 } from '@/features/stylist';
 import { POLICY_VERSION } from '@/shared/config/policies';
-import { DEFAULT_CURRENCY, formatDistance, formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatDistance, formatMoney, SEP } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -359,7 +359,7 @@ export default function RequestBookingScreen() {
                   label={
                     index === 0
                       ? choice.label
-                      : `${choice.label} · +${formatMoney(choice.add, currency)}`
+                      : `${choice.label}${SEP}+${formatMoney(choice.add, currency)}`
                   }
                   selected={chosen[group] === choice.id}
                   onPress={() => {
@@ -383,14 +383,14 @@ export default function RequestBookingScreen() {
             }
           >
             <ListRow
-              title={[service.name, ...quote.labels].join(' · ')}
+              title={[service.name, ...quote.labels].join(SEP)}
               subtitle={
                 [
                   quote.minutes ? `About ${formatDuration(quote.minutes)}` : undefined,
                   service.hairIncluded ? 'Hair included' : undefined,
                 ]
                   .filter(Boolean)
-                  .join(' · ') || undefined
+                  .join(SEP) || undefined
               }
               trailing={
                 <RollingText variant="callout" tone="secondary">
@@ -439,7 +439,7 @@ export default function RequestBookingScreen() {
             {hosts && (
               <View style={styles.chips}>
                 <Chip
-                  label={`At theirs · ${profile.baseArea}`}
+                  label={`At theirs${SEP}${profile.baseArea}`}
                   icon={House}
                   selected={!atClient}
                   onPress={() => setAtClient(false)}

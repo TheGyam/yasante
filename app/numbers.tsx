@@ -8,7 +8,7 @@ import {
   type ServiceTiming,
   type WeekCounts,
 } from '@/features/stylist';
-import { formatMoney, formatMoneyList } from '@/shared/lib/format';
+import { formatMoney, formatMoneyList, SEP } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
@@ -24,15 +24,14 @@ const TILES: {
   label: string;
   money?: boolean;
   lowerIsBetter?: boolean;
-}[] =
-  [
-    { key: 'views', label: 'Page views' },
-    { key: 'requests', label: 'Requests' },
-    { key: 'confirmed', label: 'Confirmed' },
-    { key: 'completed', label: 'Done' },
-    { key: 'noShows', label: 'No-shows', lowerIsBetter: true },
-    { key: 'earned', label: 'Paid', money: true },
-  ];
+}[] = [
+  { key: 'views', label: 'Page views' },
+  { key: 'requests', label: 'Requests' },
+  { key: 'confirmed', label: 'Confirmed' },
+  { key: 'completed', label: 'Done' },
+  { key: 'noShows', label: 'No-shows', lowerIsBetter: true },
+  { key: 'earned', label: 'Paid', money: true },
+];
 
 /** A service worth re-quoting: it runs half an hour or more away from what she says. */
 const OFF_BY = 30;
@@ -96,7 +95,7 @@ export default function NumbersScreen() {
               t.over && `${t.over} over`,
             ]
               .filter(Boolean)
-              .join(' · ')}{' '}
+              .join(SEP)}{' '}
             — from {t.sample} {t.sample === 1 ? 'appointment' : 'appointments'}
           </Text>
           {worthUpdating && (
@@ -147,7 +146,8 @@ export default function NumbersScreen() {
               const earnings = data.thisWeek.earnings ?? [];
               const shown = !tile.money
                 ? String(now)
-                : earnings.length > 1 || (earnings.length === 1 && earnings[0].currency !== currency)
+                : earnings.length > 1 ||
+                    (earnings.length === 1 && earnings[0].currency !== currency)
                   ? formatMoneyList(earnings)
                   : formatMoney(now, currency);
               const delta = change(

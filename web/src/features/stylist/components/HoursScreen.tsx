@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { errorMessage } from '@/shared/lib/errors';
-import { formatDate } from '@/shared/lib/format';
+import { formatDate, SEP } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
 import { Chip } from '@/shared/ui/Chip';
@@ -437,7 +437,7 @@ function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: st
                 block.repeats.length
                   ? `${repeatLabel(block.repeats)}, ${toSalonInput(block.start, timeZone).slice(11)}`
                   : whenLabel(block.start, timeZone)
-              }–${toSalonInput(block.end, timeZone).slice(11)}${block.note ? ` · ${block.note}` : ''}`}
+              }–${toSalonInput(block.end, timeZone).slice(11)}${block.note ? `${SEP}${block.note}` : ''}`}
               icon={X}
               onClick={() => remove.mutate(block.id)}
             />
@@ -458,7 +458,7 @@ function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: st
                 return (
                   <Chip
                     key={day}
-                    label={`${new Date(`${day}T12:00:00Z`).toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric' })}${skipped ? ' · skipped' : ''}`}
+                    label={`${new Date(`${day}T12:00:00Z`).toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric' })}${skipped ? `${SEP}skipped` : ''}`}
                     selected={!skipped}
                     onClick={() => skip.mutate({ id: block.id, date: day, skip: !skipped })}
                   />

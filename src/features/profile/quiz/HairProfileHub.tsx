@@ -19,6 +19,7 @@ import { useUser } from '../hooks';
 import { useUserStore } from '../store';
 import { lengthIsStale, progressOf, sectionSummary, SECTIONS } from './sections';
 import { StrandArt } from './TextureStep';
+import { SEP } from '@/shared/lib/format';
 
 /** One tap each, dated by the phone. */
 const LOGGABLE: { kind: HairLogKind; title: string; icon: LucideIcon }[] = [
@@ -73,7 +74,7 @@ export function HairProfileHub() {
             <Text variant="footnote" tone="secondary" align="center">
               {done === total
                 ? 'All of it — thank you. Change anything whenever it changes.'
-                : `${done} of ${total} answered${next ? ` · ${next.name} next` : ''}`}
+                : `${done} of ${total} answered${next ? `${SEP}${next.name} next` : ''}`}
             </Text>
           </View>
         </View>

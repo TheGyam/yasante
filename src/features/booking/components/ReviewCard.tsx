@@ -7,6 +7,7 @@ import { IconButton } from '@/shared/ui/IconButton';
 import { StarRating } from '@/shared/ui/StarRating';
 import { Text } from '@/shared/ui/Text';
 import type { Review } from '../types';
+import { SEP } from '@/shared/lib/format';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.sm },
@@ -35,7 +36,10 @@ export function ReviewCard({ review, onReport }: ReviewCardProps) {
         </View>
         {!!review.body && <Text variant="body">{review.body}</Text>}
         <Text variant="footnote" tone="tertiary">
-          {review.authorName} · {review.serviceName} ·{' '}
+          {review.authorName}
+          {SEP}
+          {review.serviceName}
+          {SEP}
           {format(new Date(review.createdAt), 'MMM yyyy')}
         </Text>
       </View>

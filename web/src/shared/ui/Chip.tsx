@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { Link } from './Link';
+import { withMarks } from './Text';
 import * as styles from './Chip.css';
 
 export interface ChipProps {
@@ -17,7 +18,7 @@ export function Chip({ label, selected = false, icon: Icon, to, onClick }: ChipP
   const inner = (
     <>
       {Icon && <Icon size={15} strokeWidth={2.2} aria-hidden />}
-      {label}
+      {withMarks(label)}
     </>
   );
   if (to !== undefined) {

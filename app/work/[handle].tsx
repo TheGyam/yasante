@@ -23,6 +23,7 @@ import { Glass } from '@/shared/ui/Glass';
 import { IconButton } from '@/shared/ui/IconButton';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
+import { SEP } from '@/shared/lib/format';
 
 // The photo that's mostly on screen is the one the count and the card describe.
 const VIEWABLE = { itemVisiblePercentThreshold: 60 };
@@ -144,7 +145,7 @@ export default function WorkViewer() {
         {!!page_ && (photos.length > 1 || page_.parts > 1) && (
           <Text variant="subhead" style={styles.count} accessibilityLiveRegion="polite">
             {page_.at + 1} of {photos.length}
-            {page_.parts > 1 ? ` · photo ${page_.part + 1} of ${page_.parts}` : ''}
+            {page_.parts > 1 ? `${SEP}photo ${page_.part + 1} of ${page_.parts}` : ''}
           </Text>
         )}
       </View>

@@ -1,6 +1,7 @@
 import { differenceInDays } from 'date-fns';
 import { deviceCurrency } from '@/shared/lib/region';
 import type { HairLength, HairProfile, StyleBudget } from '../types';
+import { SEP } from '@/shared/lib/format';
 
 export type SectionKey =
   | 'texture'
@@ -132,7 +133,7 @@ export function lengthLine(p: Pick<HairProfile, 'length' | 'shrunkLength'>) {
     p.shrunkLength && `${LENGTH_WORDS[p.shrunkLength]} as it shrinks`,
   ]
     .filter(Boolean)
-    .join(' · ');
+    .join(SEP);
 }
 
 /** A month on from the last length, it's worth asking again — that's the growth curve. */

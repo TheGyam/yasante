@@ -1,3 +1,4 @@
+import { plain } from '@/shared/lib/format';
 import { matchRoute, MockError } from '@/shared/lib/api/mock';
 import { shelfSummary } from '@/features/shelf/format';
 import { db } from '../db';
@@ -35,7 +36,7 @@ describe('the shelf', () => {
 
     const again = call('patch', `/api/shelf/${item.id}/`, { status: 'repurchased' });
     expect(again).toMatchObject({ status: 'repurchased', timesBought: 2, finishedAt: undefined });
-    expect(shelfSummary([again])).toBe('1 in use · 1 finished · 1 bought again');
+    expect(plain(shelfSummary([again]))).toBe('1 in use · 1 finished · 1 bought again');
   });
 
   it('keeps ratings between one and five', () => {

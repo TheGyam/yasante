@@ -13,6 +13,7 @@ import { useMyBookings } from '../hooks';
 import type { Booking } from '../types';
 import { GetTheApp } from './GetTheApp';
 import * as styles from './BookScreen.css';
+import { SEP } from '@/shared/lib/format';
 
 /** Everything she has asked for or been given, the live ones first. As the app's list. */
 export function BookingsScreen() {
@@ -24,12 +25,12 @@ export function BookingsScreen() {
       to={`/bookings/${booking.id}`}
       icon={CalendarClock}
       iconTone={booking.status === 'confirmed' ? 'success' : 'neutral'}
-      title={`${booking.serviceName} · ${booking.stylistName}`}
+      title={`${booking.serviceName}${SEP}${booking.stylistName}`}
       subtitle={`${
         booking.scheduledFor
           ? whenLabel(booking.scheduledFor, booking.timeZone)
-          : booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(' · ')
-      } · ${CLIENT_STATUS_LABELS[booking.status]}`}
+          : booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(SEP)
+      }${SEP}${CLIENT_STATUS_LABELS[booking.status]}`}
     />
   );
 

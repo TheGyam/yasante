@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { ExternalLink, MapPin, Store } from 'lucide-react';
 import { errorMessage } from '@/shared/lib/errors';
-import { DEFAULT_CURRENCY, fromMiles, toMiles } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, fromMiles, toMiles, SEP } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Glass } from '@/shared/ui/Glass';
@@ -320,7 +320,7 @@ function Setup({
                     icon={MapPin}
                     iconTone="neutral"
                     title={draft.baseArea}
-                    subtitle={draft.serviceModels.join(' · ')}
+                    subtitle={draft.serviceModels.join(SEP)}
                   />
                 </Section>
                 <Text variant="body" tone="secondary">

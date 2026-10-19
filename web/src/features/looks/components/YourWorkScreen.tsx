@@ -4,7 +4,7 @@ import { ImagePlus, PenLine, Trash2 } from 'lucide-react';
 import { useCheckFinishTags, useFinishState } from '@/features/claim';
 import { usePortfolio, useRemovePortfolioPhoto } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
-import { plural } from '@/shared/lib/format';
+import { plural, SEP } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Glass } from '@/shared/ui/Glass';
@@ -88,7 +88,7 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
         />
       )}
 
-      <SectionHeader title={`In the feed${live.length ? ` · ${live.length}` : ''}`} />
+      <SectionHeader title={`In the feed${live.length ? `${SEP}${live.length}` : ''}`} />
       {looks.isPending ? (
         <Skeleton style={{ height: 200, borderRadius: 20 }} />
       ) : looks.isError ? (
@@ -243,7 +243,7 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
         </ul>
       )}
 
-      <SectionHeader title={`On your page${photos.length ? ` · ${photos.length}` : ''}`} />
+      <SectionHeader title={`On your page${photos.length ? `${SEP}${photos.length}` : ''}`} />
       {portfolio.isPending ? (
         <Skeleton style={{ height: 120, borderRadius: 20 }} />
       ) : !photos.length ? (

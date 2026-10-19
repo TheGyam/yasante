@@ -91,3 +91,14 @@ export function slugify(text: string) {
     .trim()
     .replace(/[-\s]+/g, '-');
 }
+
+/**
+ * Our plait, the mark between parts of a line, as in the app. A private-use character the
+ * site's font draws (shared/ui/marks.css); Text colours it. The space before it doesn't
+ * break, so a line never starts with the mark.
+ */
+export const MARK = String.fromCharCode(0xe000);
+export const SEP = `${String.fromCharCode(0xa0)}${MARK} `;
+
+/** Text with marks for anywhere the font can't reach (the tab title, sharing): a plain dot. */
+export const plain = (text: string) => text.replaceAll(SEP, ' · ').replaceAll(MARK, '·');

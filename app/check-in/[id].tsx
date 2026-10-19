@@ -27,6 +27,7 @@ import { ProgressBar } from '@/shared/ui/ProgressBar';
 import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { SEP } from '@/shared/lib/format';
 
 type Key = keyof CheckInAnswers;
 
@@ -205,7 +206,9 @@ export default function CheckInScreen() {
         <Animated.View key={question.key} entering={NEXT}>
           <View style={styles.heading}>
             <Text variant="overline" tone="tertiary">
-              Week {due} · {booking.stylistName}
+              Week {due}
+              {SEP}
+              {booking.stylistName}
             </Text>
             <Text variant="title1" accessibilityRole="header">
               {question.title(style, answers)}

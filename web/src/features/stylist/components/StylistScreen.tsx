@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useSession, withNext } from '@/features/auth';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
-import { DEFAULT_CURRENCY, formatMonth, plural } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMonth, plural, SEP } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
@@ -122,7 +122,9 @@ function Stylist({ page }: { page: StylistPage }) {
                 <span className={styles.average}>
                   <StarRating value={Math.round(rating.average)} size={13} />
                   <Text variant="footnote" tone="secondary">
-                    {rating.average.toFixed(1)} · {plural(rating.count, 'review')}
+                    {rating.average.toFixed(1)}
+                    {SEP}
+                    {plural(rating.count, 'review')}
                   </Text>
                 </span>
               )}
@@ -262,7 +264,9 @@ function Stylist({ page }: { page: StylistPage }) {
                       </div>
                       {review.body && <Text variant="body">{review.body}</Text>}
                       <Text variant="footnote" tone="secondary">
-                        {review.authorName} · {review.serviceName}
+                        {review.authorName}
+                        {SEP}
+                        {review.serviceName}
                       </Text>
                     </Glass>
                   ))}

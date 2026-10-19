@@ -22,7 +22,7 @@ import {
   type TimingReason,
 } from '@/features/booking';
 import { ChoiceCard } from '@/features/profile';
-import { DEFAULT_CURRENCY, formatMoney, parseMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, parseMoney, SEP } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -188,7 +188,9 @@ export default function CloseOutScreen() {
         <Animated.View key={step} entering={direction > 0 ? FORWARD : BACKWARD}>
           <View style={styles.heading}>
             <Text variant="overline" tone="tertiary">
-              {booking.serviceName} · {booking.clientName}
+              {booking.serviceName}
+              {SEP}
+              {booking.clientName}
             </Text>
             <Text variant="title1" accessibilityRole="header">
               {question.title}

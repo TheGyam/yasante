@@ -66,7 +66,7 @@ describe('her studio', () => {
     signedIn({});
     renderSite('/today');
     const list = await screen.findByRole('heading', {
-      name: /Get ready for clients · 3 of 5 done/,
+      name: /Get ready for clients\s+3 of 5 done/,
     });
     const steps = within(list.closest('section')!);
     // Live, services added and a way to be paid: done. Hours and looks: not yet.
@@ -149,7 +149,10 @@ describe('her studio', () => {
       'GET /api/features/': { features: { multi_photo_looks: false } },
       'POST /api/uploads/': (call: { body?: unknown }) => {
         const file = (call.body as FormData).get('file') as File;
-        return { status: 201, body: { id: file.name, uri: `https://x/${file.name}`, photoAspect: 0.8 } };
+        return {
+          status: 201,
+          body: { id: file.name, uri: `https://x/${file.name}`, photoAspect: 0.8 },
+        };
       },
       'POST /api/looks/': (call: { body?: unknown }) => ({
         status: 201,
@@ -184,14 +187,24 @@ describe('her studio', () => {
         const file = (call.body as FormData).get('file') as File;
         return {
           status: 201,
-          body: { id: file.name, uri: `https://x/${file.name}`, thumbUri: `https://x/${file.name}-t`, photoAspect: 0.8 },
+          body: {
+            id: file.name,
+            uri: `https://x/${file.name}`,
+            thumbUri: `https://x/${file.name}-t`,
+            photoAspect: 0.8,
+          },
         };
       },
       'POST /api/looks/': (call: { body?: unknown }) => {
         const body = call.body as { photoUris: string[] };
         return {
           status: 201,
-          body: { ...body, id: 'l1', photoUri: body.photoUris[0], thumbUri: `${body.photoUris[0]}-t` },
+          body: {
+            ...body,
+            id: 'l1',
+            photoUri: body.photoUris[0],
+            thumbUri: `${body.photoUris[0]}-t`,
+          },
         };
       },
       'POST /api/stylists/me/portfolio/': { status: 201, body: [] },
@@ -224,7 +237,9 @@ describe('her studio', () => {
       styles: ['knotless'],
       visibility: 'public',
     });
-    const onPage = calls.filter(c => c.url === '/api/stylists/me/portfolio/' && c.method === 'POST');
+    const onPage = calls.filter(
+      c => c.url === '/api/stylists/me/portfolio/' && c.method === 'POST'
+    );
     expect(onPage).toHaveLength(1);
     const photos = (onPage[0].body as { photos: { uri: string; lookId: string }[] }).photos;
     expect(photos).toHaveLength(1);
@@ -278,17 +293,23 @@ describe('her studio', () => {
           return new Promise<Response>(resolve => {
             pending.push(() =>
               resolve(
-                new Response(JSON.stringify({ id: `m${n}`, uri: `https://x/${n}.jpg`, photoAspect: 0.8 }), {
-                  status: 201,
-                  headers: { 'Content-Type': 'application/json' },
-                })
+                new Response(
+                  JSON.stringify({ id: `m${n}`, uri: `https://x/${n}.jpg`, photoAspect: 0.8 }),
+                  {
+                    status: 201,
+                    headers: { 'Content-Type': 'application/json' },
+                  }
+                )
               )
             );
           });
         }
         const body = fixed[`${method} ${path}`] ?? fixed[path] ?? { message: 'Not found' };
         return Promise.resolve(
-          new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
+          new Response(JSON.stringify(body), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
         );
       })
     );

@@ -6,7 +6,7 @@ import { useAuth } from '@/features/auth';
 import { useLook, useStyleTaxonomy } from '@/features/looks';
 import { useUpdateHairProfile, useUser } from '@/features/profile';
 import { useStylistsForStyle, type StylistSearchResult, type Within } from '@/features/stylist';
-import { DEFAULT_CURRENCY, formatDistance, formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatDistance, formatMoney, SEP } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
@@ -109,10 +109,12 @@ export default function WhoDoesThisStyle() {
         </View>
         <Text variant="footnote" tone="secondary" numberOfLines={1}>
           {s.miles != null
-            ? `${s.miles < 0.6 ? (usesMiles ? 'Under a mile' : 'Under a km') : formatDistance(s.miles, usesMiles)} · `
+            ? `${s.miles < 0.6 ? (usesMiles ? 'Under a mile' : 'Under a km') : formatDistance(s.miles, usesMiles)}${SEP}`
             : ''}
           {s.baseArea}
-          {s.fromPrice ? ` · from ${formatMoney(s.fromPrice, s.currency ?? DEFAULT_CURRENCY)}` : ''}
+          {s.fromPrice
+            ? `${SEP}from ${formatMoney(s.fromPrice, s.currency ?? DEFAULT_CURRENCY)}`
+            : ''}
         </Text>
         {!!s.ratingCount && s.rating != null && (
           <View style={styles.line}>

@@ -1,5 +1,6 @@
 import { addDays, differenceInCalendarDays, format, startOfDay } from 'date-fns';
 import type { CarePlan, CarePlanFrequency, TimeOfDay } from './types';
+import { SEP } from '@/shared/lib/format';
 
 export const FREQUENCY_LABELS: Record<CarePlanFrequency, string> = {
   daily: 'Every day',
@@ -26,7 +27,7 @@ export function describePlan(plan: Pick<CarePlan, 'frequency' | 'specificDays' |
           .map(day => DAY_LABELS[day])
           .join(', ')
       : FREQUENCY_LABELS[plan.frequency];
-  return `${often} · ${TIME_OF_DAY_LABELS[plan.timeOfDay]}`;
+  return `${often}${SEP}${TIME_OF_DAY_LABELS[plan.timeOfDay]}`;
 }
 
 /** The day it's next due. A plan never done is due today. */

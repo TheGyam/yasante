@@ -2,7 +2,7 @@
  * How her page is worded: the same sentences as the app's stylist page
  * (src/features/stylist/format.ts at the repo root), so she reads the same everywhere.
  */
-import { formatDistance, formatMoney } from '@/shared/lib/format';
+import { formatDistance, formatMoney, SEP } from '@/shared/lib/format';
 import type { Availability, MenuItem, PublicProfile } from './types';
 
 /** "Usually replies within an hour" — rounded the way a person would say it. */
@@ -23,7 +23,7 @@ export function timingLabelText(label?: {
   sample: number;
 }) {
   if (!label) return undefined;
-  return `Usually ${TIMING_WORDS[label.outcome]} · ${label.count} of ${label.sample} appointments`;
+  return `Usually ${TIMING_WORDS[label.outcome]}${SEP}${label.count} of ${label.sample} appointments`;
 }
 
 /** Every badge says exactly what was checked — never a generic "verified". */
@@ -62,7 +62,7 @@ export function serviceDetails(item: MenuItem) {
       item.hairIncluded ? 'hair included' : undefined,
     ]
       .filter(Boolean)
-      .join(' · ') || undefined
+      .join(SEP) || undefined
   );
 }
 

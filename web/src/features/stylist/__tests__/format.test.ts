@@ -1,3 +1,4 @@
+import { SEP } from '@/shared/lib/format';
 import { formatDuration, hoursLabel, replyLabel, serviceDetails, timingLabelText } from '../format';
 import type { Availability, MenuItem } from '../types';
 import { estimate, optionGroups } from '../menu';
@@ -29,7 +30,7 @@ describe('her page’s wording', () => {
 
   it('always shows how many appointments a timing claim rests on', () => {
     expect(timingLabelText({ outcome: 'on_time', count: 8, sample: 10 })).toBe(
-      'Usually finishes on time · 8 of 10 appointments'
+      `Usually finishes on time${SEP}8 of 10 appointments`
     );
     expect(timingLabelText(undefined)).toBeUndefined();
     expect(replyLabel(3)).toBe('Usually replies within a few hours');
@@ -49,7 +50,7 @@ describe('her page’s wording', () => {
         { id: 'b', group: 'size', label: 'Small', add: 40 },
       ],
     } as MenuItem;
-    expect(serviceDetails(item)).toBe('5 hrs · priced by length and size · hair included');
+    expect(serviceDetails(item)).toBe(`5 hrs${SEP}priced by length and size${SEP}hair included`);
   });
 });
 
