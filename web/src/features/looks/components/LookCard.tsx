@@ -6,6 +6,7 @@ import { usePrefetchLook } from '../hooks';
 import { lookAlt, lookTitle } from '../format';
 import type { Look } from '../types';
 import * as styles from './LookCard.css';
+import { SEP } from '@/shared/lib/format';
 
 /** Portrait tiles, like the app's grid, so a feed reads as one even wall. */
 export const TILE_ASPECT = 4 / 5;
@@ -29,7 +30,7 @@ export function LookCard({ look, priority }: { look: Look; priority?: boolean })
           {look.area}
           {look.likeCount > 0 && (
             <>
-              {look.area && ' · '}
+              {look.area && SEP}
               <Heart size={12} strokeWidth={2.4} />
               {look.likeCount}
             </>

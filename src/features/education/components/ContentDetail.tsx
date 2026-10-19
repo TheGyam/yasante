@@ -17,6 +17,7 @@ import { useContentItem, useIsFavorite, useRelatedContent, useToggleFavorite } f
 import type { Content } from '../types';
 import { ArticleBody } from './ArticleBody';
 import { ContentCarousel } from './ContentCarousel';
+import { SEP } from '@/shared/lib/format';
 
 export interface ContentDetailProps {
   id: string;
@@ -33,7 +34,7 @@ function metaLine(content: Content) {
   const parts = [TOPIC_LABELS[content.topic] ?? content.topic];
   if (content.duration)
     parts.push(`${content.duration} min${content.type === 'video' ? '' : ' read'}`);
-  return parts.join(' · ');
+  return parts.join(SEP);
 }
 
 /** Detail for any piece of content — inspiration, article or video. */

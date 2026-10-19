@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Sparkles } from 'lucide-react-native';
 import { useInsights, type InsightsPeriod } from '@/features/profile';
-import { formatMoneyList } from '@/shared/lib/format';
+import { formatMoneyList, SEP } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
@@ -87,7 +87,7 @@ export default function InsightsScreen() {
                   </Text>
                   <Text variant="title3">
                     {i.length.now}
-                    {i.length.nowCm ? ` · ${i.length.nowCm} cm` : ''}
+                    {i.length.nowCm ? `${SEP}${i.length.nowCm} cm` : ''}
                   </Text>
                   {!!i.length.grewCm && i.length.grewCm > 0 && (
                     <Text variant="subhead" tone="success">

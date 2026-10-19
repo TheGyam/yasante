@@ -11,6 +11,7 @@ import '@fontsource/instrument-sans/500.css';
 import '@fontsource/instrument-sans/600.css';
 import '@fontsource/instrument-sans/700.css';
 import '@/shared/theme/global.css';
+import '@/shared/ui/marks.css';
 
 startErrorReports({ endpoint: '/api/client-errors/', platform: 'web' });
 

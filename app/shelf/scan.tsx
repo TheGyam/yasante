@@ -18,6 +18,7 @@ import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Screen } from '@/shared/ui/Screen';
 import { Text } from '@/shared/ui/Text';
+import { SEP } from '@/shared/lib/format';
 
 // Product barcodes: EAN-13/8 in Europe, UPC in the US.
 const PRODUCT_CODES = ['ean13', 'ean8', 'upc_a', 'upc_e'] as const;
@@ -172,7 +173,9 @@ export default function ScanProductScreen() {
           <Animated.View entering={ARRIVE} style={styles.card}>
             <View>
               <Text variant="caption" tone="tertiary">
-                {product.brand} · {CATEGORY_LABELS[product.category]}
+                {product.brand}
+                {SEP}
+                {CATEGORY_LABELS[product.category]}
               </Text>
               <Text variant="title3" numberOfLines={2}>
                 {product.name}

@@ -27,7 +27,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowUp, ChevronRight, ImageOff, MoreHorizontal, X } from 'lucide-react-native';
-import { DEFAULT_CURRENCY, formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, SEP } from '@/shared/lib/format';
 import { errorMessage, useAuth } from '@/features/auth';
 import {
   LikeButton,
@@ -840,7 +840,7 @@ function WhoDoesThis({ style, name, lookId }: { style: string; name?: string; lo
             {stylists.length} {stylists.length === 1 ? 'stylist' : 'stylists'}
             {near ? ' near you' : ''}
             {prices.length && currency
-              ? ` · from ${formatMoney(Math.min(...prices), currency)}`
+              ? `${SEP}from ${formatMoney(Math.min(...prices), currency)}`
               : ''}
           </Text>
         </View>

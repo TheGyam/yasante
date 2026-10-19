@@ -50,6 +50,7 @@ import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Screen } from '@/shared/ui/Screen';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Text } from '@/shared/ui/Text';
+import { SEP } from '@/shared/lib/format';
 
 const MAX_STYLES = 3;
 const VISIBILITY = [
@@ -371,7 +372,7 @@ export default function ComposeLookScreen() {
               {services.map(service => (
                 <Chip
                   key={service.id}
-                  label={`${service.name} · ${formatPrice(service, currency)}`}
+                  label={`${service.name}${SEP}${formatPrice(service, currency)}`}
                   selected={serviceId === service.id}
                   onPress={() => tagService(serviceId === service.id ? undefined : service.id)}
                 />
@@ -391,7 +392,7 @@ export default function ComposeLookScreen() {
               {(fromBooking ? [fromBooking] : done).map(booking => (
                 <Chip
                   key={booking.id}
-                  label={`${booking.stylistName} · ${dayLabel(booking.completedAt ?? booking.updatedAt)}`}
+                  label={`${booking.stylistName}${SEP}${dayLabel(booking.completedAt ?? booking.updatedAt)}`}
                   selected={bookingId === booking.id}
                   locked={!!fromBooking}
                   onPress={() => tagBooking(bookingId === booking.id ? undefined : booking.id)}

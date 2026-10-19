@@ -48,7 +48,7 @@ import {
   useUpdateStylistProfile,
   type PaymentMethodDraft,
 } from '@/features/stylist';
-import { DEFAULT_CURRENCY, formatMoney, parseMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, parseMoney, SEP } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { zoneMark } from '@/shared/lib/timeZone';
 import { useRouter } from '@/shared/lib/navigation';
@@ -227,7 +227,7 @@ export default function RequestScreen() {
           <Text variant="subhead" tone="secondary">
             {`${booking.fromPrice ? 'from ' : ''}${formatMoney(booking.price, booking.currency ?? DEFAULT_CURRENCY)}`}
             {status !== 'requested' && status !== 'awaiting_deposit' && status !== 'confirmed'
-              ? ` · ${STYLIST_STATUS_LABELS[status]}`
+              ? `${SEP}${STYLIST_STATUS_LABELS[status]}`
               : ''}
           </Text>
           {isLive(booking) && !!balanceLine(booking) && (
@@ -258,7 +258,7 @@ export default function RequestScreen() {
           />
           {booking.atClient && (
             <ListRow
-              title={booking.address ?? `At their place · ${booking.area}`}
+              title={booking.address ?? `At their place${SEP}${booking.area}`}
               subtitle={
                 booking.address
                   ? 'You’re going to them. Tap for directions'

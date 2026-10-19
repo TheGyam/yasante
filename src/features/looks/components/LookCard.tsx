@@ -11,7 +11,7 @@ import {
   Share,
 } from 'lucide-react-native';
 import { TEXTURE_LABELS } from '@/features/profile';
-import { DEFAULT_CURRENCY, formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, SEP } from '@/shared/lib/format';
 import { HIT_TARGET, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -170,7 +170,7 @@ export const LookCard = memo(function LookCard({
         <Text variant="caption" tone="tertiary" numberOfLines={1}>
           {[look.authorHandle && `@${look.authorHandle}`, look.area, postedLabel(look.createdAt)]
             .filter(Boolean)
-            .join(' · ')}
+            .join(SEP)}
         </Text>
       </View>
     </>
@@ -298,12 +298,12 @@ export const LookCard = memo(function LookCard({
               accessibilityRole={credit.handle ? 'link' : undefined}
             >
               Hair by {credit.name}
-              {tags.length ? ' · ' : ''}
+              {tags.length ? SEP : ''}
             </Text>
           )}
           {tags.length > 0 && (
             <Text variant="caption" tone="tertiary">
-              {tags.join(' · ')}
+              {tags.join(SEP)}
             </Text>
           )}
         </View>
@@ -371,7 +371,7 @@ export const LookCard = memo(function LookCard({
               )}
               {!!price && (
                 <Text variant="footnote" style={styles.serviceText}>
-                  {look.serviceName ? `· ${price}` : price}
+                  {look.serviceName ? `${SEP.trimStart()}${price}` : price}
                 </Text>
               )}
             </View>

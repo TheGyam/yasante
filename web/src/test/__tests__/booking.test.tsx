@@ -86,7 +86,7 @@ beforeEach(() => {
 /** Service, length, a time and the terms: everything the request needs. */
 async function fillIn() {
   await userEvent.click(await screen.findByRole('radio', { name: /Knotless braids/ }));
-  await userEvent.click(screen.getByRole('button', { name: 'Waist · +£40' }));
+  await userEvent.click(screen.getByRole('button', { name: /^Waist\s+\+£40$/ }));
   // Her soonest opens its day; another time that day is one tap more.
   await userEvent.click(await screen.findByRole('button', { name: /Soonest/ }));
   await userEvent.click(await screen.findByRole('button', { name: '14:00' }));

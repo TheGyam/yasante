@@ -30,6 +30,7 @@ import { Section } from '@/shared/ui/Section';
 import { Switch } from '@/shared/ui/Switch';
 import { Text } from '@/shared/ui/Text';
 import * as styles from './Studio.css';
+import { SEP } from '@/shared/lib/format';
 
 /** Enough looks that someone browsing her style sees a body of work, not a one-off. */
 const LOOKS_GOAL = 9;
@@ -153,8 +154,8 @@ export function TodayScreen({ accountId }: { accountId: string }) {
                 <ListRow
                   key={b.id}
                   icon={new Date(b.scheduledFor!) <= now ? ClipboardCheck : CalendarClock}
-                  title={`${b.clientName} · ${b.serviceName}`}
-                  subtitle={`${whenLabel(b.scheduledFor!)} · ${
+                  title={`${b.clientName}${SEP}${b.serviceName}`}
+                  subtitle={`${whenLabel(b.scheduledFor!)}${SEP}${
                     new Date(b.scheduledFor!) <= now
                       ? 'Close it out when they leave'
                       : b.attendanceConfirmedAt
@@ -182,13 +183,13 @@ export function TodayScreen({ accountId }: { accountId: string }) {
             return (
               <Section
                 key={day}
-                title={`${sayDay.format(new Date(`${day}T12:00:00`))} · ${those.length} booked`}
+                title={`${sayDay.format(new Date(`${day}T12:00:00`))}${SEP}${those.length} booked`}
               >
                 {those.map(b => (
                   <ListRow
                     key={b.id}
                     icon={CalendarDays}
-                    title={`${b.clientName} · ${b.serviceName}`}
+                    title={`${b.clientName}${SEP}${b.serviceName}`}
                     subtitle={whenLabel(b.scheduledFor!)}
                     to={`/requests/${b.id}`}
                   />
@@ -312,7 +313,7 @@ function Checklist({
   if (!left.length) return null;
   return (
     <Section
-      title={`Get ready for clients · ${steps.length - left.length} of ${steps.length} done`}
+      title={`Get ready for clients${SEP}${steps.length - left.length} of ${steps.length} done`}
     >
       {left.map(step => (
         <ListRow

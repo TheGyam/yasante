@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Banknote, CalendarClock, Clock, MapPin, Scissors, UserRound } from 'lucide-react';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
-import { currencySymbol, DEFAULT_CURRENCY, formatMoney, formatPrice } from '@/shared/lib/format';
+import {
+  currencySymbol,
+  DEFAULT_CURRENCY,
+  formatMoney,
+  formatPrice,
+  SEP,
+} from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { Chip } from '@/shared/ui/Chip';
 import { EmptyState } from '@/shared/ui/EmptyState';
@@ -105,7 +111,7 @@ function Request({
           <Text variant="subhead" tone="secondary">
             {STATUS_LABELS[status]}
             {booking.scheduledFor && status !== 'requested'
-              ? ` · ${whenLabel(booking.scheduledFor, booking.timeZone)}`
+              ? `${SEP}${whenLabel(booking.scheduledFor, booking.timeZone)}`
               : ''}
           </Text>
         </div>
@@ -136,11 +142,11 @@ function Request({
             title={booking.serviceName}
             subtitle={
               [
-                booking.optionLabels?.join(' · '),
+                booking.optionLabels?.join(SEP),
                 booking.bringingOwnHair ? 'Bringing their own hair' : undefined,
               ]
                 .filter(Boolean)
-                .join(' · ') || undefined
+                .join(SEP) || undefined
             }
             value={formatPrice(
               booking.price,
@@ -152,7 +158,7 @@ function Request({
             <ListRow
               icon={MapPin}
               iconTone={booking.address ? 'success' : 'neutral'}
-              title={booking.address ?? `At their place · ${booking.area}`}
+              title={booking.address ?? `At their place${SEP}${booking.area}`}
               subtitle={
                 booking.address
                   ? 'You’re going to them'
@@ -286,7 +292,9 @@ function Answer({
           >
             {paymentMethods.map((m, i) => (
               <option key={`${m.label}${i}`} value={i}>
-                {m.label} · {m.details}
+                {m.label}
+                {SEP}
+                {m.details}
               </option>
             ))}
           </Select>

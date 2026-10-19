@@ -14,7 +14,7 @@ import {
   type ChosenOptions,
 } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
-import { DEFAULT_CURRENCY, formatDistance, formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatDistance, formatMoney, SEP } from '@/shared/lib/format';
 import { POSTCODE, joinAddress, splitAddress } from '@/shared/lib/postcode';
 import { readJson, writeJson } from '@/shared/lib/storage';
 import { Button } from '@/shared/ui/Button';
@@ -229,7 +229,8 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                 See their page
               </Text>
             </Link>{' '}
-            · {profile.baseArea}
+            {SEP}
+            {profile.baseArea}
           </Text>
         </div>
 
@@ -307,7 +308,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                   label={
                     index === 0
                       ? choice.label
-                      : `${choice.label} · +${formatMoney(choice.add, currency)}`
+                      : `${choice.label}${SEP}+${formatMoney(choice.add, currency)}`
                   }
                   selected={draft.chosen[group] === choice.id}
                   // A longer job may not fit the time picked for a shorter one.
@@ -331,14 +332,14 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
           >
             <ListRow
               icon={CalendarClock}
-              title={[service.name, ...quote.labels].join(' · ')}
+              title={[service.name, ...quote.labels].join(SEP)}
               subtitle={
                 [
                   quote.minutes ? `About ${formatDuration(quote.minutes)}` : undefined,
                   service.hairIncluded ? 'Hair included' : undefined,
                 ]
                   .filter(Boolean)
-                  .join(' · ') || undefined
+                  .join(SEP) || undefined
               }
               value={`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price, currency)}`}
             />
@@ -394,7 +395,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
             {hosts && (
               <div className={styles.chips}>
                 <Chip
-                  label={`At theirs · ${profile.baseArea}`}
+                  label={`At theirs${SEP}${profile.baseArea}`}
                   icon={House}
                   selected={!draft.atClient}
                   onClick={() => set({ atClient: false })}

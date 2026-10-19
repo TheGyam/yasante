@@ -51,7 +51,7 @@ import {
   whenLabel,
 } from '@/features/booking';
 import { formatDuration } from '@/features/stylist';
-import { DEFAULT_CURRENCY, formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, SEP } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
@@ -205,7 +205,7 @@ export default function BookingScreen() {
 
   const when = booking.scheduledFor
     ? whenLabel(booking.scheduledFor, booking.timeZone)
-    : booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(' · ');
+    : booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(SEP);
 
   return (
     <Screen title={booking.stylistName} back testID="booking-screen">

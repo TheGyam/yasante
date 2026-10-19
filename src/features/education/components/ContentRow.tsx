@@ -5,6 +5,7 @@ import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
 import { TOPIC_LABELS } from '../content';
 import type { Content } from '../types';
+import { SEP } from '@/shared/lib/format';
 
 export interface ContentRowProps {
   content: Content;
@@ -32,7 +33,9 @@ export function ContentRow({ content, onPress }: ContentRowProps) {
       <RemoteImage uri={content.thumbnailUri} style={styles.thumb} recyclingKey={content.id} />
       <View style={styles.text}>
         <Text variant="overline" tone="tertiary" numberOfLines={1}>
-          {TOPIC_LABELS[content.topic] ?? content.topic} · {kind}
+          {TOPIC_LABELS[content.topic] ?? content.topic}
+          {SEP}
+          {kind}
         </Text>
         <Text variant="callout" numberOfLines={2}>
           {content.title}

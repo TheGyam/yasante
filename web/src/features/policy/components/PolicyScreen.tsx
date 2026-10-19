@@ -1,6 +1,6 @@
 import { FileQuestion } from 'lucide-react';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
-import { formatDate } from '@/shared/lib/format';
+import { formatDate, SEP } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Page } from '@/shared/ui/Page';
@@ -52,7 +52,8 @@ export function PolicyScreen({ type }: { type: PolicyType }) {
       <header className={styles.head}>
         <Text variant="display">{policy.title}</Text>
         <Text variant="subhead" tone="secondary">
-          Version {policy.version} · in effect from {formatDate(policy.effectiveAt)}
+          Version {policy.version}
+          {SEP}in effect from {formatDate(policy.effectiveAt)}
         </Text>
       </header>
       <article className={styles.body}>

@@ -9,6 +9,7 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { SEP } from '@/shared/lib/format';
 
 type Policy = ApiSchemas['Policy'];
 
@@ -57,8 +58,8 @@ export default function PolicyScreen() {
       ) : (
         <View style={styles.body}>
           <Text variant="footnote" tone="tertiary" style={styles.meta}>
-            Version {data.version} · in effect from{' '}
-            {format(new Date(data.effectiveAt), 'd MMMM yyyy')}
+            Version {data.version}
+            {SEP}in effect from {format(new Date(data.effectiveAt), 'd MMMM yyyy')}
           </Text>
           {blocks.map((block, i) =>
             /^\d+\.\s/.test(block) && !block.includes('\n') && block.length < 80 ? (

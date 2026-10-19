@@ -22,6 +22,7 @@ import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StarRating } from '@/shared/ui/StarRating';
 import { Text } from '@/shared/ui/Text';
+import { SEP } from '@/shared/lib/format';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xl },
@@ -117,7 +118,9 @@ export default function ShelfItemScreen() {
       <View style={styles.body}>
         <View style={styles.head}>
           <Text variant="overline" tone="tertiary">
-            {item.product.brand} · {CATEGORY_LABELS[item.product.category]}
+            {item.product.brand}
+            {SEP}
+            {CATEGORY_LABELS[item.product.category]}
           </Text>
           <Text variant="title1" accessibilityRole="header">
             {item.product.name}

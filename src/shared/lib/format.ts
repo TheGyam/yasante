@@ -86,5 +86,19 @@ export const fromMiles = (miles: number, inMiles: boolean) =>
 
 /** "$60 · €45 · GH₵300": money in several currencies, each on its own, never added. */
 export function formatMoneyList(amounts: readonly { currency: string; amount: number }[]) {
-  return amounts.map(m => formatMoney(m.amount, m.currency)).join(' · ');
+  return amounts.map(m => formatMoney(m.amount, m.currency)).join(SEP);
 }
+
+/**
+ * Our plait, the mark between parts of a line ("Ama Mensah ⟨plait⟩ Knotless braids"). A
+ * private-use character drawn by the YasanteMarks font; Text colours and draws it. The
+ * space before it doesn't break, so a line never starts with the mark.
+ */
+export const MARK = String.fromCharCode(0xe000);
+export const SEP = `${String.fromCharCode(0xa0)}${MARK} `;
+
+/** Text with marks as a screen reader should say it: the parts with pauses between. */
+export const spoken = (text: string) => text.replaceAll(SEP, ', ').replaceAll(MARK, ',');
+
+/** Text with marks for anywhere outside the app (calendars, sharing): a plain dot instead. */
+export const plain = (text: string) => text.replaceAll(SEP, ' · ').replaceAll(MARK, '·');

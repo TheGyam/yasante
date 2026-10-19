@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { formatDuration, useStylistPage } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
-import { DEFAULT_CURRENCY, formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, SEP } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Glass } from '@/shared/ui/Glass';
@@ -44,7 +44,7 @@ import { GetTheApp } from './GetTheApp';
 import { SlotPicker } from './SlotPicker';
 import * as styles from './BookingScreen.css';
 
-const serviceLine = (b: Booking) => [b.serviceName, ...(b.optionLabels ?? [])].join(' · ');
+const serviceLine = (b: Booking) => [b.serviceName, ...(b.optionLabels ?? [])].join(SEP);
 
 /** "From £80 left to pay on the day" once there's a deposit. */
 function balanceLine(b: Booking) {
@@ -135,7 +135,7 @@ export function BookingScreen({ id }: { id: string }) {
   const zone = booking.timeZone;
   const when = booking.scheduledFor
     ? whenLabel(booking.scheduledFor, zone)
-    : booking.requestedTimes.map(t => whenLabel(t, zone)).join(' · ');
+    : booking.requestedTimes.map(t => whenLabel(t, zone)).join(SEP);
   const late = cancellingIsLate(booking);
   // Not answered yet: she withdraws a request rather than cancelling a booking.
   const asking = booking.status === 'requested';
@@ -154,7 +154,9 @@ export function BookingScreen({ id }: { id: string }) {
             {serviceLine(booking)}
           </Text>
           <Text variant="subhead" tone="secondary">
-            With {booking.stylistName} · {CLIENT_STATUS_LABELS[booking.status]}
+            With {booking.stylistName}
+            {SEP}
+            {CLIENT_STATUS_LABELS[booking.status]}
           </Text>
         </div>
 
@@ -485,7 +487,7 @@ function ReviewPart({ booking }: { booking: Booking }) {
         <ListRow
           icon={MessageSquareHeart}
           iconTone="success"
-          title={`Your review · ${booking.review.rating} of 5`}
+          title={`Your review${SEP}${booking.review.rating} of 5`}
           subtitle={
             booking.review.status === 'published'
               ? 'On their page'

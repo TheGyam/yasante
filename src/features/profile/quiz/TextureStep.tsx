@@ -11,6 +11,7 @@ import { EASE_OUT, makeStyles, space, useTheme } from '@/shared/theme';
 import type { HairTexture } from '../types';
 import { ChoiceCard } from './ChoiceCard';
 import { STRAND_BOX, strand } from './strands';
+import { SEP } from '@/shared/lib/format';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -19,7 +20,7 @@ export const TEXTURES: readonly { value: HairTexture; label: string; code: strin
   { value: 'wavy', label: 'Wavy', code: '2A–2C' },
   { value: 'curly', label: 'Curly', code: '3A–3C' },
   { value: 'coily', label: 'Coily', code: '4A–4B' },
-  { value: 'kinky', label: 'Kinky', code: '4C · zig-zag' },
+  { value: 'kinky', label: 'Kinky', code: `4C${SEP}zig-zag` },
 ];
 
 // Generated once for the life of the app.

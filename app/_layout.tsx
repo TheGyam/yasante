@@ -350,6 +350,7 @@ export default function RootLayout() {
     InstrumentSans_500Medium,
     InstrumentSans_600SemiBold,
     InstrumentSans_700Bold,
+    YasanteMarks: require('../assets/fonts/YasanteMarks.ttf'),
   });
 
   useEffect(() => {

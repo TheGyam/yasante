@@ -28,7 +28,7 @@ import {
 } from '@/features/stylist';
 import { useAuth } from '@/features/auth';
 import { ReviewCard } from '@/features/booking';
-import { DEFAULT_CURRENCY, formatDistance, formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatDistance, formatMoney, SEP } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
@@ -252,7 +252,7 @@ export default function StylistPageScreen() {
                     item.hairIncluded ? 'hair included' : undefined,
                   ]
                     .filter(Boolean)
-                    .join(' · ') || undefined
+                    .join(SEP) || undefined
                 }
                 value={formatPrice(item, currency)}
                 icon={Scissors}
@@ -316,8 +316,9 @@ export default function StylistPageScreen() {
                 <View style={styles.average}>
                   <StarRating value={Math.round(rating.average)} size={12} />
                   <Text variant="footnote" tone="secondary">
-                    {rating.average.toFixed(1)} · {rating.count}{' '}
-                    {rating.count === 1 ? 'review' : 'reviews'}
+                    {rating.average.toFixed(1)}
+                    {SEP}
+                    {rating.count} {rating.count === 1 ? 'review' : 'reviews'}
                   </Text>
                 </View>
               )}

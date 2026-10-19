@@ -38,6 +38,7 @@ import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Text } from '@/shared/ui/Text';
+import { SEP } from '@/shared/lib/format';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
@@ -174,7 +175,7 @@ function Profile() {
               : stale
                 ? 'It’s been a month — has it grown?'
                 : progress.next
-                  ? `${progress.done} of ${progress.total} answered · add ${progress.next.name.toLowerCase()}`
+                  ? `${progress.done} of ${progress.total} answered${SEP}add ${progress.next.name.toLowerCase()}`
                   : 'See your hair profile'}
           </Text>
         </View>

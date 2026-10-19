@@ -24,6 +24,7 @@ import {
 } from '../picker';
 import type { FreeSlots, SlotQuery } from '../types';
 import * as styles from './SlotPicker.css';
+import { SEP } from '@/shared/lib/format';
 
 /** Pixels per minute on the day's timeline: a ten-hour day is 360 tall. */
 const SCALE = 0.6;
@@ -488,8 +489,8 @@ function Day({
         <Text variant="footnote" tone="secondary">
           {hours ? `${hours.start}–${hours.end}` : ''}
           {chosen !== undefined
-            ? `${hours ? ' · ' : ''}You’d be there ${clock(chosen)} to ${clock(chosen + minutes)}`
-            : `${hours ? ' · ' : ''}Pick a time, or click a free part of the day`}
+            ? `${hours ? SEP : ''}You’d be there ${clock(chosen)} to ${clock(chosen + minutes)}`
+            : `${hours ? SEP : ''}Pick a time, or click a free part of the day`}
         </Text>
       </div>
 
