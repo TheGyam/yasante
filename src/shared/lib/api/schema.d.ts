@@ -1235,7 +1235,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Areas for the area field outside the UK. Signed in only, so the free quota is ours. */
+        /** @description Areas for the area field outside the UK. Signed in only, to be fair to the free service. */
         get: operations["places_suggest_list"];
         put?: never;
         post?: never;

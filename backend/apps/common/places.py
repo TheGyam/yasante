@@ -1,55 +1,87 @@
 """
 Area names to pick from while a stylist outside the UK types where she works. From
-Mapbox's free temporary geocoding: its terms forbid keeping those answers, so nothing is
-cached or stored. Only the name she picks is saved, as text she could have typed.
+Photon, komoot's free open-source search over OpenStreetMap: no key, and the data's
+licence (ODbL) lets us keep answers, so each one is cached for a day. Only the name she
+picks is saved on her profile, as text she could have typed.
 """
 
+import hashlib
 import json
 import logging
 import urllib.error
 import urllib.parse
 import urllib.request
 
-from django.conf import settings
+from django.core.cache import cache
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import permissions, serializers
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
-from drf_spectacular.utils import OpenApiParameter, extend_schema
 
-from apps.common.countries import is_country
+from apps.common.countries import BY_CODE, is_country
 
 logger = logging.getLogger(__name__)
 
-URL = "https://api.mapbox.com/search/geocode/v6/forward"
+URL = "https://photon.komoot.io/api/"
+# Photon has no country filter: ask for more and keep hers.
+ASKED = 20
+SHOWN = 5
+DAY = 60 * 60 * 24
+MONTH = DAY * 30
+
+
+def _photon(params):
+    query = urllib.parse.urlencode(params)
+    request = urllib.request.Request(f"{URL}?{query}", headers={"User-Agent": "Yasante (admin@yasante.com)"})
+    with urllib.request.urlopen(request, timeout=4) as response:
+        return json.loads(response.read().decode("utf-8")).get("features") or []
+
+
+def _centre(country):
+    """Her country's middle, (lon, lat), from Photon itself; kept for a month."""
+    key = f"places-centre1:{country}"
+    found = cache.get(key)
+    if found is None:
+        countries = _photon([("q", BY_CODE[country]["name"]), ("layer", "country"), ("limit", 5)])
+        match = next((f for f in countries if (f["properties"].get("countrycode") or "").upper() == country), None)
+        found = match["geometry"]["coordinates"] if match else []
+        cache.set(key, found, MONTH)
+    return found
 
 
 def suggest(text, country):
     """Up to five areas matching what she's typed, in her country: [{"name", "context"}]."""
-    token = settings.MAPBOX_TOKEN
-    if not token or len(text) < 2 or not is_country(country):
+    if len(text) < 2 or not is_country(country):
         return []
-    query = urllib.parse.urlencode(
-        {
-            "q": text,
-            "country": country.lower(),
-            "types": "neighborhood,locality,place,district",
-            "autocomplete": "true",
-            "limit": 5,
-            "access_token": token,
-        }
-    )
+    key = "places3:" + hashlib.sha1(f"{country}:{text.lower()}".encode()).hexdigest()
+    found = cache.get(key)
+    if found is not None:
+        return found
     try:
-        with urllib.request.urlopen(f"{URL}?{query}", timeout=4) as response:
-            features = json.loads(response.read().decode("utf-8")).get("features") or []
-    except (urllib.error.URLError, TimeoutError, ValueError):
-        logger.info("Mapbox had no suggestions", exc_info=True)
-        return []
-    found = []
+        # Photon ranks the whole world, so "East Le" would find East London before East
+        # Legon. Leaning the search towards her country's middle fixes that.
+        params = [("q", text), ("limit", ASKED)] + [("layer", layer) for layer in ("city", "district", "locality")]
+        centre = _centre(country)
+        if centre:
+            params += [("lon", centre[0]), ("lat", centre[1]), ("zoom", 6), ("location_bias_scale", 0.5)]
+        features = _photon(params)
+    except (urllib.error.URLError, TimeoutError, ValueError, KeyError):
+        logger.info("Photon had no suggestions", exc_info=True)
+        return []  # Not cached: the next letter tries again.
+    found, seen = [], set()
     for feature in features:
         props = feature.get("properties") or {}
-        if props.get("name"):
-            found.append({"name": props["name"], "context": props.get("place_formatted") or ""})
+        name = props.get("name")
+        if not name or (props.get("countrycode") or "").upper() != country:
+            continue
+        # "Accra, Greater Accra Region": where it is, to tell same-named places apart.
+        context = ", ".join(dict.fromkeys(p for p in (props.get("city"), props.get("state")) if p and p != name))
+        if (name, context) not in seen:
+            seen.add((name, context))
+            found.append({"name": name, "context": context})
+    found = found[:SHOWN]
+    cache.set(key, found, DAY)
     return found
 
 
@@ -64,7 +96,7 @@ class PlaceSerializer(serializers.Serializer):
 
 
 class PlaceSuggestionsView(APIView):
-    """Areas for the area field outside the UK. Signed in only, so the free quota is ours."""
+    """Areas for the area field outside the UK. Signed in only, to be fair to the free service."""
 
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [PlaceSuggestionsThrottle]
@@ -79,6 +111,4 @@ class PlaceSuggestionsView(APIView):
     def get(self, request):
         text = (request.query_params.get("q") or "").strip()[:80]
         country = (request.query_params.get("country") or "").upper()
-        response = Response(suggest(text, country))
-        response["Cache-Control"] = "no-store"
-        return response
+        return Response(suggest(text, country))

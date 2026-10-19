@@ -77,7 +77,7 @@ const areaName = (place: { name: string; context: string }) => {
 };
 
 /**
- * Outside the UK: she types her area and Mapbox suggests names to tap, or she keeps what
+ * Outside the UK: she types her area and OpenStreetMap suggests names to tap, or she keeps what
  * she typed. Only the words are saved. Her address, when clients come to her, she writes.
  */
 function WorldLocation({
@@ -126,7 +126,7 @@ function WorldLocation({
             ))}
           </View>
           <Text variant="caption" tone="tertiary" style={styles.label}>
-            Suggestions by Mapbox
+            Suggestions © OpenStreetMap contributors
           </Text>
         </View>
       )}
