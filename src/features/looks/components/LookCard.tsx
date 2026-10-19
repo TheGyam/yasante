@@ -371,7 +371,7 @@ export const LookCard = memo(function LookCard({
               )}
               {!!price && (
                 <Text variant="footnote" style={styles.serviceText}>
-                  {look.serviceName ? `${SEP}${price}` : price}
+                  {look.serviceName ? `${SEP.trimStart()}${price}` : price}
                 </Text>
               )}
             </View>
