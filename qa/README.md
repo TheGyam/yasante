@@ -50,7 +50,7 @@ qa/
 | PROFILE-01 | edit profile, username, hair profile and quiz, planner, care plans, shelf, learn | written (1 emulator) |
 | SETTINGS-01 | settings, notifications, privacy, data download, FAQs, policies, reports and appeals, sign-out (F1), delete account | written (1 emulator) |
 | FIXES-01, NEW-01, NEW-02 | rechecks of upstream's fixes (FIXES-01 now also F30–F32); new booking and discovery features | written (emulators); FIXES-01 and NEW-01 revised 19-10 for the new picker |
-| FEATURED-01 | featured stylists: staff build, yes, link, live; waitlist; a claim refused, a claim made; Finish your page; bookable and the waitlist told; take-down; a moderator kept out; what today's app shows | written (browser + 1 emulator), dry-run by Claude |
+| FEATURED-01 | featured stylists: staff build, yes, link, live; waitlist; a claim refused, a claim made; Finish your page; bookable and the waitlist told; take-down; a moderator kept out; what today's app shows | run and audited (`FEATURED-01-20261019-0023`): the journey works end to end; F38 (no email for website waitlisters), F39 (staff preview), candidate F40 (blank photos in the app) |
 | LOOKS-02 | several photos in one look in the app and on the web, the `multi_photo_looks` switch turned in the workspace, swiping, the marker on grids | written (2 emulators + browser), app part dry-run |
 | DIARY-01 | notice, how far ahead, time between clients, blocked-out time (once, repeating, skipped), and the picker clients see; clashes, two waiting requests, one chair per client, a full day's waitlist | written (2 emulators + browser) |
 | WEBBOOK-01 | booking on yasante.com with no app: request, Come to me, the stylist's answers by email, move, cancel, signing out | written (browser + 1 emulator) |
