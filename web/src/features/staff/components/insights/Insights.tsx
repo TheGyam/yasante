@@ -27,6 +27,7 @@ const CHARTS: { name: string; heading: string; money?: boolean; wide?: boolean }
   { name: 'booking-times', heading: 'When people book', wide: true },
   { name: 'areas', heading: 'Demand and supply by area' },
   { name: 'empty-searches', heading: 'Searches that found nothing' },
+  { name: 'area-suggestions', heading: 'Area suggestions' },
   { name: 'retention', heading: 'People coming back', wide: true },
   { name: 'top-stylists', heading: 'Top stylists', money: true },
   { name: 'community', heading: 'Community health' },

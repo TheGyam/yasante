@@ -56,3 +56,19 @@ def test_bad_input_means_no_suggestions(api, make_user, monkeypatch):
 
 def test_signed_out_people_cannot_use_it(api):
     assert api().get("/api/places/suggest/", q="Osu", country="GH").status_code == 401
+
+
+def test_the_team_sees_searches_that_find_nothing_or_fail(api, make_user, photon, monkeypatch):
+    from tests.test_staff import staff_client
+
+    me = api(make_user())
+    me.get("/api/places/suggest/", q="Osu", country="GH")  # Found.
+    me.get("/api/places/suggest/", q="Nowhere", country="DE")  # Found nothing.
+    monkeypatch.setattr("urllib.request.urlopen", lambda *a, **k: (_ for _ in ()).throw(TimeoutError()))
+    me.get("/api/places/suggest/", q="Adum", country="GH")  # Couldn't reach it.
+    staff, _ = staff_client(make_user, superuser=True)
+    data = staff.get("/data/insights/area-suggestions/").json()
+    assert [sum(row["values"][i] for row in data["rows"]) for i in range(3)] == [3, 1, 1]
+    assert data["meta"]["note"] == "Most typed and not found: Nowhere (DE)."
+    # Area lookups aren't mixed into the searches for looks and stylists.
+    assert all(row["label"] != "Nowhere" for row in staff.get("/data/insights/empty-searches/").json()["rows"])

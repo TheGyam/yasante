@@ -20,6 +20,7 @@ from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from apps.common.countries import BY_CODE, is_country
+from apps.common.models import log_search
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,10 @@ def _centre(country):
 
 
 def suggest(text, country):
-    """Up to five areas matching what she's typed, in her country: [{"name", "context"}]."""
+    """
+    Up to five areas matching what she's typed, in her country: [{"name", "context"}].
+    None when Photon couldn't be reached, so the staff dashboard can count it.
+    """
     if len(text) < 2 or not is_country(country):
         return []
     key = "places3:" + hashlib.sha1(f"{country}:{text.lower()}".encode()).hexdigest()
@@ -68,7 +72,7 @@ def suggest(text, country):
         features = _photon(params)
     except (urllib.error.URLError, TimeoutError, ValueError, KeyError):
         logger.info("Photon had no suggestions", exc_info=True)
-        return []  # Not cached: the next letter tries again.
+        return None  # Not cached: the next letter tries again.
     found, seen = [], set()
     for feature in features:
         props = feature.get("properties") or {}
@@ -111,4 +115,8 @@ class PlaceSuggestionsView(APIView):
     def get(self, request):
         text = (request.query_params.get("q") or "").strip()[:80]
         country = (request.query_params.get("country") or "").upper()
-        return Response(suggest(text, country))
+        found = suggest(text, country)
+        if len(text) >= 2 and is_country(country):
+            # So the team can see if OpenStreetMap starts letting stylists down.
+            log_search(request, "areas", text, {"country": country, "failed": found is None}, len(found or []))
+        return Response(found or [])

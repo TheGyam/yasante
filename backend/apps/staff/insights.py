@@ -8,12 +8,12 @@ from .access import workspace_url
 UK = ZoneInfo("Europe/London")
 SOURCES = {
     "money": ["bookings.booking"], "funnel": ["bookings.booking"], "growth": ["accounts.user", "stylists.stylistprofile"],
-    "booking-times": ["bookings.booking"], "areas": ["profiles.hairprofile", "stylists.stylistprofile"], "empty-searches": ["common.searchlog"],
+    "booking-times": ["bookings.booking"], "areas": ["profiles.hairprofile", "stylists.stylistprofile"], "empty-searches": ["common.searchlog"], "area-suggestions": ["common.searchlog"],
     "retention": ["accounts.user", "profiles.analyticsevent"], "top-stylists": ["bookings.booking", "stylists.stylistprofile"],
     "community": ["looks.look", "looks.lookcomment", "looks.report"], "app-health": ["common.clienterror", "profiles.analyticsevent"],
 }
 TITLES = {"money": "Booking value", "funnel": "From request to appointment", "growth": "People joining Yasante", "booking-times": "When people book",
-          "areas": "Where to recruit", "empty-searches": "Searches that found nothing", "retention": "People coming back", "top-stylists": "Top stylists",
+          "areas": "Where to recruit", "empty-searches": "Searches that found nothing", "area-suggestions": "Area suggestions", "retention": "People coming back", "top-stylists": "Top stylists",
           "community": "Community health", "app-health": "App health"}
 
 
@@ -73,8 +73,18 @@ def calculate(name, sources, start, end, currency=None):
         labels, kind = ["People in area", "Active stylists"], "bar"
         meta["note"] = "Current hair-profile areas and published stylists; these are current totals, not historical snapshots."
     elif name == "empty-searches":
-        rows = [{"label": row["query"], "values": [row["value"]], "url": "/records/common/searchlog?" + __import__('urllib.parse', fromlist=['urlencode']).urlencode({"q": row["query"], "result_count__exact": 0})} for row in qs.filter(result_count=0).exclude(query="").values("query").annotate(value=Count("pk")).order_by("-value")[:12]]
+        rows = [{"label": row["query"], "values": [row["value"]], "url": "/records/common/searchlog?" + __import__('urllib.parse', fromlist=['urlencode']).urlencode({"q": row["query"], "result_count__exact": 0})} for row in qs.filter(result_count=0).exclude(query="").exclude(surface="areas").values("query").annotate(value=Count("pk")).order_by("-value")[:12]]
         kind = "bar"
+    elif name == "area-suggestions":
+        # What stylists outside the UK typed in the area field: did OpenStreetMap find it?
+        areas = qs.filter(surface="areas")
+        per_day = areas.annotate(day=TruncDate("created_at", tzinfo=UK)).values("day").annotate(
+            searches=Count("pk"), empty=Count("pk", filter=Q(result_count=0, filters__failed__isnull=True)), failed=Count("pk", filter=Q(filters__failed=True)))
+        rows = [{"label": str(row["day"]), "values": [row["searches"], row["empty"], row["failed"]], "url": f"/records/common/searchlog?surface__exact=areas&created_at__date={row['day']}"} for row in per_day.order_by("day")]
+        labels, kind = ["Searches", "Found nothing", "Couldn't reach OpenStreetMap"], "line"
+        missing = areas.filter(result_count=0, filters__failed__isnull=True).values("query", "filters__country").annotate(value=Count("pk")).order_by("-value")[:5]
+        if missing:
+            meta["note"] = "Most typed and not found: " + ", ".join(f"{row['query']} ({row['filters__country']})" for row in missing) + "."
     elif name == "retention":
         cohorts = {row["week"].date(): row["value"] for row in source.annotate(week=TruncWeek("created_at", tzinfo=UK)).filter(created_at__gte=start, created_at__lt=end).values("week").annotate(value=Count("pk"))}
         active = sources["profiles.analyticsevent"].filter(user__created_at__gte=start, user__created_at__lt=end, at__gte=start, at__lt=end).annotate(cohort=TruncWeek("user__created_at", tzinfo=UK), week=TruncWeek("at", tzinfo=UK)).values("cohort", "week").annotate(value=Count("user", distinct=True))
