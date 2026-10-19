@@ -74,6 +74,14 @@ export function takeaway(insight: Insight): string {
       const hours = meta.medianResolutionHours;
       return `${formatNumber(looks)} ${looks === 1 ? 'look' : 'looks'} posted${typeof hours === 'number' ? `; reports resolved in ${hours < 1 ? 'under an hour' : `${Math.round(hours)} h`} on average` : ''}`;
     }
+    case 'area-suggestions': {
+      const searches = sum(rows, 0);
+      if (!searches) return 'No area searches in this period';
+      const missed = sum(rows, 1) + sum(rows, 2);
+      return missed
+        ? `${Math.round((100 * missed) / searches)}% of area searches found nothing or failed`
+        : `Every one of ${formatNumber(searches)} area searches found somewhere`;
+    }
     case 'app-health': {
       const total = rows.reduce((all, row) => all + row.values.reduce((a, b) => a + b, 0), 0);
       return total

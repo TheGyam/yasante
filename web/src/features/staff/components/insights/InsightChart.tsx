@@ -37,7 +37,9 @@ export function InsightChart({ insight }: { insight: Insight }) {
   const { labels } = insight;
   const days =
     Math.round((new Date(insight.to).getTime() - new Date(insight.from).getTime()) / DAY) + 1;
-  const timeSeries = ['growth', 'community', 'app-health'].includes(insight.name);
+  const timeSeries = ['growth', 'community', 'app-health', 'area-suggestions'].includes(
+    insight.name
+  );
   const rows = timeSeries ? daily(insight.rows, insight.from, days, labels.length) : insight.rows;
   const previousStart = new Date(new Date(insight.from).getTime() - days * DAY)
     .toISOString()
@@ -250,6 +252,21 @@ export function InsightChart({ insight }: { insight: Insight }) {
           label="Looks posted, and reports opened and resolved, per day"
           onSelect={open}
         />
+      );
+    case 'area-suggestions':
+      return (
+        <>
+          <TimeChart
+            labels={rows.map(row => row.label)}
+            series={labels.map((name, index) => ({
+              name,
+              values: rows.map(row => row.values[index]),
+            }))}
+            label="Area searches per day, and how many found nothing or failed"
+            onSelect={open}
+          />
+          {typeof insight.meta.note === 'string' && <p className={ui.muted}>{insight.meta.note}</p>}
+        </>
       );
     case 'app-health':
       return (
