@@ -2165,7 +2165,7 @@ export interface components {
             lookId?: string;
             /** @description The stylist comes to the client */
             atClient?: boolean;
-            /** @description Street and postcode, when at_client */
+            /** @description When at_client: street and postcode in the UK, else street then area ("12 Lagos Avenue, East Legon") */
             clientAddress?: string;
         };
         /** @description Her policies as they were when the request was made. */

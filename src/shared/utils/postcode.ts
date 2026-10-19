@@ -16,6 +16,14 @@ export function splitAddress(address = '') {
     : { street: address, postcode: '' };
 }
 
+/** Outside the UK: "12 Lagos Avenue, East Legon" → the street, and the area after the last comma. */
+export function splitArea(address = '') {
+  const at = address.lastIndexOf(',');
+  return at < 0
+    ? { street: address, postcode: '' }
+    : { street: address.slice(0, at).trim(), postcode: address.slice(at + 1).trim() };
+}
+
 /** "12 Bellenden Road, SE15 4QJ", or just the street while the postcode isn't whole. */
 export function joinAddress(street: string, postcode: string) {
   return [street.trim(), POSTCODE.test(postcode.trim()) ? tidyPostcode(postcode) : '']

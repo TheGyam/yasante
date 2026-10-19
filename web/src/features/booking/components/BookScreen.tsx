@@ -15,7 +15,7 @@ import {
 } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
 import { DEFAULT_CURRENCY, formatDistance, formatMoney, SEP } from '@/shared/lib/format';
-import { POSTCODE, joinAddress, splitAddress } from '@/shared/lib/postcode';
+import { POSTCODE, joinAddress, splitAddress, splitArea } from '@/shared/lib/postcode';
 import { readJson, writeJson } from '@/shared/lib/storage';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
@@ -87,7 +87,10 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
 
   // The address from her last home visit, so it's typed once.
   const { data: past = [] } = useMyBookings(!!session?.user.emailVerified);
-  const lastHome = splitAddress(past.find(b => b.atClient && b.address)?.address);
+  // A UK postcode, or outside the UK the area clients name ("East Legon").
+  const inUk = (page.data?.profile.country ?? 'GB') === 'GB';
+  const lastAddress = past.find(b => b.atClient && b.address)?.address;
+  const lastHome = inUk ? splitAddress(lastAddress) : splitArea(lastAddress);
   const street = draft.street ?? lastHome.street;
   const postcode = draft.postcode ?? lastHome.postcode;
 
@@ -168,7 +171,8 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
   const hosts = offers.some(m => m !== 'mobile');
   // A stylist who only travels always comes to the client.
   const comesToMe = travels && (draft.atClient || !hosts);
-  const addressReady = !!street.trim() && POSTCODE.test(postcode.trim());
+  const addressReady =
+    !!street.trim() && (inUk ? POSTCODE.test(postcode.trim()) : !!postcode.trim());
 
   // The button stays off until everything's there; say what's left, so it never looks broken.
   const missing = !service
@@ -178,7 +182,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
       : !time
         ? 'Pick a time to send your request.'
         : comesToMe && !addressReady
-          ? 'Add your street and postcode so they can get to you.'
+          ? `Add your street and ${inUk ? 'postcode' : 'area'} so they can get to you.`
           : !accepted
             ? 'Tick their terms above to send.'
             : undefined;
@@ -205,7 +209,11 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
         policyVersion: POLICY_VERSION,
         lookId: fromLook?.id,
         atClient: comesToMe,
-        clientAddress: comesToMe ? joinAddress(street, postcode) : undefined,
+        clientAddress: comesToMe
+          ? inUk
+            ? joinAddress(street, postcode)
+            : `${street.trim()}, ${postcode.trim()}`
+          : undefined,
       },
       {
         onSuccess: booking =>
@@ -412,19 +420,19 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
               <>
                 <Input
                   label="Your house number and street"
-                  placeholder="4 Choumert Grove"
+                  placeholder={inUk ? '4 Choumert Grove' : '12 Lagos Avenue'}
                   autoComplete="street-address"
                   value={street}
                   onChange={event => set({ street: event.target.value })}
                 />
                 <Input
-                  label="Your postcode"
-                  placeholder="SE15 4RB"
-                  autoComplete="postal-code"
-                  maxLength={8}
+                  label={inUk ? 'Your postcode' : 'Your area'}
+                  placeholder={inUk ? 'SE15 4RB' : 'East Legon'}
+                  autoComplete={inUk ? 'postal-code' : 'address-level3'}
+                  maxLength={inUk ? 8 : 100}
                   value={postcode}
                   onChange={event => set({ postcode: event.target.value })}
-                  hint={`They see your postcode area first${profile.travelRadiusMiles ? ` (they travel up to ${formatDistance(profile.travelRadiusMiles)} from ${profile.baseArea})` : ''}, and your street once they confirm.`}
+                  hint={`They see your ${inUk ? 'postcode area' : 'area'} first${profile.travelRadiusMiles ? ` (they travel up to ${formatDistance(profile.travelRadiusMiles)} from ${profile.baseArea})` : ''}, and your street once they confirm.`}
                 />
               </>
             )}

@@ -3431,7 +3431,8 @@ components:
         clientAddress:
           type: string
           minLength: 1
-          description: Street and postcode, when at_client
+          description: 'When at_client: street and postcode in the UK, else street
+            then area ("12 Lagos Avenue, East Legon")'
       required:
       - bringingOwnHair
       - policyVersion

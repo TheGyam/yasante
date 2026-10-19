@@ -136,7 +136,7 @@ export interface BookingDraft {
   policyVersion: string;
   /** The look she's booking from, so the stylist sees the picture. */
   lookId?: string;
-  /** The stylist comes to the client, at this street and postcode. */
+  /** The stylist comes to the client: street and postcode in the UK, else street then area. */
   atClient?: boolean;
   clientAddress?: string;
 }

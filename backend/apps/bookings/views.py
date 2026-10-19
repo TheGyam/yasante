@@ -253,9 +253,17 @@ class BookingListCreateView(APIView):
         if at_client:
             if "mobile" not in models_offered:
                 return _err("This stylist doesn’t travel to clients. Book at their place instead", 400)
-            outcode = _outcode(client_address)
-            if not outcode:
-                return _err("Add your street and postcode so the stylist can get to you", 400)
+            if profile.country == "GB":
+                outcode = _outcode(client_address)
+                if not outcode:
+                    return _err("Add your street and postcode so the stylist can get to you", 400)
+            else:
+                # No postcodes to lean on: "12 Lagos Avenue, East Legon". The part after
+                # the last comma is the area she sees first; the street waits, as in the UK.
+                street, _, outcode = (part.strip() for part in client_address.rpartition(","))
+                outcode = outcode[:100]
+                if not street or not outcode:
+                    return _err("Add your street and your area so the stylist can get to you", 400)
 
         with diary_lock(profile.pk, user.pk):
             # Inside the lock: the time may have gone since she saw it.
@@ -294,8 +302,8 @@ class BookingListCreateView(APIView):
                 notes=str(data.get("notes") or "").strip()[:1000],
                 requested_times=[start],
                 expires_at=answer_by(start, settings.BOOKING_REQUEST_LAPSE_HOURS),
-                # The client's postcode district when the stylist travels, so they can
-                # judge the journey before saying yes; the street waits for confirming.
+                # The client's postcode district (or area, outside the UK) when the stylist
+                # travels, so they can judge the journey; the street waits for confirming.
                 area=outcode if at_client else profile.base_area,
                 # Held, not sent until it's confirmed.
                 address=client_address if at_client else profile.address,
