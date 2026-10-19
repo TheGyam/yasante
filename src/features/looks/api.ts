@@ -88,6 +88,15 @@ export const looksApi = {
   /** GET /api/looks/mine/ — her own, private ones included. */
   mine: async () => (await apiClient.get<Look[]>('/api/looks/mine/')).data,
 
+  /** PATCH /api/looks/:id/ — her own look's styles and hair type, and nothing else. */
+  updateTags: async (id: string, tags: { styles?: string[]; hairTexture?: string | null }) =>
+    (
+      await apiClient.patch<Look>(`/api/looks/${id}/`, {
+        ...(tags.styles && { styles: tags.styles }),
+        ...(tags.hairTexture !== undefined && { hairTexture: tags.hairTexture ?? '' }),
+      })
+    ).data,
+
   /** GET /api/looks/:id/ */
   get: async (id: string) => (await apiClient.get<Look>(`/api/looks/${id}/`)).data,
 

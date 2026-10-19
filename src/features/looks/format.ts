@@ -25,8 +25,8 @@ export function postedLabel(iso: string, now = new Date()) {
 }
 
 /** A look can be booked when its stylist has a live page and it's tagged with one of her services. */
-export const bookable = (look: Pick<Look, 'stylist' | 'serviceId'>) =>
-  !!look.stylist?.handle && !!look.serviceId;
+export const bookable = (look: Pick<Look, 'stylist' | 'serviceId' | 'stylistFeatured'>) =>
+  !!look.stylist?.handle && !!look.serviceId && !look.stylistFeatured;
 
 /** Where a look lives on the web, for sharing. */
 export const lookUrl = (look: Pick<Look, 'id'>) => `https://yasante.com/looks/${look.id}`;

@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import { format, isToday } from 'date-fns';
 import { CalendarClock, CalendarX2, ClipboardCheck, Store, UserCheck } from 'lucide-react-native';
 import { salonTime, useBookings, whenLabel, type Booking } from '@/features/booking';
+import { FinishCard } from '@/features/claim';
 import {
   PageLinkCard,
   isNotFound,
@@ -103,6 +104,7 @@ export default function TodayScreen() {
       testID="stylist-today"
     >
       <View style={styles.body}>
+        <FinishCard />
         {isLoading ? (
           <Skeleton height={180} />
         ) : isNotFound(error) ? (

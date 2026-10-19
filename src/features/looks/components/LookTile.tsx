@@ -92,9 +92,12 @@ export const LookTile = memo(function LookTile({
     64,
     look.styles.length ? onFindStylists : undefined
   );
-  const price = look.price
-    ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
-    : undefined;
+  // A featured stylist isn't taking bookings yet: "Featured" stands where a price would.
+  const price = look.stylistFeatured
+    ? 'Featured'
+    : look.price
+      ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
+      : undefined;
 
   return (
     <View style={[styles.tile, dimmed && styles.dimmed]}>
