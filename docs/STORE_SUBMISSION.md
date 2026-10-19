@@ -47,7 +47,8 @@ reporting and blocking, community guidelines, Sign in with Apple beside Google.
 > Looks, comments and stylist pages each have a ⋯ menu to report them or block the person. Reviews can be reported too. Reports are reviewed by a person within 24 hours. Account deletion: Profile → Settings → Privacy and data → Delete account.
 
 **App Privacy** (the nutrition label). Data linked to the user, none used for tracking:
-- Contact info: name, email address. Used for app functionality.
+- Contact info: name, email address, physical address (a stylist's street, given only to clients whose booking she has confirmed). Used for app functionality.
+- Location: coarse location. A stylist's country, which sets her currency and is shown on her page, and her area name, which we turn into a rough point to measure distances. She types both; we never read the phone's location. Used for app functionality.
 - User content: photos, customer support messages, other user content (posts, comments, reviews, hair profile). Used for app functionality.
 - Identifiers: user ID. Used for app functionality.
 - Usage data: product interaction (only if they agree to analytics). Used for analytics.
@@ -68,8 +69,9 @@ reporting and blocking, community guidelines, Sign in with Apple beside Google.
 - Content rating: user-generated content with moderation, no violence or gambling.
 - Target audience: 18+ (the terms say 18 or over).
 - Data safety:
-  - Collected: name, email, user ID, photos, other user-generated content, app interactions (optional).
-  - Shared with third parties: no. Service providers acting for you don't count as sharing.
+  - Collected: name, email, user ID, address (stylists who see clients at home or in a salon), approximate location (a stylist's country and area, typed by her and shown on her page), photos, other user-generated content, app interactions (optional).
+  - Location and address: collected, not shared, required for stylists only, used for app functionality. Not collected in the background and not read from the phone.
+  - Shared with third parties: no. Service providers acting for you don't count as sharing. That includes Mapbox, which sees the letters a stylist types in the area field to suggest names, and keeps nothing.
   - Encrypted in transit: yes.
   - Users can request deletion: yes, in the app and at https://yasante.com/delete-account.
 - Account deletion URL: https://yasante.com/delete-account
