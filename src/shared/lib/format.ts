@@ -5,7 +5,9 @@ export const DEFAULT_CURRENCY = 'GBP';
 
 // One formatter per currency and shape, made once: formatting runs for every price shown.
 const formatters = new Map<string, Intl.NumberFormat>();
-function formatter(currency: string, whole: boolean) {
+function formatter(given: string, whole: boolean) {
+  // A server from before currencies sends none: those prices were all pounds.
+  const currency = given || DEFAULT_CURRENCY;
   const key = `${currency}:${whole}`;
   let found = formatters.get(key);
   if (!found) {
