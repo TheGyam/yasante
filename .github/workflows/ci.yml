@@ -1,7 +1,10 @@
 name: CI
 
 on:
+  # Pushes to master only (a pull request is checked by its own run below, so a
+  # branch isn't checked twice).
   push:
+    branches: [master]
   pull_request:
   # The deploy workflow runs this first and only ships what passes.
   workflow_call:
