@@ -291,6 +291,7 @@ class MyLooksView(APIView):
 class LookTagsRequestSerializer(serializers.Serializer):
     styles = serializers.ListField(child=serializers.CharField(), required=False)
     hair_texture = serializers.CharField(required=False, allow_blank=True)
+    visibility = serializers.ChoiceField(choices=["public", "private"], required=False)
 
 
 class LookDetailView(APIView):
@@ -314,8 +315,21 @@ class LookDetailView(APIView):
             return _not_found()
         if look.author_id != request.user.pk:
             return Response({"message": "That look isn’t yours"}, status=403)
-        if set(request.data) - {"styles", "hair_texture"}:
-            return Response({"message": "Only the style and hair type can be changed"}, status=400)
+        if set(request.data) - {"styles", "hair_texture", "visibility"}:
+            return Response({"message": "Only the style, hair type and who sees it can be changed"}, status=400)
+        if "visibility" in request.data:
+            wanted = request.data["visibility"]
+            if wanted not in ("public", "private"):
+                return Response({"message": "Pick public or just me"}, status=400)
+            if wanted != look.visibility:
+                # It keeps its date, so going public never jumps it up the feed; likes and
+                # comments stay with it, hidden while it's private.
+                look.visibility = wanted
+                look.save(update_fields=["visibility", "updated_at"])
+                if wanted == "public" and look.status == "live":
+                    from apps.web.indexnow import announce
+
+                    announce(f"/looks/{look.pk}", *([f"/{look.stylist_handle}"] if look.stylist_handle else []))
         if "styles" in request.data:
             wanted = request.data["styles"] if isinstance(request.data["styles"], list) else []
             if len(wanted) > 3:

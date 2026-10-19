@@ -45,6 +45,9 @@ export const remove = style({
   ':hover': { opacity: 1 },
 });
 
+/** Top left, opposite the bin: who sees the look. */
+export const lock = style([remove, { right: 'auto', left: space.xs }]);
+
 export const editButton = style({
   position: 'absolute',
   bottom: space.xs,
