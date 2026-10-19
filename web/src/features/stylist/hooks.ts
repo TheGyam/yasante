@@ -8,6 +8,7 @@ import {
   closeDay,
   createProfile,
   getCountries,
+  suggestPlaces,
   getMenu,
   getMyProfile,
   getNumbers,
@@ -256,6 +257,26 @@ export function useMyCurrency(accountId: string) {
 }
 
 /** Every country (rarely changes: kept a day, and shared by every picker). */
+/** "Osu, Accra" from Osu in "Accra, Greater Accra, Ghana"; a city on its own stays as it is. */
+export const areaName = (place: { name: string; context: string }) => {
+  const city = place.context.split(',')[0]?.trim();
+  return city && city !== place.name ? `${place.name}, ${city}` : place.name;
+};
+
+/** Area names to offer while she types hers, in her country. */
+export function usePlaceSuggestions(text: string, country: string) {
+  const typed = useDebouncedValue(text.trim(), 300);
+  const query = useQuery({
+    queryKey: ['places', country, typed],
+    queryFn: () => suggestPlaces(typed, country),
+    enabled: typed.length >= 2,
+    staleTime: 60_000,
+    retry: false,
+  });
+  // Once she's picked one, it's no longer a suggestion.
+  return (query.data ?? []).map(areaName).filter(name => name !== text);
+}
+
 export function useCountries() {
   return useQuery({
     queryKey: ['countries'],

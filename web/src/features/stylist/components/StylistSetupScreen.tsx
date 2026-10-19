@@ -14,7 +14,13 @@ import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { toHandle } from '../handle';
-import { useCountries, useGoLive, useHandleAvailability, useMyProfile } from '../hooks';
+import {
+  useCountries,
+  useGoLive,
+  usePlaceSuggestions,
+  useHandleAvailability,
+  useMyProfile,
+} from '../hooks';
 import { draftFromProfile, useSetupDraft, type SetupDraft } from '../setupDraft';
 import type { StylistProfile } from '../types';
 import {
@@ -110,6 +116,7 @@ function Setup({
   const isLast = index === STEPS.length - 1;
   const set = (changes: Partial<SetupDraft>) => update(changes);
   const { data: countries = [] } = useCountries();
+  const places = usePlaceSuggestions(draft.baseArea, draft.country ?? 'GB');
   const country = countries.find(c => c.code === (draft.country ?? 'GB'));
   // Her distances in her country's units: miles in the UK and the US, km elsewhere.
   const inMiles = (country?.units ?? 'mi') === 'mi';
@@ -233,9 +240,20 @@ function Setup({
                   value={draft.baseArea}
                   placeholder="Peckham"
                   hint="District only — never your address"
-                  autoComplete="address-level2"
+                  autoComplete="off"
+                  list="area-suggestions"
                   onChange={event => set({ baseArea: event.target.value })}
                 />
+                <datalist id="area-suggestions">
+                  {places.map(place => (
+                    <option key={place} value={place} />
+                  ))}
+                </datalist>
+                {places.length > 0 && (
+                  <Text variant="caption" tone="tertiary">
+                    Suggestions by Mapbox
+                  </Text>
+                )}
                 {draft.serviceModels.includes('mobile') && (
                   <Input
                     label="How far you travel"

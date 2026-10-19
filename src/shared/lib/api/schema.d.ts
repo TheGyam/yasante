@@ -1228,6 +1228,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/places/suggest/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Areas for the area field outside the UK. Signed in only, so the free quota is ours. */
+        get: operations["places_suggest_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/policies/": {
         parameters: {
             query?: never;
@@ -3135,6 +3152,12 @@ export interface components {
          * @enum {string}
          */
         PeriodEnum: "month" | "all";
+        Place: {
+            /** @description What to save if she picks it */
+            name: string;
+            /** @description Where it is, to tell same-named places apart */
+            context: string;
+        };
         Policies: {
             noticeHours: number;
             depositType: components["schemas"]["DepositTypeEnum"];
@@ -5759,6 +5782,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationPreferences"];
+                };
+            };
+        };
+    };
+    places_suggest_list: {
+        parameters: {
+            query?: {
+                /** @description ISO 3166, her country */
+                country?: string;
+                /** @description What she's typed so far */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Place"][];
                 };
             };
         };

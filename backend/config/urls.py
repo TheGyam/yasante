@@ -12,6 +12,7 @@ from apps.profiles import views as profile_views
 from apps.common.client_errors import ClientErrorView
 from apps.content import compat as content
 from apps.common.countries import CountryListView
+from apps.common.places import PlaceSuggestionsView
 from apps.looks.views import StylistReportView
 from apps.web.api import WaitlistView
 from apps.profiles.views import ConsentBatchView, EventBatchView
@@ -56,6 +57,7 @@ urlpatterns = API_DOCS + [
     path("api/stylists/<uuid:pk>/report/", StylistReportView.as_view(), name="stylist-report"),
     path("api/stylists/", include("apps.stylists.urls")),
     path("api/countries/", CountryListView.as_view(), name="country-list"),
+    path("api/places/suggest/", PlaceSuggestionsView.as_view(), name="place-suggestions"),
     path("api/bookings/", include("apps.bookings.urls")),
     path("api/slot-interests/", include("apps.bookings.waitlist_urls")),
     path("api/reviews/", include("apps.bookings.review_urls")),

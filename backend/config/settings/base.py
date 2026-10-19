@@ -143,6 +143,9 @@ DATABASES = {"default": _parse_db_url(_db_url)}
 # ──────────────────────────────────────────────
 # Cache — Redis
 # ──────────────────────────────────────────────
+# Area suggestions outside the UK. Without it the area field is plain typing.
+MAPBOX_TOKEN = config("MAPBOX_TOKEN", default="")
+
 REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")
 
 CACHES = {
@@ -217,6 +220,7 @@ REST_FRAMEWORK = {
         "waitlist": "10/hour",
         "claim": "10/min",
         "client_error": "30/hour",
+        "places": "60/min",
         "default": "100/min",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.custom_exception_handler",

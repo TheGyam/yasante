@@ -6,6 +6,8 @@ import { makeStyles, space, useTheme } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
 import { Input } from '@/shared/ui/Input';
 import { Text } from '@/shared/ui/Text';
+import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
+import { stylistApi } from '../api';
 import {
   areasFor,
   joinAddress,
@@ -44,6 +46,7 @@ export function LocationField({
   if (country !== 'GB')
     return (
       <WorldLocation
+        country={country}
         baseArea={baseArea}
         address={address}
         needsStreet={needsStreet}
@@ -67,9 +70,34 @@ interface LocationProps {
   onChange: (changes: { baseArea?: string; address?: string }) => void;
 }
 
-/** Outside the UK: her area and, when clients come to her, her address, as she writes them. */
-function WorldLocation({ baseArea, address, needsStreet, onChange }: LocationProps) {
+/** "Osu" in "Accra, Greater Accra, Ghana" reads "Osu, Accra"; a city on its own stays as it is. */
+const areaName = (place: { name: string; context: string }) => {
+  const city = place.context.split(',')[0]?.trim();
+  return city && city !== place.name ? `${place.name}, ${city}` : place.name;
+};
+
+/**
+ * Outside the UK: she types her area and Mapbox suggests names to tap, or she keeps what
+ * she typed. Only the words are saved. Her address, when clients come to her, she writes.
+ */
+function WorldLocation({
+  country,
+  baseArea,
+  address,
+  needsStreet,
+  onChange,
+}: LocationProps & { country: string }) {
   const styles = useStyles();
+  const typed = useDebouncedValue(baseArea.trim(), 300);
+  const [picked, setPicked] = useState(baseArea);
+  const suggestions = useQuery({
+    queryKey: ['places', country, typed],
+    queryFn: () => stylistApi.places(typed, country),
+    enabled: typed.length >= 2 && typed !== picked,
+    staleTime: 60_000,
+    retry: false,
+  });
+  const places = typed === picked ? [] : (suggestions.data ?? []);
   return (
     <View style={styles.group}>
       <Input
@@ -80,8 +108,28 @@ function WorldLocation({ baseArea, address, needsStreet, onChange }: LocationPro
         placeholder="East Legon, Accra"
         autoCapitalize="words"
         hint="A neighbourhood and city clients know. Never your address."
+        autoCorrect={false}
         testID="setup-area"
       />
+      {places.length > 0 && (
+        <View style={styles.group}>
+          <View style={styles.chips}>
+            {places.map(place => (
+              <Chip
+                key={`${place.name}|${place.context}`}
+                label={areaName(place)}
+                onPress={() => {
+                  setPicked(areaName(place));
+                  onChange({ baseArea: areaName(place) });
+                }}
+              />
+            ))}
+          </View>
+          <Text variant="caption" tone="tertiary" style={styles.label}>
+            Suggestions by Mapbox
+          </Text>
+        </View>
+      )}
       {needsStreet && (
         <Input
           label="Your address"

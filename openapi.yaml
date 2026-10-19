@@ -1920,6 +1920,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotificationPreferences'
           description: ''
+  /api/places/suggest/:
+    get:
+      operationId: places_suggest_list
+      description: Areas for the area field outside the UK. Signed in only, so the
+        free quota is ours.
+      parameters:
+      - in: query
+        name: country
+        schema:
+          type: string
+        description: ISO 3166, her country
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: What she's typed so far
+      tags:
+      - places
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Place'
+          description: ''
   /api/policies/:
     get:
       operationId: policies_list
@@ -5564,6 +5593,18 @@ components:
       description: |-
         * `month` - month
         * `all` - all
+    Place:
+      type: object
+      properties:
+        name:
+          type: string
+          description: What to save if she picks it
+        context:
+          type: string
+          description: Where it is, to tell same-named places apart
+      required:
+      - context
+      - name
     Policies:
       type: object
       properties:

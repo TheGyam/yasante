@@ -50,6 +50,14 @@ export const stylistApi = {
   /** GET /api/countries/ — every country, its currency and its distance units. */
   countries: async () => (await apiClient.get<Country[]>('/api/countries/')).data,
 
+  /** GET /api/places/suggest/ — areas matching what she's typed, outside the UK. Never kept. */
+  places: async (q: string, country: string) =>
+    (
+      await apiClient.get<{ name: string; context: string }[]>('/api/places/suggest/', {
+        params: { q, country },
+      })
+    ).data,
+
   /** GET /api/stylists/me/ — 404 when the account has no stylist profile yet. */
   getMine: async () => (await apiClient.get<StylistProfile>('/api/stylists/me/')).data,
 
