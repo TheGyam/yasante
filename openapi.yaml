@@ -1923,8 +1923,8 @@ paths:
   /api/places/suggest/:
     get:
       operationId: places_suggest_list
-      description: Areas for the area field outside the UK. Signed in only, so the
-        free quota is ours.
+      description: Areas for the area field outside the UK. Signed in only, to be
+        fair to the free service.
       parameters:
       - in: query
         name: country

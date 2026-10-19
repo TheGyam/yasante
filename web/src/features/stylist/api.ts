@@ -30,7 +30,7 @@ export const getMyProfile = () => api.get<StylistProfile>('/stylists/me/');
 /** Every country, its currency and its distance units. */
 export const getCountries = () => api.get<Country[]>('/countries/');
 
-/** Areas matching what she's typed, from Mapbox. Never kept: only the name she picks is saved. */
+/** Areas matching what she's typed, from OpenStreetMap. Only the name she picks is saved. */
 export const suggestPlaces = (q: string, country: string) =>
   api.get<{ name: string; context: string }[]>(
     `/places/suggest/?${new URLSearchParams({ q, country })}`

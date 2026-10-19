@@ -251,7 +251,7 @@ function Setup({
                 </datalist>
                 {places.length > 0 && (
                   <Text variant="caption" tone="tertiary">
-                    Suggestions by Mapbox
+                    Suggestions © OpenStreetMap contributors
                   </Text>
                 )}
                 {draft.serviceModels.includes('mobile') && (

@@ -71,7 +71,7 @@ reporting and blocking, community guidelines, Sign in with Apple beside Google.
 - Data safety:
   - Collected: name, email, user ID, address (stylists who see clients at home or in a salon), approximate location (a stylist's country and area, typed by her and shown on her page), photos, other user-generated content, app interactions (optional).
   - Location and address: collected, not shared, required for stylists only, used for app functionality. Not collected in the background and not read from the phone.
-  - Shared with third parties: no. Service providers acting for you don't count as sharing. That includes Mapbox, which sees the letters a stylist types in the area field to suggest names, and keeps nothing.
+  - Shared with third parties: no. Service providers acting for you don't count as sharing. That includes Photon (komoot's OpenStreetMap search), which sees the letters a stylist types in the area field to suggest names. Nothing that identifies her is sent with them.
   - Encrypted in transit: yes.
   - Users can request deletion: yes, in the app and at https://yasante.com/delete-account.
 - Account deletion URL: https://yasante.com/delete-account
