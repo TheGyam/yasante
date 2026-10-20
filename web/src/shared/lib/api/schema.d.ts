@@ -2752,8 +2752,8 @@ export interface components {
         HairProfileResponse: {
             domain: components["schemas"]["DomainEnum"];
             texture?: components["schemas"]["TextureEnum"] | components["schemas"]["BlankEnum"];
-            length?: components["schemas"]["LengthEnum"] | components["schemas"]["BlankEnum"];
-            shrunkLength?: components["schemas"]["ShrunkLengthEnum"] | components["schemas"]["BlankEnum"];
+            length?: components["schemas"]["NextLengthEnum"] | components["schemas"]["BlankEnum"];
+            shrunkLength?: components["schemas"]["NextLengthEnum"] | components["schemas"]["BlankEnum"];
             density?: components["schemas"]["DensityEnum"] | components["schemas"]["BlankEnum"];
             porosity?: components["schemas"]["PorosityEnum"] | components["schemas"]["BlankEnum"];
             goals: components["schemas"]["GoalsEnum"][];
@@ -2769,6 +2769,11 @@ export interface components {
             lengthCm?: number;
             /** Format: date-time */
             completedAt?: string;
+            nextStyles: string[];
+            nextLength?: components["schemas"]["NextLengthEnum"] | components["schemas"]["BlankEnum"];
+            nextColour?: components["schemas"]["NextColourEnum"] | components["schemas"]["BlankEnum"];
+            nextUpkeep?: components["schemas"]["NextUpkeepEnum"] | components["schemas"]["BlankEnum"];
+            nextSit?: components["schemas"]["NextSitEnum"] | components["schemas"]["BlankEnum"];
             /** Format: date-time */
             readonly updatedAt: string;
         };
@@ -2841,21 +2846,6 @@ export interface components {
          * @enum {string}
          */
         Kind823Enum: "trim" | "wash" | "take_down";
-        /**
-         * @description * `cropped` - TWA / cropped
-         *     * `ear` - Ear
-         *     * `chin` - Chin
-         *     * `neck` - Neck
-         *     * `shoulder` - Shoulder
-         *     * `armpit` - Armpit
-         *     * `bra-strap` - Bra strap
-         *     * `mid-back` - Mid-back
-         *     * `waist` - Waist
-         *     * `hip` - Hip
-         *     * `tailbone` - Tailbone
-         * @enum {string}
-         */
-        LengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
         LengthInsight: {
             now: string;
             /** Format: double */
@@ -3048,6 +3038,46 @@ export interface components {
          * @enum {string}
          */
         MyReportStatusEnum: "open" | "actioned" | "dismissed";
+        /**
+         * @description * `natural` - My natural colour
+         *     * `black` - Black
+         *     * `brown` - Brown
+         *     * `blonde` - Blonde
+         *     * `red` - Red
+         *     * `bold` - A bold colour
+         * @enum {string}
+         */
+        NextColourEnum: "natural" | "black" | "brown" | "blonde" | "red" | "bold";
+        /**
+         * @description * `cropped` - TWA / cropped
+         *     * `ear` - Ear
+         *     * `chin` - Chin
+         *     * `neck` - Neck
+         *     * `shoulder` - Shoulder
+         *     * `armpit` - Armpit
+         *     * `bra-strap` - Bra strap
+         *     * `mid-back` - Mid-back
+         *     * `waist` - Waist
+         *     * `hip` - Hip
+         *     * `tailbone` - Tailbone
+         * @enum {string}
+         */
+        NextLengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
+        /**
+         * @description * `up_to_2` - Up to 2 hours
+         *     * `2_to_4` - 2 to 4 hours
+         *     * `4_to_6` - 4 to 6 hours
+         *     * `6_plus` - 6 hours or more
+         * @enum {string}
+         */
+        NextSitEnum: "up_to_2" | "2_to_4" | "4_to_6" | "6_plus";
+        /**
+         * @description * `low` - Low
+         *     * `medium` - Medium
+         *     * `high` - High
+         * @enum {string}
+         */
+        NextUpkeepEnum: "low" | "medium" | "high";
         NotificationCategory: {
             id: string;
             label: string;
@@ -3117,6 +3147,11 @@ export interface components {
             lengthCm?: number | null;
             /** Format: date-time */
             completedAt?: string | null;
+            nextStyles?: string[];
+            nextLength?: string;
+            nextColour?: string;
+            nextUpkeep?: string;
+            nextSit?: string;
         };
         PatchedLookTagsRequestRequest: {
             styles?: string[];
@@ -3468,21 +3503,6 @@ export interface components {
          * @enum {string}
          */
         ShelfStatusEnum: "using" | "finished" | "repurchased";
-        /**
-         * @description * `cropped` - TWA / cropped
-         *     * `ear` - Ear
-         *     * `chin` - Chin
-         *     * `neck` - Neck
-         *     * `shoulder` - Shoulder
-         *     * `armpit` - Armpit
-         *     * `bra-strap` - Bra strap
-         *     * `mid-back` - Mid-back
-         *     * `waist` - Waist
-         *     * `hip` - Hip
-         *     * `tailbone` - Tailbone
-         * @enum {string}
-         */
-        ShrunkLengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
         /**
          * @description POST /api/auth/signup/
          *

@@ -119,7 +119,11 @@ class UserDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-NOT_SNAPSHOTTED = {"id", "user", "updated_at", "completed_at", "postcode", "latitude", "longitude"}
+# Where they live isn't history worth keeping, and nor is what they'd like next.
+NOT_SNAPSHOTTED = {
+    "id", "user", "updated_at", "completed_at", "postcode", "latitude", "longitude",
+    "next_styles", "next_length", "next_colour", "next_upkeep", "next_sit",
+}
 
 
 @extend_schema_view(patch=extend_schema(request=HairProfileRequestSerializer, responses=HairProfileResponseSerializer))

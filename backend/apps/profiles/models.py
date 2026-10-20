@@ -68,6 +68,23 @@ BUDGET_CHOICES = [
     ("150_plus", "£150+"),
 ]
 
+# Her next style: what she'd like, so stylists and looks can follow it. All optional.
+COLOUR_CHOICES = [
+    ("natural", "My natural colour"),
+    ("black", "Black"),
+    ("brown", "Brown"),
+    ("blonde", "Blonde"),
+    ("red", "Red"),
+    ("bold", "A bold colour"),
+]
+UPKEEP_CHOICES = [("low", "Low"), ("medium", "Medium"), ("high", "High")]
+SIT_CHOICES = [
+    ("up_to_2", "Up to 2 hours"),
+    ("2_to_4", "2 to 4 hours"),
+    ("4_to_6", "4 to 6 hours"),
+    ("6_plus", "6 hours or more"),
+]
+
 
 class HairProfile(models.Model):
     """
@@ -123,6 +140,12 @@ class HairProfile(models.Model):
     # For people who measure: never required, always in centimetres.
     length_cm = models.FloatField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    # Her wishlist for the next style. Not history, so not snapshotted.
+    next_styles = ArrayField(models.CharField(max_length=50), default=list, blank=True, size=10)
+    next_length = models.CharField(max_length=20, choices=LENGTH_CHOICES, blank=True, default="")
+    next_colour = models.CharField(max_length=20, choices=COLOUR_CHOICES, blank=True, default="")
+    next_upkeep = models.CharField(max_length=10, choices=UPKEEP_CHOICES, blank=True, default="")
+    next_sit = models.CharField(max_length=10, choices=SIT_CHOICES, blank=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
