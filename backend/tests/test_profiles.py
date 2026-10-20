@@ -50,12 +50,49 @@ def test_consents_are_kept_as_a_history(api, make_user):
     assert ConsentRecord.objects.filter(user=user).count() == 2
 
 
-def test_events_are_dropped_once_analytics_consent_is_withdrawn(api, make_user):
+def test_the_latest_answer_wins_and_anything_unanswered_is_a_no(api, make_user):
+    from apps.profiles.models import current_consents, has_consent
+
+    user = make_user()
+    assert current_consents(user) == {p: False for p in ("terms", "privacy", "analytics", "personalisation", "research")}
+    record = lambda purpose, granted, at: {"purpose": purpose, "granted": granted, "policyVersion": "v1", "recordedAt": at}
+    # Sent out of order: the later time wins, not the later row.
+    api(user).post("/api/consents/", {"consents": [
+        record("research", False, "2026-09-03T10:00:00Z"),
+        record("research", True, "2026-09-01T10:00:00Z"),
+        record("analytics", True, "2026-09-02T10:00:00Z"),
+    ]})
+    assert has_consent(user, "analytics") and not has_consent(user, "research")
+    assert not has_consent(make_user(), "analytics")
+
+
+def test_her_choices_come_back_with_their_version_and_time(api, make_user):
+    user = make_user()
+    api(user).post("/api/consents/", {"consents": [
+        {"purpose": "analytics", "granted": True, "policyVersion": "v1", "recordedAt": "2026-09-01T10:00:00Z"},
+        {"purpose": "analytics", "granted": False, "policyVersion": "v2", "recordedAt": "2026-09-02T10:00:00Z", "source": "web"},
+    ]})
+    api(make_user()).post("/api/consents/", {"consents": [
+        {"purpose": "research", "granted": True, "policyVersion": "v2", "recordedAt": "2026-09-02T10:00:00Z"},
+    ]})
+    body = api(user).get("/api/consents/").json()
+    assert body == {"consents": [
+        {"purpose": "analytics", "granted": False, "policyVersion": "v2", "recordedAt": "2026-09-02T10:00:00Z", "source": "web"},
+    ]}
+    assert api().get("/api/consents/").status_code == 401
+
+
+def test_events_are_kept_only_while_analytics_consent_is_given(api, make_user):
     from apps.profiles.models import AnalyticsEvent, ConsentRecord
 
     user = make_user()
     event = {"events": [{"name": "view_look", "at": "2026-09-22T10:00:00Z", "localAt": "2026-09-22T11:00:00+01:00"}]}
+    # Signed out, the app only sends with the consent given on the phone.
     assert api().post("/api/events/", {**event, "anonymousId": "anon_1"}).status_code == 201
+    # Never asked is a no.
+    assert api(user).post("/api/events/", event).status_code == 202
+    assert AnalyticsEvent.objects.count() == 1
+    ConsentRecord.objects.create(user=user, purpose="analytics", granted=True, policy_version="v1", recorded_at="2026-09-22T09:00:00Z")
     assert api(user).post("/api/events/", event).status_code == 201
     assert AnalyticsEvent.objects.count() == 2
     ConsentRecord.objects.create(user=user, purpose="analytics", granted=False, policy_version="v1", recorded_at="2026-09-22T12:00:00Z")

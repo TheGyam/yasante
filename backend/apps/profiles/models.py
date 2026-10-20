@@ -190,6 +190,31 @@ class ConsentRecord(models.Model):
         ordering = ["-recorded_at"]
 
 
+CONSENT_PURPOSES = ("terms", "privacy", "analytics", "personalisation", "research")
+
+
+def latest_consents(user):
+    """Her latest record for each purpose she has answered, in one query."""
+    return (
+        ConsentRecord.objects.filter(user=user)
+        .order_by("purpose", "-recorded_at", "-created_at")
+        .distinct("purpose")
+    )
+
+
+def current_consents(user):
+    """{purpose: granted} from her latest answers. Anything she hasn't answered is a no."""
+    answers = {}
+    if user is not None and user.is_authenticated:
+        answers = {r.purpose: r.granted for r in latest_consents(user)}
+    return {purpose: answers.get(purpose, False) for purpose in CONSENT_PURPOSES}
+
+
+def has_consent(user, purpose):
+    """The one check for whether a consent holds. Never read ConsentRecord directly for it."""
+    return current_consents(user).get(purpose, False)
+
+
 class AnalyticsEvent(models.Model):
     """
     Batched analytics events.  Dropped when analytics consent is withdrawn.

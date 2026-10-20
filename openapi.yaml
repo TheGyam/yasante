@@ -1174,9 +1174,23 @@ paths:
         '201':
           description: No response body
   /api/consents/:
+    get:
+      operationId: consents_retrieve
+      description: GET /api/consents/ (her latest answer to each) and POST /api/consents/
+      tags:
+      - consents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentBatch'
+          description: ''
     post:
       operationId: consents_create
-      description: POST /api/consents/
+      description: GET /api/consents/ (her latest answer to each) and POST /api/consents/
       tags:
       - consents
       requestBody:
@@ -1339,7 +1353,7 @@ paths:
       description: |-
         POST /api/events/
 
-        Drops events when analytics consent is withdrawn.
+        Drops a signed-in person's events unless she has said yes to analytics.
       tags:
       - events
       requestBody:
@@ -3973,9 +3987,43 @@ components:
           type: string
       required:
       - data
+    Consent:
+      type: object
+      description: Single consent record within a batch.
+      properties:
+        purpose:
+          type: string
+          maxLength: 50
+        granted:
+          type: boolean
+        policyVersion:
+          type: string
+          maxLength: 50
+        recordedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          default: app
+          maxLength: 50
+      required:
+      - granted
+      - policyVersion
+      - purpose
+      - recordedAt
+    ConsentBatch:
+      type: object
+      description: GET and POST /api/consents/
+      properties:
+        consents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Consent'
+      required:
+      - consents
     ConsentBatchRequest:
       type: object
-      description: POST /api/consents/
+      description: GET and POST /api/consents/
       properties:
         consents:
           type: array
