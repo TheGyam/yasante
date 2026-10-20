@@ -18,15 +18,27 @@ describe('the account', () => {
     expect(lengths.slice(-2)).toEqual(['chin', 'shoulder']);
   });
 
-  it('drops events from an account that withdrew the analytics consent', () => {
+  it('keeps events from an account only while the analytics consent is given', () => {
     const before = db.events.length;
-    call('post', '/api/consents/', 'acc_zainab', {
-      consents: [{ purpose: 'analytics', granted: false, policyVersion: 'v1', recordedAt: 'x' }],
-    });
-    call('post', '/api/events/', 'acc_zainab', {
-      events: [{ name: 'view_look', at: 'a', localAt: 'b' }],
-    });
+    const consent = (granted: boolean, recordedAt: string) =>
+      call('post', '/api/consents/', 'acc_zainab', {
+        consents: [{ purpose: 'analytics', granted, policyVersion: 'v1', recordedAt }],
+      });
+    const send = () =>
+      call('post', '/api/events/', 'acc_zainab', {
+        events: [{ name: 'view_look', at: 'a', localAt: 'b' }],
+      });
+    send();
     expect(db.events.length).toBe(before);
+    consent(true, '2026-10-01T10:00:00Z');
+    send();
+    expect(db.events.length).toBe(before + 1);
+    consent(false, '2026-10-02T10:00:00Z');
+    send();
+    expect(db.events.length).toBe(before + 1);
+    expect(call('get', '/api/consents/', 'acc_zainab').consents).toEqual([
+      expect.objectContaining({ purpose: 'analytics', granted: false }),
+    ]);
   });
 
   it('exports and deletes only your own account', () => {
