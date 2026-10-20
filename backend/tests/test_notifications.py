@@ -186,3 +186,29 @@ def test_without_a_phone_signed_in_a_booking_update_comes_by_email(api, setup, b
     confirmed = next(m for m in mailoutbox if m.to == [client.email])
     assert confirmed.subject.startswith("Confirmed with")
     assert f"https://yasante.com/bookings/{booking['id']}" in confirmed.alternatives[0][0]
+
+
+def test_a_wash_day_reminder_comes_at_her_usual_time_only_when_she_asked(make_user, consent):
+    from datetime import datetime, timezone as tz
+
+    from apps.common.models import NotificationLog, NotificationPreference
+    from apps.profiles.models import log_hair
+    from apps.profiles.tasks import wash_day_reminders
+
+    me = make_user()
+    for day in (4, 11, 18):  # three Sundays at half nine: a habit
+        log_hair(me, "wash", local_at=f"2026-10-{day:02d}T09:30:00")
+    sunday_nine = datetime(2026, 10, 25, 9, 5, tzinfo=tz.utc)  # 09:05 in London
+    sent = lambda: NotificationLog.objects.filter(user=me, category="wash_day").count()
+
+    wash_day_reminders(now=sunday_nine)
+    assert sent() == 0  # off until she switches it on
+    NotificationPreference.objects.create(user=me, opted_in=["wash_day"])
+    wash_day_reminders(now=sunday_nine)
+    assert sent() == 0  # and only with her yes to using hair details
+    consent(me, "personalisation")
+    wash_day_reminders(now=sunday_nine)
+    wash_day_reminders(now=sunday_nine.replace(minute=30))
+    assert sent() == 1  # once that day
+    wash_day_reminders(now=datetime(2026, 10, 26, 9, 5, tzinfo=tz.utc))
+    assert sent() == 1  # Monday isn't wash day

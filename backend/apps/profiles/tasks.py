@@ -122,6 +122,37 @@ def generate_data_export(self, user_id: str):
 
 
 @shared_task
+def wash_day_reminders(now=None):
+    """
+    Hourly: on the weekday and at the hour she usually washes, a reminder, for people
+    who switched wash-day reminders on and let us use their hair details. Once a day.
+    """
+    from django.utils import timezone
+
+    from apps.common import zones
+    from apps.common.notifications import notify
+
+    from .insights import usual_wash
+    from .models import consenting
+
+    now = now or timezone.now()
+    asked = consenting("personalisation").filter(notification_preference__opted_in__contains=["wash_day"])
+    for user in asked:
+        usual = usual_wash(list(user.hair_log.filter(kind="wash")))
+        local = now.astimezone(zones.of(user))
+        if usual and usual == (local.isoweekday(), local.hour):
+            notify(
+                user.pk,
+                "wash_day",
+                f"wash:{user.pk}:{local.date()}",
+                "Wash day",
+                "It’s your usual wash day. Tap “Wash day done” when you’re finished.",
+                url="/hair-profile",
+                mode="client",
+            )
+
+
+@shared_task
 def prompt_length(now=None):
     """
     Monthly: "has it grown?" to anyone whose length hasn't changed in 30 days. The

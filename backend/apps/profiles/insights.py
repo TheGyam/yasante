@@ -20,6 +20,17 @@ def _days(later, earlier):
     return max(0, (later - earlier).days)
 
 
+def usual_wash(washes):
+    """(weekday, hour) she usually washes, by her phone's clock, once it's a habit:
+    three washes on the same weekday. Otherwise None."""
+    weekdays = Counter(e.local_weekday for e in washes if e.local_weekday)
+    day, count = weekdays.most_common(1)[0] if weekdays else (None, 0)
+    if count < 3:
+        return None
+    hours = Counter(e.local_hour for e in washes if e.local_weekday == day and e.local_hour is not None)
+    return day, (hours.most_common(1)[0][0] if hours else None)
+
+
 def style_timing(user, now=None):
     """
     The style in now (or None) and how many days her styles have lasted, appointment
@@ -68,8 +79,7 @@ def insights(user, period="month", now=None):
     current, lasted = style_timing(user, now)
 
     # Wash days: how many, and the day they usually fall on once there's a pattern.
-    weekdays = Counter(e.local_weekday for e in washes if e.local_weekday)
-    usual, count = weekdays.most_common(1)[0] if weekdays else (None, 0)
+    usual = (usual_wash(washes) or (None,))[0]
     gaps = [_days(b.at, a.at) for a, b in zip(washes, washes[1:])]
 
     # Length: where it is, and how it's moved (in the period, or since they started).
@@ -108,7 +118,7 @@ def insights(user, period="month", now=None):
         "style_lasts_days": round(mean(lasted)) if lasted else None,
         "washes": len([e for e in washes if not since or e.at >= since]),
         # Only once it's a habit: three washes on the same day.
-        "usual_wash_day": WEEKDAYS[usual] if usual and count >= 3 else None,
+        "usual_wash_day": WEEKDAYS[usual] if usual else None,
         "wash_every_days": round(mean(gaps)) if len(gaps) >= 2 else None,
         "days_since_trim": _days(now, trims[-1].at) if trims else None,
         "length": length,
