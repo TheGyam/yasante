@@ -54,6 +54,9 @@ interface ConsentState {
    * on this device that the server hadn't stored by then still wins.
    */
   takeServerAnswers: (answers: ServerConsent[], askedAt: string) => void;
+  /** Whether this session has the account's answers from the server yet. Never stored. */
+  loaded: boolean;
+  setLoaded: (loaded: boolean) => void;
 }
 
 export const useConsentStore = create<ConsentState>()(
@@ -61,6 +64,8 @@ export const useConsentStore = create<ConsentState>()(
     (set, get) => ({
       // Nothing is pre-ticked, and nothing is sent as a choice until she makes it.
       consents: {},
+      loaded: false,
+      setLoaded: loaded => set({ loaded }),
 
       setConsent: (purpose, granted) => {
         set(state => ({
@@ -96,7 +101,7 @@ export const useConsentStore = create<ConsentState>()(
           for (const [purpose, value] of mine) {
             if (value.syncedAt === null || value.syncedAt > askedAt) consents[purpose] = value;
           }
-          return { consents };
+          return { consents, loaded: true };
         }),
 
       isGranted: purpose => get().consents[purpose]?.granted ?? false,
@@ -113,6 +118,15 @@ export const useConsentStore = create<ConsentState>()(
       // details ticked on. Start clean; the server's answers come back on the next load.
       version: 1,
       migrate: () => ({ consents: {} }),
+      partialize: state => ({ consents: state.consents }),
     }
   )
 );
+
+/**
+ * Whether to ask her now: she hasn't answered, and, when signed in, the account's
+ * answers have arrived, so a choice made on another device is never asked again.
+ */
+export function useUnanswered(purpose: ConsentPurpose, signedIn: boolean) {
+  return useConsentStore(s => !s.consents[purpose] && (!signedIn || s.loaded));
+}
