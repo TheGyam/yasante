@@ -7,6 +7,7 @@ import { User, HairProfile } from '@/features/profile';
 import { useAuth } from '@/features/auth';
 import { mergeGaps } from './format';
 import { useUserStore } from './store';
+import { useConsentStore } from '@/shared/config/consentStore';
 
 const USER_QUERY_KEY = 'user';
 
@@ -178,7 +179,9 @@ export function useHairProfileSync() {
       store.hairProfileOwner && store.hairProfileOwner !== user.id ? {} : (store.hairProfile ?? {});
     const gaps = mergeGaps(server, local);
 
-    if (Object.keys(gaps).length) save.mutate({ ...server, ...gaps });
+    // Only with her yes to using hair details: the server keeps nothing without it.
+    const allowed = useConsentStore.getState().isGranted('personalisation');
+    if (allowed && Object.keys(gaps).length) save.mutate({ ...server, ...gaps });
     store.setHairProfile({ ...server, ...gaps });
     store.setHairProfileOwner(user.id);
   }, [isAuthenticated, user?.id, isSuccess, account, save]);

@@ -99,6 +99,23 @@ describe('the hair profile', () => {
     await act(async () => useConsentStore.getState().setLoaded(true));
     expect(screen.getByText('Use your hair details')).toBeTruthy();
   });
+
+  it('asks again when she opens a part of it after saying no', () => {
+    useConsentStore.getState().setConsent('personalisation', false);
+    render(<HairQuiz mode="section" section="texture" />);
+    expect(screen.getByText('Use your hair details')).toBeTruthy();
+  });
+
+  it('stays hers to see when she says no, with a way to turn it back on', () => {
+    useUserStore.getState().setHairProfile({ texture: 'curly' });
+    useConsentStore.getState().setConsent('personalisation', false);
+    useConsentStore.getState().setConsent('research', false);
+    render(<HairProfileHub />);
+    expect(screen.getByText('Your hair details aren’t being used')).toBeTruthy();
+    expect(screen.getByTestId('section-texture')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('hair-details-on'));
+    expect(answered('personalisation')).toBe(true);
+  });
 });
 
 describe('the research question', () => {

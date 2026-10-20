@@ -91,10 +91,11 @@ def test_care_sessions_keep_the_local_day(api, make_user):
     assert (session.local_weekday, session.local_hour) == (7, 8)
 
 
-def test_length_keeps_neck_and_an_optional_measurement_in_history(api, make_user):
+def test_length_keeps_neck_and_an_optional_measurement_in_history(api, make_user, consent):
     from apps.profiles.models import HairProfileSnapshot
 
     me = make_user()
+    consent(me, "personalisation")
     url = f"/api/users/{me.pk}/hair-profile/"
     assert api(me).patch(url, {"length": "neck", "lengthCm": 30.5}).status_code == 200
     api(me).patch(url, {"length": "shoulder"})

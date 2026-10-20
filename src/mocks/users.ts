@@ -55,6 +55,12 @@ defineMocks({
   'PATCH /api/users/:id/hair-profile/': request => {
     requireAccount(request);
     const found = account(request.params.id);
+    if (!latestConsents(found.id).find(c => c.purpose === 'personalisation')?.granted) {
+      throw new MockError(
+        403,
+        'Turn on “Use your hair details” in Settings to save your hair profile.'
+      );
+    }
     found.hairProfile = { ...found.hairProfile, ...request.body };
     // The growth curve depends on history, so every change is kept as it was.
     db.hairSnapshots.push({

@@ -3671,7 +3671,14 @@ components:
         holding:
           $ref: '#/components/schemas/HoldingEnum'
         scalp:
-          $ref: '#/components/schemas/CheckInRequestScalpEnum'
+          allOf:
+          - $ref: '#/components/schemas/CheckInRequestScalpEnum'
+          description: |-
+            Only with hair details consent
+
+            * `comfortable` - comfortable
+            * `itchy` - itchy
+            * `sore` - sore
         again:
           $ref: '#/components/schemas/AgainEnum'
         stillIn:
@@ -3684,7 +3691,6 @@ components:
       required:
       - again
       - holding
-      - scalp
       - week
     CheckInRequestScalpEnum:
       enum:

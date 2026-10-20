@@ -193,10 +193,16 @@ class ConsentRecord(models.Model):
 CONSENT_PURPOSES = ("terms", "privacy", "analytics", "personalisation", "research")
 
 
+def counted_consents():
+    """Every consent record that counts as an answer."""
+    return ConsentRecord.objects.all()
+
+
 def latest_consents(user):
     """Her latest record for each purpose she has answered, in one query."""
     return (
-        ConsentRecord.objects.filter(user=user)
+        counted_consents()
+        .filter(user=user)
         .order_by("purpose", "-recorded_at", "-created_at")
         .distinct("purpose")
     )
@@ -213,6 +219,24 @@ def current_consents(user):
 def has_consent(user, purpose):
     """The one check for whether a consent holds. Never read ConsentRecord directly for it."""
     return current_consents(user).get(purpose, False)
+
+
+def research_participants():
+    """
+    Everyone whose latest research answer is yes. Every research or staff query that
+    breaks results down by hair, scalp or growth starts here, so a no (or no answer)
+    keeps her out from that moment.
+    """
+    from django.contrib.auth import get_user_model
+    from django.db.models import OuterRef, Subquery
+
+    latest = (
+        counted_consents()
+        .filter(user=OuterRef("pk"), purpose="research")
+        .order_by("-recorded_at", "-created_at")
+        .values("granted")[:1]
+    )
+    return get_user_model().objects.annotate(research=Subquery(latest)).filter(research=True)
 
 
 class AnalyticsEvent(models.Model):

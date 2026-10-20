@@ -247,7 +247,7 @@ describe('check-ins', () => {
     ).toThrow(/isn’t open/);
     expect(() =>
       call('post', `/api/bookings/${booking.id}/check-in/`, CLIENT, { week: 2, holding: 'fresh' })
-    ).toThrow(/all three/);
+    ).toThrow(/every question/);
 
     call('post', `/api/bookings/${booking.id}/check-in/`, CLIENT, { week: 2, ...answers });
     expect(call('get', `/api/bookings/${booking.id}/`, CLIENT).checkInDue).toBeUndefined();

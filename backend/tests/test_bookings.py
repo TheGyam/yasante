@@ -157,10 +157,11 @@ def test_only_the_two_people_can_see_a_booking(api, setup, book, make_user):
     assert api(profile.account).get("/api/bookings/", role="stylist", status="confirmed").json() == []
 
 
-def test_the_stylist_sees_her_record_and_hair_the_client_never_does(api, setup, book):
+def test_the_stylist_sees_her_record_and_hair_the_client_never_does(api, setup, book, consent):
     from apps.bookings.models import Booking
 
     profile, client = setup
+    consent(client, "personalisation")
     booking = book(client, profile)
     # An early cancellation elsewhere is never counted; a late one is.
     Booking.objects.filter(pk=booking["id"]).update()
@@ -382,6 +383,38 @@ def test_check_ins_open_at_two_and_four_weeks(api, setup, book):
     assert api(client).post(f"/api/bookings/{due}/check-in/", {"week": 2, **answers}).status_code == 204
     assert "checkInDue" not in api(client).get(f"/api/bookings/{due}/").json()
     assert api(client).post(f"/api/bookings/{due}/check-in/", {"week": 2, **answers}).status_code == 409
+
+
+def test_the_scalp_question_is_asked_and_kept_only_with_hair_consent(api, setup, book, consent):
+    from apps.bookings.models import CheckIn
+
+    profile, client = setup
+    two = {"holding": "fresh", "again": "yes"}
+    due = _completed(api, profile, client, book, days_ago=15)
+    # Without her yes, two answers are enough, and a scalp answer sent anyway isn't kept.
+    assert api(client).post(f"/api/bookings/{due}/check-in/", {"week": 2, **two, "scalp": "sore"}).status_code == 204
+    assert CheckIn.objects.get(booking_id=due).scalp == ""
+
+    consent(client, "personalisation")
+    later = _completed(api, profile, client, book, days_ago=15)
+    assert api(client).post(f"/api/bookings/{later}/check-in/", {"week": 2, **two}).status_code == 400
+    assert api(client).post(f"/api/bookings/{later}/check-in/", {"week": 2, **two, "scalp": "itchy"}).status_code == 204
+    assert CheckIn.objects.get(booking_id=later).scalp == "itchy"
+
+
+def test_a_stylist_stops_seeing_her_hair_once_she_turns_hair_details_off(api, setup, book, consent):
+    from apps.bookings.models import Booking
+
+    profile, client = setup
+    consent(client, "personalisation")
+    before = book(client, profile)
+    assert "coily" in api(profile.account).get(f"/api/bookings/{before['id']}/").json()["clientHair"]
+    assert "coily" in Booking.objects.get(pk=before["id"]).client_hair
+
+    consent(client, "personalisation", granted=False)
+    assert "clientHair" not in api(profile.account).get(f"/api/bookings/{before['id']}/").json()
+    after = book(client, profile)
+    assert Booking.objects.get(pk=after["id"]).client_hair == ""
 
 
 def test_lapses_apply_on_read_even_if_the_job_is_late(api, setup, book):

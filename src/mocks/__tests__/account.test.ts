@@ -9,7 +9,24 @@ const call = (method: string, url: string, accountId: string | undefined, body?:
 };
 
 describe('the account', () => {
+  it('keeps hair details only with her yes', () => {
+    const patch = () =>
+      call('patch', '/api/users/acc_new/hair-profile/', 'acc_new', { texture: 'coily' });
+    expect(patch).toThrow(MockError);
+    call('post', '/api/consents/', 'acc_new', {
+      consents: [
+        { purpose: 'personalisation', granted: true, policyVersion: 'v1', recordedAt: 'x' },
+      ],
+    });
+    expect(patch).not.toThrow();
+  });
+
   it('keeps every hair profile change instead of overwriting it', () => {
+    call('post', '/api/consents/', 'acc_client', {
+      consents: [
+        { purpose: 'personalisation', granted: true, policyVersion: 'v1', recordedAt: 'x' },
+      ],
+    });
     call('patch', '/api/users/acc_client/hair-profile/', 'acc_client', { length: 'chin' });
     call('patch', '/api/users/acc_client/hair-profile/', 'acc_client', { length: 'shoulder' });
     const lengths = db.hairSnapshots
