@@ -118,6 +118,21 @@ def make_user(db):
     return make
 
 
+@pytest.fixture
+def consent(db):
+    """consent(user, purpose, granted=True) records her answer under the current policy."""
+    from apps.profiles.models import ConsentRecord
+
+    # A second apart, so a later answer is always later even where the clock is coarse.
+    start, seconds = timezone.now(), itertools.count()
+
+    def give(user, purpose, granted=True):
+        at = start + timedelta(seconds=next(seconds))
+        ConsentRecord.objects.create(user=user, purpose=purpose, granted=granted, policy_version="2026-10-20", recorded_at=at)
+
+    return give
+
+
 WEEK_9_TO_6 = {
     "week": [None] + [{"start": "09:00", "end": "18:00"}] * 6,
     "blocked": [],

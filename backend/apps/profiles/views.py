@@ -138,6 +138,12 @@ class HairProfileUpdateView(APIView):
                 {"message": "You can only edit your own hair profile."},
                 status=status.HTTP_403_FORBIDDEN,
             )
+        # Texture and scalp are special category details: kept only with her explicit yes.
+        if not has_consent(request.user, "personalisation"):
+            return Response(
+                {"message": "Turn on “Use your hair details” in Settings to save your hair profile."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         with transaction.atomic():
             profile, _ = HairProfile.objects.get_or_create(user=request.user)

@@ -50,8 +50,10 @@ def present_item(i):
 
 
 def _hair_now(user):
+    from apps.profiles.models import has_consent
+
     hair = getattr(user, "hair_profile", None)
-    if not hair:
+    if not hair or not has_consent(user, "personalisation"):
         return None
     return {
         "texture": hair.texture,

@@ -1,4 +1,5 @@
 import { apiClient } from '@/shared/lib/api/client';
+import { syncConsents } from '@/shared/config/consentSync';
 import { ApiResponse, PaginatedResponse } from '@/shared/types/api';
 import { User, HairProfile } from '@/features/profile';
 
@@ -188,6 +189,8 @@ export const userApi = {
     hairProfile: Partial<HairProfile>
   ): Promise<ApiResponse<HairProfile>> => {
     const url = `/api/users/${userId}/hair-profile/`;
+    // The server keeps hair details only with her yes, so a yes just given goes first.
+    await syncConsents();
 
     if (__DEV__) {
       console.log('📡 API Request:', { method: 'PATCH', url, userId });

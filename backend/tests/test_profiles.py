@@ -16,10 +16,11 @@ def test_get_and_update_a_user(api, make_user):
     assert api(other).patch(f"/api/users/{user.pk}/", {"name": "x"}).status_code == 403
 
 
-def test_hair_profile_keeps_two_lengths_and_a_snapshot_each_change(api, make_user):
+def test_hair_profile_keeps_two_lengths_and_a_snapshot_each_change(api, make_user, consent):
     from apps.profiles.models import HairProfileSnapshot
 
     user = make_user()
+    consent(user, "personalisation")
     url = f"/api/users/{user.pk}/hair-profile/"
     first = api(user).patch(url, {"texture": "kinky", "length": "mid-back", "shrunkLength": "shoulder"})
     assert first.status_code == 200
@@ -75,6 +76,9 @@ def test_optional_answers_from_before_the_new_policy_count_as_unanswered(api, ma
     api(user).post("/api/consents/", {"consents": [old("terms"), old("analytics"), old("personalisation"), old("research")]})
     assert current_consents(user) == {"terms": True, "privacy": False, "analytics": False, "personalisation": False, "research": False}
     assert [c["purpose"] for c in api(user).get("/api/consents/").json()["consents"]] == ["terms"]
+    from apps.profiles.models import research_participants
+
+    assert user not in research_participants()
     # Asked again under the new policy, her answer counts.
     api(user).post("/api/consents/", {"consents": [
         {"purpose": "personalisation", "granted": True, "policyVersion": "2026-10-20", "recordedAt": "2026-10-21T10:00:00Z"},
@@ -182,17 +186,51 @@ def test_usernames_are_what_posts_show_and_share_a_namespace_with_handles(api, m
     assert api().get(f"/api/looks/{stylist_look.pk}/").json()["authorName"] == stylist.display_name
 
 
-def test_a_postcode_puts_them_on_the_map_privately(api, make_user, monkeypatch):
+def test_a_postcode_puts_them_on_the_map_privately(api, make_user, monkeypatch, consent):
     from apps.common import geo
     from apps.profiles.models import HairProfile, HairProfileSnapshot
 
     monkeypatch.setattr(geo, "locate", lambda text: (51.47, -0.07) if text == "SE15 4QJ" else None)
     user = make_user()
+    consent(user, "personalisation")
     body = api(user).patch(f"/api/users/{user.pk}/hair-profile/", {"postcode": "SE15 4QJ", "area": "Peckham"}).json()
     assert body["postcode"] == "SE15 4QJ" and "latitude" not in body
     hair = HairProfile.objects.get(user=user)
     assert (hair.latitude, hair.longitude) == (51.47, -0.07)
     assert HairProfileSnapshot.objects.filter(user=user).exists()  # history still kept, without the location
+    # The map point stays on the server: not in her export either.
+    from apps.profiles.tasks import collect_user_data
+
+    exported = collect_user_data(user)["hair_profile"][0]
+    assert exported["postcode"] == "SE15 4QJ" and "latitude" not in exported and "longitude" not in exported
+
+
+def test_the_hair_profile_is_saved_only_with_her_yes(api, make_user, consent):
+    from apps.profiles.models import HairProfile
+
+    user = make_user()
+    url = f"/api/users/{user.pk}/hair-profile/"
+    refused = api(user).patch(url, {"texture": "coily"})
+    assert refused.status_code == 403 and "Use your hair details" in refused.json()["message"]
+    assert not HairProfile.objects.filter(user=user).exists()
+    consent(user, "personalisation")
+    assert api(user).patch(url, {"texture": "coily"}).status_code == 200
+    consent(user, "personalisation", granted=False)
+    assert api(user).patch(url, {"texture": "kinky"}).status_code == 403
+    # Still hers to see.
+    assert HairProfile.objects.get(user=user).texture == "coily"
+
+
+def test_research_only_ever_counts_people_whose_latest_answer_is_yes(make_user, consent):
+    from apps.profiles.models import research_participants
+
+    yes, changed_mind, said_no, never_asked = make_user(), make_user(), make_user(), make_user()
+    consent(yes, "research")
+    consent(changed_mind, "research")
+    consent(changed_mind, "research", granted=False)
+    consent(said_no, "research", granted=False)
+    consent(never_asked, "personalisation")
+    assert list(research_participants()) == [yes]
 
 
 def test_tips_come_from_the_server(api):

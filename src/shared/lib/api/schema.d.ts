@@ -2276,7 +2276,14 @@ export interface components {
         CheckInRequestRequest: {
             week: components["schemas"]["WeekEnum"];
             holding: components["schemas"]["HoldingEnum"];
-            scalp: components["schemas"]["CheckInRequestScalpEnum"];
+            /**
+             * @description Only with hair details consent
+             *
+             *     * `comfortable` - comfortable
+             *     * `itchy` - itchy
+             *     * `sore` - sore
+             */
+            scalp?: components["schemas"]["CheckInRequestScalpEnum"];
             again: components["schemas"]["AgainEnum"];
             /** @description Is the style still in? */
             stillIn?: boolean;

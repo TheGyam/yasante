@@ -702,9 +702,17 @@ class CheckInView(_BookingAction):
             week = None
         if week is None or week != check_in_due(booking, answered):
             return _err("That check-in isn’t open", 409)
-        answers = {k: request.data.get(k) for k in CHECK_IN_ANSWERS}
-        if any(answers[k] not in allowed for k, allowed in CHECK_IN_ANSWERS.items()):
-            return _err("Answer all three", 400)
+        from apps.profiles.models import has_consent
+
+        # How her scalp feels is health data: asked, and kept, only with her yes.
+        asked = {
+            k: allowed
+            for k, allowed in CHECK_IN_ANSWERS.items()
+            if k != "scalp" or has_consent(request.user, "personalisation")
+        }
+        answers = {k: request.data.get(k) for k in asked}
+        if any(answers[k] not in allowed for k, allowed in asked.items()):
+            return _err("Answer every question", 400)
         still_in = request.data.get("still_in")
         still_in = None if still_in is None else bool(still_in)
         CheckIn.objects.create(booking=booking, week=week, still_in=still_in, **answers)

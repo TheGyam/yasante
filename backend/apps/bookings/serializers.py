@@ -38,8 +38,11 @@ def client_record(booking):
 
 
 def client_hair(user):
+    """What a stylist she books sees of her hair, only while she lets us use it."""
+    from apps.profiles.models import has_consent
+
     hair = getattr(user, "hair_profile", None) if user else None
-    if not hair:
+    if not hair or not has_consent(user, "personalisation"):
         return None
     parts = [
         hair.texture,
@@ -382,7 +385,9 @@ class ReviewCreateRequestSerializer(serializers.Serializer):
 class CheckInRequestSerializer(serializers.Serializer):
     week = serializers.ChoiceField(choices=[2, 4])
     holding = serializers.ChoiceField(choices=["fresh", "okay", "tired"])
-    scalp = serializers.ChoiceField(choices=["comfortable", "itchy", "sore"])
+    scalp = serializers.ChoiceField(
+        choices=["comfortable", "itchy", "sore"], required=False, help_text="Only with hair details consent"
+    )
     again = serializers.ChoiceField(choices=["yes", "maybe", "no"])
     still_in = serializers.BooleanField(required=False, help_text="Is the style still in?")
     local_at = serializers.CharField(required=False, help_text="The phone's own clock")

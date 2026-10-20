@@ -3,12 +3,14 @@ import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import Animated, { FadeInLeft, FadeInRight } from 'react-native-reanimated';
 import { useAuth } from '@/features/auth';
+import { useConsentStore, useUnanswered } from '@/shared/config/consentStore';
 import { track } from '@/shared/lib/analytics';
 import { haptics } from '@/shared/lib/haptics';
 import { EASE_OUT, makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { notify } from '@/shared/ui/dialog';
 import { Chip } from '@/shared/ui/Chip';
+import { ConsentQuestion } from '@/shared/ui/ConsentQuestion';
 import { MeasuredLength } from './MeasuredLength';
 import { ProgressBar } from '@/shared/ui/ProgressBar';
 import { Screen } from '@/shared/ui/Screen';
@@ -73,6 +75,14 @@ export function HairQuiz({ mode, section }: HairQuizProps) {
   const setHairProfile = useUserStore(s => s.setHairProfile);
   const setOnboardingCompleted = useUserStore(s => s.setOnboardingCompleted);
   const save = useUpdateHairProfile();
+  // Asked before the first question, wherever the hair profile starts. A part opened
+  // after she said no asks again: without her yes there's nothing to fill in.
+  const saidNo = useConsentStore(s => s.consents.personalisation?.granted === false);
+  const askHair =
+    useUnanswered('personalisation', isAuthenticated) || (mode === 'section' && saidNo);
+  // Asked once the core is done, before the app opens.
+  const askResearch = useUnanswered('research', isAuthenticated);
+  const [askingResearch, setAskingResearch] = useState(false);
 
   const steps: StepKey[] = mode === 'onboarding' ? [...CORE, 'summary'] : [section ?? 'texture'];
   const [answers, setAnswers] = useState<HairProfile>(() => ({
@@ -127,6 +137,10 @@ export function HairQuiz({ mode, section }: HairQuizProps) {
   const finish = async () => {
     await store({ ...answers, completedAt: answers.completedAt ?? new Date().toISOString() });
     haptics.success();
+    if (askResearch) {
+      setAskingResearch(true);
+      return;
+    }
     // First run: this opens the app — the welcome screens' guard closes behind it.
     setOnboardingCompleted(true);
   };
@@ -140,6 +154,25 @@ export function HairQuiz({ mode, section }: HairQuizProps) {
     haptics.success();
     router.back();
   };
+
+  if (askHair) {
+    return (
+      <ConsentQuestion
+        purpose="personalisation"
+        modal={mode === 'section'}
+        back={mode === 'onboarding'}
+        onAnswered={granted => {
+          if (granted) return;
+          // Without it there's nothing to fill in here, but the rest of the app is hers.
+          if (mode === 'onboarding') setOnboardingCompleted(true);
+          else router.back();
+        }}
+      />
+    );
+  }
+  if (askingResearch) {
+    return <ConsentQuestion purpose="research" onAnswered={() => setOnboardingCompleted(true)} />;
+  }
 
   const traits = hairTraits(answers);
   const done = answered(key, answers);

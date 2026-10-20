@@ -199,11 +199,18 @@ OPTIONAL_CONSENTS = ("analytics", "personalisation", "research")
 OPTIONAL_CONSENTS_SINCE = "2026-10-20"
 
 
+def counted_consents():
+    """Every consent record that counts as an answer."""
+    return ConsentRecord.objects.exclude(
+        purpose__in=OPTIONAL_CONSENTS, policy_version__lt=OPTIONAL_CONSENTS_SINCE
+    )
+
+
 def latest_consents(user):
     """Her latest record for each purpose she has answered, in one query."""
     return (
-        ConsentRecord.objects.filter(user=user)
-        .exclude(purpose__in=OPTIONAL_CONSENTS, policy_version__lt=OPTIONAL_CONSENTS_SINCE)
+        counted_consents()
+        .filter(user=user)
         .order_by("purpose", "-recorded_at", "-created_at")
         .distinct("purpose")
     )
@@ -220,6 +227,24 @@ def current_consents(user):
 def has_consent(user, purpose):
     """The one check for whether a consent holds. Never read ConsentRecord directly for it."""
     return current_consents(user).get(purpose, False)
+
+
+def research_participants():
+    """
+    Everyone whose latest research answer is yes. Every research or staff query that
+    breaks results down by hair, scalp or growth starts here, so a no (or no answer)
+    keeps her out from that moment.
+    """
+    from django.contrib.auth import get_user_model
+    from django.db.models import OuterRef, Subquery
+
+    latest = (
+        counted_consents()
+        .filter(user=OuterRef("pk"), purpose="research")
+        .order_by("-recorded_at", "-created_at")
+        .values("granted")[:1]
+    )
+    return get_user_model().objects.annotate(research=Subquery(latest)).filter(research=True)
 
 
 class AnalyticsEvent(models.Model):

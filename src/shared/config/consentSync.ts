@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 import { apiClient } from '@/shared/lib/api/client';
-import { useConsentStore, type ServerConsent } from './consentStore';
+import { useRouter } from '@/shared/lib/navigation';
+import { useConsentStore, useUnanswered, type ServerConsent } from './consentStore';
 
 /** An attempt that hasn't settled by then is given up on; the records stay pending. */
 const GIVE_UP_MS = 20_000;
@@ -76,6 +77,8 @@ const syncThenLoad = () => syncConsents().then(loadConsents);
  */
 export function useConsentSync(signedIn: boolean) {
   useEffect(() => {
+    // Signed out, or someone else signing in: their answers have to arrive first.
+    useConsentStore.getState().setLoaded(false);
     if (!signedIn) return;
     void syncThenLoad();
     const unsubscribe = useConsentStore.subscribe((state, previous) => {
@@ -89,4 +92,24 @@ export function useConsentSync(signedIn: boolean) {
       foreground.remove();
     };
   }, [signedIn]);
+}
+
+/**
+ * Asks for the analytics choice once a launch, while she's signed in and hasn't given
+ * one: right after sign-up, and for accounts made before it was asked. `canAsk` is
+ * false while sign-up's own screens are still open.
+ */
+export function useAskForAnalytics(canAsk: boolean) {
+  const router = useRouter();
+  const unanswered = useUnanswered('analytics', true);
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!canAsk || !unanswered || asked.current) return;
+    // A moment after the screens that signing in closes have gone.
+    const timer = setTimeout(() => {
+      asked.current = true;
+      router.push('/settings/privacy-choices' as never);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [canAsk, unanswered, router]);
 }

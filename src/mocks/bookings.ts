@@ -687,8 +687,9 @@ defineMocks({
       throw new MockError(409, 'That check-in isn’t open');
     }
     const { holding, scalp, again, stillIn } = request.body ?? {};
-    if (!RATINGS.includes(holding) || !SCALP.includes(scalp) || !AGAIN.includes(again)) {
-      throw new MockError(400, 'Answer all three');
+    // The scalp question is only asked with hair details consent.
+    if (!RATINGS.includes(holding) || (scalp && !SCALP.includes(scalp)) || !AGAIN.includes(again)) {
+      throw new MockError(400, 'Answer every question');
     }
     db.checkIns.push({
       bookingId: booking.id,
