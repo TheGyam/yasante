@@ -139,6 +139,8 @@ export interface LookFilters {
   area?: string;
   /** Words to search for: caption, style, service, the stylist or who posted it. */
   q?: string;
+  /** Style ids from her recent searches, mixed through the feed. Never kept on the server. */
+  searched?: string;
 }
 
 /** Why someone reported a look. The wording is what the reporter sees. */

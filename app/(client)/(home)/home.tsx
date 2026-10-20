@@ -127,17 +127,19 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
 
   const actions = useLookActions({ onNeedsAccount });
 
-  const { query, filtered } = useFeedQuery();
+  const { query, filtered, ready } = useFeedQuery();
   // Her hair puts looks like it first, unless she's already filtered to it.
   const because = useWhySuggested(['texture']);
   const why = query.hair ? undefined : because;
   const clearFilters = useLookFilters(s => s.clear);
-  const feed = useLooks(query);
+  const feed = useLooks(query, { enabled: ready });
+  // Waiting for her recent searches counts as loading: the feed loads once, in order.
+  const feedLoading = feed.isLoading || !ready;
   const focused = useIsFocused();
   const refresh = useRefreshLooks();
   // One array per fetch, not per render: the list re-diffs whenever this changes.
   const looks = useMemo(() => feed.data?.pages.flatMap(page => page.data) ?? [], [feed.data]);
-  const emptyFiltered = filtered && !feed.isLoading && !feed.isPlaceholderData && !looks.length;
+  const emptyFiltered = filtered && !feedLoading && !feed.isPlaceholderData && !looks.length;
   // Nothing matched: rather than a blank page, the latest looks still show below.
   const fallback = useLooks({}, { enabled: emptyFiltered });
   const fallbackLooks = (fallback.data?.pages[0]?.data ?? []).slice(0, 6);
@@ -162,7 +164,7 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
   const renderItem = useCallback(({ item }: { item: Look }) => tile(item), [tile]);
 
   // Built only when what's in it changes: the list re-renders its header otherwise.
-  const loading = feed.isLoading;
+  const loading = feedLoading;
   const header = useMemo(
     () => (
       <View style={styles.header}>
@@ -192,14 +194,14 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
     <>
       <AnimatedFlashList
         ref={listRef}
-        data={feed.isLoading ? [] : looks}
+        data={feedLoading ? [] : looks}
         masonry
         numColumns={2}
         keyExtractor={look => look.id}
         renderItem={renderItem}
         ListHeaderComponent={header}
         ListEmptyComponent={
-          feed.isLoading ? null : feed.isError ? (
+          feedLoading ? null : feed.isError ? (
             <EmptyState
               icon={WifiOff}
               title="Couldn’t load looks"
