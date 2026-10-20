@@ -22,7 +22,7 @@ Your hair details, if you choose to share them: your hair's texture, length, den
 
 What you post: looks, captions, comments, reviews, collections, your product shelf and check-ins. Looks and stylists you mark “Not for me” are kept so your feed shows fewer like them. Nobody else sees them.
 
-Bookings: the stylist, service, times, deposit status, attendance, cancellations and reviews, and what a booking is for, if you say (a wedding, a holiday or an event). If you are a stylist: your page, services, prices, hours, area, address (shown to a client only once their appointment is confirmed), portfolio, verification checks such as your phone number, a proof-of-work photo and any insurance certificate you upload, your booking numbers and, if you note it, the extension hair you used at an appointment.
+Bookings: the stylist, service, times, deposit status, attendance, cancellations and reviews, and what a booking is for, if you say (a wedding, a holiday or an event). If you are a stylist: your page, services, prices, hours, area, address (shown to a client only once their appointment is confirmed), portfolio, verification checks such as your phone number and a proof-of-work photo, your booking numbers and, if you note it, the extension hair you used at an appointment.
 
 Device and usage: a push notification token for your phone, and basic technical logs (such as IP address and errors) kept for security. Usage analytics only if you turn them on (section 4).
 
