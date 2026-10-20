@@ -76,13 +76,13 @@ Where information leaves the UK, it is protected by the safeguards UK law requir
 
 The website, yasante.com, sets no cookies. It keeps a few things in your browser's own storage, all needed for the site to work: your sign-in, for that tab only; a booking or a stylist page setup you've started, so a reload doesn't lose it; consent choices not yet sent to us; and a marker that stops the page reloading over and over after an update. The staff site, used only by the Yasante team, sets two essential cookies: one keeps staff signed in, and one protects their forms from forgery.
 
-On your phone, the app keeps your sign-in in the phone's secure storage. It keeps your settings, drafts, recent searches, consent choices and any hair profile answers not yet sent to us on the phone itself. With usage analytics on, it also keeps a random ID that is sent with your usage records.
+On your phone, the app keeps your sign-in in the phone's secure storage. It keeps your settings, drafts, recent searches, consent choices and any hair profile answers not yet sent to us on the phone itself. The app uses your recent searches to show you more looks in the styles you've searched for; it sends us those styles to order your feed, and we don't keep them. With usage analytics on, it also keeps a random ID that is sent with your usage records.
 
 8. How long we keep it
 
 We keep your account information while your account is open. When you delete your account, we delete your profile, hair profile, looks, comments, collections, shelf and consent records. Stylists keep a record of appointments they had with you, without your name, for their business records.
 
-Usage analytics: 12 months. Searches: linked to you for 90 days, then kept without your name, and deleted after 12 months. Views of a stylist's page: who viewed is removed after 90 days; the counts stay, because the stylist sees them. Security logs and error reports: up to 90 days. Backups are overwritten within 7 days.
+Usage analytics: 12 months. Searches: kept without your name from the start, to see what people look for, and deleted after 12 months. Views of a stylist's page: who viewed is removed after 90 days; the counts stay, because the stylist sees them. Security logs and error reports: up to 90 days. Backups are overwritten within 7 days.
 
 9. Your rights
 

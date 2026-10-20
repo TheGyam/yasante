@@ -25,7 +25,8 @@ expects an assessment before the processing starts.
 | Bookings, attendance, reviews | Clients and stylists | Running bookings; trust between both sides | Contract; legitimate interest for attendance records |
 | Stylist page, services, prices, address, verification evidence | Stylists | Running the stylist's page; safety checks | Contract; legitimate interest for verification |
 | Usage events: actions in the app, time, local time, app version | People who said yes | Finding what's slow or confusing | Consent (`analytics`) |
-| Searches | Everyone | Making search work; seeing what people can't find | Legitimate interest (see open question 1) |
+| Searches | Everyone | Seeing what people look for and can't find | Not personal data: never linked to anyone, from the start |
+| Recent searches on the phone | Everyone, on their own phone | Mixing looks in the styles they search for into their feed | Kept on the phone; the styles are sent with a feed request and not kept |
 | Technical logs and error reports | Everyone | Security and fixing faults | Legitimate interest |
 | Anonymous research totals | Built from people who said yes | Reports for hair brands, studies with universities | Explicit consent (`research`) |
 
@@ -61,7 +62,7 @@ apps, advertising IDs. No ad networks and no third-party tracking.
 | Withdrawal doesn't take effect | Possible, moderate | Each consent is read from the latest record on the server; turning off takes effect on every device; research queries exclude people from that moment | Built for reading; enforcement in 6.5 |
 | Usage tracking without agreement | Was possible | Analytics off until yes, on the phone and on the server; the queue is dropped when it's turned off | Built (6.1, 6.2) |
 | Location more precise than needed | Possible, moderate | No phone location at all; postcodes turned into a rough point; coordinates kept server-side only or removed if nothing needs them | Review in 6.5 |
-| Data kept longer than needed | Possible, moderate | Events and searches deleted after a year; searches and page views anonymised after 90 days; error reports after 90 days; account data deleted with the account | Built |
+| Data kept longer than needed | Possible, moderate | Events and searches deleted after a year; searches never linked to anyone; page views anonymised after 90 days; error reports after 90 days; account data deleted with the account | Built |
 | A breach exposes hair or health details | Unlikely, serious | Encrypted in transit; tokens in secure storage; private photos never public; staff access restricted; backups overwritten within 7 days | Built |
 | Under-18s sign up | Possible, moderate | Terms say 18+; age confirmed at sign-up | Built |
 | A partner misuses research results | Possible, moderate | No partner until Yaw agrees one; results are anonymous totals only; CSV export only for an agreed partner | Planned (6.9) |
@@ -85,18 +86,16 @@ and would need a new assessment.
 | Account, hair profile, posts, shelf, consent records | Until the account is deleted |
 | Appointment records held by a stylist | Kept without the client's name after deletion |
 | Usage events | 12 months |
-| Searches | Linked to the person for 90 days, deleted after 12 months |
+| Searches | Never linked to anyone; deleted after 12 months |
 | Stylist page views | Viewer removed after 90 days; counts kept |
 | Security logs and error reports | Up to 90 days |
 | Backups | Overwritten within 7 days |
 
 ## 7. Open questions for review
 
-1. **Searches are logged for everyone**, not only people who agreed to analytics. Is
-   legitimate interest enough, or should search logging follow the analytics consent?
-2. **Check-in scalp answers** are collected today without the hair details consent.
-   The plan skips the question without consent (6.5); until then, is that acceptable?
-3. **Registrations:** the ICO fee must be paid before launch, and the EU representative
+1. **Searches** are logged for everyone but never linked to anyone (decided 21 October
+   2026), so they aren't personal data. Confirm that holds for the words people type.
+2. **Registrations:** the ICO fee must be paid before launch, and the EU representative
    named in the policy.
-4. **Contracts:** data processing terms should be confirmed with each service provider,
+3. **Contracts:** data processing terms should be confirmed with each service provider,
    including the two free map services.
