@@ -186,6 +186,11 @@ export const looksApi = {
     await apiClient.post('/api/blocks/', { accountId });
   },
 
+  /** POST /api/not-for-me/ — a look, or a stylist's account: her feed shows fewer like it. */
+  notForMe: async (what: { lookId: string } | { stylistId: string }) => {
+    await apiClient.post('/api/not-for-me/', what);
+  },
+
   /** GET /api/styles/ — the taxonomy looks are tagged from. */
   styles: async () => (await apiClient.get<Style[]>('/api/styles/')).data,
 

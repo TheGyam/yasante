@@ -107,13 +107,15 @@ NOTIFICATION_CATEGORIES = [
     ("waitlist", "Slots opening up"),
     ("after_appointment", "After an appointment"),
     ("check_ins", "Style check-ins"),
+    ("wash_day", "Wash-day reminders"),
     ("weekly_digest", "Your weekly numbers"),
     ("account", "Your account, badges and important updates"),
     ("news", "News and offers from Yasante"),
 ]
 
-# Promotional messages need a yes first (App Store guideline 4.5.4): off until switched on.
-OPT_IN_CATEGORIES = {"news"}
+# Off until switched on: promotional messages need a yes first (App Store guideline
+# 4.5.4), and a wash-day reminder is only worth having if she asks for it.
+OPT_IN_CATEGORIES = {"news", "wash_day"}
 
 
 class NotificationPreference(models.Model):

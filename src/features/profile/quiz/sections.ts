@@ -12,7 +12,8 @@ export type SectionKey =
   | 'scalp'
   | 'chemicals'
   | 'area'
-  | 'budget';
+  | 'budget'
+  | 'wishlist';
 
 export interface Section {
   key: SectionKey;
@@ -95,6 +96,14 @@ export const SECTIONS: readonly Section[] = [
     title: 'What do you usually spend on a style?',
     help: 'Roughly, before hair. It helps us show prices that fit.',
     answered: p => !!p.budget,
+  },
+  {
+    key: 'wishlist',
+    name: 'Next style',
+    title: 'What would you like next?',
+    help: 'All of it’s optional. Pick what you know.',
+    answered: p =>
+      !!(p.nextStyles?.length || p.nextLength || p.nextColour || p.nextUpkeep || p.nextSit),
   },
 ];
 
@@ -214,5 +223,16 @@ export function sectionSummary(
       return p.area?.trim();
     case 'budget':
       return p.budget && BUDGET_WORDS[p.budget];
+    case 'wishlist':
+      return (
+        [
+          p.nextStyles?.length &&
+            `${p.nextStyles.length} style${p.nextStyles.length === 1 ? '' : 's'}`,
+          p.nextLength && `${LENGTH_WORDS[p.nextLength]} length`,
+          p.nextUpkeep && `${p.nextUpkeep[0].toUpperCase()}${p.nextUpkeep.slice(1)} upkeep`,
+        ]
+          .filter(Boolean)
+          .join(SEP) || undefined
+      );
   }
 }

@@ -132,6 +132,44 @@ def open_check_ins(now=None):
             )
 
 
+@shared_task
+def nudge_rebooks(now=None):
+    """
+    In the week before her style usually comes out, once per style: time to rebook,
+    with her stylist's first free time from then. Only with her yes to using her hair
+    details, and only from her own history: someone who's never logged a style coming
+    out isn't guessed at.
+    """
+    from statistics import mean
+
+    from apps.common.timeparse import parse_iso
+    from apps.profiles.insights import style_timing
+    from apps.profiles.models import consenting
+    from apps.stylists.slots import free_times
+
+    now = now or timezone.now()
+    for user in consenting("personalisation").filter(hair_log__kind="take_down").distinct():
+        current, lasted = style_timing(user, now)
+        if not current or not lasted or not 0 < round(mean(lasted)) - current["days"] <= 7:
+            continue
+        booking = Booking.objects.select_related("stylist_profile").get(pk=current["booking_id"])
+        profile = booking.stylist_profile
+        if profile is None or not profile.published:
+            continue
+        out_on = (booking.scheduled_for + timedelta(days=round(mean(lasted)))).astimezone(zones.of(profile)).date()
+        days = free_times(profile, booking.duration_minutes or 60, first=out_on, viewer_id=user.pk)["days"]
+        free = f" {booking.stylist_name} is free on {_when(parse_iso(days[0]['times'][0]), booking, user)}." if days else ""
+        notify(
+            user.pk,
+            "after_appointment",
+            f"booking:{booking.pk}:rebook",
+            "Time to rebook?",
+            f"It’s nearly time for your {booking.service_name.lower()} to come out.{free}",
+            url=f"/book/{profile.handle}",
+            mode="client",
+        )
+
+
 # Kept for the old beat entry; the day-before reminder now lives in send_reminders.
 @shared_task
 def send_attendance_reminders():

@@ -31,6 +31,8 @@ export interface SignupRequest {
   invite_code?: string;
   /** 18+ confirmed at signup and stored. */
   age_confirmed: true;
+  /** Optional: a band, never a birthday. */
+  age_band?: '18_24' | '25_34' | '35_44' | '45_54' | '55_plus';
   /** The terms and privacy version accepted. */
   policy_version: string;
 }

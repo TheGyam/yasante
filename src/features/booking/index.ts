@@ -11,6 +11,7 @@ export type {
   Deposit,
   Busy,
   FreeSlots,
+  Occasion,
   Review,
   ReviewReportReason,
   SlotInterest,
@@ -19,7 +20,7 @@ export type {
   TimingOutcome,
   TimingReason,
 } from './types';
-export { REVIEW_REPORT_REASONS, TIMING_BUCKETS, TIMING_REASONS } from './types';
+export { OCCASIONS, REVIEW_REPORT_REASONS, TIMING_BUCKETS, TIMING_REASONS } from './types';
 export { bookingApi } from './api';
 export * from './format';
 export * from './hooks';

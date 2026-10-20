@@ -63,6 +63,8 @@ export interface Booking {
   /** Whether the service includes the braiding hair, from her menu at the time. */
   hairIncluded?: boolean;
   notes?: string;
+  /** What it's for, if she said. */
+  occasion?: Occasion;
   /** An .ics link the server provides for the confirmed appointment. */
   calendarUrl?: string;
 
@@ -104,6 +106,8 @@ export interface Booking {
   timing?: BookingTiming;
   /** The client's one tap: did it start on time? */
   startedOnTime?: boolean;
+  /** The extension hair she used, from her close-out. Only on the stylist's copy. */
+  extensionHair?: ExtensionHair;
   /** A client may contest a no-show or a timing record, once each. */
   contested?: { noShow?: boolean; timing?: boolean };
   /** Her review, once she's left one. Only on the client's copy. */
@@ -133,6 +137,7 @@ export interface BookingDraft {
   bringingOwnHair: boolean;
   requestedTimes: string[];
   notes?: string;
+  occasion?: Occasion;
   policyVersion: string;
   /** The look she's booking from, so the stylist sees the picture. */
   lookId?: string;
@@ -217,6 +222,8 @@ export type CheckInWeek = 2 | 4;
 export interface CheckInAnswers {
   /** Is the style still in? "no" dates when it came out: how long styles last. */
   stillIn: 'yes' | 'no';
+  /** Why it came out, when it has. "hurt" is health data: only with hair details consent. */
+  cameOut?: 'time' | 'hurt' | 'frizzy' | 'event' | 'other';
   holding: 'fresh' | 'okay' | 'tired';
   /** Health data: asked only with her hair details consent. */
   scalp?: 'comfortable' | 'itchy' | 'sore';
@@ -277,8 +284,23 @@ export interface SlotInterest {
 }
 
 /** What a close-out records. */
+export interface ExtensionHair {
+  brand?: string;
+  product?: string;
+  packs?: number;
+}
+
 export interface CloseOut {
   outcome: 'attended' | 'no_show';
   timing?: BookingTiming;
   actualPrice?: number;
+  extensionHair?: ExtensionHair;
 }
+
+/** What a booking is for, if she says: optional, from this list only. */
+export type Occasion = 'wedding' | 'holiday' | 'event';
+export const OCCASIONS: { value: Occasion; label: string }[] = [
+  { value: 'wedding', label: 'A wedding' },
+  { value: 'holiday', label: 'A holiday' },
+  { value: 'event', label: 'An event' },
+];

@@ -95,6 +95,9 @@ class Booking(TimeStampedModel):
     bringing_own_hair = models.BooleanField(default=False)
     hair_included = models.BooleanField(null=True, blank=True)
     notes = models.TextField(max_length=1000, blank=True, default="")
+    # What it's for, if she said: it helps the stylist plan, and shows what people book for.
+    OCCASION_CHOICES = [("wedding", "A wedding"), ("holiday", "A holiday"), ("event", "An event")]
+    occasion = models.CharField(max_length=10, choices=OCCASION_CHOICES, blank=True, default="")
 
     # Scheduling
     requested_times = ArrayField(models.DateTimeField(), default=list)
@@ -136,6 +139,10 @@ class Booking(TimeStampedModel):
         max_length=20, choices=TIMING_BUCKET_CHOICES, blank=True, default=""
     )
     timing_reason = models.CharField(max_length=30, blank=True, default="")
+    # Extension hair she used, from her close-out, if she said: her business record.
+    hair_brand = models.CharField(max_length=80, blank=True, default="")
+    hair_product = models.CharField(max_length=120, blank=True, default="")
+    hair_packs = models.PositiveSmallIntegerField(null=True, blank=True)
     started_on_time = models.BooleanField(null=True, blank=True)
     contested_no_show = models.BooleanField(default=False)
     contested_timing = models.BooleanField(default=False)

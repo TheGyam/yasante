@@ -68,6 +68,23 @@ BUDGET_CHOICES = [
     ("150_plus", "£150+"),
 ]
 
+# Her next style: what she'd like, so stylists and looks can follow it. All optional.
+COLOUR_CHOICES = [
+    ("natural", "My natural colour"),
+    ("black", "Black"),
+    ("brown", "Brown"),
+    ("blonde", "Blonde"),
+    ("red", "Red"),
+    ("bold", "A bold colour"),
+]
+UPKEEP_CHOICES = [("low", "Low"), ("medium", "Medium"), ("high", "High")]
+SIT_CHOICES = [
+    ("up_to_2", "Up to 2 hours"),
+    ("2_to_4", "2 to 4 hours"),
+    ("4_to_6", "4 to 6 hours"),
+    ("6_plus", "6 hours or more"),
+]
+
 
 class HairProfile(models.Model):
     """
@@ -123,6 +140,12 @@ class HairProfile(models.Model):
     # For people who measure: never required, always in centimetres.
     length_cm = models.FloatField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    # Her wishlist for the next style. Not history, so not snapshotted.
+    next_styles = ArrayField(models.CharField(max_length=50), default=list, blank=True, size=10)
+    next_length = models.CharField(max_length=20, choices=LENGTH_CHOICES, blank=True, default="")
+    next_colour = models.CharField(max_length=20, choices=COLOUR_CHOICES, blank=True, default="")
+    next_upkeep = models.CharField(max_length=10, choices=UPKEEP_CHOICES, blank=True, default="")
+    next_sit = models.CharField(max_length=10, choices=SIT_CHOICES, blank=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -229,22 +252,27 @@ def has_consent(user, purpose):
     return current_consents(user).get(purpose, False)
 
 
+def consenting(purpose):
+    """Everyone whose latest answer for `purpose` is yes, as one query."""
+    from django.contrib.auth import get_user_model
+    from django.db.models import OuterRef, Subquery
+
+    latest = (
+        counted_consents()
+        .filter(user=OuterRef("pk"), purpose=purpose)
+        .order_by("-recorded_at", "-created_at")
+        .values("granted")[:1]
+    )
+    return get_user_model().objects.annotate(said_yes=Subquery(latest)).filter(said_yes=True)
+
+
 def research_participants():
     """
     Everyone whose latest research answer is yes. Every research or staff query that
     breaks results down by hair, scalp or growth starts here, so a no (or no answer)
     keeps her out from that moment.
     """
-    from django.contrib.auth import get_user_model
-    from django.db.models import OuterRef, Subquery
-
-    latest = (
-        counted_consents()
-        .filter(user=OuterRef("pk"), purpose="research")
-        .order_by("-recorded_at", "-created_at")
-        .values("granted")[:1]
-    )
-    return get_user_model().objects.annotate(research=Subquery(latest)).filter(research=True)
+    return consenting("research")
 
 
 class AnalyticsEvent(models.Model):
@@ -321,6 +349,14 @@ class HairLog(models.Model):
     """
 
     KIND_CHOICES = [("trim", "Trim"), ("wash", "Wash day"), ("take_down", "Style taken out")]
+    # Why a style came out, if she said. "hurt" is health data: kept only with her yes.
+    REASON_CHOICES = [
+        ("time", "It was time"),
+        ("hurt", "It hurt"),
+        ("frizzy", "It got frizzy"),
+        ("event", "For an event"),
+        ("other", "Other"),
+    ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hair_log")
@@ -332,6 +368,7 @@ class HairLog(models.Model):
     local_hour = models.PositiveSmallIntegerField(null=True, blank=True)
     # The appointment whose style came out, for take-downs.
     booking_id = models.UUIDField(null=True, blank=True, db_index=True)
+    reason = models.CharField(max_length=10, choices=REASON_CHOICES, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -342,7 +379,7 @@ class HairLog(models.Model):
         return f"{self.user_id} {self.kind} {self.at:%Y-%m-%d}"
 
 
-def log_hair(user, kind, local_at=None, at=None, booking_id=None):
+def log_hair(user, kind, local_at=None, at=None, booking_id=None, reason=""):
     """Append one hair event with the phone's own time; once per kind per booking for take-downs."""
     from django.utils import timezone
 
@@ -361,4 +398,14 @@ def log_hair(user, kind, local_at=None, at=None, booking_id=None):
         local_weekday=weekday,
         local_hour=hour,
         booking_id=booking_id,
+        reason=_kept_reason(user, kind, reason),
     )
+
+
+def _kept_reason(user, kind, reason):
+    """Only take-downs have a reason, and "it hurt" only with her yes to hair details."""
+    if kind != "take_down" or reason not in dict(HairLog.REASON_CHOICES):
+        return ""
+    if reason == "hurt" and not has_consent(user, "personalisation"):
+        return ""
+    return reason

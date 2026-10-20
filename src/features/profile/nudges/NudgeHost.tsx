@@ -3,13 +3,14 @@ import { View } from 'react-native';
 import { subDays } from 'date-fns';
 import { useAuth } from '@/features/auth';
 import { useBookings } from '@/features/booking';
+import { useConsentStore } from '@/shared/config/consentStore';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { Sheet } from '@/shared/ui/Sheet';
 import { Text } from '@/shared/ui/Text';
-import { useHairLog, useLogHair } from '../hairLog';
+import { TAKE_DOWN_REASONS, useHairLog, useLogHair, type TakeDownReason } from '../hairLog';
 import { useUpdateHairProfile, useUser } from '../hooks';
 import type { HairPorosity } from '../types';
 import { nextNudge, type Nudge, type NudgeKind } from './logic';
@@ -54,9 +55,11 @@ function Nudges() {
   const logHair = useLogHair();
   const saveHair = useUpdateHairProfile(user?.id);
   const memory = useNudgeMemory();
+  const hairAllowed = useConsentStore(s => s.consents.personalisation?.granted ?? false);
   const [nudge, setNudge] = useState<Nudge | null>(null);
-  // A follow-up question within the same sheet (when did it come out? has it grown?).
-  const [step, setStep] = useState<'when' | 'grown' | null>(null);
+  // A follow-up question within the same sheet (when? why? has it grown?).
+  const [step, setStep] = useState<'when' | 'why' | 'grown' | null>(null);
+  const [outDaysAgo, setOutDaysAgo] = useState(0);
   const asked = useRef(false);
 
   useEffect(() => {
@@ -69,7 +72,7 @@ function Nudges() {
   useEffect(() => {
     if (!ready || asked.current) return;
     asked.current = true;
-    const next = nextNudge({ memory, bookings, log, hair: account.hairProfile });
+    const next = nextNudge({ memory, bookings, log, hair: account.hairProfile, hairAllowed });
     if (next) {
       memory.shown();
       setNudge(next);
@@ -96,15 +99,23 @@ function Nudges() {
     close();
     router.push('/hair-profile/length');
   };
-  const takeDown = (daysAgo: number) => {
+  // The diary is never edited, so the take-down is saved once "why" is answered or skipped.
+  const takeDown = (reason?: TakeDownReason) => {
     if (nudge.kind !== 'take_down') return;
     logHair.mutate({
       kind: 'take_down',
       bookingId: nudge.booking.id,
-      at: subDays(new Date(), daysAgo).toISOString(),
+      at: subDays(new Date(), outDaysAgo).toISOString(),
+      reason,
     });
     haptics.light();
-    setStep('grown');
+    // Updating her length saves to her hair profile, so only with her yes.
+    if (hairAllowed) setStep('grown');
+    else close();
+  };
+  const when = (daysAgo: number) => {
+    setOutDaysAgo(daysAgo);
+    setStep('why');
   };
   const porosity = (value: HairPorosity) => {
     saveHair.mutate({ porosity: value });
@@ -119,10 +130,20 @@ function Nudges() {
   if (nudge.kind === 'take_down' && step === 'when') {
     title = 'When did they come out?';
     answers = [
-      { label: 'Today', onPress: () => takeDown(0) },
-      { label: 'In the last few days', onPress: () => takeDown(3) },
-      { label: 'Last week', onPress: () => takeDown(8) },
-      { label: 'Longer ago', onPress: () => takeDown(21) },
+      { label: 'Today', onPress: () => when(0) },
+      { label: 'In the last few days', onPress: () => when(3) },
+      { label: 'Last week', onPress: () => when(8) },
+      { label: 'Longer ago', onPress: () => when(21) },
+    ];
+  } else if (nudge.kind === 'take_down' && step === 'why') {
+    title = 'Why did they come out?';
+    answers = [
+      // "It hurt" is health data: only asked with her yes to using hair details.
+      ...TAKE_DOWN_REASONS.filter(r => r.value !== 'hurt' || hairAllowed).map(r => ({
+        label: r.label,
+        onPress: () => takeDown(r.value),
+      })),
+      { label: 'Skip', onPress: () => takeDown() },
     ];
   } else if (nudge.kind === 'take_down' && step === 'grown') {
     title = 'While your hair’s out, has it grown?';

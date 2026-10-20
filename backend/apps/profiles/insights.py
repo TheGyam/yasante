@@ -20,6 +20,39 @@ def _days(later, earlier):
     return max(0, (later - earlier).days)
 
 
+def usual_wash(washes):
+    """(weekday, hour) she usually washes, by her phone's clock, once it's a habit:
+    three washes on the same weekday. Otherwise None."""
+    weekdays = Counter(e.local_weekday for e in washes if e.local_weekday)
+    day, count = weekdays.most_common(1)[0] if weekdays else (None, 0)
+    if count < 3:
+        return None
+    hours = Counter(e.local_hour for e in washes if e.local_weekday == day and e.local_hour is not None)
+    return day, (hours.most_common(1)[0][0] if hours else None)
+
+
+def style_timing(user, now=None):
+    """
+    The style in now (or None) and how many days her styles have lasted, appointment
+    to take-down, from what she logged herself. Nobody else's history comes into it.
+    """
+    from apps.bookings.models import Booking
+
+    now = now or timezone.now()
+    done = Booking.objects.filter(client=user, status="completed", scheduled_for__isnull=False)
+    taken_down = {
+        e.booking_id: e for e in user.hair_log.filter(kind="take_down", booking_id__isnull=False)
+    }
+    lasted = [_days(taken_down[b.pk].at, b.scheduled_for) for b in done.filter(pk__in=list(taken_down))]
+    # The style in now: the latest appointment not yet taken down, unless a
+    # take-down came after it.
+    last = done.order_by("-scheduled_for").first()
+    current = None
+    if last and last.pk not in taken_down and not any(e.at > last.scheduled_for for e in taken_down.values()):
+        current = {"name": last.service_name, "since": last.scheduled_for, "days": _days(now, last.scheduled_for), "booking_id": str(last.pk)}
+    return current, lasted
+
+
 def insights(user, period="month", now=None):
     from apps.bookings.models import Booking
     from apps.planner.models import CollectionItem
@@ -43,23 +76,10 @@ def insights(user, period="month", now=None):
     log = list(user.hair_log.all().order_by("at"))
     washes = [e for e in log if e.kind == "wash"]
     trims = [e for e in log if e.kind == "trim"]
-    taken_down = {e.booking_id: e for e in log if e.kind == "take_down" and e.booking_id}
-
-    # How long a style lasts: appointment to take-down, for the ones they said.
-    lasted = [
-        _days(taken_down[b.pk].at, b.scheduled_for)
-        for b in done.filter(pk__in=list(taken_down))
-    ]
-    # The style in now: the latest appointment not yet taken down, unless a
-    # take-down came after it.
-    last = done.order_by("-scheduled_for").first()
-    current = None
-    if last and last.pk not in taken_down and not any(e.at > last.scheduled_for for e in taken_down.values()):
-        current = {"name": last.service_name, "since": last.scheduled_for, "days": _days(now, last.scheduled_for), "booking_id": str(last.pk)}
+    current, lasted = style_timing(user, now)
 
     # Wash days: how many, and the day they usually fall on once there's a pattern.
-    weekdays = Counter(e.local_weekday for e in washes if e.local_weekday)
-    usual, count = weekdays.most_common(1)[0] if weekdays else (None, 0)
+    usual = (usual_wash(washes) or (None,))[0]
     gaps = [_days(b.at, a.at) for a, b in zip(washes, washes[1:])]
 
     # Length: where it is, and how it's moved (in the period, or since they started).
@@ -98,7 +118,7 @@ def insights(user, period="month", now=None):
         "style_lasts_days": round(mean(lasted)) if lasted else None,
         "washes": len([e for e in washes if not since or e.at >= since]),
         # Only once it's a habit: three washes on the same day.
-        "usual_wash_day": WEEKDAYS[usual] if usual and count >= 3 else None,
+        "usual_wash_day": WEEKDAYS[usual] if usual else None,
         "wash_every_days": round(mean(gaps)) if len(gaps) >= 2 else None,
         "days_since_trim": _days(now, trims[-1].at) if trims else None,
         "length": length,

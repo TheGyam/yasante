@@ -134,6 +134,7 @@ export const bookingApi = {
         scalp: answers.scalp,
         again: answers.again,
         stillIn: answers.stillIn === 'yes',
+        cameOut: answers.cameOut,
         localAt: localTimestamp(),
       })
     ).data,

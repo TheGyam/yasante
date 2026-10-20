@@ -300,6 +300,7 @@ class BookingListCreateView(APIView):
                 styles=list(service.styles),
                 from_look=_bookable_look(data.get("look_id")),
                 notes=str(data.get("notes") or "").strip()[:1000],
+                occasion=data.get("occasion") if data.get("occasion") in dict(Booking.OCCASION_CHOICES) else "",
                 requested_times=[start],
                 expires_at=answer_by(start, settings.BOOKING_REQUEST_LAPSE_HOURS),
                 # The client's postcode district (or area, outside the UK) when the stylist
@@ -516,6 +517,18 @@ class BookingCloseView(_BookingAction):
             paid = 0
         if not no_show and paid > 0:
             booking.actual_price = paid
+        # The extension hair she used: optional, and only for an appointment that happened.
+        hair = request.data.get("extension_hair") or {}
+        if not no_show and isinstance(hair, dict):
+            booking.hair_brand = str(hair.get("brand") or "").strip()[:80]
+            booking.hair_product = str(hair.get("product") or "").strip()[:120]
+            try:
+                packs = int(hair.get("packs") or 0)
+            except (TypeError, ValueError):
+                return _err("Say how many packs, as a number", 400)
+            if not 0 <= packs <= 50:
+                return _err("Say how many packs, up to 50", 400)
+            booking.hair_packs = packs or None
         booking.status = to
         if to == "completed":
             booking.completed_at = timezone.now()
@@ -720,7 +733,13 @@ class CheckInView(_BookingAction):
             # It's come out: how long styles last, the way she lives with them.
             from apps.profiles.models import log_hair
 
-            log_hair(request.user, "take_down", request.data.get("local_at"), booking_id=booking.pk)
+            log_hair(
+                request.user,
+                "take_down",
+                request.data.get("local_at"),
+                booking_id=booking.pk,
+                reason=str(request.data.get("came_out") or ""),
+            )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

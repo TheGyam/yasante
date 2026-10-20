@@ -36,6 +36,7 @@ EXPORT = {
     "comment_likes": ("looks.CommentLike", "user"),
     "reports_made": ("looks.Report", "reporter"),
     "people_blocked": ("looks.Block", "blocker"),
+    "not_for_me": ("looks.NotForMe", "user"),
     "moderation_of_your_content": ("looks.ModerationAction", "author"),
     "appeals": ("looks.Appeal", "author"),
     "collections": ("planner.Collection", "user"),
@@ -122,6 +123,37 @@ def generate_data_export(self, user_id: str):
 
 
 @shared_task
+def wash_day_reminders(now=None):
+    """
+    Hourly: on the weekday and at the hour she usually washes, a reminder, for people
+    who switched wash-day reminders on and let us use their hair details. Once a day.
+    """
+    from django.utils import timezone
+
+    from apps.common import zones
+    from apps.common.notifications import notify
+
+    from .insights import usual_wash
+    from .models import consenting
+
+    now = now or timezone.now()
+    asked = consenting("personalisation").filter(notification_preference__opted_in__contains=["wash_day"])
+    for user in asked:
+        usual = usual_wash(list(user.hair_log.filter(kind="wash")))
+        local = now.astimezone(zones.of(user))
+        if usual and usual == (local.isoweekday(), local.hour):
+            notify(
+                user.pk,
+                "wash_day",
+                f"wash:{user.pk}:{local.date()}",
+                "Wash day",
+                "It’s your usual wash day. Tap “Wash day done” when you’re finished.",
+                url="/hair-profile",
+                mode="client",
+            )
+
+
+@shared_task
 def prompt_length(now=None):
     """
     Monthly: "has it grown?" to anyone whose length hasn't changed in 30 days. The
@@ -134,10 +166,15 @@ def prompt_length(now=None):
 
     from apps.common.notifications import notify
 
-    from .models import HairProfile, HairProfileSnapshot
+    from .models import HairProfile, HairProfileSnapshot, consenting
 
     now = now or timezone.now()
-    with_length = HairProfile.objects.exclude(length="", shrunk_length="").values_list("user_id", flat=True)
+    # Only people who let us use their hair details: their length is one of them.
+    with_length = (
+        HairProfile.objects.filter(user__in=consenting("personalisation"))
+        .exclude(length="", shrunk_length="")
+        .values_list("user_id", flat=True)
+    )
     last = dict(
         HairProfileSnapshot.objects.filter(user_id__in=with_length)
         .exclude(length="", shrunk_length="")

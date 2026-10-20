@@ -1898,6 +1898,23 @@ paths:
                 items:
                   $ref: '#/components/schemas/MyModeration'
           description: ''
+  /api/not-for-me/:
+    post:
+      operationId: not_for_me_create
+      description: 'POST /api/not-for-me/ — { lookId } or { stylistId }: her feed
+        shows fewer like it.'
+      tags:
+      - not-for-me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotForMeRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/notifications/preferences/:
     get:
       operationId: notifications_preferences_retrieve
@@ -3120,6 +3137,20 @@ components:
         * `yes` - yes
         * `maybe` - maybe
         * `no` - no
+    AgeBandEnum:
+      enum:
+      - '18_24'
+      - '25_34'
+      - '35_44'
+      - '45_54'
+      - 55_plus
+      type: string
+      description: |-
+        * `18_24` - 18_24
+        * `25_34` - 25_34
+        * `35_44` - 35_44
+        * `45_54` - 45_54
+        * `55_plus` - 55_plus
     AnswerRequestRequest:
       type: object
       properties:
@@ -3318,6 +3349,8 @@ components:
           type: boolean
         notes:
           type: string
+        occasion:
+          $ref: '#/components/schemas/OccasionEnum'
         calendarUrl:
           type: string
         requestedTimes:
@@ -3372,6 +3405,10 @@ components:
           - $ref: '#/components/schemas/Timing'
         startedOnTime:
           type: boolean
+        extensionHair:
+          allOf:
+          - $ref: '#/components/schemas/ExtensionHair'
+          description: The stylist's own record; only she sees it
         contested:
           allOf:
           - $ref: '#/components/schemas/Contested'
@@ -3432,6 +3469,15 @@ components:
         notes:
           type: string
           minLength: 1
+        occasion:
+          allOf:
+          - $ref: '#/components/schemas/OccasionEnum'
+          description: |-
+            What it's for, if she says
+
+            * `wedding` - wedding
+            * `holiday` - holiday
+            * `event` - event
         policyVersion:
           type: string
           minLength: 1
@@ -3541,6 +3587,20 @@ components:
       description: |-
         * `client` - client
         * `stylist` - stylist
+    CameOutEnum:
+      enum:
+      - time
+      - hurt
+      - frizzy
+      - event
+      - other
+      type: string
+      description: |-
+        * `time` - time
+        * `hurt` - hurt
+        * `frizzy` - frizzy
+        * `event` - event
+        * `other` - other
     CarePlanRequestRequest:
       type: object
       properties:
@@ -3684,6 +3744,17 @@ components:
         stillIn:
           type: boolean
           description: Is the style still in?
+        cameOut:
+          allOf:
+          - $ref: '#/components/schemas/CameOutEnum'
+          description: |-
+            Why it came out, when it's out. "hurt" is kept only with hair details consent
+
+            * `time` - time
+            * `hurt` - hurt
+            * `frizzy` - frizzy
+            * `event` - event
+            * `other` - other
         localAt:
           type: string
           minLength: 1
@@ -3821,6 +3892,8 @@ components:
           format: double
         timing:
           $ref: '#/components/schemas/TimingRequest'
+        extensionHair:
+          $ref: '#/components/schemas/ExtensionHairRequest'
       required:
       - outcome
     ClosedDayRequestRequest:
@@ -4311,6 +4384,37 @@ components:
       required:
       - at
       - name
+    ExtensionHair:
+      type: object
+      properties:
+        brand:
+          type: string
+          maxLength: 80
+        product:
+          type: string
+          maxLength: 120
+        packs:
+          type: integer
+          maximum: 50
+          minimum: 1
+    ExtensionHairRequest:
+      type: object
+      properties:
+        brand:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 80
+        product:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 120
+        packs:
+          type: integer
+          maximum: 50
+          minimum: 1
+          nullable: true
     FavoriteResponse:
       type: object
       properties:
@@ -4558,6 +4662,8 @@ components:
           format: date-time
         bookingId:
           type: string
+        reason:
+          type: string
       required:
       - at
       - id
@@ -4578,6 +4684,17 @@ components:
         bookingId:
           type: string
           format: uuid
+        reason:
+          allOf:
+          - $ref: '#/components/schemas/Reason5d7Enum'
+          description: |-
+            Why a style came out. "hurt" is kept only with hair details consent
+
+            * `time` - time
+            * `hurt` - hurt
+            * `frizzy` - frizzy
+            * `event` - event
+            * `other` - other
       required:
       - kind
     HairProfileResponse:
@@ -4594,11 +4711,11 @@ components:
           - $ref: '#/components/schemas/BlankEnum'
         length:
           oneOf:
-          - $ref: '#/components/schemas/LengthEnum'
+          - $ref: '#/components/schemas/NextLengthEnum'
           - $ref: '#/components/schemas/BlankEnum'
         shrunkLength:
           oneOf:
-          - $ref: '#/components/schemas/ShrunkLengthEnum'
+          - $ref: '#/components/schemas/NextLengthEnum'
           - $ref: '#/components/schemas/BlankEnum'
         density:
           oneOf:
@@ -4646,6 +4763,28 @@ components:
         completedAt:
           type: string
           format: date-time
+        nextStyles:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 10
+        nextLength:
+          oneOf:
+          - $ref: '#/components/schemas/NextLengthEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        nextColour:
+          oneOf:
+          - $ref: '#/components/schemas/NextColourEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        nextUpkeep:
+          oneOf:
+          - $ref: '#/components/schemas/NextUpkeepEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        nextSit:
+          oneOf:
+          - $ref: '#/components/schemas/NextSitEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         updatedAt:
           type: string
           format: date-time
@@ -4654,6 +4793,7 @@ components:
       - chemicals
       - domain
       - goals
+      - nextStyles
       - scalp
       - updatedAt
     HairProfileResponseScalpEnum:
@@ -4794,32 +4934,6 @@ components:
         * `trim` - trim
         * `wash` - wash
         * `take_down` - take_down
-    LengthEnum:
-      enum:
-      - cropped
-      - ear
-      - chin
-      - neck
-      - shoulder
-      - armpit
-      - bra-strap
-      - mid-back
-      - waist
-      - hip
-      - tailbone
-      type: string
-      description: |-
-        * `cropped` - TWA / cropped
-        * `ear` - Ear
-        * `chin` - Chin
-        * `neck` - Neck
-        * `shoulder` - Shoulder
-        * `armpit` - Armpit
-        * `bra-strap` - Bra strap
-        * `mid-back` - Mid-back
-        * `waist` - Waist
-        * `hip` - Hip
-        * `tailbone` - Tailbone
     LengthInsight:
       type: object
       properties:
@@ -5275,6 +5389,81 @@ components:
         * `open` - open
         * `actioned` - actioned
         * `dismissed` - dismissed
+    NextColourEnum:
+      enum:
+      - natural
+      - black
+      - brown
+      - blonde
+      - red
+      - bold
+      type: string
+      description: |-
+        * `natural` - My natural colour
+        * `black` - Black
+        * `brown` - Brown
+        * `blonde` - Blonde
+        * `red` - Red
+        * `bold` - A bold colour
+    NextLengthEnum:
+      enum:
+      - cropped
+      - ear
+      - chin
+      - neck
+      - shoulder
+      - armpit
+      - bra-strap
+      - mid-back
+      - waist
+      - hip
+      - tailbone
+      type: string
+      description: |-
+        * `cropped` - TWA / cropped
+        * `ear` - Ear
+        * `chin` - Chin
+        * `neck` - Neck
+        * `shoulder` - Shoulder
+        * `armpit` - Armpit
+        * `bra-strap` - Bra strap
+        * `mid-back` - Mid-back
+        * `waist` - Waist
+        * `hip` - Hip
+        * `tailbone` - Tailbone
+    NextSitEnum:
+      enum:
+      - up_to_2
+      - 2_to_4
+      - 4_to_6
+      - 6_plus
+      type: string
+      description: |-
+        * `up_to_2` - Up to 2 hours
+        * `2_to_4` - 2 to 4 hours
+        * `4_to_6` - 4 to 6 hours
+        * `6_plus` - 6 hours or more
+    NextUpkeepEnum:
+      enum:
+      - low
+      - medium
+      - high
+      type: string
+      description: |-
+        * `low` - Low
+        * `medium` - Medium
+        * `high` - High
+    NotForMeRequestRequest:
+      type: object
+      properties:
+        lookId:
+          type: string
+          minLength: 1
+          description: A look she'd rather not see
+        stylistId:
+          type: string
+          minLength: 1
+          description: A stylist's account, whose looks she'd rather not see
     NotificationCategory:
       type: object
       properties:
@@ -5333,6 +5522,16 @@ components:
       - thisWeek
       - timing
       - weekOf
+    OccasionEnum:
+      enum:
+      - wedding
+      - holiday
+      - event
+      type: string
+      description: |-
+        * `wedding` - wedding
+        * `holiday` - holiday
+        * `event` - event
     PageReview:
       type: object
       properties:
@@ -5451,6 +5650,20 @@ components:
           type: string
           format: date-time
           nullable: true
+        nextStyles:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          maxItems: 10
+        nextLength:
+          type: string
+        nextColour:
+          type: string
+        nextUpkeep:
+          type: string
+        nextSit:
+          type: string
     PatchedLookTagsRequestRequest:
       type: object
       properties:
@@ -5968,6 +6181,20 @@ components:
       required:
       - average
       - count
+    Reason5d7Enum:
+      enum:
+      - time
+      - hurt
+      - frizzy
+      - event
+      - other
+      type: string
+      description: |-
+        * `time` - time
+        * `hurt` - hurt
+        * `frizzy` - frizzy
+        * `event` - event
+        * `other` - other
     ReasonRequestRequest:
       type: object
       properties:
@@ -6219,32 +6446,6 @@ components:
         * `using` - using
         * `finished` - finished
         * `repurchased` - repurchased
-    ShrunkLengthEnum:
-      enum:
-      - cropped
-      - ear
-      - chin
-      - neck
-      - shoulder
-      - armpit
-      - bra-strap
-      - mid-back
-      - waist
-      - hip
-      - tailbone
-      type: string
-      description: |-
-        * `cropped` - TWA / cropped
-        * `ear` - Ear
-        * `chin` - Chin
-        * `neck` - Neck
-        * `shoulder` - Shoulder
-        * `armpit` - Armpit
-        * `bra-strap` - Bra strap
-        * `mid-back` - Mid-back
-        * `waist` - Waist
-        * `hip` - Hip
-        * `tailbone` - Tailbone
     SignupRequest:
       type: object
       description: |-
@@ -6275,6 +6476,18 @@ components:
           type: string
         ageConfirmed:
           type: boolean
+        ageBand:
+          description: |-
+            Optional: an age band, never a birthday
+
+            * `18_24` - 18_24
+            * `25_34` - 25_34
+            * `35_44` - 35_44
+            * `45_54` - 45_54
+            * `55_plus` - 55_plus
+          oneOf:
+          - $ref: '#/components/schemas/AgeBandEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         policyVersion:
           type: string
           minLength: 1

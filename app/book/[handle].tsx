@@ -15,6 +15,7 @@ import {
 import { errorMessage, useAuth } from '@/features/auth';
 import { useLook } from '@/features/looks';
 import {
+  OCCASIONS,
   SlotPicker,
   inSentence,
   useBooking,
@@ -22,6 +23,7 @@ import {
   useRefreshFreeSlots,
   useRequestBooking,
   whenLabel,
+  type Occasion,
 } from '@/features/booking';
 import {
   estimate,
@@ -137,6 +139,7 @@ export default function RequestBookingScreen() {
   const [time, setTime] = useState<string>();
   const [ownHair, setOwnHair] = useState(false);
   const [notes, setNotes] = useState('');
+  const [occasion, setOccasion] = useState<Occasion>();
   const [accepted, setAccepted] = useState(false);
   const [chosen, setChosen] = useState<ChosenOptions>({});
   // Where: at theirs, or at the client's when they travel. A stylist who only
@@ -208,6 +211,7 @@ export default function RequestBookingScreen() {
         bringingOwnHair: ownHair,
         requestedTimes: [time],
         notes: notes.trim() || undefined,
+        occasion,
         policyVersion: POLICY_VERSION,
         lookId: fromLook?.id,
         atClient: comesToMe,
@@ -505,6 +509,22 @@ export default function RequestBookingScreen() {
             }
           />
         </Section>
+
+        <View style={{ gap: space.sm }}>
+          <Text variant="footnote" tone="secondary">
+            Is it for something? (optional)
+          </Text>
+          <View style={styles.chips}>
+            {OCCASIONS.map(o => (
+              <Chip
+                key={o.value}
+                label={o.label}
+                selected={occasion === o.value}
+                onPress={() => setOccasion(occasion === o.value ? undefined : o.value)}
+              />
+            ))}
+          </View>
+        </View>
 
         <Input
           label="Anything they should know"

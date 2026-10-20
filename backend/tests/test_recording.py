@@ -103,7 +103,7 @@ def test_length_keeps_neck_and_an_optional_measurement_in_history(api, make_user
     assert history[-2:] == [("neck", 30.5), ("shoulder", 30.5)]
 
 
-def test_monthly_length_prompt_goes_to_those_who_have_not_updated(make_user):
+def test_monthly_length_prompt_goes_to_those_who_have_not_updated(make_user, consent):
     from datetime import timedelta
 
     from apps.common.models import NotificationLog
@@ -111,11 +111,15 @@ def test_monthly_length_prompt_goes_to_those_who_have_not_updated(make_user):
     from apps.profiles.tasks import prompt_length
     from django.utils import timezone
 
-    stale, fresh, never = make_user(), make_user(), make_user()
-    for user in (stale, fresh):
+    stale, fresh, never, said_no = make_user(), make_user(), make_user(), make_user()
+    for user in (stale, fresh, said_no):
         HairProfile.objects.update_or_create(user=user, defaults={"length": "chin"})
         HairProfileSnapshot.objects.create(user=user, length="chin")
-    HairProfileSnapshot.objects.filter(user=stale).update(recorded_at=timezone.now() - timedelta(days=40))
+    HairProfileSnapshot.objects.filter(user__in=(stale, said_no)).update(recorded_at=timezone.now() - timedelta(days=40))
+    for user in (stale, fresh):
+        consent(user, "personalisation")
+    # Her length is a hair detail: without her yes, it isn't used to prompt her.
+    consent(said_no, "personalisation", granted=False)
     prompt_length()
     prompt_length()  # once a month, however often it runs
     told = list(NotificationLog.objects.values_list("user_id", flat=True))
@@ -161,3 +165,24 @@ def test_a_booking_from_a_look_shows_the_stylist_that_look(api, setup, book, mak
     # A made-up look never stops a request.
     body["lookId"], body["requestedTimes"] = "not-a-look", [slot(api(client), profile, service)]
     assert api(client).post("/api/bookings/", body).status_code == 201
+
+
+def test_why_a_style_came_out_is_kept_and_it_hurt_only_with_her_yes(api, setup, book, consent):
+    from apps.profiles.models import HairLog
+
+    profile, client = setup
+    first, second, third = (_completed(api, profile, client, book) for _ in range(3))
+    post = lambda booking_id, reason: api(client).post(
+        "/api/hair-log/", {"kind": "take_down", "bookingId": booking_id, "reason": reason}
+    )
+    assert post(first, "event").json()["reason"] == "event"
+    # Pain is health data: without her yes it isn't kept.
+    assert "reason" not in post(second, "hurt").json()
+    consent(client, "personalisation")
+    assert post(third, "hurt").json()["reason"] == "hurt"
+
+    # The check-in can say it too, when the style's out.
+    due = _completed(api, profile, client, book, days_ago=29)
+    answers = {"week": 4, "holding": "okay", "scalp": "comfortable", "again": "yes", "stillIn": False, "cameOut": "frizzy"}
+    assert api(client).post(f"/api/bookings/{due}/check-in/", answers).status_code == 204
+    assert HairLog.objects.get(booking_id=due).reason == "frizzy"

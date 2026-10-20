@@ -5,6 +5,8 @@ import { vars } from '@/shared/theme/vars.css';
 export const column = style({ maxWidth: 480, margin: '0 auto', display: 'grid', gap: space.xl });
 export const heading = style({ display: 'grid', gap: space.sm, textAlign: 'center' });
 export const form = style({ display: 'grid', gap: space.lg });
+export const group = style({ display: 'grid', gap: space.sm });
+export const chips = style({ display: 'flex', flexWrap: 'wrap', gap: space.sm });
 export const footer = style({ textAlign: 'center' });
 
 /** A text-sized action inside a sentence: "send another code". */

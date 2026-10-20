@@ -1211,6 +1211,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/not-for-me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/not-for-me/ — { lookId } or { stylistId }: her feed shows fewer like it. */
+        post: operations["not_for_me_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications/preferences/": {
         parameters: {
             query?: never;
@@ -2007,6 +2024,15 @@ export interface components {
          * @enum {string}
          */
         AgainEnum: "yes" | "maybe" | "no";
+        /**
+         * @description * `18_24` - 18_24
+         *     * `25_34` - 25_34
+         *     * `35_44` - 35_44
+         *     * `45_54` - 45_54
+         *     * `55_plus` - 55_plus
+         * @enum {string}
+         */
+        AgeBandEnum: "18_24" | "25_34" | "35_44" | "45_54" | "55_plus";
         AnswerRequestRequest: {
             accept: boolean;
             reason?: string;
@@ -2116,6 +2142,7 @@ export interface components {
             bringingOwnHair: boolean;
             hairIncluded?: boolean;
             notes?: string;
+            occasion?: components["schemas"]["OccasionEnum"];
             calendarUrl?: string;
             requestedTimes: string[];
             /** Format: date-time */
@@ -2143,6 +2170,8 @@ export interface components {
             actualPrice?: number;
             timing?: components["schemas"]["Timing"];
             startedOnTime?: boolean;
+            /** @description The stylist's own record; only she sees it */
+            extensionHair?: components["schemas"]["ExtensionHair"];
             contested?: components["schemas"]["Contested"];
             review?: components["schemas"]["ReviewState"];
             checkInDue?: components["schemas"]["CheckInDueEnum"];
@@ -2161,6 +2190,14 @@ export interface components {
             bringingOwnHair: boolean;
             requestedTimes: string[];
             notes?: string;
+            /**
+             * @description What it's for, if she says
+             *
+             *     * `wedding` - wedding
+             *     * `holiday` - holiday
+             *     * `event` - event
+             */
+            occasion?: components["schemas"]["OccasionEnum"];
             policyVersion: string;
             /** @description The look the booking is from */
             lookId?: string;
@@ -2221,6 +2258,15 @@ export interface components {
          * @enum {string}
          */
         ByEnum: "client" | "stylist";
+        /**
+         * @description * `time` - time
+         *     * `hurt` - hurt
+         *     * `frizzy` - frizzy
+         *     * `event` - event
+         *     * `other` - other
+         * @enum {string}
+         */
+        CameOutEnum: "time" | "hurt" | "frizzy" | "event" | "other";
         CarePlanRequestRequest: {
             name: string;
             frequency: components["schemas"]["FrequencyEnum"];
@@ -2287,6 +2333,16 @@ export interface components {
             again: components["schemas"]["AgainEnum"];
             /** @description Is the style still in? */
             stillIn?: boolean;
+            /**
+             * @description Why it came out, when it's out. "hurt" is kept only with hair details consent
+             *
+             *     * `time` - time
+             *     * `hurt` - hurt
+             *     * `frizzy` - frizzy
+             *     * `event` - event
+             *     * `other` - other
+             */
+            cameOut?: components["schemas"]["CameOutEnum"];
             /** @description The phone's own clock */
             localAt?: string;
         };
@@ -2354,6 +2410,7 @@ export interface components {
             /** Format: double */
             actualPrice?: number;
             timing?: components["schemas"]["TimingRequest"];
+            extensionHair?: components["schemas"]["ExtensionHairRequest"];
         };
         ClosedDayRequestRequest: {
             /** Format: date */
@@ -2578,6 +2635,16 @@ export interface components {
             /** @default  */
             appVersion: string;
         };
+        ExtensionHair: {
+            brand?: string;
+            product?: string;
+            packs?: number;
+        };
+        ExtensionHairRequest: {
+            brand?: string | null;
+            product?: string | null;
+            packs?: number | null;
+        };
         FavoriteResponse: {
             id: string;
             userId: string;
@@ -2702,6 +2769,7 @@ export interface components {
             /** Format: date-time */
             at: string;
             bookingId?: string;
+            reason?: string;
         };
         HairLogRequestRequest: {
             kind: components["schemas"]["Kind823Enum"];
@@ -2714,6 +2782,16 @@ export interface components {
             localAt?: string;
             /** Format: uuid */
             bookingId?: string;
+            /**
+             * @description Why a style came out. "hurt" is kept only with hair details consent
+             *
+             *     * `time` - time
+             *     * `hurt` - hurt
+             *     * `frizzy` - frizzy
+             *     * `event` - event
+             *     * `other` - other
+             */
+            reason?: components["schemas"]["Reason5d7Enum"];
         };
         /**
          * @description For output-only model serializers: a model field that may be blank or null can be
@@ -2722,8 +2800,8 @@ export interface components {
         HairProfileResponse: {
             domain: components["schemas"]["DomainEnum"];
             texture?: components["schemas"]["TextureEnum"] | components["schemas"]["BlankEnum"];
-            length?: components["schemas"]["LengthEnum"] | components["schemas"]["BlankEnum"];
-            shrunkLength?: components["schemas"]["ShrunkLengthEnum"] | components["schemas"]["BlankEnum"];
+            length?: components["schemas"]["NextLengthEnum"] | components["schemas"]["BlankEnum"];
+            shrunkLength?: components["schemas"]["NextLengthEnum"] | components["schemas"]["BlankEnum"];
             density?: components["schemas"]["DensityEnum"] | components["schemas"]["BlankEnum"];
             porosity?: components["schemas"]["PorosityEnum"] | components["schemas"]["BlankEnum"];
             goals: components["schemas"]["GoalsEnum"][];
@@ -2739,6 +2817,11 @@ export interface components {
             lengthCm?: number;
             /** Format: date-time */
             completedAt?: string;
+            nextStyles: string[];
+            nextLength?: components["schemas"]["NextLengthEnum"] | components["schemas"]["BlankEnum"];
+            nextColour?: components["schemas"]["NextColourEnum"] | components["schemas"]["BlankEnum"];
+            nextUpkeep?: components["schemas"]["NextUpkeepEnum"] | components["schemas"]["BlankEnum"];
+            nextSit?: components["schemas"]["NextSitEnum"] | components["schemas"]["BlankEnum"];
             /** Format: date-time */
             readonly updatedAt: string;
         };
@@ -2811,21 +2894,6 @@ export interface components {
          * @enum {string}
          */
         Kind823Enum: "trim" | "wash" | "take_down";
-        /**
-         * @description * `cropped` - TWA / cropped
-         *     * `ear` - Ear
-         *     * `chin` - Chin
-         *     * `neck` - Neck
-         *     * `shoulder` - Shoulder
-         *     * `armpit` - Armpit
-         *     * `bra-strap` - Bra strap
-         *     * `mid-back` - Mid-back
-         *     * `waist` - Waist
-         *     * `hip` - Hip
-         *     * `tailbone` - Tailbone
-         * @enum {string}
-         */
-        LengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
         LengthInsight: {
             now: string;
             /** Format: double */
@@ -3018,6 +3086,52 @@ export interface components {
          * @enum {string}
          */
         MyReportStatusEnum: "open" | "actioned" | "dismissed";
+        /**
+         * @description * `natural` - My natural colour
+         *     * `black` - Black
+         *     * `brown` - Brown
+         *     * `blonde` - Blonde
+         *     * `red` - Red
+         *     * `bold` - A bold colour
+         * @enum {string}
+         */
+        NextColourEnum: "natural" | "black" | "brown" | "blonde" | "red" | "bold";
+        /**
+         * @description * `cropped` - TWA / cropped
+         *     * `ear` - Ear
+         *     * `chin` - Chin
+         *     * `neck` - Neck
+         *     * `shoulder` - Shoulder
+         *     * `armpit` - Armpit
+         *     * `bra-strap` - Bra strap
+         *     * `mid-back` - Mid-back
+         *     * `waist` - Waist
+         *     * `hip` - Hip
+         *     * `tailbone` - Tailbone
+         * @enum {string}
+         */
+        NextLengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
+        /**
+         * @description * `up_to_2` - Up to 2 hours
+         *     * `2_to_4` - 2 to 4 hours
+         *     * `4_to_6` - 4 to 6 hours
+         *     * `6_plus` - 6 hours or more
+         * @enum {string}
+         */
+        NextSitEnum: "up_to_2" | "2_to_4" | "4_to_6" | "6_plus";
+        /**
+         * @description * `low` - Low
+         *     * `medium` - Medium
+         *     * `high` - High
+         * @enum {string}
+         */
+        NextUpkeepEnum: "low" | "medium" | "high";
+        NotForMeRequestRequest: {
+            /** @description A look she'd rather not see */
+            lookId?: string;
+            /** @description A stylist's account, whose looks she'd rather not see */
+            stylistId?: string;
+        };
         NotificationCategory: {
             id: string;
             label: string;
@@ -3042,6 +3156,13 @@ export interface components {
             lastWeek: components["schemas"]["WeekCounts"];
             timing: components["schemas"]["ServiceTiming"][];
         };
+        /**
+         * @description * `wedding` - wedding
+         *     * `holiday` - holiday
+         *     * `event` - event
+         * @enum {string}
+         */
+        OccasionEnum: "wedding" | "holiday" | "event";
         PageReview: {
             id: string;
             bookingId: string;
@@ -3087,6 +3208,11 @@ export interface components {
             lengthCm?: number | null;
             /** Format: date-time */
             completedAt?: string | null;
+            nextStyles?: string[];
+            nextLength?: string;
+            nextColour?: string;
+            nextUpkeep?: string;
+            nextSit?: string;
         };
         PatchedLookTagsRequestRequest: {
             styles?: string[];
@@ -3307,6 +3433,15 @@ export interface components {
             average: number;
             count: number;
         };
+        /**
+         * @description * `time` - time
+         *     * `hurt` - hurt
+         *     * `frizzy` - frizzy
+         *     * `event` - event
+         *     * `other` - other
+         * @enum {string}
+         */
+        Reason5d7Enum: "time" | "hurt" | "frizzy" | "event" | "other";
         ReasonRequestRequest: {
             reason?: string;
         };
@@ -3430,21 +3565,6 @@ export interface components {
          */
         ShelfStatusEnum: "using" | "finished" | "repurchased";
         /**
-         * @description * `cropped` - TWA / cropped
-         *     * `ear` - Ear
-         *     * `chin` - Chin
-         *     * `neck` - Neck
-         *     * `shoulder` - Shoulder
-         *     * `armpit` - Armpit
-         *     * `bra-strap` - Bra strap
-         *     * `mid-back` - Mid-back
-         *     * `waist` - Waist
-         *     * `hip` - Hip
-         *     * `tailbone` - Tailbone
-         * @enum {string}
-         */
-        ShrunkLengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
-        /**
          * @description POST /api/auth/signup/
          *
          *     Validates email uniqueness, password strength, age confirmation,
@@ -3459,6 +3579,16 @@ export interface components {
             role: components["schemas"]["RoleEnum"];
             inviteCode?: string;
             ageConfirmed: boolean;
+            /**
+             * @description Optional: an age band, never a birthday
+             *
+             *     * `18_24` - 18_24
+             *     * `25_34` - 25_34
+             *     * `35_44` - 35_44
+             *     * `45_54` - 45_54
+             *     * `55_plus` - 55_plus
+             */
+            ageBand?: components["schemas"]["AgeBandEnum"] | components["schemas"]["BlankEnum"];
             policyVersion: string;
         };
         SlotInterest: {
@@ -5783,6 +5913,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MyModeration"][];
                 };
+            };
+        };
+    };
+    not_for_me_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["NotForMeRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
