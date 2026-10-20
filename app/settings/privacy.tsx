@@ -38,9 +38,9 @@ const CHOICES: { purpose: ConsentPurpose; title: string; subtitle: string; icon:
   },
   {
     purpose: 'research',
-    title: 'Help research on textured hair',
+    title: 'Help research on hair',
     subtitle:
-      'Let your hair data, without your name or photos, join anonymous research on textured hair, including reports for hair brands and studies with universities. You can stop any time in Settings.',
+      'Let your hair data, without your name or photos, join anonymous research on hair, including reports for hair brands and studies with universities. You can stop any time in Settings.',
     icon: FlaskConical,
   },
 ];

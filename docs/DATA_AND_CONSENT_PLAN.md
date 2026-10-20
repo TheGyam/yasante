@@ -194,7 +194,7 @@ Known problems this plan fixes:
 | --- | --- | --- | --- | --- |
 | `analytics` | A "Your privacy choices" screen right after sign-up | Title: "Help make Yasante better". Body: "Share how you use Yasante, never what you post, so we can fix what’s slow or confusing." | Off | Nothing is recorded |
 | `personalisation` | The first screen of the hair profile, before any question | Title: "Use your hair details". Body: "We’ll use your hair and scalp details to match looks, stylists and products to your hair. Only you and stylists you book can see them." | Off | The hair profile can't be filled in; the app works without matching |
-| `research` | When the hair profile is finished | Title: "Help research on textured hair". Body: "Let your hair data, without your name or photos, join anonymous research on textured hair, including reports for hair brands and studies with universities. You can stop any time in Settings." | Off | Never in any research or report |
+| `research` | When the hair profile is finished | Title: "Help research on hair". Body: "Let your hair data, without your name or photos, join anonymous research on hair, including reports for hair brands and studies with universities. You can stop any time in Settings." | Off | Never in any research or report |
 
 Every consent screen:
 
@@ -204,6 +204,11 @@ Every consent screen:
 - Shown once per account. Existing accounts see each one once, at the same moment
   (after their next launch, at the next hair profile visit, at the next profile
   completion), unless they've already answered in Settings.
+- Answers to `analytics`, `personalisation` and `research` recorded against a policy
+  version older than the one 6.3 publishes count as unanswered, so everyone is asked
+  once under the new wording. The app used to send its untouched defaults as if they
+  were choices (hair details pre-ticked on), so old records can't be trusted. Yaw
+  decided this on 20 October 2026.
 - Records a `ConsentRecord` with purpose, granted, `policy_version`, time, source
   (`app` or `web`).
 - Settings > Privacy and data keeps all three switches, with the same wording, and
