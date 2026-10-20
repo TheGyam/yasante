@@ -20,23 +20,27 @@ import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Toggle } from '@/shared/ui/Toggle';
 
+// The same words as where each is first asked.
 const CHOICES: { purpose: ConsentPurpose; title: string; subtitle: string; icon: LucideIcon }[] = [
   {
     purpose: 'analytics',
-    title: 'Usage analytics',
-    subtitle: 'Anonymous data that shows us what to fix',
+    title: 'Help make Yasante better',
+    subtitle:
+      'Share how you use Yasante, never what you post, so we can fix what’s slow or confusing.',
     icon: BarChart3,
   },
   {
     purpose: 'personalisation',
-    title: 'Personalisation',
-    subtitle: 'Match what you see to your hair profile',
+    title: 'Use your hair details',
+    subtitle:
+      'We’ll use your hair and scalp details to match looks, stylists and products to your hair. Only you and stylists you book can see them.',
     icon: SlidersHorizontal,
   },
   {
     purpose: 'research',
-    title: 'Hair research',
-    subtitle: 'Let anonymised data inform research. Off until you turn it on',
+    title: 'Help research on textured hair',
+    subtitle:
+      'Let your hair data, without your name or photos, join anonymous research on textured hair, including reports for hair brands and studies with universities. You can stop any time in Settings.',
     icon: FlaskConical,
   },
 ];
@@ -107,6 +111,7 @@ export default function PrivacyScreen() {
               subtitle={choice.subtitle}
               icon={choice.icon}
               iconTone="neutral"
+              wrap
               trailing={
                 <Toggle
                   value={consents[choice.purpose]?.granted ?? false}
