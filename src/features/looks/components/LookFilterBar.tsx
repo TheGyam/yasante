@@ -2,6 +2,7 @@ import { ScrollView } from 'react-native';
 import { ChevronDown, MapPin, Waves } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { useUser, useUserStore } from '@/features/profile';
+import { useConsentStore } from '@/shared/config/consentStore';
 import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, space } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
@@ -15,12 +16,16 @@ const useStyles = makeStyles(() => ({
   row: { flexDirection: 'row', gap: space.sm, paddingHorizontal: GUTTER },
 }));
 
-/** Her curl pattern, from the account or, before signing up, this device. */
+/**
+ * Her curl pattern, from the account or, before signing up, this device. Only while
+ * she lets us use her hair details: without that, nothing is matched on it.
+ */
 function useTexture() {
   const { user } = useAuth();
   const { data: account } = useUser(user?.id, { enabled: !!user?.id });
   const local = useUserStore(s => s.hairProfile);
-  return account?.hairProfile?.texture ?? local?.texture;
+  const allowed = useConsentStore(s => s.consents.personalisation?.granted ?? false);
+  return allowed ? (account?.hairProfile?.texture ?? local?.texture) : undefined;
 }
 
 /** What the feed is narrowed to right now, as the API takes it. */
@@ -43,12 +48,15 @@ export function LookFilterBar({ inset = true }: { inset?: boolean }) {
   const styles = useStyles();
   const router = useRouter();
   const texture = useTexture();
+  const hairAllowed = useConsentStore(s => s.consents.personalisation?.granted ?? false);
   const filters = useLookFilters();
   const { data: taxonomy = [] } = useStyleTaxonomy();
   useLookAreas(); // warmed now, so the area picker opens full
 
   const toggleHair = async () => {
     if (filters.hairLikeMine) return filters.setHairLikeMine(false);
+    // Matching on her hair needs her yes first: ask for it instead of filtering.
+    if (!hairAllowed) return router.push('/settings/privacy-choices?purpose=personalisation');
     if (texture) return filters.setHairLikeMine(true);
     const go = await confirm({
       title: 'Tell us about your hair first',

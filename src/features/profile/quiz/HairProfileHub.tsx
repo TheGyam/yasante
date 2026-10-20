@@ -6,6 +6,7 @@ import { useConsentStore, useUnanswered } from '@/shared/config/consentStore';
 import { useRouter } from '@/shared/lib/navigation';
 import { EASE_OUT, makeStyles, space, useTheme } from '@/shared/theme';
 import { haptics } from '@/shared/lib/haptics';
+import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { ConsentQuestion } from '@/shared/ui/ConsentQuestion';
 import { notify } from '@/shared/ui/dialog';
@@ -35,6 +36,7 @@ const useStyles = makeStyles(() => ({
   progress: { alignSelf: 'stretch', gap: space.xs },
   nudge: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   nudgeText: { flex: 1, gap: 2 },
+  off: { gap: space.sm },
 }));
 
 /**
@@ -55,6 +57,7 @@ export function HairProfileHub() {
   const stale = lengthIsStale(profile);
   const askHair = useUnanswered('personalisation', isAuthenticated);
   const hairAllowed = useConsentStore(s => s.consents.personalisation?.granted ?? false);
+  const setConsent = useConsentStore(s => s.setConsent);
   const askResearch = useUnanswered('research', isAuthenticated);
 
   const open = (key: string) => router.push(`/hair-profile/${key}`);
@@ -100,7 +103,25 @@ export function HairProfileHub() {
           </View>
         </View>
 
-        {stale && (
+        {!hairAllowed && (
+          <Card>
+            <View style={styles.off}>
+              <Text variant="bodyStrong">Your hair details aren’t being used</Text>
+              <Text variant="footnote" tone="secondary">
+                They’re saved for you to see, but nothing is matched to them and stylists you book
+                don’t see them.
+              </Text>
+              <Button
+                label="Use my hair details"
+                variant="secondary"
+                onPress={() => setConsent('personalisation', true)}
+                testID="hair-details-on"
+              />
+            </View>
+          </Card>
+        )}
+
+        {stale && hairAllowed && (
           <Rise>
             <Card onPress={() => open('length')} accessibilityLabel="Check your length">
               <View style={styles.nudge}>

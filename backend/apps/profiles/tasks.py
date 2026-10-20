@@ -64,6 +64,8 @@ EXPORT = {
 }
 # Never sent, on any row: credentials and the like.
 SECRET = ("password", "token", "secret", "code_hash", "apple_id", "google_id")
+# Map points are worked out on the server for distances, and stay there.
+SERVER_ONLY = ("latitude", "longitude")
 NOT_FOR_STYLIST = ("address",)
 
 
@@ -78,6 +80,7 @@ def collect_user_data(user):
             f.attname
             for f in model._meta.concrete_fields
             if not any(word in f.name for word in SECRET)
+            and f.name not in SERVER_ONLY
             and not (key == "bookings_as_stylist" and f.name in NOT_FOR_STYLIST)
         ]
         rows = list(model.objects.filter(**{relation: user.pk}).values(*names))

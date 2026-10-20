@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import Animated, { FadeInLeft, FadeInRight } from 'react-native-reanimated';
 import { useAuth } from '@/features/auth';
-import { useUnanswered } from '@/shared/config/consentStore';
+import { useConsentStore, useUnanswered } from '@/shared/config/consentStore';
 import { track } from '@/shared/lib/analytics';
 import { haptics } from '@/shared/lib/haptics';
 import { EASE_OUT, makeStyles, space } from '@/shared/theme';
@@ -75,8 +75,11 @@ export function HairQuiz({ mode, section }: HairQuizProps) {
   const setHairProfile = useUserStore(s => s.setHairProfile);
   const setOnboardingCompleted = useUserStore(s => s.setOnboardingCompleted);
   const save = useUpdateHairProfile();
-  // Asked before the first question, wherever the hair profile starts.
-  const askHair = useUnanswered('personalisation', isAuthenticated);
+  // Asked before the first question, wherever the hair profile starts. A part opened
+  // after she said no asks again: without her yes there's nothing to fill in.
+  const saidNo = useConsentStore(s => s.consents.personalisation?.granted === false);
+  const askHair =
+    useUnanswered('personalisation', isAuthenticated) || (mode === 'section' && saidNo);
   // Asked once the core is done, before the app opens.
   const askResearch = useUnanswered('research', isAuthenticated);
   const [askingResearch, setAskingResearch] = useState(false);

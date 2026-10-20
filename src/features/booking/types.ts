@@ -218,7 +218,8 @@ export interface CheckInAnswers {
   /** Is the style still in? "no" dates when it came out: how long styles last. */
   stillIn: 'yes' | 'no';
   holding: 'fresh' | 'okay' | 'tired';
-  scalp: 'comfortable' | 'itchy' | 'sore';
+  /** Health data: asked only with her hair details consent. */
+  scalp?: 'comfortable' | 'itchy' | 'sore';
   again: 'yes' | 'maybe' | 'no';
 }
 
