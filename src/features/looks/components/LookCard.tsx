@@ -11,7 +11,7 @@ import {
   Share,
 } from 'lucide-react-native';
 import { TEXTURE_LABELS } from '@/features/profile';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, SEP } from '@/shared/lib/format';
 import { HIT_TARGET, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -136,9 +136,12 @@ export const LookCard = memo(function LookCard({
 }: LookCardProps) {
   const styles = useStyles();
   const theme = useTheme();
-  const price = look.price
-    ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
-    : undefined;
+  // A featured stylist isn't taking bookings yet: "Featured" stands where a price would.
+  const price = look.stylistFeatured
+    ? 'Featured'
+    : look.price
+      ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price, look.currency ?? DEFAULT_CURRENCY)}`
+      : undefined;
 
   // In a feed the photo grows out of this card into the look's page.
   const ownPhoto = useRef<View>(null);
@@ -147,8 +150,10 @@ export const LookCard = memo(function LookCard({
     (l: Look, photoIndex: number) => {
       if (!onOpen) return;
       const photo = lookPhotos(l)[photoIndex] ?? lookPhotos(l)[0];
-      openWithHero(media.current, { lookId: l.id, uri: photo.thumbUri ?? photo.uri, photoIndex }, () =>
-        onOpen(l)
+      openWithHero(
+        media.current,
+        { lookId: l.id, uri: photo.thumbUri ?? photo.uri, photoIndex },
+        () => onOpen(l)
       );
     },
     [onOpen, media]
@@ -165,7 +170,7 @@ export const LookCard = memo(function LookCard({
         <Text variant="caption" tone="tertiary" numberOfLines={1}>
           {[look.authorHandle && `@${look.authorHandle}`, look.area, postedLabel(look.createdAt)]
             .filter(Boolean)
-            .join(' · ')}
+            .join(SEP)}
         </Text>
       </View>
     </>
@@ -293,12 +298,12 @@ export const LookCard = memo(function LookCard({
               accessibilityRole={credit.handle ? 'link' : undefined}
             >
               Hair by {credit.name}
-              {tags.length ? ' · ' : ''}
+              {tags.length ? SEP : ''}
             </Text>
           )}
           {tags.length > 0 && (
             <Text variant="caption" tone="tertiary">
-              {tags.join(' · ')}
+              {tags.join(SEP)}
             </Text>
           )}
         </View>
@@ -357,14 +362,16 @@ export const LookCard = memo(function LookCard({
               style={styles.save}
             />
           )}
-          {!!look.serviceName && (
+          {(!!look.serviceName || !!look.stylistFeatured) && (
             <View style={styles.service} pointerEvents="none">
-              <Text variant="footnote" style={styles.serviceText} numberOfLines={1}>
-                {look.serviceName}
-              </Text>
+              {!!look.serviceName && (
+                <Text variant="footnote" style={styles.serviceText} numberOfLines={1}>
+                  {look.serviceName}
+                </Text>
+              )}
               {!!price && (
                 <Text variant="footnote" style={styles.serviceText}>
-                  · {price}
+                  {look.serviceName ? `${SEP.trimStart()}${price}` : price}
                 </Text>
               )}
             </View>

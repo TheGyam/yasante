@@ -6,6 +6,7 @@ import { Section } from '@/shared/ui/Section';
 import { Sheet } from '@/shared/ui/Sheet';
 import { Text } from '@/shared/ui/Text';
 import { formatPrice } from '../format';
+import { useMyCurrency } from '../hooks';
 import type { MenuItem } from '../types';
 
 export interface PhotoTagSheetProps {
@@ -38,6 +39,7 @@ export function PhotoTagSheet({
   title = 'What is this?',
 }: PhotoTagSheetProps) {
   const styles = useStyles();
+  const currency = useMyCurrency();
   const theme = useTheme();
 
   const tick = (selected: boolean) =>
@@ -58,7 +60,7 @@ export function PhotoTagSheet({
               <ListRow
                 key={service.id}
                 title={service.name}
-                value={formatPrice(service)}
+                value={formatPrice(service, currency)}
                 icon={Scissors}
                 trailing={tick(service.id === value)}
                 onPress={() => choose(service.id)}

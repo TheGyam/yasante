@@ -1,5 +1,6 @@
 import { Linking, Platform } from 'react-native';
 import { calendarLink, serviceLine } from './format';
+import { plain } from '@/shared/lib/format';
 import type { Booking } from './types';
 
 /**
@@ -16,7 +17,7 @@ export async function addToCalendar(booking: Booking) {
     const Calendar = require('expo-calendar') as typeof import('expo-calendar');
     const startDate = new Date(booking.scheduledFor);
     await Calendar.createEventInCalendarAsync({
-      title: `${serviceLine(booking)} with ${booking.stylistName}`,
+      title: plain(`${serviceLine(booking)} with ${booking.stylistName}`),
       startDate,
       endDate: new Date(startDate.getTime() + (booking.durationMinutes ?? 120) * 60_000),
       location: booking.address ?? booking.area,

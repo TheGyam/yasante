@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Link } from '@/shared/ui/Link';
 import { Tabs } from '@/shared/ui/Tabs';
-import { formatMoney, formatNumber } from '../../format';
+import { formatMoney, formatMoneyList, formatNumber } from '../../format';
 import type { Insight, InsightRow } from '../../types';
 import { BarChart } from '../charts/BarChart';
 import { Funnel } from '../charts/Funnel';
@@ -37,7 +37,9 @@ export function InsightChart({ insight }: { insight: Insight }) {
   const { labels } = insight;
   const days =
     Math.round((new Date(insight.to).getTime() - new Date(insight.from).getTime()) / DAY) + 1;
-  const timeSeries = ['growth', 'community', 'app-health'].includes(insight.name);
+  const timeSeries = ['growth', 'community', 'app-health', 'area-suggestions'].includes(
+    insight.name
+  );
   const rows = timeSeries ? daily(insight.rows, insight.from, days, labels.length) : insight.rows;
   const previousStart = new Date(new Date(insight.from).getTime() - days * DAY)
     .toISOString()
@@ -49,16 +51,25 @@ export function InsightChart({ insight }: { insight: Insight }) {
   const open = (index: number) => rows[index]?.url && navigate(rows[index].url!);
 
   switch (insight.name) {
-    case 'money':
+    case 'money': {
+      const currency = String(insight.meta.currency ?? 'GBP');
+      const money = (value: number) => formatMoney(value, currency);
+      const currencies = (insight.meta.currencies ?? []) as unknown as {
+        currency: string;
+        amount: number;
+      }[];
       return (
         <>
+          {currencies.length > 1 && (
+            <p className={ui.muted}>
+              Each currency on its own, never converted: {formatMoneyList(currencies)}. The chart
+              below shows {currency}.
+            </p>
+          )}
           <div className={s.tiles}>
-            <Tile label="Total" value={formatMoney(Number(insight.meta.total ?? 0))} />
-            <Tile label="Average booking" value={formatMoney(Number(insight.meta.average ?? 0))} />
-            <Tile
-              label="Deposits collected"
-              value={formatMoney(Number(insight.meta.deposits ?? 0))}
-            />
+            <Tile label="Total" value={money(Number(insight.meta.total ?? 0))} />
+            <Tile label="Average booking" value={money(Number(insight.meta.average ?? 0))} />
+            <Tile label="Deposits collected" value={money(Number(insight.meta.deposits ?? 0))} />
           </div>
           <BarChart
             bars={rows.map(row => ({
@@ -70,12 +81,13 @@ export function InsightChart({ insight }: { insight: Insight }) {
             }))}
             series={labels}
             stacked
-            format={formatMoney}
-            label="Completed booking value per week, with deposits"
+            format={money}
+            label={`Completed booking value per week in ${currency}, with deposits`}
             onSelect={open}
           />
         </>
       );
+    }
     case 'funnel':
       return (
         <>
@@ -219,7 +231,7 @@ export function InsightChart({ insight }: { insight: Insight }) {
                     )}
                   </td>
                   <td className={s.number}>{formatNumber(row.values[0])}</td>
-                  <td className={s.number}>{formatMoney(row.values[1])}</td>
+                  <td className={s.number}>{formatMoney(row.values[1], row.currency)}</td>
                   <td className={s.number}>{row.values[2] ? row.values[2].toFixed(1) : '—'}</td>
                   <td className={s.number}>{row.values[3] ? `${whole(row.values[3])} h` : '—'}</td>
                 </tr>
@@ -240,6 +252,21 @@ export function InsightChart({ insight }: { insight: Insight }) {
           label="Looks posted, and reports opened and resolved, per day"
           onSelect={open}
         />
+      );
+    case 'area-suggestions':
+      return (
+        <>
+          <TimeChart
+            labels={rows.map(row => row.label)}
+            series={labels.map((name, index) => ({
+              name,
+              values: rows.map(row => row.values[index]),
+            }))}
+            label="Area searches per day, and how many found nothing or failed"
+            onSelect={open}
+          />
+          {typeof insight.meta.note === 'string' && <p className={ui.muted}>{insight.meta.note}</p>}
+        </>
       );
     case 'app-health':
       return (

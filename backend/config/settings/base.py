@@ -217,6 +217,7 @@ REST_FRAMEWORK = {
         "waitlist": "10/hour",
         "claim": "10/min",
         "client_error": "30/hour",
+        "places": "60/min",
         "default": "100/min",
     },
     "EXCEPTION_HANDLER": "apps.common.exceptions.custom_exception_handler",

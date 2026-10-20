@@ -6,7 +6,7 @@ import { useAuth } from '@/features/auth';
 import { useLook, useStyleTaxonomy } from '@/features/looks';
 import { useUpdateHairProfile, useUser } from '@/features/profile';
 import { useStylistsForStyle, type StylistSearchResult, type Within } from '@/features/stylist';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatDistance, formatMoney, SEP } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
@@ -23,12 +23,14 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
 import { areasFor, POSTCODE, tidyPostcode } from '@/shared/utils/postcode';
+import { usesMiles } from '@/shared/lib/region';
 
 // How far people usually go for a style, and further if they want.
+// Kept in miles, the server's unit, and labelled in the reader's: 5 miles reads "8 km".
 const RADII: { value: Within; label: string }[] = [
-  { value: 5, label: '5 miles' },
-  { value: 10, label: '10 miles' },
-  { value: 20, label: '20 miles' },
+  { value: 5, label: formatDistance(5, usesMiles) },
+  { value: 10, label: formatDistance(10, usesMiles) },
+  { value: 20, label: formatDistance(20, usesMiles) },
   { value: 'any', label: 'Anywhere' },
 ];
 
@@ -82,7 +84,7 @@ export default function WhoDoesThisStyle() {
     <PressableScale
       key={s.accountId}
       onPress={() => router.push(`/stylist/${s.handle}${withLook ? `?look=${withLook}` : ''}`)}
-      accessibilityLabel={`${s.displayName}, ${s.baseArea}${s.fromPrice ? `, from ${formatMoney(s.fromPrice)}` : ''}`}
+      accessibilityLabel={`${s.displayName}, ${s.baseArea}${s.fromPrice ? `, from ${formatMoney(s.fromPrice, s.currency ?? DEFAULT_CURRENCY)}` : ''}`}
       style={styles.row}
     >
       {s.photoUri ? (
@@ -107,10 +109,12 @@ export default function WhoDoesThisStyle() {
         </View>
         <Text variant="footnote" tone="secondary" numberOfLines={1}>
           {s.miles != null
-            ? `${s.miles < 1 ? 'Under a mile' : `${Math.round(s.miles)} mi`} · `
+            ? `${s.miles < 0.6 ? (usesMiles ? 'Under a mile' : 'Under a km') : formatDistance(s.miles, usesMiles)}${SEP}`
             : ''}
           {s.baseArea}
-          {s.fromPrice ? ` · from ${formatMoney(s.fromPrice)}` : ''}
+          {s.fromPrice
+            ? `${SEP}from ${formatMoney(s.fromPrice, s.currency ?? DEFAULT_CURRENCY)}`
+            : ''}
         </Text>
         {!!s.ratingCount && s.rating != null && (
           <View style={styles.line}>
@@ -200,7 +204,7 @@ export default function WhoDoesThisStyle() {
       ) : place && wider ? (
         <EmptyState
           icon={MapPin}
-          title={`Nobody within ${within} miles yet`}
+          title={`Nobody within ${typeof within === 'number' ? formatDistance(within, usesMiles) : 'reach'} yet`}
           message="Stylists who do this are a little further out."
           actionLabel={`Look within ${wider.label.toLowerCase()}`}
           onAction={() => setWithin(wider.value)}

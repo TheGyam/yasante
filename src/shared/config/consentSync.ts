@@ -1,10 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 import { apiClient } from '@/shared/lib/api/client';
-import { useConsentStore } from './consentStore';
+import { useRouter } from '@/shared/lib/navigation';
+import { useConsentStore, useUnanswered, type ServerConsent } from './consentStore';
 
 /** An attempt that hasn't settled by then is given up on; the records stay pending. */
 const GIVE_UP_MS = 20_000;
+
+// A request stuck behind a token refresh mustn't hold every later one hostage.
+function withTimeout<T>(request: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const giveUp = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('timed out')), GIVE_UP_MS);
+  });
+  return Promise.race([request, giveUp]).finally(() => clearTimeout(timer));
+}
 
 let inFlight: Promise<void> | null = null;
 
@@ -30,38 +40,76 @@ export function syncConsents(): Promise<void> {
     })
     .then(() => useConsentStore.getState().markSynced(pending, new Date().toISOString()));
 
-  // A request stuck behind a token refresh mustn't hold every later sync hostage.
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const giveUp = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error('timed out')), GIVE_UP_MS);
-  });
-
-  inFlight = Promise.race([send, giveUp])
+  inFlight = withTimeout(send)
     // Stays pending; the next change, launch or return to the app tries again.
     .catch(error => {
       if (__DEV__) console.warn('[consents] not synced yet:', error?.message ?? error);
     })
     .finally(() => {
-      clearTimeout(timer);
       inFlight = null;
     });
   return inFlight;
 }
 
-/** While signed in: sync now, whenever a choice changes, and when the app comes back. */
+/**
+ * Takes the account's answers from the server, so a choice made on another device
+ * holds on this one too. Choices this device hasn't sent yet still win.
+ */
+export async function loadConsents(): Promise<void> {
+  const askedAt = new Date().toISOString();
+  try {
+    const { data } = await withTimeout(
+      apiClient.get<{ consents: ServerConsent[] }>('/api/consents/')
+    );
+    useConsentStore.getState().takeServerAnswers(data.consents, askedAt);
+  } catch (error) {
+    // The device's answers stand until the next launch or return to the app.
+    if (__DEV__) console.warn('[consents] not loaded:', (error as Error)?.message ?? error);
+  }
+}
+
+// Send first, so the server's answers include everything this device has chosen.
+const syncThenLoad = () => syncConsents().then(loadConsents);
+
+/**
+ * While signed in: send and load now and when the app comes back, and send
+ * whenever a choice changes.
+ */
 export function useConsentSync(signedIn: boolean) {
   useEffect(() => {
+    // Signed out, or someone else signing in: their answers have to arrive first.
+    useConsentStore.getState().setLoaded(false);
     if (!signedIn) return;
-    void syncConsents();
+    void syncThenLoad();
     const unsubscribe = useConsentStore.subscribe((state, previous) => {
       if (state.consents !== previous.consents) void syncConsents();
     });
     const foreground = AppState.addEventListener('change', state => {
-      if (state === 'active') void syncConsents();
+      if (state === 'active') void syncThenLoad();
     });
     return () => {
       unsubscribe();
       foreground.remove();
     };
   }, [signedIn]);
+}
+
+/**
+ * Asks for the analytics choice once a launch, while she's signed in and hasn't given
+ * one: right after sign-up, and for accounts made before it was asked. `canAsk` is
+ * false while sign-up's own screens are still open.
+ */
+export function useAskForAnalytics(canAsk: boolean) {
+  const router = useRouter();
+  const unanswered = useUnanswered('analytics', true);
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!canAsk || !unanswered || asked.current) return;
+    // A moment after the screens that signing in closes have gone.
+    const timer = setTimeout(() => {
+      asked.current = true;
+      router.push('/settings/privacy-choices' as never);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [canAsk, unanswered, router]);
 }

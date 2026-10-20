@@ -8,12 +8,12 @@ from .access import workspace_url
 UK = ZoneInfo("Europe/London")
 SOURCES = {
     "money": ["bookings.booking"], "funnel": ["bookings.booking"], "growth": ["accounts.user", "stylists.stylistprofile"],
-    "booking-times": ["bookings.booking"], "areas": ["profiles.hairprofile", "stylists.stylistprofile"], "empty-searches": ["common.searchlog"],
+    "booking-times": ["bookings.booking"], "areas": ["profiles.hairprofile", "stylists.stylistprofile"], "empty-searches": ["common.searchlog"], "area-suggestions": ["common.searchlog"],
     "retention": ["accounts.user", "profiles.analyticsevent"], "top-stylists": ["bookings.booking", "stylists.stylistprofile"],
     "community": ["looks.look", "looks.lookcomment", "looks.report"], "app-health": ["common.clienterror", "profiles.analyticsevent"],
 }
 TITLES = {"money": "Booking value", "funnel": "From request to appointment", "growth": "People joining Yasante", "booking-times": "When people book",
-          "areas": "Where to recruit", "empty-searches": "Searches that found nothing", "retention": "People coming back", "top-stylists": "Top stylists",
+          "areas": "Where to recruit", "empty-searches": "Searches that found nothing", "area-suggestions": "Area suggestions", "retention": "People coming back", "top-stylists": "Top stylists",
           "community": "Community health", "app-health": "App health"}
 
 
@@ -29,15 +29,22 @@ def buckets(qs, field, start, end, value=None, weekly=False):
                 .annotate(value=value if value is not None else Count("pk")).order_by("day"))
 
 
-def calculate(name, sources, start, end):
+def calculate(name, sources, start, end, currency=None):
     source = sources[SOURCES[name][0]]
     field = "updated_at" if name == "areas" else "created_at"
     qs = source.filter(**{f"{field}__gte": start, f"{field}__lt": end})
     rows, labels, kind, meta = [], ["Total"], "line", {}
     if name == "money":
-        paid = qs.filter(status="completed")
+        completed = qs.filter(status="completed")
+        # Money is never added across currencies. Each currency's total is listed, and the
+        # chart shows one currency at a time: the one asked for, else the busiest.
+        per = list(completed.values("currency").annotate(total=Sum(Coalesce("actual_price", "price")), n=Count("pk")).order_by("-n", "currency"))
+        currencies = [{"currency": row["currency"], "amount": float(row["total"] or 0)} for row in per]
+        shown = currency if any(c["currency"] == currency for c in currencies) else (currencies[0]["currency"] if currencies else "GBP")
+        paid = completed.filter(currency=shown)
         totals = paid.aggregate(total=Sum(Coalesce("actual_price", "price")), average=Avg(Coalesce("actual_price", "price")), deposits=Sum("deposit_amount", filter=Q(deposit_status="paid")))
         meta = {key: float(value or 0) for key, value in totals.items()}
+        meta.update({"currency": shown, "currencies": currencies})
         rows = list(paid.annotate(day=TruncWeek("created_at", tzinfo=UK)).values("day").annotate(value=Sum(Coalesce("actual_price", "price")), deposit=Sum("deposit_amount", filter=Q(deposit_status="paid"))).order_by("day"))
         rows = [{"label": str(row["day"].date()), "values": [float(row["value"] or 0)-float(row["deposit"] or 0), float(row["deposit"] or 0)], "url": f"{workspace_url('bookings.booking')}?status__exact=completed&created_at__gte={row['day'].date()}&created_at__lt={(row['day']+timedelta(days=7)).date()}"} for row in rows]
         labels, kind = ["Booking value excluding deposit", "Deposits collected"], "stacked-bar"
@@ -66,8 +73,18 @@ def calculate(name, sources, start, end):
         labels, kind = ["People in area", "Active stylists"], "bar"
         meta["note"] = "Current hair-profile areas and published stylists; these are current totals, not historical snapshots."
     elif name == "empty-searches":
-        rows = [{"label": row["query"], "values": [row["value"]], "url": "/records/common/searchlog?" + __import__('urllib.parse', fromlist=['urlencode']).urlencode({"q": row["query"], "result_count__exact": 0})} for row in qs.filter(result_count=0).exclude(query="").values("query").annotate(value=Count("pk")).order_by("-value")[:12]]
+        rows = [{"label": row["query"], "values": [row["value"]], "url": "/records/common/searchlog?" + __import__('urllib.parse', fromlist=['urlencode']).urlencode({"q": row["query"], "result_count__exact": 0})} for row in qs.filter(result_count=0).exclude(query="").exclude(surface="areas").values("query").annotate(value=Count("pk")).order_by("-value")[:12]]
         kind = "bar"
+    elif name == "area-suggestions":
+        # What stylists outside the UK typed in the area field: did OpenStreetMap find it?
+        areas = qs.filter(surface="areas")
+        per_day = areas.annotate(day=TruncDate("created_at", tzinfo=UK)).values("day").annotate(
+            searches=Count("pk"), empty=Count("pk", filter=Q(result_count=0, filters__failed__isnull=True)), failed=Count("pk", filter=Q(filters__failed=True)))
+        rows = [{"label": str(row["day"]), "values": [row["searches"], row["empty"], row["failed"]], "url": f"/records/common/searchlog?surface__exact=areas&created_at__date={row['day']}"} for row in per_day.order_by("day")]
+        labels, kind = ["Searches", "Found nothing", "Couldn't reach OpenStreetMap"], "line"
+        missing = areas.filter(result_count=0, filters__failed__isnull=True).values("query", "filters__country").annotate(value=Count("pk")).order_by("-value")[:5]
+        if missing:
+            meta["note"] = "Most typed and not found: " + ", ".join(f"{row['query']} ({row['filters__country']})" for row in missing) + "."
     elif name == "retention":
         cohorts = {row["week"].date(): row["value"] for row in source.annotate(week=TruncWeek("created_at", tzinfo=UK)).filter(created_at__gte=start, created_at__lt=end).values("week").annotate(value=Count("pk"))}
         active = sources["profiles.analyticsevent"].filter(user__created_at__gte=start, user__created_at__lt=end, at__gte=start, at__lt=end).annotate(cohort=TruncWeek("user__created_at", tzinfo=UK), week=TruncWeek("at", tzinfo=UK)).values("cohort", "week").annotate(value=Count("user", distinct=True))
@@ -75,8 +92,13 @@ def calculate(name, sources, start, end):
         labels, kind = ["Active %"], "heatmap"
     elif name == "top-stylists":
         top = qs.filter(status="completed", stylist_profile__isnull=False, stylist_profile__featured=False).values("stylist_profile_id", "stylist_name", "stylist_profile__rating_average", "stylist_profile__response_hours").annotate(value=Count("pk"), total=Sum(Coalesce("actual_price", "price"))).order_by("-value")[:10]
-        rows = [{"label": row["stylist_name"], "values": [row["value"], float(row["total"] or 0), float(row["stylist_profile__rating_average"] or 0), row["stylist_profile__response_hours"]], "url": f"/records/stylists/stylistprofile/{row['stylist_profile_id']}"} for row in top]
-        labels, kind = ["Bookings", "Value (£)", "Rating", "Response (h)"], "table"
+        # Each stylist's value in her own currency (her bookings are in it).
+        from apps.common.countries import currency_of
+        from apps.stylists.models import StylistProfile
+
+        countries = dict(StylistProfile.objects.filter(pk__in=[row["stylist_profile_id"] for row in top]).values_list("pk", "country"))
+        rows = [{"label": row["stylist_name"], "values": [row["value"], float(row["total"] or 0), float(row["stylist_profile__rating_average"] or 0), row["stylist_profile__response_hours"]], "currency": currency_of(countries.get(row["stylist_profile_id"])), "url": f"/records/stylists/stylistprofile/{row['stylist_profile_id']}"} for row in top]
+        labels, kind = ["Bookings", "Value", "Rating", "Response (h)"], "table"
     elif name == "community":
         looks = buckets(source, "created_at", start, end)
         comments = buckets(sources["looks.lookcomment"], "created_at", start, end)

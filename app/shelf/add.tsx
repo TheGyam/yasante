@@ -20,6 +20,7 @@ import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen } from '@/shared/ui/Screen';
 import { SearchField } from '@/shared/ui/SearchField';
 import { Text } from '@/shared/ui/Text';
+import { SEP } from '@/shared/lib/format';
 
 const useStyles = makeStyles(t => ({
   search: {
@@ -131,8 +132,10 @@ export default function AddToShelfScreen() {
             >
               <View style={styles.text}>
                 <Text variant="caption" tone="tertiary">
-                  {item.brand} · {CATEGORY_LABELS[item.category]}
-                  {item.pending ? ' · Added by you, awaiting review' : ''}
+                  {item.brand}
+                  {SEP}
+                  {CATEGORY_LABELS[item.category]}
+                  {item.pending ? `${SEP}Added by you, awaiting review` : ''}
                 </Text>
                 <Text variant="callout" numberOfLines={2}>
                   {item.name}

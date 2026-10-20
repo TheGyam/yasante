@@ -9,6 +9,7 @@ from django.db.models import Avg, Count
 from django.utils import timezone
 
 from .models import MenuItem, PageView, StylistProfile
+from apps.common.countries import totals
 
 BUCKET_MINUTES = {
     "under_30": 15,
@@ -57,7 +58,10 @@ def count_week(profile, start, end):
             updated_at__gte=start,
             updated_at__lt=end,
         ).count(),
-        "earned": float(sum(b.actual_price or 0 for b in completed)),
+        # In her own currency, for the week-on-week change; and every currency she was
+        # paid in, kept apart (a booking from before she moved country keeps its own).
+        "earned": float(sum(b.actual_price or 0 for b in completed if b.currency == profile.currency)),
+        "earnings": totals((b.currency, b.actual_price) for b in completed if b.actual_price),
     }
 
 

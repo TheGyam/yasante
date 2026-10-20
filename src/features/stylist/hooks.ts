@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
+import { DEFAULT_CURRENCY } from '@/shared/lib/format';
 import { stylistApi, type Within } from './api';
 import { handleProblem } from './handle';
 import type {
   MenuItemDraft,
   PortfolioPhotoDraft,
+  StylistPage,
   StylistProfile,
   StylistProfileDraft,
 } from './types';
@@ -297,4 +299,46 @@ export function useUpdatePhoto() {
 export function useRemovePhoto() {
   const onSuccess = useRefreshPortfolio();
   return useMutation({ mutationFn: (id: string) => stylistApi.removePhoto(id), onSuccess });
+}
+
+/**
+ * Joins or leaves a featured stylist's waitlist, shown at once. The answer sets the
+ * button; her page isn't read again, since every read of it counts as a visit.
+ */
+export function useTogglePageWaitlist(handle: string) {
+  const queryClient = useQueryClient();
+  const key = pageQuery(handle).queryKey;
+  const set = (joined: boolean) =>
+    queryClient.setQueryData<StylistPage>(key, old =>
+      old ? { ...old, waitlistJoined: joined } : old
+    );
+  return useMutation({
+    mutationFn: (join: boolean) => stylistApi.setWaitlist(handle, join),
+    onMutate: async (join: boolean) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<StylistPage>(key)?.waitlistJoined;
+      set(join);
+      return { previous };
+    },
+    onSuccess: answer => set(answer.joined),
+    onError: (_error, _join, context) => {
+      if (context) set(context.previous === true);
+    },
+  });
+}
+
+/** Her own currency, from her page: what she prices her menu and records takings in. */
+export function useMyCurrency() {
+  const { data } = useMyStylistProfile();
+  return data?.currency ?? DEFAULT_CURRENCY;
+}
+
+/** Every country (rarely changes: kept a day, and shared by every picker). */
+export function useCountries() {
+  return useQuery({
+    queryKey: ['countries'],
+    queryFn: stylistApi.countries,
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+  });
 }

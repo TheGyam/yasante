@@ -65,12 +65,15 @@ export function nextNudge({
   bookings,
   log,
   hair,
+  hairAllowed = false,
 }: {
   now?: Date;
   memory: NudgeMemory;
   bookings: Booking[];
   log: HairLogEntry[];
   hair?: HairProfile;
+  /** Her yes to using hair details: length and porosity are saved to her hair profile. */
+  hairAllowed?: boolean;
 }): Nudge | null {
   if (days(now, memory.firstSeenAt) < FIRST_DAY_QUIET) return null;
   if (days(now, memory.lastShownAt) < QUIET_DAYS) return null;
@@ -96,14 +99,14 @@ export function nextNudge({
 
   // 2. Length: right after a style comes out (the best moment to see it), or when
   // it's been a couple of months.
-  if (hair?.length && may('length')) {
+  if (hairAllowed && hair?.length && may('length')) {
     const measured = days(now, hair.lengthMeasuredAt);
     const justOut = days(now, lastTakeDown?.at) <= 3 && measured > 3;
     if (justOut || measured >= LENGTH_EVERY) return { kind: 'length', afterTakeDown: justOut };
   }
 
   // 3. Porosity, in plain words, once they've settled in.
-  if (hair && !hair.porosity && may('porosity')) return { kind: 'porosity' };
+  if (hairAllowed && hair && !hair.porosity && may('porosity')) return { kind: 'porosity' };
 
   // 4. A trim every couple of months or so.
   const lastTrim = log.find(e => e.kind === 'trim');

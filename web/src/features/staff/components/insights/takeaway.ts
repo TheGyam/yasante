@@ -1,4 +1,4 @@
-import { formatMoney, formatNumber, percent } from '../../format';
+import { formatMoney, formatMoneyList, formatNumber, percent } from '../../format';
 import type { Insight, InsightRow } from '../../types';
 
 const sum = (rows: InsightRow[], index = 0) =>
@@ -22,7 +22,12 @@ export function takeaway(insight: Insight): string {
     case 'money': {
       const total = Number(meta.total ?? 0);
       if (!total) return 'No completed bookings in this period yet';
-      return `${formatMoney(total)} from completed bookings${versus(total, previous ? sum(previous, 0) + sum(previous, 1) : null)}`;
+      const currencies = (meta.currencies ?? []) as unknown as {
+        currency: string;
+        amount: number;
+      }[];
+      if (currencies.length > 1) return `${formatMoneyList(currencies)} from completed bookings`;
+      return `${formatMoney(total, String(meta.currency ?? 'GBP'))} from completed bookings${versus(total, previous ? sum(previous, 0) + sum(previous, 1) : null)}`;
     }
     case 'funnel': {
       const requested = Number(meta.requested ?? 0);
@@ -68,6 +73,14 @@ export function takeaway(insight: Insight): string {
       const looks = sum(rows, 0);
       const hours = meta.medianResolutionHours;
       return `${formatNumber(looks)} ${looks === 1 ? 'look' : 'looks'} posted${typeof hours === 'number' ? `; reports resolved in ${hours < 1 ? 'under an hour' : `${Math.round(hours)} h`} on average` : ''}`;
+    }
+    case 'area-suggestions': {
+      const searches = sum(rows, 0);
+      if (!searches) return 'No area searches in this period';
+      const missed = sum(rows, 1) + sum(rows, 2);
+      return missed
+        ? `${Math.round((100 * missed) / searches)}% of area searches found nothing or failed`
+        : `Every one of ${formatNumber(searches)} area searches found somewhere`;
     }
     case 'app-health': {
       const total = rows.reduce((all, row) => all + row.values.reduce((a, b) => a + b, 0), 0);

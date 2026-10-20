@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { ListPlus, Plus, X } from 'lucide-react';
 import { errorMessage } from '@/shared/lib/errors';
-import { formatMoney } from '@/shared/lib/format';
+import { currencySymbol, formatMoney } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
 import { Chip } from '@/shared/ui/Chip';
@@ -14,7 +14,7 @@ import { Link } from '@/shared/ui/Link';
 import { Page } from '@/shared/ui/Page';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
-import { useMenu, useRemoveMenuItem, useSaveMenuItem } from '../hooks';
+import { useMenu, useMyCurrency, useRemoveMenuItem, useSaveMenuItem } from '../hooks';
 import { formatDuration } from '../format';
 import {
   DURATIONS,
@@ -64,6 +64,7 @@ const toRow = (o: OptionDraft): Row => ({ ...o, key: nextKey++, add: o.add ? Str
 const money = (text: string) => Number(text.replace(/[^\d.]/g, '')) || 0;
 
 function ServiceForm({ accountId, item }: { accountId: string; item?: MenuItem }) {
+  const currency = useMyCurrency(accountId);
   const navigate = useNavigate();
   const save = useSaveMenuItem(accountId);
   const remove = useRemoveMenuItem(accountId);
@@ -149,7 +150,7 @@ function ServiceForm({ accountId, item }: { accountId: string; item?: MenuItem }
             onChange={e => setName(e.target.value)}
           />
           <Input
-            label="Price (£)"
+            label={`Price (${currencySymbol(currency)})`}
             inputMode="decimal"
             value={price}
             placeholder="120"
@@ -161,7 +162,7 @@ function ServiceForm({ accountId, item }: { accountId: string; item?: MenuItem }
             </Text>
             <Text variant="footnote" tone="secondary" as="span">
               {' '}
-              — shows as “from {base ? formatMoney(base) : '£120'}”
+              — shows as “from {formatMoney(base || 120, currency)}”
             </Text>
           </Checkbox>
           <Select
@@ -209,7 +210,7 @@ function ServiceForm({ accountId, item }: { accountId: string; item?: MenuItem }
                       onChange={e => change(row.key, { label: e.target.value })}
                     />
                     <Input
-                      label="Adds £"
+                      label={`Adds ${currencySymbol(currency)}`}
                       inputMode="decimal"
                       value={row.add}
                       placeholder="0"

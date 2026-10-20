@@ -15,6 +15,7 @@ import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Text } from '@/shared/ui/Text';
+import { SEP } from '@/shared/lib/format';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.xxl },
@@ -52,7 +53,7 @@ export default function ReportsScreen() {
                 <ListRow
                   key={action.id}
                   title={`${ACTION_LABELS[action.action]}: your ${targetNoun(action.target)}`}
-                  subtitle={`${day(action.createdAt)} · ${
+                  subtitle={`${day(action.createdAt)}${SEP}${
                     appeal ? APPEAL_STATUS_LABELS[appeal.status] : action.reason
                   }`}
                   icon={ShieldAlert}
@@ -86,7 +87,7 @@ export default function ReportsScreen() {
               <ListRow
                 key={report.id}
                 title={`A ${targetNoun(report.target)}: ${reportReasonLabel(report.reason)}`}
-                subtitle={`${day(report.createdAt)} · ${
+                subtitle={`${day(report.createdAt)}${SEP}${
                   report.resolution ?? REPORT_STATUS_LABELS[report.status]
                 }`}
                 icon={Flag}

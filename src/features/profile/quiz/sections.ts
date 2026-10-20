@@ -1,5 +1,7 @@
 import { differenceInDays } from 'date-fns';
-import type { HairLength, HairProfile } from '../types';
+import { deviceCurrency } from '@/shared/lib/region';
+import type { HairLength, HairProfile, StyleBudget } from '../types';
+import { SEP } from '@/shared/lib/format';
 
 export type SectionKey =
   | 'texture'
@@ -10,7 +12,8 @@ export type SectionKey =
   | 'scalp'
   | 'chemicals'
   | 'area'
-  | 'budget';
+  | 'budget'
+  | 'wishlist';
 
 export interface Section {
   key: SectionKey;
@@ -94,6 +97,14 @@ export const SECTIONS: readonly Section[] = [
     help: 'Roughly, before hair. It helps us show prices that fit.',
     answered: p => !!p.budget,
   },
+  {
+    key: 'wishlist',
+    name: 'Next style',
+    title: 'What would you like next?',
+    help: 'All of it’s optional. Pick what you know.',
+    answered: p =>
+      !!(p.nextStyles?.length || p.nextLength || p.nextColour || p.nextUpkeep || p.nextSit),
+  },
 ];
 
 /** What the first run asks. The rest wait for the profile. */
@@ -131,7 +142,7 @@ export function lengthLine(p: Pick<HairProfile, 'length' | 'shrunkLength'>) {
     p.shrunkLength && `${LENGTH_WORDS[p.shrunkLength]} as it shrinks`,
   ]
     .filter(Boolean)
-    .join(' · ');
+    .join(SEP);
 }
 
 /** A month on from the last length, it's worth asking again — that's the growth curve. */
@@ -154,12 +165,21 @@ const CHEMICAL_WORDS = {
   bleach: 'Bleach',
   keratin: 'Keratin',
 } as const;
-const BUDGET_WORDS = {
-  under_50: 'Under £50',
-  '50_100': '£50–100',
-  '100_150': '£100–150',
-  '150_plus': '£150 or more',
-} as const;
+/** A style budget in words: amounts where the phone uses pounds, plain words elsewhere. */
+export const BUDGET_WORDS: Record<StyleBudget, string> =
+  deviceCurrency === 'GBP'
+    ? {
+        under_50: 'Under £50',
+        '50_100': '£50–100',
+        '100_150': '£100–150',
+        '150_plus': '£150 or more',
+      }
+    : {
+        under_50: 'Keeping it affordable',
+        '50_100': 'Mid-range',
+        '100_150': 'Higher-end',
+        '150_plus': 'Whatever it takes',
+      };
 const GOAL_WORDS = {
   growth: 'Length',
   health: 'Health',
@@ -203,5 +223,16 @@ export function sectionSummary(
       return p.area?.trim();
     case 'budget':
       return p.budget && BUDGET_WORDS[p.budget];
+    case 'wishlist':
+      return (
+        [
+          p.nextStyles?.length &&
+            `${p.nextStyles.length} style${p.nextStyles.length === 1 ? '' : 's'}`,
+          p.nextLength && `${LENGTH_WORDS[p.nextLength]} length`,
+          p.nextUpkeep && `${p.nextUpkeep[0].toUpperCase()}${p.nextUpkeep.slice(1)} upkeep`,
+        ]
+          .filter(Boolean)
+          .join(SEP) || undefined
+      );
   }
 }

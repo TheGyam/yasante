@@ -37,6 +37,7 @@ import {
   type DayFilter,
 } from '../picker';
 import type { SlotQuery } from '../types';
+import { SEP } from '@/shared/lib/format';
 
 /** Points per minute on the day's timeline: a ten-hour day is 360 tall. */
 const SCALE = 0.6;
@@ -670,8 +671,8 @@ function Day({
         <Text variant="footnote" tone="secondary">
           {hours ? `${hours.start}–${hours.end}` : 'Her hours'}
           {chosen !== undefined
-            ? ` · You’d be there ${clock(chosen)} to ${clock(chosen + minutes)}`
-            : ' · Tap a time, or a free part of the day'}
+            ? `${SEP}You’d be there ${clock(chosen)} to ${clock(chosen + minutes)}`
+            : `${SEP}Tap a time, or a free part of the day`}
         </Text>
       </View>
 

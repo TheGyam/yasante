@@ -19,6 +19,13 @@ describe('incoming links', () => {
     expect(routeForLink('https://yasante.com/terms')).toBe('/policy/terms');
   });
 
+  it('opens a stylist’s private link and Finish your page, never as handles', () => {
+    expect(routeForLink('https://yasante.com/claim/AbC-123_x')).toBe('/claim/AbC-123_x');
+    expect(routeForLink('https://yasante.com/finish')).toBe('/finish');
+    expect(NOT_HANDLES.has('claim')).toBe(true);
+    expect(NOT_HANDLES.has('finish')).toBe(true);
+  });
+
   it('keeps the query', () => {
     expect(routeForLink('https://yasante.com/braidsbyama?ref=ig')).toBe(
       '/stylist/braidsbyama?ref=ig'

@@ -14,8 +14,8 @@ import {
   type ChosenOptions,
 } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
-import { formatMoney } from '@/shared/lib/format';
-import { POSTCODE, joinAddress, splitAddress } from '@/shared/lib/postcode';
+import { DEFAULT_CURRENCY, formatDistance, formatMoney, SEP } from '@/shared/lib/format';
+import { POSTCODE, joinAddress, splitAddress, splitArea } from '@/shared/lib/postcode';
 import { readJson, writeJson } from '@/shared/lib/storage';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
@@ -38,12 +38,21 @@ import { SlotPicker } from './SlotPicker';
 import * as styles from './BookScreen.css';
 
 /** What she's filled in, kept for this tab: signing in halfway loses nothing. */
+// What a booking is for, if she says: optional, from this list only.
+const OCCASIONS = [
+  { value: 'wedding', label: 'A wedding' },
+  { value: 'holiday', label: 'A holiday' },
+  { value: 'event', label: 'An event' },
+] as const;
+type Occasion = (typeof OCCASIONS)[number]['value'];
+
 interface Draft {
   serviceId?: string;
   chosen: ChosenOptions;
   time?: string;
   ownHair: boolean;
   notes: string;
+  occasion?: Occasion;
   atClient: boolean;
   /** Unset until she types one: her last home visit's address fills in meanwhile. */
   street?: string;
@@ -87,7 +96,10 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
 
   // The address from her last home visit, so it's typed once.
   const { data: past = [] } = useMyBookings(!!session?.user.emailVerified);
-  const lastHome = splitAddress(past.find(b => b.atClient && b.address)?.address);
+  // A UK postcode, or outside the UK the area clients name ("East Legon").
+  const inUk = (page.data?.profile.country ?? 'GB') === 'GB';
+  const lastAddress = past.find(b => b.atClient && b.address)?.address;
+  const lastHome = inUk ? splitAddress(lastAddress) : splitArea(lastAddress);
   const street = draft.street ?? lastHome.street;
   const postcode = draft.postcode ?? lastHome.postcode;
 
@@ -126,6 +138,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
   }
 
   const { profile } = page.data;
+  const currency = profile.currency ?? DEFAULT_CURRENCY;
 
   if (sent) {
     return (
@@ -167,7 +180,8 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
   const hosts = offers.some(m => m !== 'mobile');
   // A stylist who only travels always comes to the client.
   const comesToMe = travels && (draft.atClient || !hosts);
-  const addressReady = !!street.trim() && POSTCODE.test(postcode.trim());
+  const addressReady =
+    !!street.trim() && (inUk ? POSTCODE.test(postcode.trim()) : !!postcode.trim());
 
   // The button stays off until everything's there; say what's left, so it never looks broken.
   const missing = !service
@@ -177,7 +191,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
       : !time
         ? 'Pick a time to send your request.'
         : comesToMe && !addressReady
-          ? 'Add your street and postcode so they can get to you.'
+          ? `Add your street and ${inUk ? 'postcode' : 'area'} so they can get to you.`
           : !accepted
             ? 'Tick their terms above to send.'
             : undefined;
@@ -201,10 +215,15 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
         bringingOwnHair: draft.ownHair,
         requestedTimes: [time],
         notes: draft.notes.trim() || undefined,
+        occasion: draft.occasion,
         policyVersion: POLICY_VERSION,
         lookId: fromLook?.id,
         atClient: comesToMe,
-        clientAddress: comesToMe ? joinAddress(street, postcode) : undefined,
+        clientAddress: comesToMe
+          ? inUk
+            ? joinAddress(street, postcode)
+            : `${street.trim()}, ${postcode.trim()}`
+          : undefined,
       },
       {
         onSuccess: booking =>
@@ -228,7 +247,8 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                 See their page
               </Text>
             </Link>{' '}
-            · {profile.baseArea}
+            {SEP}
+            {profile.baseArea}
           </Text>
         </div>
 
@@ -266,7 +286,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                   type="button"
                   role="radio"
                   aria-checked={on}
-                  aria-label={`${item.name}, ${formatServicePrice(item)}`}
+                  aria-label={`${item.name}, ${formatServicePrice(item, currency)}`}
                   className={styles.service}
                   onClick={() => {
                     if (on) return;
@@ -282,7 +302,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                       </Text>
                     )}
                   </span>
-                  <span className={styles.price}>{formatServicePrice(item)}</span>
+                  <span className={styles.price}>{formatServicePrice(item, currency)}</span>
                   {on ? (
                     <CircleCheck size={20} className={styles.tick} aria-hidden />
                   ) : (
@@ -304,7 +324,9 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
                 <Chip
                   key={choice.id}
                   label={
-                    index === 0 ? choice.label : `${choice.label} · +${formatMoney(choice.add)}`
+                    index === 0
+                      ? choice.label
+                      : `${choice.label}${SEP}+${formatMoney(choice.add, currency)}`
                   }
                   selected={draft.chosen[group] === choice.id}
                   // A longer job may not fit the time picked for a shorter one.
@@ -328,22 +350,22 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
           >
             <ListRow
               icon={CalendarClock}
-              title={[service.name, ...quote.labels].join(' · ')}
+              title={[service.name, ...quote.labels].join(SEP)}
               subtitle={
                 [
                   quote.minutes ? `About ${formatDuration(quote.minutes)}` : undefined,
                   service.hairIncluded ? 'Hair included' : undefined,
                 ]
                   .filter(Boolean)
-                  .join(' · ') || undefined
+                  .join(SEP) || undefined
               }
-              value={`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price)}`}
+              value={`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price, currency)}`}
             />
             {depositDue > 0 && (
               <ListRow
                 title="Deposit to confirm"
                 subtitle="Paid straight to them, once they accept"
-                value={formatMoney(depositDue)}
+                value={formatMoney(depositDue, currency)}
               />
             )}
           </Section>
@@ -391,7 +413,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
             {hosts && (
               <div className={styles.chips}>
                 <Chip
-                  label={`At theirs · ${profile.baseArea}`}
+                  label={`At theirs${SEP}${profile.baseArea}`}
                   icon={House}
                   selected={!draft.atClient}
                   onClick={() => set({ atClient: false })}
@@ -408,19 +430,19 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
               <>
                 <Input
                   label="Your house number and street"
-                  placeholder="4 Choumert Grove"
+                  placeholder={inUk ? '4 Choumert Grove' : '12 Lagos Avenue'}
                   autoComplete="street-address"
                   value={street}
                   onChange={event => set({ street: event.target.value })}
                 />
                 <Input
-                  label="Your postcode"
-                  placeholder="SE15 4RB"
-                  autoComplete="postal-code"
-                  maxLength={8}
+                  label={inUk ? 'Your postcode' : 'Your area'}
+                  placeholder={inUk ? 'SE15 4RB' : 'East Legon'}
+                  autoComplete={inUk ? 'postal-code' : 'address-level3'}
+                  maxLength={inUk ? 8 : 100}
                   value={postcode}
                   onChange={event => set({ postcode: event.target.value })}
-                  hint={`They see your postcode area first${profile.travelRadiusMiles ? ` (they travel up to ${profile.travelRadiusMiles} miles from ${profile.baseArea})` : ''}, and your street once they confirm.`}
+                  hint={`They see your ${inUk ? 'postcode area' : 'area'} first${profile.travelRadiusMiles ? ` (they travel up to ${formatDistance(profile.travelRadiusMiles)} from ${profile.baseArea})` : ''}, and your street once they confirm.`}
                 />
               </>
             )}
@@ -433,6 +455,22 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
           checked={draft.ownHair}
           onChange={event => set({ ownHair: event.target.checked })}
         />
+
+        <div className={styles.group}>
+          <Text variant="footnote" tone="secondary">
+            Is it for something? (optional)
+          </Text>
+          <div className={styles.chips}>
+            {OCCASIONS.map(o => (
+              <Chip
+                key={o.value}
+                label={o.label}
+                selected={draft.occasion === o.value}
+                onClick={() => set({ occasion: draft.occasion === o.value ? undefined : o.value })}
+              />
+            ))}
+          </div>
+        </div>
 
         <TextArea
           label="Anything they should know"

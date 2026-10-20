@@ -1,4 +1,5 @@
 import type { CSSProperties, ElementType, ReactNode } from 'react';
+import { MARK } from '@/shared/lib/format';
 import type { TypeVariant } from '@/shared/theme';
 import * as styles from './Text.css';
 
@@ -26,6 +27,25 @@ const ELEMENT: Partial<Record<TypeVariant, ElementType>> = {
   title3: 'h3',
   body: 'p',
 };
+
+/** The plait between parts of a line, in the accent colour; screen readers skip it. */
+export function withMarks(children: ReactNode): ReactNode {
+  if (typeof children === 'string') {
+    if (!children.includes(MARK)) return children;
+    return children.split(MARK).flatMap((part, i) =>
+      i === 0
+        ? [part]
+        : [
+            <span key={i} className="yasante-mark" aria-hidden="true">
+              {MARK}
+            </span>,
+            part,
+          ]
+    );
+  }
+  if (Array.isArray(children)) return children.map(withMarks);
+  return children;
+}
 
 /** All type goes through here, so every size and weight comes from the scale. */
 export function Text({
@@ -56,7 +76,7 @@ export function Text({
       className={classes}
       style={lines ? { WebkitLineClamp: lines, ...style } : style}
     >
-      {children}
+      {withMarks(children)}
     </Element>
   );
 }

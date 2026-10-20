@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { Bookmark, BookmarkPlus } from 'lucide-react-native';
 import { PhotoCount } from '@/shared/ui/PhotoCount';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney } from '@/shared/lib/format';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -92,9 +92,12 @@ export const LookTile = memo(function LookTile({
     64,
     look.styles.length ? onFindStylists : undefined
   );
-  const price = look.price
-    ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price)}`
-    : undefined;
+  // A featured stylist isn't taking bookings yet: "Featured" stands where a price would.
+  const price = look.stylistFeatured
+    ? 'Featured'
+    : look.price
+      ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price, look.currency ?? DEFAULT_CURRENCY)}`
+      : undefined;
 
   return (
     <View style={[styles.tile, dimmed && styles.dimmed]}>

@@ -127,6 +127,7 @@ export interface Decision {
 export interface InsightRow {
   label: string;
   values: number[];
+  currency?: string;
   url?: string;
   x?: number;
   y?: number;
@@ -390,6 +391,7 @@ export interface FeaturedSummary {
   display_name: string;
   handle: string;
   instagram_handle: string;
+  tiktok_handle: string;
   avatar_uri: string;
   base_area: string;
   live: boolean;

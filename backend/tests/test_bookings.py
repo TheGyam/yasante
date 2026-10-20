@@ -157,10 +157,11 @@ def test_only_the_two_people_can_see_a_booking(api, setup, book, make_user):
     assert api(profile.account).get("/api/bookings/", role="stylist", status="confirmed").json() == []
 
 
-def test_the_stylist_sees_her_record_and_hair_the_client_never_does(api, setup, book):
+def test_the_stylist_sees_her_record_and_hair_the_client_never_does(api, setup, book, consent):
     from apps.bookings.models import Booking
 
     profile, client = setup
+    consent(client, "personalisation")
     booking = book(client, profile)
     # An early cancellation elsewhere is never counted; a late one is.
     Booking.objects.filter(pk=booking["id"]).update()
@@ -337,6 +338,61 @@ def _completed(api, profile, client, book, days_ago=0):
     return booking_id
 
 
+def test_a_rebook_nudge_comes_a_week_before_her_style_usually_comes_out(api, setup, book, consent):
+    from apps.bookings.models import Booking
+    from apps.bookings.tasks import nudge_rebooks
+    from apps.common.models import NotificationLog
+    from apps.profiles.models import log_hair
+
+    profile, client = setup
+    now = timezone.now()
+
+    def styled(days_ago):
+        booking_id = _completed(api, profile, client, book)
+        Booking.objects.filter(pk=booking_id).update(scheduled_for=now - timedelta(days=days_ago))
+        return booking_id
+
+    # Her last style lasted four weeks; this one went in 23 days ago, so it's due in five.
+    before = styled(60)
+    log_hair(client, "take_down", at=now - timedelta(days=32), booking_id=before)
+    current = styled(23)
+    nudges = lambda: NotificationLog.objects.filter(user=client, event_key=f"booking:{current}:rebook")
+
+    nudge_rebooks(now=now)
+    assert not nudges().exists()  # not without her yes to using hair details
+
+    consent(client, "personalisation")
+    nudge_rebooks(now=now)
+    nudge_rebooks(now=now)
+    nudge = nudges().get()
+    assert nudge.category == "after_appointment" and nudge.data["url"] == f"/book/{profile.handle}"
+    assert nudge.body.startswith("It’s nearly time for your knotless braids to come out.")
+    assert "is free on" in nudge.body
+
+
+def test_the_extension_hair_she_used_is_her_own_record(api, setup, book):
+    profile, client = setup
+    booking_id = _confirmed(api, profile, client, book, hours_ahead=-6)
+    url = f"/api/bookings/{booking_id}"
+    hair = {"brand": "X-Pression", "product": "Ultra Braid 1B", "packs": 6}
+    bad = api(profile.account).post(f"{url}/close/", {"outcome": "attended", "extensionHair": {**hair, "packs": 99}})
+    assert bad.status_code == 400
+    closed = api(profile.account).post(f"{url}/close/", {"outcome": "attended", "extensionHair": hair})
+    assert closed.json()["extensionHair"] == hair
+    assert api(profile.account).get(f"{url}/").json()["extensionHair"] == hair
+    assert "extensionHair" not in api(client).get(f"{url}/").json()
+
+
+def test_a_booking_can_say_what_its_for(api, setup, book, make_user):
+    profile, client = setup
+    wedding = book(client, profile, occasion="wedding")
+    assert wedding["occasion"] == "wedding"
+    assert api(profile.account).get(f"/api/bookings/{wedding['id']}/").json()["occasion"] == "wedding"
+    # Optional, and only from the list: anything else is left out.
+    assert "occasion" not in book(client, profile)
+    assert "occasion" not in book(make_user(), profile, occasion="birthday")
+
+
 def test_reviews_follow_a_completed_appointment_once(api, setup, book):
     profile, client = setup
     pending = _confirmed(api, profile, client, book)
@@ -382,6 +438,38 @@ def test_check_ins_open_at_two_and_four_weeks(api, setup, book):
     assert api(client).post(f"/api/bookings/{due}/check-in/", {"week": 2, **answers}).status_code == 204
     assert "checkInDue" not in api(client).get(f"/api/bookings/{due}/").json()
     assert api(client).post(f"/api/bookings/{due}/check-in/", {"week": 2, **answers}).status_code == 409
+
+
+def test_the_scalp_question_is_asked_and_kept_only_with_hair_consent(api, setup, book, consent):
+    from apps.bookings.models import CheckIn
+
+    profile, client = setup
+    two = {"holding": "fresh", "again": "yes"}
+    due = _completed(api, profile, client, book, days_ago=15)
+    # Without her yes, two answers are enough, and a scalp answer sent anyway isn't kept.
+    assert api(client).post(f"/api/bookings/{due}/check-in/", {"week": 2, **two, "scalp": "sore"}).status_code == 204
+    assert CheckIn.objects.get(booking_id=due).scalp == ""
+
+    consent(client, "personalisation")
+    later = _completed(api, profile, client, book, days_ago=15)
+    assert api(client).post(f"/api/bookings/{later}/check-in/", {"week": 2, **two}).status_code == 400
+    assert api(client).post(f"/api/bookings/{later}/check-in/", {"week": 2, **two, "scalp": "itchy"}).status_code == 204
+    assert CheckIn.objects.get(booking_id=later).scalp == "itchy"
+
+
+def test_a_stylist_stops_seeing_her_hair_once_she_turns_hair_details_off(api, setup, book, consent):
+    from apps.bookings.models import Booking
+
+    profile, client = setup
+    consent(client, "personalisation")
+    before = book(client, profile)
+    assert "coily" in api(profile.account).get(f"/api/bookings/{before['id']}/").json()["clientHair"]
+    assert "coily" in Booking.objects.get(pk=before["id"]).client_hair
+
+    consent(client, "personalisation", granted=False)
+    assert "clientHair" not in api(profile.account).get(f"/api/bookings/{before['id']}/").json()
+    after = book(client, profile)
+    assert Booking.objects.get(pk=after["id"]).client_hair == ""
 
 
 def test_lapses_apply_on_read_even_if_the_job_is_late(api, setup, book):
@@ -443,6 +531,25 @@ def test_coming_to_the_client_needs_a_postcode_and_a_stylist_who_travels(api, ma
     profile.save()
     body["clientAddress"] = "4 Choumert Grove"
     assert "postcode" in as_client.post("/api/bookings/", body).json()["message"]
+
+
+def test_outside_the_uk_a_home_visit_needs_a_street_and_an_area_not_a_postcode(api, make_user, make_stylist, slot):
+    profile = make_stylist(country="GH")
+    profile.service_models = ["mobile"]
+    profile.save()
+    service = profile.menu_items.get(name="Knotless braids")
+    as_client = api(make_user())
+    body = {
+        "stylistId": str(profile.account_id), "serviceId": str(service.pk), "bringingOwnHair": False,
+        "requestedTimes": [slot(as_client, profile, service)], "policyVersion": "2026-09", "atClient": True,
+        "clientAddress": "12 Lagos Avenue",
+    }
+    assert "your area" in as_client.post("/api/bookings/", body).json()["message"]
+    body["clientAddress"] = "House 12, Lagos Avenue, East Legon"
+    booking = as_client.post("/api/bookings/", body).json()
+    # She sees the area first, and the street only once she's confirmed.
+    seen = api(profile.account).get(f"/api/bookings/{booking['id']}/").json()
+    assert seen["area"] == "East Legon" and "address" not in seen
 
 
 def test_a_move_lands_on_a_working_day_and_never_on_another_booking(api, setup, book, make_user):

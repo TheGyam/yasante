@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useSession, withNext } from '@/features/auth';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
-import { formatMonth, plural } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMonth, plural, SEP } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
@@ -85,6 +85,7 @@ export function StylistScreen({ handle }: { handle: string }) {
 function Stylist({ page }: { page: StylistPage }) {
   const { profile, menu, photos, confirmedStyles, reviews, rating, responseHours, timingLabel } =
     page;
+  const currency = profile.currency ?? DEFAULT_CURRENCY;
   const [photosShown, setPhotosShown] = useState(PHOTOS_STEP);
   const [reviewsShown, setReviewsShown] = useState(REVIEWS_STEP);
   const [showClaimNote, setShowClaimNote] = useState(false);
@@ -121,7 +122,9 @@ function Stylist({ page }: { page: StylistPage }) {
                 <span className={styles.average}>
                   <StarRating value={Math.round(rating.average)} size={13} />
                   <Text variant="footnote" tone="secondary">
-                    {rating.average.toFixed(1)} · {plural(rating.count, 'review')}
+                    {rating.average.toFixed(1)}
+                    {SEP}
+                    {plural(rating.count, 'review')}
                   </Text>
                 </span>
               )}
@@ -195,7 +198,7 @@ function Stylist({ page }: { page: StylistPage }) {
                   icon={Scissors}
                   title={item.name}
                   subtitle={serviceDetails(item)}
-                  value={formatPrice(item)}
+                  value={formatPrice(item, currency)}
                 />
               ))}
             </Section>
@@ -261,7 +264,9 @@ function Stylist({ page }: { page: StylistPage }) {
                       </div>
                       {review.body && <Text variant="body">{review.body}</Text>}
                       <Text variant="footnote" tone="secondary">
-                        {review.authorName} · {review.serviceName}
+                        {review.authorName}
+                        {SEP}
+                        {review.serviceName}
                       </Text>
                     </Glass>
                   ))}
@@ -297,7 +302,7 @@ function Stylist({ page }: { page: StylistPage }) {
               <ListRow
                 icon={Store}
                 iconTone="neutral"
-                title={depositLabel(profile.policies)}
+                title={depositLabel(profile.policies, currency)}
                 subtitle="Paid straight to them — Yasante never handles it"
               />
             </Section>
@@ -309,17 +314,7 @@ function Stylist({ page }: { page: StylistPage }) {
         <div className={styles.claimFooter}>
           {showClaimNote ? (
             <Text variant="footnote" tone="secondary" className={styles.claimNote}>
-              Message{' '}
-              <a
-                href="https://www.instagram.com/yasantebeauty/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.inlineInstagramLink}
-              >
-                @yasantebeauty
-              </a>{' '}
-              on Instagram from @{profile.instagramHandle ?? profile.handle} and we'll send you a
-              link to make this page yours.
+              <ClaimNote profile={profile} />
             </Text>
           ) : (
             <button
@@ -336,8 +331,45 @@ function Stylist({ page }: { page: StylistPage }) {
   );
 }
 
+const instagramUrl = (handle: string) => `https://www.instagram.com/${encodeURIComponent(handle)}/`;
+const tiktokUrl = (handle: string) => `https://www.tiktok.com/@${encodeURIComponent(handle)}`;
+
+/** Where to message us to make the page theirs: from the account it was made from. */
+function ClaimNote({ profile }: { profile: StylistPage['profile'] }) {
+  const us = (href: string, name: string) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={styles.inlineInstagramLink}>
+      {name}
+    </a>
+  );
+  const instagram = profile.instagramHandle;
+  const tiktok = profile.tiktokHandle;
+  return (
+    <>
+      Message{' '}
+      {instagram && (
+        <>
+          {us('https://www.instagram.com/yasantebeauty/', '@yasantebeauty')} on Instagram from @
+          {instagram}
+        </>
+      )}
+      {instagram && tiktok && ', or '}
+      {tiktok && (
+        <>
+          {us('https://www.tiktok.com/@yasante_beauty', '@yasante_beauty')} on TikTok from @{tiktok}
+        </>
+      )}
+      {!instagram && !tiktok && (
+        <>{us('https://www.instagram.com/yasantebeauty/', '@yasantebeauty')} on Instagram</>
+      )}{' '}
+      and we'll send you a link to make this page yours.
+    </>
+  );
+}
+
 function FeaturedButtons({ page }: { page: StylistPage }) {
   const { profile } = page;
+  const instagram = profile.instagramHandle || (profile.tiktokHandle ? '' : profile.handle);
+  const tiktok = profile.tiktokHandle;
   const session = useSession();
   const navigate = useNavigate();
   const client = useQueryClient();
@@ -377,12 +409,22 @@ function FeaturedButtons({ page }: { page: StylistPage }) {
   return (
     <div className={styles.featuredButtons}>
       <Button
-        label="Book on Instagram"
-        href={`https://www.instagram.com/${profile.instagramHandle ?? profile.handle}/`}
+        label={instagram ? 'Book on Instagram' : 'Book on TikTok'}
+        href={instagram ? instagramUrl(instagram) : tiktokUrl(tiktok!)}
         target="_blank"
         rel="noopener noreferrer"
         fullWidth
       />
+      {instagram && tiktok && (
+        <a
+          className={styles.inlineInstagramLink}
+          href={tiktokUrl(tiktok)}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Also on TikTok
+        </a>
+      )}
       {signedIn ? (
         <Button
           label={joined ? 'On the waitlist' : 'Join the waitlist'}

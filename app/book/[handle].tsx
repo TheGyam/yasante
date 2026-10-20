@@ -15,6 +15,7 @@ import {
 import { errorMessage, useAuth } from '@/features/auth';
 import { useLook } from '@/features/looks';
 import {
+  OCCASIONS,
   SlotPicker,
   inSentence,
   useBooking,
@@ -22,6 +23,7 @@ import {
   useRefreshFreeSlots,
   useRequestBooking,
   whenLabel,
+  type Occasion,
 } from '@/features/booking';
 import {
   estimate,
@@ -35,7 +37,7 @@ import {
   type ChosenOptions,
 } from '@/features/stylist';
 import { POLICY_VERSION } from '@/shared/config/policies';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatDistance, formatMoney, SEP } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -53,7 +55,8 @@ import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
 import { track } from '@/shared/lib/analytics';
-import { joinAddress, POSTCODE, splitAddress } from '@/shared/utils/postcode';
+import { joinAddress, POSTCODE, splitAddress, splitArea } from '@/shared/utils/postcode';
+import { usesMiles } from '@/shared/lib/region';
 
 const useStyles = makeStyles(t => ({
   body: { gap: space.xl },
@@ -136,26 +139,29 @@ export default function RequestBookingScreen() {
   const [time, setTime] = useState<string>();
   const [ownHair, setOwnHair] = useState(false);
   const [notes, setNotes] = useState('');
+  const [occasion, setOccasion] = useState<Occasion>();
   const [accepted, setAccepted] = useState(false);
   const [chosen, setChosen] = useState<ChosenOptions>({});
   // Where: at theirs, or at the client's when they travel. A stylist who only
   // travels always comes to the client.
   const [atClient, setAtClient] = useState(false);
   const [street, setStreet] = useState('');
+  // A UK postcode, or outside the UK the area clients name ("East Legon").
   const [postcode, setPostcode] = useState('');
+  const inUk = (data?.profile.country ?? 'GB') === 'GB';
   const offers = data?.profile.serviceModels ?? [];
   const comesToMe = offers.includes('mobile') && (atClient || offers.every(m => m === 'mobile'));
   // The address from their last home visit, so it's typed once.
   const { data: past = [] } = useBookings('client');
   const lastHome = past.find(b => b.atClient && b.address)?.address;
   useEffect(() => {
-    if (!lastHome || street || postcode) return;
-    const known = splitAddress(lastHome);
+    if (!lastHome || !data || street || postcode) return;
+    const known = inUk ? splitAddress(lastHome) : splitArea(lastHome);
     setStreet(known.street);
     setPostcode(known.postcode);
-    // Once, when it arrives.
+    // Once, when it and her page (so her country) have arrived.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastHome]);
+  }, [lastHome, data]);
 
   // Booking the same again: once both are here, the same style with the same choices,
   // matched by name, as long as the stylist still offers them.
@@ -205,10 +211,15 @@ export default function RequestBookingScreen() {
         bringingOwnHair: ownHair,
         requestedTimes: [time],
         notes: notes.trim() || undefined,
+        occasion,
         policyVersion: POLICY_VERSION,
         lookId: fromLook?.id,
         atClient: comesToMe,
-        clientAddress: comesToMe ? joinAddress(street, postcode) : undefined,
+        clientAddress: comesToMe
+          ? inUk
+            ? joinAddress(street, postcode)
+            : `${street.trim()}, ${postcode.trim()}`
+          : undefined,
       });
       haptics.success();
       // A beat to see it went, then the booking itself.
@@ -254,6 +265,7 @@ export default function RequestBookingScreen() {
   }
 
   const { profile, menu } = data;
+  const currency = profile.currency ?? DEFAULT_CURRENCY;
   const quote = service ? estimate(service, chosen) : undefined;
   const groups = service ? optionGroups(service) : [];
   const depositDue =
@@ -265,7 +277,8 @@ export default function RequestBookingScreen() {
 
   const travels = profile.serviceModels.includes('mobile');
   const hosts = profile.serviceModels.some(m => m !== 'mobile');
-  const addressReady = !!street.trim() && POSTCODE.test(postcode.trim());
+  const addressReady =
+    !!street.trim() && (inUk ? POSTCODE.test(postcode.trim()) : !!postcode.trim());
 
   // The button stays off until everything's there; say what's left, so it never
   // just looks broken.
@@ -276,7 +289,7 @@ export default function RequestBookingScreen() {
       : !time
         ? 'Pick a time to send your request.'
         : comesToMe && !addressReady
-          ? 'Add your street and postcode so they can get to you.'
+          ? `Add your street and ${inUk ? 'postcode' : 'area'} so they can get to you.`
           : !accepted
             ? 'Tick their terms above to send.'
             : undefined;
@@ -317,7 +330,7 @@ export default function RequestBookingScreen() {
                 key={item.id}
                 title={item.name}
                 subtitle={item.durationMinutes ? formatDuration(item.durationMinutes) : item.note}
-                value={formatPrice(item)}
+                value={formatPrice(item, currency)}
                 icon={Scissors}
                 iconTone={serviceId === item.id ? 'accent' : 'neutral'}
                 // A choice, not a link: a tick where a chevron would promise another page.
@@ -355,7 +368,9 @@ export default function RequestBookingScreen() {
                 <Chip
                   key={choice.id}
                   label={
-                    index === 0 ? choice.label : `${choice.label} · +${formatMoney(choice.add)}`
+                    index === 0
+                      ? choice.label
+                      : `${choice.label}${SEP}+${formatMoney(choice.add, currency)}`
                   }
                   selected={chosen[group] === choice.id}
                   onPress={() => {
@@ -379,18 +394,18 @@ export default function RequestBookingScreen() {
             }
           >
             <ListRow
-              title={[service.name, ...quote.labels].join(' · ')}
+              title={[service.name, ...quote.labels].join(SEP)}
               subtitle={
                 [
                   quote.minutes ? `About ${formatDuration(quote.minutes)}` : undefined,
                   service.hairIncluded ? 'Hair included' : undefined,
                 ]
                   .filter(Boolean)
-                  .join(' · ') || undefined
+                  .join(SEP) || undefined
               }
               trailing={
                 <RollingText variant="callout" tone="secondary">
-                  {`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price)}`}
+                  {`${quote.fromPrice ? 'from ' : ''}${formatMoney(quote.price, currency)}`}
                 </RollingText>
               }
               icon={CalendarClock}
@@ -399,7 +414,7 @@ export default function RequestBookingScreen() {
               <ListRow
                 title="Deposit to confirm"
                 subtitle="Paid straight to them, once they accept"
-                value={formatMoney(depositDue)}
+                value={formatMoney(depositDue, currency)}
               />
             )}
           </Section>
@@ -435,7 +450,7 @@ export default function RequestBookingScreen() {
             {hosts && (
               <View style={styles.chips}>
                 <Chip
-                  label={`At theirs · ${profile.baseArea}`}
+                  label={`At theirs${SEP}${profile.baseArea}`}
                   icon={House}
                   selected={!atClient}
                   onPress={() => setAtClient(false)}
@@ -455,23 +470,23 @@ export default function RequestBookingScreen() {
                   icon={MapPin}
                   value={street}
                   onChangeText={setStreet}
-                  placeholder="4 Choumert Grove"
+                  placeholder={inUk ? '4 Choumert Grove' : '12 Lagos Avenue'}
                   autoCapitalize="words"
                   autoComplete="street-address"
                   textContentType="streetAddressLine1"
                   testID="booking-street"
                 />
                 <Input
-                  label="Your postcode"
+                  label={inUk ? 'Your postcode' : 'Your area'}
                   value={postcode}
                   onChangeText={setPostcode}
-                  placeholder="SE15 4RB"
-                  autoCapitalize="characters"
+                  placeholder={inUk ? 'SE15 4RB' : 'East Legon'}
+                  autoCapitalize={inUk ? 'characters' : 'words'}
                   autoCorrect={false}
-                  autoComplete="postal-code"
-                  textContentType="postalCode"
-                  maxLength={8}
-                  hint={`They see your postcode area first${profile.travelRadiusMiles ? ` (they travel up to ${profile.travelRadiusMiles} miles from ${profile.baseArea})` : ''}, and your street once they confirm.`}
+                  autoComplete={inUk ? 'postal-code' : 'address-line2'}
+                  textContentType={inUk ? 'postalCode' : 'sublocality'}
+                  maxLength={inUk ? 8 : 100}
+                  hint={`They see your ${inUk ? 'postcode area' : 'area'} first${profile.travelRadiusMiles ? ` (they travel up to ${formatDistance(profile.travelRadiusMiles, usesMiles)} from ${profile.baseArea})` : ''}, and your street once they confirm.`}
                   testID="booking-postcode"
                 />
               </>
@@ -494,6 +509,22 @@ export default function RequestBookingScreen() {
             }
           />
         </Section>
+
+        <View style={{ gap: space.sm }}>
+          <Text variant="footnote" tone="secondary">
+            Is it for something? (optional)
+          </Text>
+          <View style={styles.chips}>
+            {OCCASIONS.map(o => (
+              <Chip
+                key={o.value}
+                label={o.label}
+                selected={occasion === o.value}
+                onPress={() => setOccasion(occasion === o.value ? undefined : o.value)}
+              />
+            ))}
+          </View>
+        </View>
 
         <Input
           label="Anything they should know"

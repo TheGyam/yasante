@@ -82,7 +82,7 @@ class ConsentSerializer(serializers.Serializer):
 
 
 class ConsentBatchSerializer(serializers.Serializer):
-    """POST /api/consents/"""
+    """GET and POST /api/consents/"""
 
     consents = ConsentSerializer(many=True)
 
@@ -155,6 +155,11 @@ class HairProfileRequestSerializer(serializers.Serializer):
     length_measured_at = serializers.DateTimeField(required=False, allow_null=True)
     length_cm = serializers.FloatField(required=False, allow_null=True, min_value=1, max_value=200)
     completed_at = serializers.DateTimeField(required=False, allow_null=True)
+    next_styles = serializers.ListField(child=serializers.CharField(), required=False, max_length=10)
+    next_length = serializers.CharField(required=False, allow_blank=True)
+    next_colour = serializers.CharField(required=False, allow_blank=True)
+    next_upkeep = serializers.CharField(required=False, allow_blank=True)
+    next_sit = serializers.CharField(required=False, allow_blank=True)
 
 
 class HairLogSerializer(serializers.Serializer):
@@ -162,6 +167,7 @@ class HairLogSerializer(serializers.Serializer):
     kind = serializers.ChoiceField(choices=["trim", "wash", "take_down"])
     at = serializers.DateTimeField()
     booking_id = optional(serializers.CharField())
+    reason = optional(serializers.CharField())
 
 
 class HairLogRequestSerializer(serializers.Serializer):
@@ -169,6 +175,11 @@ class HairLogRequestSerializer(serializers.Serializer):
     at = serializers.DateTimeField(required=False, help_text="When it happened; now if left out")
     local_at = serializers.CharField(required=False, help_text="The phone's own clock, ISO without offset")
     booking_id = serializers.UUIDField(required=False)
+    reason = serializers.ChoiceField(
+        choices=["time", "hurt", "frizzy", "event", "other"],
+        required=False,
+        help_text="Why a style came out. \"hurt\" is kept only with hair details consent",
+    )
 
 
 class CurrentStyleSerializer(serializers.Serializer):
@@ -186,13 +197,18 @@ class LengthInsightSerializer(serializers.Serializer):
     grew_steps = optional(serializers.IntegerField())
 
 
+class MoneySerializer(serializers.Serializer):
+    currency = serializers.CharField(help_text="ISO 4217")
+    amount = serializers.FloatField()
+
+
 class InsightsSerializer(serializers.Serializer):
     """GET /api/insights/ — a client's hair in numbers."""
 
     period = serializers.ChoiceField(choices=["month", "all"])
     since = optional(serializers.DateTimeField())
     appointments = serializers.IntegerField()
-    spent = serializers.FloatField()
+    spending = MoneySerializer(many=True, help_text="What she spent in each currency, never added across them")
     styles = serializers.ListField(child=serializers.CharField())
     stylists = serializers.IntegerField()
     current_style = optional(CurrentStyleSerializer())

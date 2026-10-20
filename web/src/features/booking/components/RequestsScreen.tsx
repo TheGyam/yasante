@@ -1,6 +1,6 @@
 import { CalendarClock, Inbox, Wallet } from 'lucide-react';
 import { errorMessage } from '@/shared/lib/errors';
-import { formatPrice } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatPrice, SEP } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { ListRow } from '@/shared/ui/ListRow';
@@ -28,9 +28,9 @@ function row(booking: Booking, subtitle: string, icon = CalendarClock) {
     <ListRow
       key={booking.id}
       icon={icon}
-      title={`${booking.clientName} · ${booking.serviceName}`}
+      title={`${booking.clientName}${SEP}${booking.serviceName}`}
       subtitle={subtitle}
-      value={formatPrice(booking.price, booking.fromPrice)}
+      value={formatPrice(booking.price, booking.currency ?? DEFAULT_CURRENCY, booking.fromPrice)}
       to={`/requests/${booking.id}`}
     />
   );
@@ -108,7 +108,7 @@ export function RequestsScreen() {
               {deposits.map(b =>
                 row(
                   b,
-                  `${whenLabel(b.scheduledFor ?? '', b.timeZone)} · mark it when it arrives`,
+                  `${whenLabel(b.scheduledFor ?? '', b.timeZone)}${SEP}mark it when it arrives`,
                   Wallet
                 )
               )}

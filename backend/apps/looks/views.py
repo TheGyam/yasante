@@ -37,7 +37,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Cast, Extract, Greatest, Power
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import serializers, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -51,12 +51,15 @@ from .models import (
     LookLike,
     LookPhoto,
     ModerationAction,
+    NotForMe,
     Report,
     Style,
+    not_for_me,
 )
 from .serializers import (
     AppealRequestSerializer,
     BlockRequestSerializer,
+    NotForMeRequestSerializer,
     CommentCreateRequestSerializer,
     LookCreateRequestSerializer,
     ReportRequestSerializer,
@@ -132,6 +135,36 @@ def _is_uuid(value):
         return False
 
 
+def _texture_to_match(viewer):
+    """Her curl pattern, only while she lets us use her hair details."""
+    from apps.profiles.models import HairProfile, has_consent
+
+    if viewer is None or not has_consent(viewer, "personalisation"):
+        return ""
+    # Asked outright: a missing profile cached on the user would make the count vary.
+    return HairProfile.objects.filter(user=viewer).values_list("texture", flat=True).first() or ""
+
+
+# Where the second list starts in a cursor: everything after the looks on her hair.
+REST = "rest."
+
+
+def matched_first(qs, texture, request):
+    """
+    Looks on hair like hers first, newest first, then everything else, newest first.
+    The cursor says which list she's in, so nothing repeats or goes missing between
+    them. The page where the first list ends can be short; the next one starts the rest.
+    """
+    cursor = request.query_params.get("cursor") or ""
+    if not cursor.startswith(REST):
+        items, after = keyset_page(qs.filter(hair_texture=texture), request, cursor=cursor)
+        if after or items:
+            return items, after or REST
+        cursor = REST
+    items, after = keyset_page(qs.exclude(hair_texture=texture), request, cursor=cursor[len(REST):])
+    return items, after and REST + after
+
+
 class FeedView(APIView):
     """GET /api/looks/?cursor=&limit=&hair=&style=&area=&q= — also POST, to post a look."""
 
@@ -147,11 +180,19 @@ class FeedView(APIView):
         blocked = blocked_account_ids(viewer)
         if blocked:
             qs = qs.exclude(author_id__in=blocked)
+        style = request.query_params.get("style")
+        # What she's said isn't for her, unless she's asked for that style herself.
+        looks, stylists, styles = not_for_me(viewer)
+        if looks:
+            qs = qs.exclude(pk__in=looks)
+        if stylists:
+            qs = qs.exclude(author_id__in=stylists).exclude(stylist_id__in=[str(s) for s in stylists])
+        if styles - {style}:
+            qs = qs.exclude(styles__slug__in=styles - {style})
 
         hair = request.query_params.get("hair")
         if hair:
             qs = qs.filter(hair_texture=hair)
-        style = request.query_params.get("style")
         if style:
             qs = qs.filter(styles__slug=style)
         area = request.query_params.get("area")
@@ -167,7 +208,9 @@ class FeedView(APIView):
                 | Q(styles__name__icontains=word)
             ).distinct()
 
-        items, next_cursor = keyset_page(qs, request)
+        # With her yes, looks on hair like hers come first, unless she's chosen a hair type.
+        texture = "" if hair else _texture_to_match(viewer)
+        items, next_cursor = matched_first(qs, texture, request) if texture else keyset_page(qs, request)
         q = request.query_params.get("q", "")
         filters = {"hair": hair, "style": style, "area": area}
         # Log what people search or filter for, on the first page only (not every scroll).
@@ -291,6 +334,7 @@ class MyLooksView(APIView):
 class LookTagsRequestSerializer(serializers.Serializer):
     styles = serializers.ListField(child=serializers.CharField(), required=False)
     hair_texture = serializers.CharField(required=False, allow_blank=True)
+    visibility = serializers.ChoiceField(choices=["public", "private"], required=False)
 
 
 class LookDetailView(APIView):
@@ -314,8 +358,21 @@ class LookDetailView(APIView):
             return _not_found()
         if look.author_id != request.user.pk:
             return Response({"message": "That look isn’t yours"}, status=403)
-        if set(request.data) - {"styles", "hair_texture"}:
-            return Response({"message": "Only the style and hair type can be changed"}, status=400)
+        if set(request.data) - {"styles", "hair_texture", "visibility"}:
+            return Response({"message": "Only the style, hair type and who sees it can be changed"}, status=400)
+        if "visibility" in request.data:
+            wanted = request.data["visibility"]
+            if wanted not in ("public", "private"):
+                return Response({"message": "Pick public or just me"}, status=400)
+            if wanted != look.visibility:
+                # It keeps its date, so going public never jumps it up the feed; likes and
+                # comments stay with it, hidden while it's private.
+                look.visibility = wanted
+                look.save(update_fields=["visibility", "updated_at"])
+                if wanted == "public" and look.status == "live":
+                    from apps.web.indexnow import announce
+
+                    announce(f"/looks/{look.pk}", *([f"/{look.stylist_handle}"] if look.stylist_handle else []))
         if "styles" in request.data:
             wanted = request.data["styles"] if isinstance(request.data["styles"], list) else []
             if len(wanted) > 3:
@@ -710,6 +767,25 @@ class BlockListCreateView(APIView):
             Block.objects.get_or_create(blocker=request.user, blocked_id=blocked_id)
         except IntegrityError:
             pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(post=extend_schema(request=NotForMeRequestSerializer, responses={204: None}))
+class NotForMeView(APIView):
+    """POST /api/not-for-me/ — { lookId } or { stylistId }: her feed shows fewer like it."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from apps.accounts.models import User
+
+        look_id, stylist_id = request.data.get("look_id"), request.data.get("stylist_id")
+        if look_id and _is_uuid(look_id) and Look.objects.filter(pk=look_id).exists():
+            NotForMe.objects.get_or_create(user=request.user, look_id=look_id)
+        elif stylist_id and _is_uuid(stylist_id) and User.objects.filter(pk=stylist_id).exists():
+            NotForMe.objects.get_or_create(user=request.user, stylist_id=stylist_id)
+        else:
+            return Response({"message": "Say which look or stylist"}, status=400)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

@@ -3,6 +3,7 @@ Content models: Education library articles/videos.
 """
 
 from apps.common.models import TimeStampedModel
+from apps.profiles.models import POROSITY_CHOICES, TEXTURE_CHOICES
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 
@@ -22,10 +23,10 @@ class ContentItem(TimeStampedModel):
     body = models.TextField(blank=True, default="")
     author = models.CharField(max_length=150, blank=True, default="")
 
-    # Matching metadata for "For You"
-    texture_tags = ArrayField(models.CharField(max_length=50), default=list, blank=True)
+    # Matching metadata for "For You", in the hair profile's own words so they match.
+    texture_tags = ArrayField(models.CharField(max_length=50, choices=TEXTURE_CHOICES), default=list, blank=True)
     porosity_tags = ArrayField(
-        models.CharField(max_length=50), default=list, blank=True
+        models.CharField(max_length=50, choices=POROSITY_CHOICES), default=list, blank=True
     )
     TOPIC_CHOICES = [
         ("care", "Care"),

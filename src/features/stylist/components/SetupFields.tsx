@@ -9,6 +9,7 @@ import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
 import type { DepositType, ServiceModel, StylistPolicies } from '../types';
+import { currencySymbol, parseMoney } from '@/shared/lib/format';
 
 const MODELS: readonly { value: ServiceModel; label: string; hint: string; icon: LucideIcon }[] = [
   {
@@ -101,9 +102,12 @@ export function ServiceModelField({
 export function PolicyFields({
   value,
   onChange,
+  currency,
 }: {
   value: StylistPolicies;
   onChange: (policies: StylistPolicies) => void;
+  /** Her currency (ISO 4217): a fixed deposit is in it. */
+  currency: string;
 }) {
   const styles = useStyles();
   const set = (changes: Partial<StylistPolicies>) => onChange({ ...value, ...changes });
@@ -141,10 +145,10 @@ export function PolicyFields({
         {value.depositType !== 'none' && (
           <Input
             label={value.depositType === 'fixed' ? 'Amount' : 'Share of the price'}
-            placeholder={value.depositType === 'fixed' ? '£20' : '20%'}
+            placeholder={value.depositType === 'fixed' ? `${currencySymbol(currency)}20` : '20%'}
             keyboardType="decimal-pad"
             value={value.depositAmount ? String(value.depositAmount) : ''}
-            onChangeText={text => set({ depositAmount: Number(text.replace(/[^\d.]/g, '')) || 0 })}
+            onChangeText={text => set({ depositAmount: parseMoney(text) })}
           />
         )}
         <Text variant="caption" tone="tertiary" style={styles.label}>

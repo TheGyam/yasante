@@ -1,4 +1,4 @@
-import { formatPrice } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatPrice } from '@/shared/lib/format';
 import type { Look } from './types';
 
 /** "Knotless braids by Ama" — what a look is, in a line. */
@@ -13,8 +13,10 @@ export function lookAlt(look: Pick<Look, 'serviceName' | 'caption' | 'stylist'>)
   return caption ? `${lookTitle(look)}: ${caption.slice(0, 120)}` : lookTitle(look);
 }
 
-export function lookPrice(look: Pick<Look, 'price' | 'fromPrice'>) {
-  return look.price === undefined ? undefined : formatPrice(look.price, look.fromPrice);
+export function lookPrice(look: Pick<Look, 'price' | 'fromPrice' | 'currency'>) {
+  return look.price === undefined
+    ? undefined
+    : formatPrice(look.price, look.currency ?? DEFAULT_CURRENCY, look.fromPrice);
 }
 
 export const HAIR_TEXTURES: { id: NonNullable<Look['hairTexture']>; name: string }[] = [

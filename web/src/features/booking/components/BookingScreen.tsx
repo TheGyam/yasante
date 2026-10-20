@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { formatDuration, useStylistPage } from '@/features/stylist';
 import { errorMessage } from '@/shared/lib/errors';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, SEP } from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Glass } from '@/shared/ui/Glass';
@@ -44,14 +44,14 @@ import { GetTheApp } from './GetTheApp';
 import { SlotPicker } from './SlotPicker';
 import * as styles from './BookingScreen.css';
 
-const serviceLine = (b: Booking) => [b.serviceName, ...(b.optionLabels ?? [])].join(' · ');
+const serviceLine = (b: Booking) => [b.serviceName, ...(b.optionLabels ?? [])].join(SEP);
 
 /** "From £80 left to pay on the day" once there's a deposit. */
 function balanceLine(b: Booking) {
   const left = b.deposit ? b.price - b.deposit.amount : 0;
   if (left <= 0) return undefined;
   const paid = b.deposit!.status === 'received';
-  return `${b.fromPrice ? 'From ' : ''}${formatMoney(left)} left to pay on the day${paid ? '' : ', after the deposit'}`;
+  return `${b.fromPrice ? 'From ' : ''}${formatMoney(left, b.currency ?? DEFAULT_CURRENCY)} left to pay on the day${paid ? '' : ', after the deposit'}`;
 }
 
 /** Within two days of a confirmed appointment she hasn't said she's coming to. */
@@ -135,7 +135,7 @@ export function BookingScreen({ id }: { id: string }) {
   const zone = booking.timeZone;
   const when = booking.scheduledFor
     ? whenLabel(booking.scheduledFor, zone)
-    : booking.requestedTimes.map(t => whenLabel(t, zone)).join(' · ');
+    : booking.requestedTimes.map(t => whenLabel(t, zone)).join(SEP);
   const late = cancellingIsLate(booking);
   // Not answered yet: she withdraws a request rather than cancelling a booking.
   const asking = booking.status === 'requested';
@@ -154,7 +154,9 @@ export function BookingScreen({ id }: { id: string }) {
             {serviceLine(booking)}
           </Text>
           <Text variant="subhead" tone="secondary">
-            With {booking.stylistName} · {CLIENT_STATUS_LABELS[booking.status]}
+            With {booking.stylistName}
+            {SEP}
+            {CLIENT_STATUS_LABELS[booking.status]}
           </Text>
         </div>
 
@@ -163,7 +165,7 @@ export function BookingScreen({ id }: { id: string }) {
         {booking.status === 'awaiting_deposit' && booking.deposit && (
           <InlineAlert
             tone="info"
-            message={`Send ${formatMoney(booking.deposit.amount)} to ${booking.stylistName} directly, ${booking.deposit.method || 'using the details they gave you'}${booking.expiresAt ? `, by ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Yasante never handles this payment. They mark it received, and that confirms your booking.`}
+            message={`Send ${formatMoney(booking.deposit.amount, booking.currency ?? DEFAULT_CURRENCY)} to ${booking.stylistName} directly, ${booking.deposit.method || 'using the details they gave you'}${booking.expiresAt ? `, by ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Yasante never handles this payment. They mark it received, and that confirms your booking.`}
           />
         )}
 
@@ -172,7 +174,7 @@ export function BookingScreen({ id }: { id: string }) {
             title={`${booking.stylistName} suggested ${inSentence(whenLabel(booking.proposal.scheduledFor, zone))}`}
             message={
               booking.proposal.deposit
-                ? `None of your days worked. Say yes and they’ll ask for a ${formatMoney(booking.proposal.deposit.amount)} deposit.`
+                ? `None of your days worked. Say yes and they’ll ask for a ${formatMoney(booking.proposal.deposit.amount, booking.currency ?? DEFAULT_CURRENCY)} deposit.`
                 : 'None of your days worked. Say yes and it’s confirmed.'
             }
           >
@@ -271,7 +273,7 @@ export function BookingScreen({ id }: { id: string }) {
             icon={Scissors}
             title={booking.serviceName}
             subtitle={booking.durationMinutes ? formatDuration(booking.durationMinutes) : undefined}
-            value={`${booking.fromPrice ? 'from ' : ''}${formatMoney(booking.price)}`}
+            value={`${booking.fromPrice ? 'from ' : ''}${formatMoney(booking.price, booking.currency ?? DEFAULT_CURRENCY)}`}
           />
           <ListRow
             icon={MapPin}
@@ -305,7 +307,7 @@ export function BookingScreen({ id }: { id: string }) {
             <ListRow
               icon={booking.deposit.status === 'received' ? BadgeCheck : Banknote}
               iconTone={booking.deposit.status === 'received' ? 'success' : 'neutral'}
-              title={`${formatMoney(booking.deposit.amount)} deposit ${booking.deposit.status === 'received' ? 'received' : 'due'}`}
+              title={`${formatMoney(booking.deposit.amount, booking.currency ?? DEFAULT_CURRENCY)} deposit ${booking.deposit.status === 'received' ? 'received' : 'due'}`}
               subtitle={booking.deposit.method || undefined}
             />
           )}
@@ -485,7 +487,7 @@ function ReviewPart({ booking }: { booking: Booking }) {
         <ListRow
           icon={MessageSquareHeart}
           iconTone="success"
-          title={`Your review · ${booking.review.rating} of 5`}
+          title={`Your review${SEP}${booking.review.rating} of 5`}
           subtitle={
             booking.review.status === 'published'
               ? 'On their page'

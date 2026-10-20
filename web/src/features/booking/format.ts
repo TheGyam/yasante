@@ -1,5 +1,6 @@
 import { toSalonInput } from '@/shared/lib/salonTime';
 import type { Booking } from './types';
+import { SEP } from '@/shared/lib/format';
 
 // The stylist's clock lives in shared/lib, where her studio screens read it too.
 export { fromSalonInput, toSalonInput, whenLabel, zoneMark } from '@/shared/lib/salonTime';
@@ -23,7 +24,7 @@ export function recordLabel(record?: Booking['clientRecord']) {
     lateCancellations &&
       `${lateCancellations} late ${lateCancellations === 1 ? 'cancellation' : 'cancellations'}`,
   ].filter(Boolean);
-  return `${styles} · ${misses.join(', ')}`;
+  return `${styles}${SEP}${misses.join(', ')}`;
 }
 
 /** Where a booking is up to, for her. */

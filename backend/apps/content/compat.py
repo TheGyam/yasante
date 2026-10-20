@@ -3,7 +3,7 @@ The education library and favourites, on the paths and shapes the app already
 calls: /api/content/content/… and /api/favorites/favorites/….
 """
 
-from django.db.models import Q
+from django.db.models import Case, IntegerField, Q, Value, When
 from apps.common.models import log_search
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, serializers, status
@@ -44,6 +44,26 @@ def _published():
     return ContentItem.objects.filter(published=True).order_by("-created_at")
 
 
+def _for_her_hair(qs, viewer):
+    """
+    With her yes to using hair details: articles tagged for both her texture and her
+    porosity first, then either, then the rest, newest first within each.
+    """
+    from apps.profiles.models import HairProfile, has_consent
+
+    if viewer is None or not viewer.is_authenticated or not has_consent(viewer, "personalisation"):
+        return qs
+    hair = HairProfile.objects.filter(user=viewer).values("texture", "porosity").first() or {}
+    fits = [
+        Case(When(**{f"{field}__contains": [hair[key]]}, then=Value(1)), default=Value(0), output_field=IntegerField())
+        for key, field in (("texture", "texture_tags"), ("porosity", "porosity_tags"))
+        if hair.get(key)
+    ]
+    if not fits:
+        return qs
+    return qs.annotate(fit=sum(fits[1:], fits[0])).order_by("-fit", "-created_at")
+
+
 @extend_schema_view(get=extend_schema(responses=ContentResponseSerializer(many=True)))
 class ContentListView(APIView):
     """GET /api/content/content/?topic=&type=&search= — the library, newest first."""
@@ -66,6 +86,8 @@ class ContentListView(APIView):
                     | Q(description__icontains=word)
                     | Q(body__icontains=word)
                 )
+        else:
+            qs = _for_her_hair(qs, request.user)
         # Paged on the server (?limit=&offset=), never the whole library at once.
         try:
             limit = max(1, min(int(request.query_params.get("limit", 20)), 50))

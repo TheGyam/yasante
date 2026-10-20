@@ -41,6 +41,11 @@ app.conf.beat_schedule = {
         "task": "apps.bookings.tasks.send_reminders",
         "schedule": crontab(minute="*/15"),
     },
+    # A week before a style usually comes out, with consent: time to rebook.
+    "nudge-rebooks": {
+        "task": "apps.bookings.tasks.nudge_rebooks",
+        "schedule": crontab(hour=10, minute=30),
+    },
     "open-check-ins": {
         "task": "apps.bookings.tasks.open_check_ins",
         "schedule": crontab(hour=10, minute=0),
@@ -56,6 +61,11 @@ app.conf.beat_schedule = {
     "monthly-recap": {
         "task": "apps.stylists.tasks.monthly_recap",
         "schedule": crontab(hour=9, minute=0, day_of_month=1),
+    },
+    # On the hour, so it lands at the hour she usually washes.
+    "wash-day-reminders": {
+        "task": "apps.profiles.tasks.wash_day_reminders",
+        "schedule": crontab(minute=0),
     },
     "length-prompt": {
         "task": "apps.profiles.tasks.prompt_length",

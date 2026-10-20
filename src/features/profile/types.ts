@@ -45,6 +45,12 @@ export interface HairProfile {
   budget?: StyleBudget;
   photoUri?: string;
   completedAt?: string;
+  /** Her next style, all optional: style ids from the looks taxonomy, and what she'd like. */
+  nextStyles?: string[];
+  nextLength?: HairLength;
+  nextColour?: 'natural' | 'black' | 'brown' | 'blonde' | 'red' | 'bold';
+  nextUpkeep?: 'low' | 'medium' | 'high';
+  nextSit?: 'up_to_2' | '2_to_4' | '4_to_6' | '6_plus';
 }
 
 /** One account can hold several roles; stylist mode needs `stylist`. */

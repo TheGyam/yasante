@@ -725,9 +725,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** @description GET /api/consents/ (her latest answer to each) and POST /api/consents/ */
+        get: operations["consents_retrieve"];
         put?: never;
-        /** @description POST /api/consents/ */
+        /** @description GET /api/consents/ (her latest answer to each) and POST /api/consents/ */
         post: operations["consents_create"];
         delete?: never;
         options?: never;
@@ -803,6 +804,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/countries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every country, its currency and its distance units: for the country pickers. */
+        get: operations["countries_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/devices/": {
         parameters: {
             query?: never;
@@ -849,7 +867,7 @@ export interface paths {
         /**
          * @description POST /api/events/
          *
-         *     Drops events when analytics consent is withdrawn.
+         *     Drops a signed-in person's events unless she has said yes to analytics.
          */
         post: operations["events_create"];
         delete?: never;
@@ -1193,6 +1211,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/not-for-me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/not-for-me/ — { lookId } or { stylistId }: her feed shows fewer like it. */
+        post: operations["not_for_me_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications/preferences/": {
         parameters: {
             query?: never;
@@ -1204,6 +1239,23 @@ export interface paths {
         get: operations["notifications_preferences_retrieve"];
         /** @description GET/PUT /api/notifications/preferences/ — which kinds of notification she gets. */
         put: operations["notifications_preferences_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/places/suggest/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Areas for the area field outside the UK. Signed in only, to be fair to the free service. */
+        get: operations["places_suggest_list"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -2074,11 +2126,14 @@ export interface components {
             optionLabels?: string[];
             /** Format: double */
             price: number;
+            /** @description ISO 4217: the stylist's, when it was booked */
+            currency: string;
             fromPrice: boolean;
             durationMinutes?: number;
             bringingOwnHair: boolean;
             hairIncluded?: boolean;
             notes?: string;
+            occasion?: components["schemas"]["OccasionEnum"];
             calendarUrl?: string;
             requestedTimes: string[];
             /** Format: date-time */
@@ -2106,6 +2161,8 @@ export interface components {
             actualPrice?: number;
             timing?: components["schemas"]["Timing"];
             startedOnTime?: boolean;
+            /** @description The stylist's own record; only she sees it */
+            extensionHair?: components["schemas"]["ExtensionHair"];
             contested?: components["schemas"]["Contested"];
             review?: components["schemas"]["ReviewState"];
             checkInDue?: components["schemas"]["CheckInDueEnum"];
@@ -2124,12 +2181,20 @@ export interface components {
             bringingOwnHair: boolean;
             requestedTimes: string[];
             notes?: string;
+            /**
+             * @description What it's for, if she says
+             *
+             *     * `wedding` - wedding
+             *     * `holiday` - holiday
+             *     * `event` - event
+             */
+            occasion?: components["schemas"]["OccasionEnum"];
             policyVersion: string;
             /** @description The look the booking is from */
             lookId?: string;
             /** @description The stylist comes to the client */
             atClient?: boolean;
-            /** @description Street and postcode, when at_client */
+            /** @description When at_client: street and postcode in the UK, else street then area ("12 Lagos Avenue, East Legon") */
             clientAddress?: string;
         };
         /** @description Her policies as they were when the request was made. */
@@ -2184,6 +2249,15 @@ export interface components {
          * @enum {string}
          */
         ByEnum: "client" | "stylist";
+        /**
+         * @description * `time` - time
+         *     * `hurt` - hurt
+         *     * `frizzy` - frizzy
+         *     * `event` - event
+         *     * `other` - other
+         * @enum {string}
+         */
+        CameOutEnum: "time" | "hurt" | "frizzy" | "event" | "other";
         CarePlanRequestRequest: {
             name: string;
             frequency: components["schemas"]["FrequencyEnum"];
@@ -2239,10 +2313,27 @@ export interface components {
         CheckInRequestRequest: {
             week: components["schemas"]["WeekEnum"];
             holding: components["schemas"]["HoldingEnum"];
-            scalp: components["schemas"]["CheckInRequestScalpEnum"];
+            /**
+             * @description Only with hair details consent
+             *
+             *     * `comfortable` - comfortable
+             *     * `itchy` - itchy
+             *     * `sore` - sore
+             */
+            scalp?: components["schemas"]["CheckInRequestScalpEnum"];
             again: components["schemas"]["AgainEnum"];
             /** @description Is the style still in? */
             stillIn?: boolean;
+            /**
+             * @description Why it came out, when it's out. "hurt" is kept only with hair details consent
+             *
+             *     * `time` - time
+             *     * `hurt` - hurt
+             *     * `frizzy` - frizzy
+             *     * `event` - event
+             *     * `other` - other
+             */
+            cameOut?: components["schemas"]["CameOutEnum"];
             /** @description The phone's own clock */
             localAt?: string;
         };
@@ -2310,6 +2401,7 @@ export interface components {
             /** Format: double */
             actualPrice?: number;
             timing?: components["schemas"]["TimingRequest"];
+            extensionHair?: components["schemas"]["ExtensionHairRequest"];
         };
         ClosedDayRequestRequest: {
             /** Format: date */
@@ -2382,7 +2474,21 @@ export interface components {
             data: components["schemas"]["Comment"][];
             nextCursor?: string;
         };
-        /** @description POST /api/consents/ */
+        /** @description Single consent record within a batch. */
+        Consent: {
+            purpose: string;
+            granted: boolean;
+            policyVersion: string;
+            /** Format: date-time */
+            recordedAt: string;
+            /** @default app */
+            source: string;
+        };
+        /** @description GET and POST /api/consents/ */
+        ConsentBatch: {
+            consents: components["schemas"]["Consent"][];
+        };
+        /** @description GET and POST /api/consents/ */
         ConsentBatchRequest: {
             consents: components["schemas"]["ConsentRequest"][];
         };
@@ -2423,6 +2529,20 @@ export interface components {
         Contested: {
             noShow?: boolean;
             timing?: boolean;
+        };
+        Country: {
+            /** @description ISO 3166 */
+            code: string;
+            name: string;
+            /** @description ISO 4217 */
+            currency: string;
+            /**
+             * @description How distances are given there
+             *
+             *     * `km` - km
+             *     * `mi` - mi
+             */
+            units: components["schemas"]["UnitsEnum"];
         };
         CurrentStyle: {
             name: string;
@@ -2505,6 +2625,16 @@ export interface components {
             };
             /** @default  */
             appVersion: string;
+        };
+        ExtensionHair: {
+            brand?: string;
+            product?: string;
+            packs?: number;
+        };
+        ExtensionHairRequest: {
+            brand?: string | null;
+            product?: string | null;
+            packs?: number | null;
         };
         FavoriteResponse: {
             id: string;
@@ -2630,6 +2760,7 @@ export interface components {
             /** Format: date-time */
             at: string;
             bookingId?: string;
+            reason?: string;
         };
         HairLogRequestRequest: {
             kind: components["schemas"]["Kind823Enum"];
@@ -2642,6 +2773,16 @@ export interface components {
             localAt?: string;
             /** Format: uuid */
             bookingId?: string;
+            /**
+             * @description Why a style came out. "hurt" is kept only with hair details consent
+             *
+             *     * `time` - time
+             *     * `hurt` - hurt
+             *     * `frizzy` - frizzy
+             *     * `event` - event
+             *     * `other` - other
+             */
+            reason?: components["schemas"]["Reason5d7Enum"];
         };
         /**
          * @description For output-only model serializers: a model field that may be blank or null can be
@@ -2650,8 +2791,8 @@ export interface components {
         HairProfileResponse: {
             domain: components["schemas"]["DomainEnum"];
             texture?: components["schemas"]["TextureEnum"] | components["schemas"]["BlankEnum"];
-            length?: components["schemas"]["LengthEnum"] | components["schemas"]["BlankEnum"];
-            shrunkLength?: components["schemas"]["ShrunkLengthEnum"] | components["schemas"]["BlankEnum"];
+            length?: components["schemas"]["NextLengthEnum"] | components["schemas"]["BlankEnum"];
+            shrunkLength?: components["schemas"]["NextLengthEnum"] | components["schemas"]["BlankEnum"];
             density?: components["schemas"]["DensityEnum"] | components["schemas"]["BlankEnum"];
             porosity?: components["schemas"]["PorosityEnum"] | components["schemas"]["BlankEnum"];
             goals: components["schemas"]["GoalsEnum"][];
@@ -2667,6 +2808,11 @@ export interface components {
             lengthCm?: number;
             /** Format: date-time */
             completedAt?: string;
+            nextStyles: string[];
+            nextLength?: components["schemas"]["NextLengthEnum"] | components["schemas"]["BlankEnum"];
+            nextColour?: components["schemas"]["NextColourEnum"] | components["schemas"]["BlankEnum"];
+            nextUpkeep?: components["schemas"]["NextUpkeepEnum"] | components["schemas"]["BlankEnum"];
+            nextSit?: components["schemas"]["NextSitEnum"] | components["schemas"]["BlankEnum"];
             /** Format: date-time */
             readonly updatedAt: string;
         };
@@ -2706,8 +2852,8 @@ export interface components {
             /** Format: date-time */
             since?: string;
             appointments: number;
-            /** Format: double */
-            spent: number;
+            /** @description What she spent in each currency, never added across them */
+            spending: components["schemas"]["Money"][];
             styles: string[];
             stylists: number;
             currentStyle?: components["schemas"]["CurrentStyle"];
@@ -2739,21 +2885,6 @@ export interface components {
          * @enum {string}
          */
         Kind823Enum: "trim" | "wash" | "take_down";
-        /**
-         * @description * `cropped` - TWA / cropped
-         *     * `ear` - Ear
-         *     * `chin` - Chin
-         *     * `neck` - Neck
-         *     * `shoulder` - Shoulder
-         *     * `armpit` - Armpit
-         *     * `bra-strap` - Bra strap
-         *     * `mid-back` - Mid-back
-         *     * `waist` - Waist
-         *     * `hip` - Hip
-         *     * `tailbone` - Tailbone
-         * @enum {string}
-         */
-        LengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
         LengthInsight: {
             now: string;
             /** Format: double */
@@ -2775,6 +2906,8 @@ export interface components {
         };
         Look: {
             stylistFeatured: boolean;
+            /** @description ISO 4217, with a price */
+            currency?: string;
             photos: components["schemas"]["LookPhoto"][];
             id: string;
             authorId: string;
@@ -2887,6 +3020,12 @@ export interface components {
         Message: {
             message: string;
         };
+        Money: {
+            /** @description ISO 4217 */
+            currency: string;
+            /** Format: double */
+            amount: number;
+        };
         MoneyMethod: {
             /** Format: double */
             amount: number;
@@ -2938,6 +3077,52 @@ export interface components {
          * @enum {string}
          */
         MyReportStatusEnum: "open" | "actioned" | "dismissed";
+        /**
+         * @description * `natural` - My natural colour
+         *     * `black` - Black
+         *     * `brown` - Brown
+         *     * `blonde` - Blonde
+         *     * `red` - Red
+         *     * `bold` - A bold colour
+         * @enum {string}
+         */
+        NextColourEnum: "natural" | "black" | "brown" | "blonde" | "red" | "bold";
+        /**
+         * @description * `cropped` - TWA / cropped
+         *     * `ear` - Ear
+         *     * `chin` - Chin
+         *     * `neck` - Neck
+         *     * `shoulder` - Shoulder
+         *     * `armpit` - Armpit
+         *     * `bra-strap` - Bra strap
+         *     * `mid-back` - Mid-back
+         *     * `waist` - Waist
+         *     * `hip` - Hip
+         *     * `tailbone` - Tailbone
+         * @enum {string}
+         */
+        NextLengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
+        /**
+         * @description * `up_to_2` - Up to 2 hours
+         *     * `2_to_4` - 2 to 4 hours
+         *     * `4_to_6` - 4 to 6 hours
+         *     * `6_plus` - 6 hours or more
+         * @enum {string}
+         */
+        NextSitEnum: "up_to_2" | "2_to_4" | "4_to_6" | "6_plus";
+        /**
+         * @description * `low` - Low
+         *     * `medium` - Medium
+         *     * `high` - High
+         * @enum {string}
+         */
+        NextUpkeepEnum: "low" | "medium" | "high";
+        NotForMeRequestRequest: {
+            /** @description A look she'd rather not see */
+            lookId?: string;
+            /** @description A stylist's account, whose looks she'd rather not see */
+            stylistId?: string;
+        };
         NotificationCategory: {
             id: string;
             label: string;
@@ -2962,6 +3147,13 @@ export interface components {
             lastWeek: components["schemas"]["WeekCounts"];
             timing: components["schemas"]["ServiceTiming"][];
         };
+        /**
+         * @description * `wedding` - wedding
+         *     * `holiday` - holiday
+         *     * `event` - event
+         * @enum {string}
+         */
+        OccasionEnum: "wedding" | "holiday" | "event";
         PageReview: {
             id: string;
             bookingId: string;
@@ -3007,10 +3199,16 @@ export interface components {
             lengthCm?: number | null;
             /** Format: date-time */
             completedAt?: string | null;
+            nextStyles?: string[];
+            nextLength?: string;
+            nextColour?: string;
+            nextUpkeep?: string;
+            nextSit?: string;
         };
         PatchedLookTagsRequestRequest: {
             styles?: string[];
             hairTexture?: string;
+            visibility?: components["schemas"]["VisibilityEnum"];
         };
         /** @description For creating/updating menu items. */
         PatchedMenuItemDraftRequest: {
@@ -3042,6 +3240,8 @@ export interface components {
             bio: string;
             serviceModels?: components["schemas"]["ServiceModelEnum"][];
             baseArea?: string;
+            /** @default GB */
+            country: string;
             /** @default  */
             address: string;
             /** @default  */
@@ -3050,6 +3250,8 @@ export interface components {
             travelRadiusMiles?: number | null;
             /** @default  */
             instagramHandle: string;
+            /** @default  */
+            tiktokHandle: string;
             policies?: components["schemas"]["PoliciesRequest"];
             proofPhotoUri?: string;
             availability?: {
@@ -3090,6 +3292,12 @@ export interface components {
          * @enum {string}
          */
         PeriodEnum: "month" | "all";
+        Place: {
+            /** @description What to save if she picks it */
+            name: string;
+            /** @description Where it is, to tell same-named places apart */
+            context: string;
+        };
         Policies: {
             noticeHours: number;
             depositType: components["schemas"]["DepositTypeEnum"];
@@ -3192,10 +3400,14 @@ export interface components {
             avatarUri?: string;
             serviceModels: components["schemas"]["ServiceModelsBafEnum"][];
             baseArea: string;
+            country: string;
+            /** @description ISO 4217: every price on her page is in it */
+            readonly currency: string;
             /** Format: double */
             travelRadiusMiles?: number;
             timeZone?: string;
             instagramHandle?: string;
+            tiktokHandle?: string;
             readonly policies: components["schemas"]["Policies"];
             readonly availability?: components["schemas"]["Availability"];
             readonly verificationTier: components["schemas"]["VerificationTierEnum"];
@@ -3212,6 +3424,15 @@ export interface components {
             average: number;
             count: number;
         };
+        /**
+         * @description * `time` - time
+         *     * `hurt` - hurt
+         *     * `frizzy` - frizzy
+         *     * `event` - event
+         *     * `other` - other
+         * @enum {string}
+         */
+        Reason5d7Enum: "time" | "hurt" | "frizzy" | "event" | "other";
         ReasonRequestRequest: {
             reason?: string;
         };
@@ -3335,21 +3556,6 @@ export interface components {
          */
         ShelfStatusEnum: "using" | "finished" | "repurchased";
         /**
-         * @description * `cropped` - TWA / cropped
-         *     * `ear` - Ear
-         *     * `chin` - Chin
-         *     * `neck` - Neck
-         *     * `shoulder` - Shoulder
-         *     * `armpit` - Armpit
-         *     * `bra-strap` - Bra strap
-         *     * `mid-back` - Mid-back
-         *     * `waist` - Waist
-         *     * `hip` - Hip
-         *     * `tailbone` - Tailbone
-         * @enum {string}
-         */
-        ShrunkLengthEnum: "cropped" | "ear" | "chin" | "neck" | "shoulder" | "armpit" | "bra-strap" | "mid-back" | "waist" | "hip" | "tailbone";
-        /**
          * @description POST /api/auth/signup/
          *
          *     Validates email uniqueness, password strength, age confirmation,
@@ -3447,11 +3653,15 @@ export interface components {
             avatarUri?: string;
             serviceModels: components["schemas"]["ServiceModelsBafEnum"][];
             baseArea: string;
+            country: string;
+            /** @description ISO 4217: every price on her page is in it */
+            readonly currency: string;
             address?: string;
             /** Format: double */
             travelRadiusMiles?: number;
             timeZone?: string;
             instagramHandle?: string;
+            tiktokHandle?: string;
             readonly policies: components["schemas"]["Policies"];
             readonly availability?: components["schemas"]["Availability"];
             readonly paymentMethods: components["schemas"]["PaymentMethod"][];
@@ -3470,6 +3680,8 @@ export interface components {
             bio: string;
             serviceModels: components["schemas"]["ServiceModelEnum"][];
             baseArea: string;
+            /** @default GB */
+            country: string;
             /** @default  */
             address: string;
             /** @default  */
@@ -3478,6 +3690,8 @@ export interface components {
             travelRadiusMiles?: number | null;
             /** @default  */
             instagramHandle: string;
+            /** @default  */
+            tiktokHandle: string;
             policies?: components["schemas"]["PoliciesRequest"];
             proofPhotoUri?: string;
             availability?: {
@@ -3491,6 +3705,7 @@ export interface components {
             displayName: string;
             avatarUri?: string;
             baseArea: string;
+            currency: string;
             serviceId?: string;
             /** Format: double */
             fromPrice?: number;
@@ -3618,6 +3833,12 @@ export interface components {
          */
         TopicEnum: "care" | "styling" | "products" | "treatments" | "color" | "growth" | "health" | "tips";
         /**
+         * @description * `km` - km
+         *     * `mi` - mi
+         * @enum {string}
+         */
+        UnitsEnum: "km" | "mi";
+        /**
          * @description * `look` - look
          *     * `portfolio` - portfolio
          *     * `avatar` - avatar
@@ -3712,8 +3933,13 @@ export interface components {
             completed: number;
             noShows: number;
             lateCancellations: number;
-            /** Format: double */
+            /**
+             * Format: double
+             * @description In her own currency
+             */
             earned: number;
+            /** @description Each currency she was paid in, never added across them */
+            earnings: components["schemas"]["Money"][];
         };
         /**
          * @description * `2` - 2
@@ -4911,6 +5137,25 @@ export interface operations {
             };
         };
     };
+    consents_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentBatch"];
+                };
+            };
+        };
+    };
     consents_create: {
         parameters: {
             query?: never;
@@ -5011,6 +5256,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContentResponse"][];
+                };
+            };
+        };
+    };
+    countries_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Country"][];
                 };
             };
         };
@@ -5633,6 +5897,28 @@ export interface operations {
             };
         };
     };
+    not_for_me_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["NotForMeRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     notifications_preferences_retrieve: {
         parameters: {
             query?: never;
@@ -5671,6 +5957,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationPreferences"];
+                };
+            };
+        };
+    };
+    places_suggest_list: {
+        parameters: {
+            query?: {
+                /** @description ISO 3166, her country */
+                country?: string;
+                /** @description What she's typed so far */
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Place"][];
                 };
             };
         };

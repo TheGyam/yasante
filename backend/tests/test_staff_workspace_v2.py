@@ -137,7 +137,7 @@ def test_error_issue_screen_and_actions(make_user):
     assert ErrorIssue.objects.get().status == "resolved"
 
 
-@pytest.mark.parametrize("name", ["money", "funnel", "growth", "booking-times", "areas", "empty-searches", "retention", "top-stylists", "community", "app-health"])
+@pytest.mark.parametrize("name", ["money", "funnel", "growth", "booking-times", "areas", "empty-searches", "retention", "top-stylists", "community", "app-health", "area-suggestions"])
 def test_every_insight_answers(make_user, make_stylist, name):
     client, _ = staff_client(make_user, superuser=True)
     make_stylist()

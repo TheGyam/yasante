@@ -9,6 +9,7 @@ import type {
   LooksPage,
   ReportReason,
   Style,
+  LookVisibility,
 } from './types';
 
 /** Uploads this many of a look's photos at once. */
@@ -87,6 +88,19 @@ export const looksApi = {
 
   /** GET /api/looks/mine/ — her own, private ones included. */
   mine: async () => (await apiClient.get<Look[]>('/api/looks/mine/')).data,
+
+  /** PATCH /api/looks/:id/ — who sees her own look: everyone, or just her. */
+  setVisibility: async (id: string, visibility: LookVisibility) =>
+    (await apiClient.patch<Look>(`/api/looks/${id}/`, { visibility })).data,
+
+  /** PATCH /api/looks/:id/ — her own look's styles and hair type. */
+  updateTags: async (id: string, tags: { styles?: string[]; hairTexture?: string | null }) =>
+    (
+      await apiClient.patch<Look>(`/api/looks/${id}/`, {
+        ...(tags.styles && { styles: tags.styles }),
+        ...(tags.hairTexture !== undefined && { hairTexture: tags.hairTexture ?? '' }),
+      })
+    ).data,
 
   /** GET /api/looks/:id/ */
   get: async (id: string) => (await apiClient.get<Look>(`/api/looks/${id}/`)).data,
@@ -170,6 +184,11 @@ export const looksApi = {
   /** POST /api/blocks/ — hides everything by that account, both ways. */
   block: async (accountId: string) => {
     await apiClient.post('/api/blocks/', { accountId });
+  },
+
+  /** POST /api/not-for-me/ — a look, or a stylist's account: her feed shows fewer like it. */
+  notForMe: async (what: { lookId: string } | { stylistId: string }) => {
+    await apiClient.post('/api/not-for-me/', what);
   },
 
   /** GET /api/styles/ — the taxonomy looks are tagged from. */

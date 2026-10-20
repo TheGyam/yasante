@@ -71,7 +71,8 @@ export function Featured({ id, csrf }: { id?: string; csrf: string }) {
         <div className={ui.heading}>
           <Text variant="title1">Add a featured stylist</Text>
           <Text tone="secondary">
-            Start with their Instagram. You'll add their looks and their yes next.
+            Start with where they post: Instagram, TikTok or both. You'll add their looks and their
+            yes next.
           </Text>
         </div>
         <section className={s.section}>

@@ -22,7 +22,7 @@ export type {
   ServiceTiming,
   VerificationTier,
 } from './types';
-export { stylistApi, type Within } from './api';
+export { stylistApi, type Country, type Within } from './api';
 export * from './handle';
 export * from './priceList';
 export * from './setupDraft';

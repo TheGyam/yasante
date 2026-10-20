@@ -253,9 +253,17 @@ class BookingListCreateView(APIView):
         if at_client:
             if "mobile" not in models_offered:
                 return _err("This stylist doesn’t travel to clients. Book at their place instead", 400)
-            outcode = _outcode(client_address)
-            if not outcode:
-                return _err("Add your street and postcode so the stylist can get to you", 400)
+            if profile.country == "GB":
+                outcode = _outcode(client_address)
+                if not outcode:
+                    return _err("Add your street and postcode so the stylist can get to you", 400)
+            else:
+                # No postcodes to lean on: "12 Lagos Avenue, East Legon". The part after
+                # the last comma is the area she sees first; the street waits, as in the UK.
+                street, _, outcode = (part.strip() for part in client_address.rpartition(","))
+                outcode = outcode[:100]
+                if not street or not outcode:
+                    return _err("Add your street and your area so the stylist can get to you", 400)
 
         with diary_lock(profile.pk, user.pk):
             # Inside the lock: the time may have gone since she saw it.
@@ -284,6 +292,7 @@ class BookingListCreateView(APIView):
                 service_name=service.name,
                 option_labels=priced["labels"],
                 price=priced["price"],
+                currency=profile.currency,
                 from_price=priced["from_price"],
                 duration_minutes=minutes,
                 bringing_own_hair=bool(data.get("bringing_own_hair")),
@@ -291,10 +300,11 @@ class BookingListCreateView(APIView):
                 styles=list(service.styles),
                 from_look=_bookable_look(data.get("look_id")),
                 notes=str(data.get("notes") or "").strip()[:1000],
+                occasion=data.get("occasion") if data.get("occasion") in dict(Booking.OCCASION_CHOICES) else "",
                 requested_times=[start],
                 expires_at=answer_by(start, settings.BOOKING_REQUEST_LAPSE_HOURS),
-                # The client's postcode district when the stylist travels, so they can
-                # judge the journey before saying yes; the street waits for confirming.
+                # The client's postcode district (or area, outside the UK) when the stylist
+                # travels, so they can judge the journey; the street waits for confirming.
                 area=outcode if at_client else profile.base_area,
                 # Held, not sent until it's confirmed.
                 address=client_address if at_client else profile.address,
@@ -507,6 +517,18 @@ class BookingCloseView(_BookingAction):
             paid = 0
         if not no_show and paid > 0:
             booking.actual_price = paid
+        # The extension hair she used: optional, and only for an appointment that happened.
+        hair = request.data.get("extension_hair") or {}
+        if not no_show and isinstance(hair, dict):
+            booking.hair_brand = str(hair.get("brand") or "").strip()[:80]
+            booking.hair_product = str(hair.get("product") or "").strip()[:120]
+            try:
+                packs = int(hair.get("packs") or 0)
+            except (TypeError, ValueError):
+                return _err("Say how many packs, as a number", 400)
+            if not 0 <= packs <= 50:
+                return _err("Say how many packs, up to 50", 400)
+            booking.hair_packs = packs or None
         booking.status = to
         if to == "completed":
             booking.completed_at = timezone.now()
@@ -693,9 +715,17 @@ class CheckInView(_BookingAction):
             week = None
         if week is None or week != check_in_due(booking, answered):
             return _err("That check-in isn’t open", 409)
-        answers = {k: request.data.get(k) for k in CHECK_IN_ANSWERS}
-        if any(answers[k] not in allowed for k, allowed in CHECK_IN_ANSWERS.items()):
-            return _err("Answer all three", 400)
+        from apps.profiles.models import has_consent
+
+        # How her scalp feels is health data: asked, and kept, only with her yes.
+        asked = {
+            k: allowed
+            for k, allowed in CHECK_IN_ANSWERS.items()
+            if k != "scalp" or has_consent(request.user, "personalisation")
+        }
+        answers = {k: request.data.get(k) for k in asked}
+        if any(answers[k] not in allowed for k, allowed in asked.items()):
+            return _err("Answer every question", 400)
         still_in = request.data.get("still_in")
         still_in = None if still_in is None else bool(still_in)
         CheckIn.objects.create(booking=booking, week=week, still_in=still_in, **answers)
@@ -703,7 +733,13 @@ class CheckInView(_BookingAction):
             # It's come out: how long styles last, the way she lives with them.
             from apps.profiles.models import log_hair
 
-            log_hair(request.user, "take_down", request.data.get("local_at"), booking_id=booking.pk)
+            log_hair(
+                request.user,
+                "take_down",
+                request.data.get("local_at"),
+                booking_id=booking.pk,
+                reason=str(request.data.get("came_out") or ""),
+            )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

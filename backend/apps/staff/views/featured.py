@@ -37,7 +37,8 @@ from ..audit import security_event
 
 class PageDraftSerializer(serializers.Serializer):
     display_name = serializers.CharField(max_length=150)
-    instagram_handle = serializers.CharField(max_length=50)
+    instagram_handle = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    tiktok_handle = serializers.CharField(max_length=200, required=False, allow_blank=True)
     base_area = serializers.CharField(max_length=100)
     bio = serializers.CharField(max_length=1000, required=False, allow_blank=True)
 
@@ -89,6 +90,7 @@ def _summary(page):
         "display_name": profile.display_name,
         "handle": profile.handle,
         "instagram_handle": page.instagram_handle,
+        "tiktok_handle": page.tiktok_handle,
         "avatar_uri": profile.avatar_uri,
         "base_area": profile.base_area,
         "live": profile.published,
@@ -184,7 +186,7 @@ def _write(view):
             message = (
                 str(error)
                 if isinstance(error, ValueError)
-                else "Check the name, Instagram handle and area"
+                else "Check the name, the Instagram or TikTok handle, and the area"
             )
             return JsonResponse({"message": message}, status=400)
 
@@ -275,27 +277,13 @@ def _edit(request, pk):
     body, files = _payload(request)
     serializer = PageDraftSerializer(data=body, partial=True)
     serializer.is_valid(raise_exception=True)
-    if "instagram_handle" in serializer.validated_data:
-        from apps.accounts.usernames import name_in_use
-        from apps.common.identifiers import (
-            POLICY,
-            UNAVAILABLE,
-            identifier_problem,
-            normalise,
+    socials = {"instagram_handle", "tiktok_handle"} & set(serializer.validated_data)
+    if socials:
+        featured.set_socials(
+            page,
+            instagram_handle=serializer.validated_data.get("instagram_handle", page.instagram_handle),
+            tiktok_handle=serializer.validated_data.get("tiktok_handle", page.tiktok_handle),
         )
-
-        handle = normalise(serializer.validated_data["instagram_handle"])
-        if handle != page.instagram_handle:
-            if page.profile.published:
-                raise ValueError("Locked while the page is live")
-            problem = identifier_problem(handle, max_length=POLICY["handle_max"])
-            if problem or name_in_use(handle):
-                raise ValueError(problem or UNAVAILABLE)
-            page.instagram_handle = handle
-            page.save(update_fields=["instagram_handle", "updated_at"])
-            page.profile.handle = page.profile.instagram_handle = handle
-            # Her looks carry the handle for their links, so they move with it.
-            Look.objects.filter(stylist_id=str(page.profile.account_id)).update(stylist_handle=handle)
     for key in ("display_name", "bio", "base_area"):
         if key in serializer.validated_data:
             setattr(page.profile, key, serializer.validated_data[key])
@@ -337,6 +325,7 @@ def looks(request, pk):
         styles=styles,
         hair_texture=body.get("hair_texture", ""),
         caption=body.get("caption", ""),
+        request=request,
     )
     security_event(
         request, "featured_look_added", user=request.user, email=page.profile.handle

@@ -51,7 +51,7 @@ import {
   whenLabel,
 } from '@/features/booking';
 import { formatDuration } from '@/features/stylist';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, SEP } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
@@ -205,7 +205,7 @@ export default function BookingScreen() {
 
   const when = booking.scheduledFor
     ? whenLabel(booking.scheduledFor, booking.timeZone)
-    : booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(' · ');
+    : booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(SEP);
 
   return (
     <Screen title={booking.stylistName} back testID="booking-screen">
@@ -229,7 +229,7 @@ export default function BookingScreen() {
         {booking.status === 'awaiting_deposit' && !!booking.deposit && (
           <InlineAlert
             tone="info"
-            message={`Send ${formatMoney(booking.deposit.amount)} to ${booking.stylistName} directly, ${booking.deposit.method || 'using the details they gave you'}${booking.expiresAt ? `, by ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Yasante never handles this payment. They mark it received, and that confirms your booking.`}
+            message={`Send ${formatMoney(booking.deposit.amount, booking.currency ?? DEFAULT_CURRENCY)} to ${booking.stylistName} directly, ${booking.deposit.method || 'using the details they gave you'}${booking.expiresAt ? `, by ${inSentence(whenLabel(booking.expiresAt))}` : ''}. Yasante never handles this payment. They mark it received, and that confirms your booking.`}
           />
         )}
 
@@ -238,7 +238,7 @@ export default function BookingScreen() {
             title={`${booking.stylistName} suggested ${inSentence(whenLabel(booking.proposal.scheduledFor, booking.timeZone))}`}
             message={
               booking.proposal.deposit
-                ? `None of your days worked. Say yes and they'll ask for a ${formatMoney(booking.proposal.deposit.amount)} deposit.`
+                ? `None of your days worked. Say yes and they'll ask for a ${formatMoney(booking.proposal.deposit.amount, booking.currency ?? DEFAULT_CURRENCY)} deposit.`
                 : 'None of your days worked. Say yes and it’s confirmed.'
             }
           >
@@ -362,7 +362,7 @@ export default function BookingScreen() {
           <ListRow
             title={booking.serviceName}
             subtitle={booking.durationMinutes ? formatDuration(booking.durationMinutes) : undefined}
-            value={`${booking.fromPrice ? 'from ' : ''}${formatMoney(booking.price)}`}
+            value={`${booking.fromPrice ? 'from ' : ''}${formatMoney(booking.price, booking.currency ?? DEFAULT_CURRENCY)}`}
             icon={Scissors}
           />
           <ListRow
@@ -397,8 +397,8 @@ export default function BookingScreen() {
             <ListRow
               title={
                 booking.deposit.status === 'received'
-                  ? `${formatMoney(booking.deposit.amount)} deposit received`
-                  : `${formatMoney(booking.deposit.amount)} deposit due`
+                  ? `${formatMoney(booking.deposit.amount, booking.currency ?? DEFAULT_CURRENCY)} deposit received`
+                  : `${formatMoney(booking.deposit.amount, booking.currency ?? DEFAULT_CURRENCY)} deposit due`
               }
               subtitle={booking.deposit.method || undefined}
               icon={booking.deposit.status === 'received' ? BadgeCheck : Banknote}

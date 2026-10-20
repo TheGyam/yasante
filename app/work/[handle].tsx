@@ -8,6 +8,7 @@ import {
   formatPrice,
   PhotoTagSheet,
   useMenu,
+  useMyCurrency,
   usePortfolio,
   useRemovePhoto,
   useStylistPage,
@@ -22,6 +23,7 @@ import { Glass } from '@/shared/ui/Glass';
 import { IconButton } from '@/shared/ui/IconButton';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
+import { SEP } from '@/shared/lib/format';
 
 // The photo that's mostly on screen is the one the count and the card describe.
 const VIEWABLE = { itemVisiblePercentThreshold: 60 };
@@ -62,6 +64,7 @@ export default function WorkViewer() {
   const { data: page } = useStylistPage(mine ? undefined : handle);
   const { data: ownPhotos } = usePortfolio();
   const { data: ownMenu = [] } = useMenu();
+  const ownCurrency = useMyCurrency();
   const data = mine ? ownPhotos && { photos: ownPhotos, menu: ownMenu, profile: undefined } : page;
   const retag = useUpdatePhoto();
   const remove = useRemovePhoto();
@@ -142,7 +145,7 @@ export default function WorkViewer() {
         {!!page_ && (photos.length > 1 || page_.parts > 1) && (
           <Text variant="subhead" style={styles.count} accessibilityLiveRegion="polite">
             {page_.at + 1} of {photos.length}
-            {page_.parts > 1 ? ` · photo ${page_.part + 1} of ${page_.parts}` : ''}
+            {page_.parts > 1 ? `${SEP}photo ${page_.part + 1} of ${page_.parts}` : ''}
           </Text>
         )}
       </View>
@@ -155,8 +158,8 @@ export default function WorkViewer() {
                 <Text variant="title3">{service.name}</Text>
                 <Text variant="subhead" tone="secondary">
                   {data.profile
-                    ? `${formatPrice(service)} with ${data.profile.displayName}`
-                    : formatPrice(service)}
+                    ? `${formatPrice(service, data.profile.currency ?? ownCurrency)} with ${data.profile.displayName}`
+                    : formatPrice(service, ownCurrency)}
                 </Text>
               </View>
             )}

@@ -5,8 +5,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api';
 import { User, HairProfile } from '@/features/profile';
 import { useAuth } from '@/features/auth';
-import { mergeGaps } from './format';
+import { becauseOf, mergeGaps } from './format';
 import { useUserStore } from './store';
+import { useConsentStore } from '@/shared/config/consentStore';
 
 const USER_QUERY_KEY = 'user';
 
@@ -178,8 +179,21 @@ export function useHairProfileSync() {
       store.hairProfileOwner && store.hairProfileOwner !== user.id ? {} : (store.hairProfile ?? {});
     const gaps = mergeGaps(server, local);
 
-    if (Object.keys(gaps).length) save.mutate({ ...server, ...gaps });
+    // Only with her yes to using hair details: the server keeps nothing without it.
+    const allowed = useConsentStore.getState().isGranted('personalisation');
+    if (allowed && Object.keys(gaps).length) save.mutate({ ...server, ...gaps });
     store.setHairProfile({ ...server, ...gaps });
     store.setHairProfileOwner(user.id);
   }, [isAuthenticated, user?.id, isSuccess, account, save]);
+}
+
+/**
+ * Why her feed or library comes in the order it does, or undefined when her hair
+ * isn't used for it: signed in, with her yes, exactly when the server matches on it.
+ */
+export function useWhySuggested(on: ('texture' | 'porosity')[]) {
+  const { user, isAuthenticated } = useAuth();
+  const { data: account } = useUser(user?.id, { enabled: isAuthenticated });
+  const allowed = useConsentStore(s => s.consents.personalisation?.granted ?? false);
+  return isAuthenticated && allowed ? becauseOf(account?.hairProfile, on) : undefined;
 }

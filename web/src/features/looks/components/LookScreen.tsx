@@ -10,7 +10,7 @@ import {
 import { usePrefetchStylist } from '@/features/stylist';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
 import { appLink } from '@/shared/lib/links';
-import { formatMonth, plural } from '@/shared/lib/format';
+import { formatMonth, plural, SEP } from '@/shared/lib/format';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { Chip } from '@/shared/ui/Chip';
@@ -106,7 +106,7 @@ export function LookScreen({ id }: { id: string }) {
                 {look.authorName}
               </Text>
               <Text variant="footnote" tone="secondary" as="p">
-                {[look.area, formatMonth(look.createdAt)].filter(Boolean).join(' · ')}
+                {[look.area, formatMonth(look.createdAt)].filter(Boolean).join(SEP)}
               </Text>
             </div>
           </div>

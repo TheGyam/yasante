@@ -1,5 +1,5 @@
 import { Share } from 'react-native';
-import { formatMoney } from '@/shared/lib/format';
+import { formatMoney, SEP } from '@/shared/lib/format';
 import type {
   Availability,
   DayHours,
@@ -36,7 +36,7 @@ export function timingLabelText(label?: {
   sample: number;
 }) {
   if (!label) return undefined;
-  return `Usually ${TIMING_WORDS[label.outcome]} · ${label.count} of ${label.sample} appointments`;
+  return `Usually ${TIMING_WORDS[label.outcome]}${SEP}${label.count} of ${label.sample} appointments`;
 }
 
 /** Every badge says exactly what was checked — never a generic "verified". */
@@ -55,9 +55,14 @@ export function formatDuration(minutes: number) {
   return rest ? `${spoken} ${rest} mins` : spoken;
 }
 
-/** "£120" or "from £120". Never a range: the low end plus "from" is what clients read. */
-export function formatPrice(item: Pick<MenuItem, 'price' | 'fromPrice'>) {
-  return item.fromPrice ? `from ${formatMoney(item.price)}` : formatMoney(item.price);
+/**
+ * "£120" or "from £120", in the stylist's currency. Never a range: the low end plus
+ * "from" is what clients read.
+ */
+export function formatPrice(item: Pick<MenuItem, 'price' | 'fromPrice'>, currency: string) {
+  return item.fromPrice
+    ? `from ${formatMoney(item.price, currency)}`
+    : formatMoney(item.price, currency);
 }
 
 export function sharePage(profile: Pick<StylistProfile, 'handle' | 'displayName'>) {

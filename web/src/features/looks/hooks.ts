@@ -292,7 +292,11 @@ export function useUpdateLook() {
       patch,
     }: {
       id: string;
-      patch: { styles?: string[]; hairTexture?: Look['hairTexture'] | null };
+      patch: {
+        styles?: string[];
+        hairTexture?: Look['hairTexture'] | null;
+        visibility?: Look['visibility'];
+      };
     }) => updateLook(id, patch),
     onSuccess: look => {
       client.setQueryData(lookKeys.look(look.id), look);

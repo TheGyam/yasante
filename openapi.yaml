@@ -1174,9 +1174,23 @@ paths:
         '201':
           description: No response body
   /api/consents/:
+    get:
+      operationId: consents_retrieve
+      description: GET /api/consents/ (her latest answer to each) and POST /api/consents/
+      tags:
+      - consents
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentBatch'
+          description: ''
     post:
       operationId: consents_create
-      description: POST /api/consents/
+      description: GET /api/consents/ (her latest answer to each) and POST /api/consents/
       tags:
       - consents
       requestBody:
@@ -1276,6 +1290,24 @@ paths:
                 items:
                   $ref: '#/components/schemas/ContentResponse'
           description: ''
+  /api/countries/:
+    get:
+      operationId: countries_list
+      description: 'Every country, its currency and its distance units: for the country
+        pickers.'
+      tags:
+      - countries
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Country'
+          description: ''
   /api/devices/:
     post:
       operationId: devices_create
@@ -1321,7 +1353,7 @@ paths:
       description: |-
         POST /api/events/
 
-        Drops events when analytics consent is withdrawn.
+        Drops a signed-in person's events unless she has said yes to analytics.
       tags:
       - events
       requestBody:
@@ -1866,6 +1898,23 @@ paths:
                 items:
                   $ref: '#/components/schemas/MyModeration'
           description: ''
+  /api/not-for-me/:
+    post:
+      operationId: not_for_me_create
+      description: 'POST /api/not-for-me/ — { lookId } or { stylistId }: her feed
+        shows fewer like it.'
+      tags:
+      - not-for-me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotForMeRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/notifications/preferences/:
     get:
       operationId: notifications_preferences_retrieve
@@ -1901,6 +1950,35 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationPreferences'
+          description: ''
+  /api/places/suggest/:
+    get:
+      operationId: places_suggest_list
+      description: Areas for the area field outside the UK. Signed in only, to be
+        fair to the free service.
+      parameters:
+      - in: query
+        name: country
+        schema:
+          type: string
+        description: ISO 3166, her country
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: What she's typed so far
+      tags:
+      - places
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Place'
           description: ''
   /api/policies/:
     get:
@@ -3244,6 +3322,9 @@ components:
         price:
           type: number
           format: double
+        currency:
+          type: string
+          description: 'ISO 4217: the stylist''s, when it was booked'
         fromPrice:
           type: boolean
         durationMinutes:
@@ -3254,6 +3335,8 @@ components:
           type: boolean
         notes:
           type: string
+        occasion:
+          $ref: '#/components/schemas/OccasionEnum'
         calendarUrl:
           type: string
         requestedTimes:
@@ -3308,6 +3391,10 @@ components:
           - $ref: '#/components/schemas/Timing'
         startedOnTime:
           type: boolean
+        extensionHair:
+          allOf:
+          - $ref: '#/components/schemas/ExtensionHair'
+          description: The stylist's own record; only she sees it
         contested:
           allOf:
           - $ref: '#/components/schemas/Contested'
@@ -3328,6 +3415,7 @@ components:
       - bringingOwnHair
       - clientName
       - createdAt
+      - currency
       - fromPrice
       - id
       - moves
@@ -3367,6 +3455,15 @@ components:
         notes:
           type: string
           minLength: 1
+        occasion:
+          allOf:
+          - $ref: '#/components/schemas/OccasionEnum'
+          description: |-
+            What it's for, if she says
+
+            * `wedding` - wedding
+            * `holiday` - holiday
+            * `event` - event
         policyVersion:
           type: string
           minLength: 1
@@ -3380,7 +3477,8 @@ components:
         clientAddress:
           type: string
           minLength: 1
-          description: Street and postcode, when at_client
+          description: 'When at_client: street and postcode in the UK, else street
+            then area ("12 Lagos Avenue, East Legon")'
       required:
       - bringingOwnHair
       - policyVersion
@@ -3475,6 +3573,20 @@ components:
       description: |-
         * `client` - client
         * `stylist` - stylist
+    CameOutEnum:
+      enum:
+      - time
+      - hurt
+      - frizzy
+      - event
+      - other
+      type: string
+      description: |-
+        * `time` - time
+        * `hurt` - hurt
+        * `frizzy` - frizzy
+        * `event` - event
+        * `other` - other
     CarePlanRequestRequest:
       type: object
       properties:
@@ -3605,12 +3717,30 @@ components:
         holding:
           $ref: '#/components/schemas/HoldingEnum'
         scalp:
-          $ref: '#/components/schemas/CheckInRequestScalpEnum'
+          allOf:
+          - $ref: '#/components/schemas/CheckInRequestScalpEnum'
+          description: |-
+            Only with hair details consent
+
+            * `comfortable` - comfortable
+            * `itchy` - itchy
+            * `sore` - sore
         again:
           $ref: '#/components/schemas/AgainEnum'
         stillIn:
           type: boolean
           description: Is the style still in?
+        cameOut:
+          allOf:
+          - $ref: '#/components/schemas/CameOutEnum'
+          description: |-
+            Why it came out, when it's out. "hurt" is kept only with hair details consent
+
+            * `time` - time
+            * `hurt` - hurt
+            * `frizzy` - frizzy
+            * `event` - event
+            * `other` - other
         localAt:
           type: string
           minLength: 1
@@ -3618,7 +3748,6 @@ components:
       required:
       - again
       - holding
-      - scalp
       - week
     CheckInRequestScalpEnum:
       enum:
@@ -3749,6 +3878,8 @@ components:
           format: double
         timing:
           $ref: '#/components/schemas/TimingRequest'
+        extensionHair:
+          $ref: '#/components/schemas/ExtensionHairRequest'
       required:
       - outcome
     ClosedDayRequestRequest:
@@ -3921,9 +4052,43 @@ components:
           type: string
       required:
       - data
+    Consent:
+      type: object
+      description: Single consent record within a batch.
+      properties:
+        purpose:
+          type: string
+          maxLength: 50
+        granted:
+          type: boolean
+        policyVersion:
+          type: string
+          maxLength: 50
+        recordedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          default: app
+          maxLength: 50
+      required:
+      - granted
+      - policyVersion
+      - purpose
+      - recordedAt
+    ConsentBatch:
+      type: object
+      description: GET and POST /api/consents/
+      properties:
+        consents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Consent'
+      required:
+      - consents
     ConsentBatchRequest:
       type: object
-      description: POST /api/consents/
+      description: GET and POST /api/consents/
       properties:
         consents:
           type: array
@@ -4017,6 +4182,30 @@ components:
           type: boolean
         timing:
           type: boolean
+    Country:
+      type: object
+      properties:
+        code:
+          type: string
+          description: ISO 3166
+        name:
+          type: string
+        currency:
+          type: string
+          description: ISO 4217
+        units:
+          allOf:
+          - $ref: '#/components/schemas/UnitsEnum'
+          description: |-
+            How distances are given there
+
+            * `km` - km
+            * `mi` - mi
+      required:
+      - code
+      - currency
+      - name
+      - units
     CurrentStyle:
       type: object
       properties:
@@ -4181,6 +4370,37 @@ components:
       required:
       - at
       - name
+    ExtensionHair:
+      type: object
+      properties:
+        brand:
+          type: string
+          maxLength: 80
+        product:
+          type: string
+          maxLength: 120
+        packs:
+          type: integer
+          maximum: 50
+          minimum: 1
+    ExtensionHairRequest:
+      type: object
+      properties:
+        brand:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 80
+        product:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 120
+        packs:
+          type: integer
+          maximum: 50
+          minimum: 1
+          nullable: true
     FavoriteResponse:
       type: object
       properties:
@@ -4428,6 +4648,8 @@ components:
           format: date-time
         bookingId:
           type: string
+        reason:
+          type: string
       required:
       - at
       - id
@@ -4448,6 +4670,17 @@ components:
         bookingId:
           type: string
           format: uuid
+        reason:
+          allOf:
+          - $ref: '#/components/schemas/Reason5d7Enum'
+          description: |-
+            Why a style came out. "hurt" is kept only with hair details consent
+
+            * `time` - time
+            * `hurt` - hurt
+            * `frizzy` - frizzy
+            * `event` - event
+            * `other` - other
       required:
       - kind
     HairProfileResponse:
@@ -4464,11 +4697,11 @@ components:
           - $ref: '#/components/schemas/BlankEnum'
         length:
           oneOf:
-          - $ref: '#/components/schemas/LengthEnum'
+          - $ref: '#/components/schemas/NextLengthEnum'
           - $ref: '#/components/schemas/BlankEnum'
         shrunkLength:
           oneOf:
-          - $ref: '#/components/schemas/ShrunkLengthEnum'
+          - $ref: '#/components/schemas/NextLengthEnum'
           - $ref: '#/components/schemas/BlankEnum'
         density:
           oneOf:
@@ -4516,6 +4749,28 @@ components:
         completedAt:
           type: string
           format: date-time
+        nextStyles:
+          type: array
+          items:
+            type: string
+            maxLength: 50
+          maxItems: 10
+        nextLength:
+          oneOf:
+          - $ref: '#/components/schemas/NextLengthEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        nextColour:
+          oneOf:
+          - $ref: '#/components/schemas/NextColourEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        nextUpkeep:
+          oneOf:
+          - $ref: '#/components/schemas/NextUpkeepEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        nextSit:
+          oneOf:
+          - $ref: '#/components/schemas/NextSitEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         updatedAt:
           type: string
           format: date-time
@@ -4524,6 +4779,7 @@ components:
       - chemicals
       - domain
       - goals
+      - nextStyles
       - scalp
       - updatedAt
     HairProfileResponseScalpEnum:
@@ -4589,9 +4845,11 @@ components:
           format: date-time
         appointments:
           type: integer
-        spent:
-          type: number
-          format: double
+        spending:
+          type: array
+          items:
+            $ref: '#/components/schemas/Money'
+          description: What she spent in each currency, never added across them
         styles:
           type: array
           items:
@@ -4623,7 +4881,7 @@ components:
       - looksSaved
       - period
       - productsAdded
-      - spent
+      - spending
       - styles
       - stylists
       - washes
@@ -4662,32 +4920,6 @@ components:
         * `trim` - trim
         * `wash` - wash
         * `take_down` - take_down
-    LengthEnum:
-      enum:
-      - cropped
-      - ear
-      - chin
-      - neck
-      - shoulder
-      - armpit
-      - bra-strap
-      - mid-back
-      - waist
-      - hip
-      - tailbone
-      type: string
-      description: |-
-        * `cropped` - TWA / cropped
-        * `ear` - Ear
-        * `chin` - Chin
-        * `neck` - Neck
-        * `shoulder` - Shoulder
-        * `armpit` - Armpit
-        * `bra-strap` - Bra strap
-        * `mid-back` - Mid-back
-        * `waist` - Waist
-        * `hip` - Hip
-        * `tailbone` - Tailbone
     LengthInsight:
       type: object
       properties:
@@ -4732,6 +4964,9 @@ components:
       properties:
         stylistFeatured:
           type: boolean
+        currency:
+          type: string
+          description: ISO 4217, with a price
         photos:
           type: array
           items:
@@ -5021,6 +5256,18 @@ components:
           type: string
       required:
       - message
+    Money:
+      type: object
+      properties:
+        currency:
+          type: string
+          description: ISO 4217
+        amount:
+          type: number
+          format: double
+      required:
+      - amount
+      - currency
     MoneyMethod:
       type: object
       properties:
@@ -5128,6 +5375,81 @@ components:
         * `open` - open
         * `actioned` - actioned
         * `dismissed` - dismissed
+    NextColourEnum:
+      enum:
+      - natural
+      - black
+      - brown
+      - blonde
+      - red
+      - bold
+      type: string
+      description: |-
+        * `natural` - My natural colour
+        * `black` - Black
+        * `brown` - Brown
+        * `blonde` - Blonde
+        * `red` - Red
+        * `bold` - A bold colour
+    NextLengthEnum:
+      enum:
+      - cropped
+      - ear
+      - chin
+      - neck
+      - shoulder
+      - armpit
+      - bra-strap
+      - mid-back
+      - waist
+      - hip
+      - tailbone
+      type: string
+      description: |-
+        * `cropped` - TWA / cropped
+        * `ear` - Ear
+        * `chin` - Chin
+        * `neck` - Neck
+        * `shoulder` - Shoulder
+        * `armpit` - Armpit
+        * `bra-strap` - Bra strap
+        * `mid-back` - Mid-back
+        * `waist` - Waist
+        * `hip` - Hip
+        * `tailbone` - Tailbone
+    NextSitEnum:
+      enum:
+      - up_to_2
+      - 2_to_4
+      - 4_to_6
+      - 6_plus
+      type: string
+      description: |-
+        * `up_to_2` - Up to 2 hours
+        * `2_to_4` - 2 to 4 hours
+        * `4_to_6` - 4 to 6 hours
+        * `6_plus` - 6 hours or more
+    NextUpkeepEnum:
+      enum:
+      - low
+      - medium
+      - high
+      type: string
+      description: |-
+        * `low` - Low
+        * `medium` - Medium
+        * `high` - High
+    NotForMeRequestRequest:
+      type: object
+      properties:
+        lookId:
+          type: string
+          minLength: 1
+          description: A look she'd rather not see
+        stylistId:
+          type: string
+          minLength: 1
+          description: A stylist's account, whose looks she'd rather not see
     NotificationCategory:
       type: object
       properties:
@@ -5186,6 +5508,16 @@ components:
       - thisWeek
       - timing
       - weekOf
+    OccasionEnum:
+      enum:
+      - wedding
+      - holiday
+      - event
+      type: string
+      description: |-
+        * `wedding` - wedding
+        * `holiday` - holiday
+        * `event` - event
     PageReview:
       type: object
       properties:
@@ -5304,6 +5636,20 @@ components:
           type: string
           format: date-time
           nullable: true
+        nextStyles:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          maxItems: 10
+        nextLength:
+          type: string
+        nextColour:
+          type: string
+        nextUpkeep:
+          type: string
+        nextSit:
+          type: string
     PatchedLookTagsRequestRequest:
       type: object
       properties:
@@ -5314,6 +5660,8 @@ components:
             minLength: 1
         hairTexture:
           type: string
+        visibility:
+          $ref: '#/components/schemas/VisibilityEnum'
     PatchedMenuItemDraftRequest:
       type: object
       description: For creating/updating menu items.
@@ -5387,6 +5735,11 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          default: GB
+          maxLength: 2
         address:
           type: string
           default: ''
@@ -5400,6 +5753,10 @@ components:
           format: double
           nullable: true
         instagramHandle:
+          type: string
+          default: ''
+          maxLength: 50
+        tiktokHandle:
           type: string
           default: ''
           maxLength: 50
@@ -5492,6 +5849,18 @@ components:
       description: |-
         * `month` - month
         * `all` - all
+    Place:
+      type: object
+      properties:
+        name:
+          type: string
+          description: What to save if she picks it
+        context:
+          type: string
+          description: Where it is, to tell same-named places apart
+      required:
+      - context
+      - name
     Policies:
       type: object
       properties:
@@ -5724,6 +6093,13 @@ components:
         baseArea:
           type: string
           maxLength: 100
+        country:
+          type: string
+          maxLength: 2
+        currency:
+          type: string
+          readOnly: true
+          description: 'ISO 4217: every price on her page is in it'
         travelRadiusMiles:
           type: number
           format: double
@@ -5731,6 +6107,9 @@ components:
           type: string
           maxLength: 64
         instagramHandle:
+          type: string
+          maxLength: 50
+        tiktokHandle:
           type: string
           maxLength: 50
         policies:
@@ -5766,7 +6145,9 @@ components:
       - baseArea
       - checks
       - claimable
+      - country
       - createdAt
+      - currency
       - displayName
       - featured
       - handle
@@ -5786,6 +6167,20 @@ components:
       required:
       - average
       - count
+    Reason5d7Enum:
+      enum:
+      - time
+      - hurt
+      - frizzy
+      - event
+      - other
+      type: string
+      description: |-
+        * `time` - time
+        * `hurt` - hurt
+        * `frizzy` - frizzy
+        * `event` - event
+        * `other` - other
     ReasonRequestRequest:
       type: object
       properties:
@@ -6037,32 +6432,6 @@ components:
         * `using` - using
         * `finished` - finished
         * `repurchased` - repurchased
-    ShrunkLengthEnum:
-      enum:
-      - cropped
-      - ear
-      - chin
-      - neck
-      - shoulder
-      - armpit
-      - bra-strap
-      - mid-back
-      - waist
-      - hip
-      - tailbone
-      type: string
-      description: |-
-        * `cropped` - TWA / cropped
-        * `ear` - Ear
-        * `chin` - Chin
-        * `neck` - Neck
-        * `shoulder` - Shoulder
-        * `armpit` - Armpit
-        * `bra-strap` - Bra strap
-        * `mid-back` - Mid-back
-        * `waist` - Waist
-        * `hip` - Hip
-        * `tailbone` - Tailbone
     SignupRequest:
       type: object
       description: |-
@@ -6299,6 +6668,13 @@ components:
         baseArea:
           type: string
           maxLength: 100
+        country:
+          type: string
+          maxLength: 2
+        currency:
+          type: string
+          readOnly: true
+          description: 'ISO 4217: every price on her page is in it'
         address:
           type: string
           maxLength: 500
@@ -6309,6 +6685,9 @@ components:
           type: string
           maxLength: 64
         instagramHandle:
+          type: string
+          maxLength: 50
+        tiktokHandle:
           type: string
           maxLength: 50
         policies:
@@ -6347,7 +6726,9 @@ components:
       required:
       - accountId
       - baseArea
+      - country
       - createdAt
+      - currency
       - displayName
       - featured
       - handle
@@ -6381,6 +6762,11 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        country:
+          type: string
+          minLength: 1
+          default: GB
+          maxLength: 2
         address:
           type: string
           default: ''
@@ -6394,6 +6780,10 @@ components:
           format: double
           nullable: true
         instagramHandle:
+          type: string
+          default: ''
+          maxLength: 50
+        tiktokHandle:
           type: string
           default: ''
           maxLength: 50
@@ -6432,6 +6822,8 @@ components:
           type: string
         baseArea:
           type: string
+        currency:
+          type: string
         serviceId:
           type: string
         fromPrice:
@@ -6456,6 +6848,7 @@ components:
       required:
       - accountId
       - baseArea
+      - currency
       - displayName
       - handle
     StylistSummary:
@@ -6694,6 +7087,14 @@ components:
         * `growth` - Growth
         * `health` - Health
         * `tips` - Tips
+    UnitsEnum:
+      enum:
+      - km
+      - mi
+      type: string
+      description: |-
+        * `km` - km
+        * `mi` - mi
     UploadRequestKindEnum:
       enum:
       - look
@@ -6914,10 +7315,17 @@ components:
         earned:
           type: number
           format: double
+          description: In her own currency
+        earnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Money'
+          description: Each currency she was paid in, never added across them
       required:
       - completed
       - confirmed
       - earned
+      - earnings
       - lateCancellations
       - noShows
       - requests

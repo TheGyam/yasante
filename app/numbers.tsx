@@ -3,11 +3,12 @@ import { format } from 'date-fns';
 import { Timer } from 'lucide-react-native';
 import {
   formatDuration,
+  useMyCurrency,
   useStylistNumbers,
   type ServiceTiming,
   type WeekCounts,
 } from '@/features/stylist';
-import { formatMoney } from '@/shared/lib/format';
+import { formatMoney, formatMoneyList, SEP } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
@@ -18,15 +19,19 @@ import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 
-const TILES: { key: keyof WeekCounts; label: string; money?: boolean; lowerIsBetter?: boolean }[] =
-  [
-    { key: 'views', label: 'Page views' },
-    { key: 'requests', label: 'Requests' },
-    { key: 'confirmed', label: 'Confirmed' },
-    { key: 'completed', label: 'Done' },
-    { key: 'noShows', label: 'No-shows', lowerIsBetter: true },
-    { key: 'earned', label: 'Paid', money: true },
-  ];
+const TILES: {
+  key: Exclude<keyof WeekCounts, 'earnings'>;
+  label: string;
+  money?: boolean;
+  lowerIsBetter?: boolean;
+}[] = [
+  { key: 'views', label: 'Page views' },
+  { key: 'requests', label: 'Requests' },
+  { key: 'confirmed', label: 'Confirmed' },
+  { key: 'completed', label: 'Done' },
+  { key: 'noShows', label: 'No-shows', lowerIsBetter: true },
+  { key: 'earned', label: 'Paid', money: true },
+];
 
 /** A service worth re-quoting: it runs half an hour or more away from what she says. */
 const OFF_BY = 30;
@@ -43,11 +48,17 @@ const useStyles = makeStyles(t => ({
   over: { backgroundColor: t.colors.gold },
 }));
 
-function change(now: number, before: number, money?: boolean, lowerIsBetter?: boolean) {
+function change(
+  now: number,
+  before: number,
+  currency: string,
+  money?: boolean,
+  lowerIsBetter?: boolean
+) {
   if (now === before) return { text: 'Same as last week', tone: 'tertiary' as const };
   const diff = now - before;
   const better = lowerIsBetter ? diff < 0 : diff > 0;
-  const amount = money ? formatMoney(Math.abs(diff)) : String(Math.abs(diff));
+  const amount = money ? formatMoney(Math.abs(diff), currency) : String(Math.abs(diff));
   return {
     text: `${diff > 0 ? '+' : '−'}${amount} on last week`,
     tone: better ? ('success' as const) : ('secondary' as const),
@@ -62,6 +73,7 @@ export default function NumbersScreen() {
   const styles = useStyles();
   const router = useRouter();
   const { data, isLoading, refetch, isRefetching } = useStylistNumbers();
+  const currency = useMyCurrency();
 
   const timingRow = (t: ServiceTiming) => {
     const off =
@@ -83,7 +95,7 @@ export default function NumbersScreen() {
               t.over && `${t.over} over`,
             ]
               .filter(Boolean)
-              .join(' · ')}{' '}
+              .join(SEP)}{' '}
             — from {t.sample} {t.sample === 1 ? 'appointment' : 'appointments'}
           </Text>
           {worthUpdating && (
@@ -130,15 +142,29 @@ export default function NumbersScreen() {
           <View style={styles.grid}>
             {TILES.map((tile, index) => {
               const now = data.thisWeek[tile.key];
-              const delta = change(now, data.lastWeek[tile.key], tile.money, tile.lowerIsBetter);
+              // Paid in more than her own currency this week: each on its own, never added.
+              const earnings = data.thisWeek.earnings ?? [];
+              const shown = !tile.money
+                ? String(now)
+                : earnings.length > 1 ||
+                    (earnings.length === 1 && earnings[0].currency !== currency)
+                  ? formatMoneyList(earnings)
+                  : formatMoney(now, currency);
+              const delta = change(
+                now,
+                data.lastWeek[tile.key],
+                currency,
+                tile.money,
+                tile.lowerIsBetter
+              );
               return (
                 <Rise key={tile.key} index={index} style={styles.tile}>
-                  <Card accessibilityLabel={`${tile.label}: ${now}. ${delta.text}`}>
+                  <Card accessibilityLabel={`${tile.label}: ${shown}. ${delta.text}`}>
                     <View style={styles.tileInner}>
                       <Text variant="caption" tone="tertiary">
                         {tile.label}
                       </Text>
-                      <Text variant="numeric">{tile.money ? formatMoney(now) : now}</Text>
+                      <Text variant="numeric">{shown}</Text>
                       <Text variant="caption" tone={delta.tone}>
                         {delta.text}
                       </Text>

@@ -22,6 +22,64 @@ def test_the_feed_is_public_newest_first_and_pages_by_cursor(api, make_user, mak
     assert ids(last) == [str(looks[0].pk)] and "nextCursor" not in last.json()
 
 
+
+def test_with_her_yes_looks_on_hair_like_hers_come_first_newest_first(api, make_user, make_look, consent):
+    author = make_user()
+    old_coily, other, new_coily, newest_other = (
+        make_look(author, hair_texture="coily"),
+        make_look(author, hair_texture="straight"),
+        make_look(author, hair_texture="coily"),
+        make_look(author),
+    )
+    me = make_user(texture="coily")
+    walk = lambda viewer: _walk(api(viewer) if viewer else api(), limit=1)
+    newest_first = [str(l.pk) for l in (newest_other, new_coily, other, old_coily)]
+    # Without her yes, and signed out: just newest first.
+    assert walk(me) == newest_first and walk(None) == newest_first
+    consent(me, "personalisation")
+    # With it: hers first, then the rest, each newest first, nothing repeated or missed.
+    assert walk(me) == [str(l.pk) for l in (new_coily, old_coily, newest_other, other)]
+    # Choosing a hair type herself still wins.
+    assert [l["id"] for l in api(me).get("/api/looks/", hair="straight").json()["data"]] == [str(other.pk)]
+
+
+def test_not_for_me_shows_her_fewer_like_it(api, make_user, make_stylist, make_look):
+    from apps.profiles.tasks import collect_user_data
+
+    author, stylist = make_user(), make_stylist()
+    one, two, three = (make_look(author, style="knotless") for _ in range(3))
+    twists = make_look(author, style="twists")
+    hers = make_look(make_user(), style="twists", stylist=stylist)
+    me = make_user()
+    feed = lambda **q: {l["id"] for l in api(me).get("/api/looks/", **q).json()["data"]}
+    nope = lambda **body: api(me).post("/api/not-for-me/", body)
+
+    assert nope(lookId=str(one.pk)).status_code == 204
+    assert feed() == {str(l.pk) for l in (two, three, twists, hers)}
+    # A second knotless look: knotless goes, unless she asks for it.
+    nope(lookId=str(two.pk))
+    assert feed() == {str(twists.pk), str(hers.pk)}
+    assert feed(style="knotless") == {str(three.pk)}
+    # A stylist: her looks go.
+    nope(stylistId=str(stylist.account_id))
+    assert feed() == {str(twists.pk)}
+    assert nope().status_code == 400
+    # Hers alone, and in her export.
+    assert len(api(make_user()).get("/api/looks/").json()["data"]) == 5
+    assert len(collect_user_data(me)["not_for_me"]) == 3
+
+
+def _walk(client, limit):
+    """Every look in the feed, page by page."""
+    seen, cursor = [], None
+    for _ in range(20):
+        body = client.get("/api/looks/", limit=limit, **({"cursor": cursor} if cursor else {})).json()
+        seen += [l["id"] for l in body["data"]]
+        cursor = body.get("nextCursor")
+        if not cursor:
+            return seen
+    raise AssertionError("the feed never ended")
+
 def test_a_look_carries_everything_the_card_shows(api, make_user, make_stylist, make_look):
     profile = make_stylist()
     viewer = make_user()

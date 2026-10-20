@@ -1,11 +1,24 @@
 import { mergeGaps } from '../format';
-import { lengthIsStale, progressOf } from '../quiz/sections';
+import { SEP } from '@/shared/lib/format';
+import { lengthIsStale, progressOf, sectionSummary } from '../quiz/sections';
 
 describe('the progressive profile', () => {
   it('counts answered sections, and names the next one', () => {
-    expect(progressOf(null)).toMatchObject({ done: 0, total: 9, next: { key: 'texture' } });
+    expect(progressOf(null)).toMatchObject({ done: 0, total: 10, next: { key: 'texture' } });
     const some = progressOf({ texture: 'coily', length: 'shoulder', goals: ['growth'] });
     expect(some).toMatchObject({ done: 3, next: { key: 'density' } });
+  });
+
+  it('counts her next style once any of it is chosen, and sums it up', () => {
+    expect(progressOf({ nextUpkeep: 'low' }).done).toBe(1);
+    expect(
+      sectionSummary(
+        'wishlist',
+        { nextStyles: ['knotless', 'boho'], nextLength: 'waist', nextUpkeep: 'low' },
+        () => []
+      )
+    ).toBe(`2 styles${SEP}Waist length${SEP}Low upkeep`);
+    expect(sectionSummary('wishlist', {}, () => [])).toBeUndefined();
   });
 
   it('treats "no chemicals, ever" as an answer, and not saying as none', () => {

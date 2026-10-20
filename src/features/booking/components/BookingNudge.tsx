@@ -16,6 +16,7 @@ import { Text } from '@/shared/ui/Text';
 import { dayLabel, inSentence, needsAttendance, whenLabel } from '../format';
 import { useBookings, useSlotInterests } from '../hooks';
 import type { Booking, SlotInterest } from '../types';
+import { SEP } from '@/shared/lib/format';
 
 const useStyles = makeStyles(t => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md },
@@ -76,7 +77,7 @@ function pickNudge(bookings: Booking[], waiting: SlotInterest[]): Nudge | undefi
     return {
       icon: Activity,
       title: `How are your ${checkIn.serviceName.toLowerCase()} holding up?`,
-      subtitle: `Week ${checkIn.checkInDue} · three taps`,
+      subtitle: `Week ${checkIn.checkInDue}${SEP}three taps`,
       href: `/check-in/${checkIn.id}`,
     };
   }

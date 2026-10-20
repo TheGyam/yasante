@@ -9,7 +9,24 @@ const call = (method: string, url: string, accountId: string | undefined, body?:
 };
 
 describe('the account', () => {
+  it('keeps hair details only with her yes', () => {
+    const patch = () =>
+      call('patch', '/api/users/acc_new/hair-profile/', 'acc_new', { texture: 'coily' });
+    expect(patch).toThrow(MockError);
+    call('post', '/api/consents/', 'acc_new', {
+      consents: [
+        { purpose: 'personalisation', granted: true, policyVersion: 'v1', recordedAt: 'x' },
+      ],
+    });
+    expect(patch).not.toThrow();
+  });
+
   it('keeps every hair profile change instead of overwriting it', () => {
+    call('post', '/api/consents/', 'acc_client', {
+      consents: [
+        { purpose: 'personalisation', granted: true, policyVersion: 'v1', recordedAt: 'x' },
+      ],
+    });
     call('patch', '/api/users/acc_client/hair-profile/', 'acc_client', { length: 'chin' });
     call('patch', '/api/users/acc_client/hair-profile/', 'acc_client', { length: 'shoulder' });
     const lengths = db.hairSnapshots
@@ -18,15 +35,27 @@ describe('the account', () => {
     expect(lengths.slice(-2)).toEqual(['chin', 'shoulder']);
   });
 
-  it('drops events from an account that withdrew the analytics consent', () => {
+  it('keeps events from an account only while the analytics consent is given', () => {
     const before = db.events.length;
-    call('post', '/api/consents/', 'acc_zainab', {
-      consents: [{ purpose: 'analytics', granted: false, policyVersion: 'v1', recordedAt: 'x' }],
-    });
-    call('post', '/api/events/', 'acc_zainab', {
-      events: [{ name: 'view_look', at: 'a', localAt: 'b' }],
-    });
+    const consent = (granted: boolean, recordedAt: string) =>
+      call('post', '/api/consents/', 'acc_zainab', {
+        consents: [{ purpose: 'analytics', granted, policyVersion: 'v1', recordedAt }],
+      });
+    const send = () =>
+      call('post', '/api/events/', 'acc_zainab', {
+        events: [{ name: 'view_look', at: 'a', localAt: 'b' }],
+      });
+    send();
     expect(db.events.length).toBe(before);
+    consent(true, '2026-10-01T10:00:00Z');
+    send();
+    expect(db.events.length).toBe(before + 1);
+    consent(false, '2026-10-02T10:00:00Z');
+    send();
+    expect(db.events.length).toBe(before + 1);
+    expect(call('get', '/api/consents/', 'acc_zainab').consents).toEqual([
+      expect.objectContaining({ purpose: 'analytics', granted: false }),
+    ]);
   });
 
   it('exports and deletes only your own account', () => {

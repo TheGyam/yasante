@@ -419,9 +419,9 @@ describe('featured stylists', () => {
     await userEv.click(saveBtn);
 
     expect(await screen.findByText('1 of 3 done')).toBeInTheDocument();
-    expect(screen.getByText(/Knotless braids · 4 photos/)).toBeInTheDocument();
+    expect(screen.getByText(/Knotless braids\s+4 photos/)).toBeInTheDocument();
 
-    expect(screen.getByText(/Twists · 1 photo$/)).toBeInTheDocument();
+    expect(screen.getByText(/Twists\s+1 photo$/)).toBeInTheDocument();
 
     // When all done
     finishState = {
@@ -649,5 +649,50 @@ describe('featured stylists', () => {
       'index, follow, max-image-preview:large, max-snippet:-1'
     );
     robots.remove();
+  });
+});
+
+describe('stylists on TikTok', () => {
+  it('a TikTok-only featured stylist is booked on TikTok and claims from TikTok', async () => {
+    mockApi({
+      '/api/stylists/by-handle/efe/': {
+        ...featuredStylist,
+        profile: {
+          ...featuredStylist.profile,
+          handle: 'efe',
+          instagramHandle: '',
+          tiktokHandle: 'efe.braids',
+        },
+      },
+      '/api/stylists/by-handle/efe/portfolio/': [],
+    });
+    renderSite('/efe');
+    const user = userEvent.setup();
+    expect(await screen.findByRole('link', { name: 'Book on TikTok' })).toHaveAttribute(
+      'href',
+      'https://www.tiktok.com/@efe.braids'
+    );
+    await user.click(screen.getByRole('button', { name: /Is this you\?/ }));
+    expect(screen.getByRole('link', { name: '@yasante_beauty' })).toHaveAttribute(
+      'href',
+      'https://www.tiktok.com/@yasante_beauty'
+    );
+    expect(screen.getByText(/on TikTok from @efe\.braids/)).toBeInTheDocument();
+  });
+
+  it('a stylist on both is booked on Instagram, with TikTok beside it', async () => {
+    mockApi({
+      '/api/stylists/by-handle/amabraids/': {
+        ...featuredStylist,
+        profile: { ...featuredStylist.profile, tiktokHandle: 'ama.tok' },
+      },
+      '/api/stylists/by-handle/amabraids/portfolio/': [],
+    });
+    renderSite('/amabraids');
+    expect(await screen.findByRole('link', { name: 'Book on Instagram' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Also on TikTok' })).toHaveAttribute(
+      'href',
+      'https://www.tiktok.com/@ama.tok'
+    );
   });
 });

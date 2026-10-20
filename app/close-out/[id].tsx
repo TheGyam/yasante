@@ -22,7 +22,7 @@ import {
   type TimingReason,
 } from '@/features/booking';
 import { ChoiceCard } from '@/features/profile';
-import { formatMoney, parseMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, parseMoney, SEP } from '@/shared/lib/format';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { EASE_OUT, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -86,6 +86,11 @@ export default function CloseOutScreen() {
   const [bucket, setBucket] = useState<TimingBucket>();
   const [reason, setReason] = useState<TimingReason>();
   const [paid, setPaid] = useState('');
+  // The extension hair she used, if any: her own record, never shown to the client.
+  const [brand, setBrand] = useState('');
+  const [product, setProduct] = useState('');
+  const [packs, setPacks] = useState('');
+  const usedHair = !!(brand.trim() || product.trim() || packs.trim());
   const [closedAs, setClosedAs] = useState<'attended' | 'no_show'>();
 
   const step = history[history.length - 1];
@@ -107,6 +112,14 @@ export default function CloseOutScreen() {
         outcome: noShow ? 'no_show' : 'attended',
         timing: noShow || !outcome ? undefined : { outcome, bucket, reason },
         actualPrice: noShow ? undefined : parseMoney(paid) || undefined,
+        extensionHair:
+          noShow || !usedHair
+            ? undefined
+            : {
+                brand: brand.trim() || undefined,
+                product: product.trim() || undefined,
+                packs: Number(packs) || undefined,
+              },
       });
       haptics.success();
       setClosedAs(noShow ? 'no_show' : 'attended');
@@ -188,7 +201,9 @@ export default function CloseOutScreen() {
         <Animated.View key={step} entering={direction > 0 ? FORWARD : BACKWARD}>
           <View style={styles.heading}>
             <Text variant="overline" tone="tertiary">
-              {booking.serviceName} · {booking.clientName}
+              {booking.serviceName}
+              {SEP}
+              {booking.clientName}
             </Text>
             <Text variant="title1" accessibilityRole="header">
               {question.title}
@@ -315,7 +330,26 @@ export default function CloseOutScreen() {
                 onChangeText={setPaid}
                 placeholder={String(booking.price)}
                 keyboardType="decimal-pad"
-                hint={`Quoted ${booking.fromPrice ? 'from ' : ''}${formatMoney(booking.price)}. Leave it empty if it matched.`}
+                hint={`Quoted ${booking.fromPrice ? 'from ' : ''}${formatMoney(booking.price, booking.currency ?? DEFAULT_CURRENCY)}. Leave it empty if it matched.`}
+              />
+              <Input
+                label="Extension hair brand (optional)"
+                value={brand}
+                onChangeText={setBrand}
+                maxLength={80}
+                placeholder="For example X-Pression"
+              />
+              <Input
+                label="Product or colour (optional)"
+                value={product}
+                onChangeText={setProduct}
+                maxLength={120}
+              />
+              <Input
+                label="Packs used (optional)"
+                value={packs}
+                onChangeText={text => setPacks(text.replace(/\D/g, '').slice(0, 2))}
+                keyboardType="number-pad"
               />
               <View style={styles.footer}>
                 <Button

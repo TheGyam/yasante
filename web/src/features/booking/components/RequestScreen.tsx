@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Banknote, CalendarClock, Clock, MapPin, Scissors, UserRound } from 'lucide-react';
 import { errorMessage, isNotFound } from '@/shared/lib/errors';
-import { formatMoney, formatPrice } from '@/shared/lib/format';
+import {
+  currencySymbol,
+  DEFAULT_CURRENCY,
+  formatMoney,
+  formatPrice,
+  SEP,
+} from '@/shared/lib/format';
 import { Button } from '@/shared/ui/Button';
 import { Chip } from '@/shared/ui/Chip';
 import { EmptyState } from '@/shared/ui/EmptyState';
@@ -105,7 +111,7 @@ function Request({
           <Text variant="subhead" tone="secondary">
             {STATUS_LABELS[status]}
             {booking.scheduledFor && status !== 'requested'
-              ? ` · ${whenLabel(booking.scheduledFor, booking.timeZone)}`
+              ? `${SEP}${whenLabel(booking.scheduledFor, booking.timeZone)}`
               : ''}
           </Text>
         </div>
@@ -136,19 +142,23 @@ function Request({
             title={booking.serviceName}
             subtitle={
               [
-                booking.optionLabels?.join(' · '),
+                booking.optionLabels?.join(SEP),
                 booking.bringingOwnHair ? 'Bringing their own hair' : undefined,
               ]
                 .filter(Boolean)
-                .join(' · ') || undefined
+                .join(SEP) || undefined
             }
-            value={formatPrice(booking.price, booking.fromPrice)}
+            value={formatPrice(
+              booking.price,
+              booking.currency ?? DEFAULT_CURRENCY,
+              booking.fromPrice
+            )}
           />
           {booking.atClient && (
             <ListRow
               icon={MapPin}
               iconTone={booking.address ? 'success' : 'neutral'}
-              title={booking.address ?? `At their place · ${booking.area}`}
+              title={booking.address ?? `At their place${SEP}${booking.area}`}
               subtitle={
                 booking.address
                   ? 'You’re going to them'
@@ -178,7 +188,11 @@ function Request({
         {status === 'completed' && (
           <Section title="How it went">
             {booking.actualPrice !== undefined && (
-              <ListRow icon={Banknote} title="Paid" value={formatMoney(booking.actualPrice)} />
+              <ListRow
+                icon={Banknote}
+                title="Paid"
+                value={formatMoney(booking.actualPrice, booking.currency ?? DEFAULT_CURRENCY)}
+              />
             )}
           </Section>
         )}
@@ -261,7 +275,7 @@ function Answer({
         />
       )}
       <Input
-        label="Deposit to confirm (£)"
+        label={`Deposit to confirm (${currencySymbol(booking.currency ?? DEFAULT_CURRENCY)})`}
         inputMode="decimal"
         value={deposit}
         placeholder="0"
@@ -278,7 +292,9 @@ function Answer({
           >
             {paymentMethods.map((m, i) => (
               <option key={`${m.label}${i}`} value={i}>
-                {m.label} · {m.details}
+                {m.label}
+                {SEP}
+                {m.details}
               </option>
             ))}
           </Select>
@@ -319,7 +335,8 @@ function AwaitingDeposit({ booking }: { booking: Booking }) {
     <Glass padded radius="xl" className={styles.card}>
       <Text variant="body">
         Accepted for {inSentence(whenLabel(booking.scheduledFor ?? '', booking.timeZone))}. They’ve
-        been asked for {formatMoney(booking.deposit?.amount ?? 0)}
+        been asked for{' '}
+        {formatMoney(booking.deposit?.amount ?? 0, booking.currency ?? DEFAULT_CURRENCY)}
         {booking.expiresAt ? `, and have until ${inSentence(whenLabel(booking.expiresAt))}` : ''}.
         Marking it received confirms the booking and{' '}
         {booking.atClient ? 'sends you their address' : 'shares your address'}.
@@ -401,6 +418,11 @@ function CloseOut({ booking }: { booking: Booking }) {
   const [paid, setPaid] = useState(String(booking.price));
   const [timing, setTiming] = useState<(typeof TIMINGS)[number]['value']>('on_time');
   const [bucket, setBucket] = useState<(typeof BUCKETS)[number]['value']>('under_30');
+  // The extension hair she used, if any: her own record, never shown to the client.
+  const [brand, setBrand] = useState('');
+  const [product, setProduct] = useState('');
+  const [packs, setPacks] = useState('');
+  const usedHair = brand.trim() || product.trim() || packs.trim();
 
   const submit = () =>
     close.mutate({
@@ -410,6 +432,13 @@ function CloseOut({ booking }: { booking: Booking }) {
             outcome: 'attended',
             actualPrice: Number(paid.replace(/[^\d.]/g, '')) || booking.price,
             timing: timing === 'on_time' ? { outcome: timing } : { outcome: timing, bucket },
+            ...(usedHair && {
+              extensionHair: {
+                brand: brand.trim() || undefined,
+                product: product.trim() || undefined,
+                packs: Number(packs) || undefined,
+              },
+            }),
           }
         : { outcome: 'no_show' },
     });
@@ -429,10 +458,28 @@ function CloseOut({ booking }: { booking: Booking }) {
       {came && (
         <>
           <Input
-            label="What they paid (£)"
+            label={`What they paid (${currencySymbol(booking.currency ?? DEFAULT_CURRENCY)})`}
             inputMode="decimal"
             value={paid}
             onChange={e => setPaid(e.target.value)}
+          />
+          <Input
+            label="Extension hair brand (optional)"
+            value={brand}
+            maxLength={80}
+            onChange={e => setBrand(e.target.value)}
+          />
+          <Input
+            label="Product or colour (optional)"
+            value={product}
+            maxLength={120}
+            onChange={e => setProduct(e.target.value)}
+          />
+          <Input
+            label="Packs used (optional)"
+            inputMode="numeric"
+            value={packs}
+            onChange={e => setPacks(e.target.value.replace(/\D/g, '').slice(0, 2))}
           />
           <div className={styles.chips}>
             {TIMINGS.map(t => (

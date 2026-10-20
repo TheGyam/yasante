@@ -64,6 +64,7 @@ class StylistProfileAdmin(admin.ModelAdmin):
                     "address",
                     "travel_radius_miles",
                     "instagram_handle",
+                    "tiktok_handle",
                 )
             },
         ),
@@ -149,8 +150,8 @@ class VerificationAdmin(admin.ModelAdmin):
 
 @admin.register(FeaturedPage)
 class FeaturedPageAdmin(admin.ModelAdmin):
-    list_display = ("profile", "instagram_handle", "agreed_at", "claimed_at", "created_at")
-    search_fields = ("profile__handle", "instagram_handle")
+    list_display = ("profile", "instagram_handle", "tiktok_handle", "agreed_at", "claimed_at", "created_at")
+    search_fields = ("profile__handle", "instagram_handle", "tiktok_handle")
     readonly_fields = tuple(f.name for f in FeaturedPage._meta.fields)
 
     def has_add_permission(self, request):

@@ -38,8 +38,11 @@ def client_record(booking):
 
 
 def client_hair(user):
+    """What a stylist she books sees of her hair, only while she lets us use it."""
+    from apps.profiles.models import has_consent
+
     hair = getattr(user, "hair_profile", None) if user else None
-    if not hair:
+    if not hair or not has_consent(user, "personalisation"):
         return None
     parts = [
         hair.texture,
@@ -89,11 +92,13 @@ def present_booking(booking, viewer):
         "from_look": present_from_look(booking.from_look),
         "option_labels": booking.option_labels or None,
         "price": _money(booking.price),
+        "currency": booking.currency,
         "from_price": booking.from_price,
         "duration_minutes": booking.duration_minutes,
         "bringing_own_hair": booking.bringing_own_hair,
         "hair_included": booking.hair_included,
         "notes": booking.notes,
+        "occasion": booking.occasion or None,
         # A signed .ics link for this person: the phone's own "Add to calendar".
         "calendar_url": calendar_url(booking, viewer) if confirmed and viewer is not None and booking.scheduled_for else None,
         "requested_times": booking.requested_times,
@@ -134,6 +139,15 @@ def present_booking(booking, viewer):
             else None
         ),
         "started_on_time": booking.started_on_time,
+        "extension_hair": (
+            {
+                "brand": booking.hair_brand or None,
+                "product": booking.hair_product or None,
+                "packs": booking.hair_packs,
+            }
+            if as_stylist and (booking.hair_brand or booking.hair_product or booking.hair_packs)
+            else None
+        ),
         "contested": (
             {"no_show": booking.contested_no_show or None, "timing": booking.contested_timing or None}
             if booking.contested_no_show or booking.contested_timing
@@ -248,6 +262,12 @@ class FromLookSerializer(serializers.Serializer):
     author_name = optional(serializers.CharField())
 
 
+class ExtensionHairSerializer(serializers.Serializer):
+    brand = optional(serializers.CharField(max_length=80))
+    product = optional(serializers.CharField(max_length=120))
+    packs = optional(serializers.IntegerField(min_value=1, max_value=50))
+
+
 class BookingSerializer(serializers.Serializer):
     id = serializers.CharField()
     status = serializers.ChoiceField(choices=[c for c, _ in BOOKING_STATUS_CHOICES])
@@ -264,11 +284,13 @@ class BookingSerializer(serializers.Serializer):
     from_look = optional(FromLookSerializer())
     option_labels = optional(serializers.ListField(child=serializers.CharField()))
     price = serializers.FloatField()
+    currency = serializers.CharField(help_text="ISO 4217: the stylist's, when it was booked")
     from_price = serializers.BooleanField()
     duration_minutes = optional(serializers.IntegerField())
     bringing_own_hair = serializers.BooleanField()
     hair_included = optional(serializers.BooleanField())
     notes = optional(serializers.CharField())
+    occasion = optional(serializers.ChoiceField(choices=["wedding", "holiday", "event"]))
     calendar_url = optional(serializers.CharField())
     requested_times = serializers.ListField(child=serializers.DateTimeField())
     scheduled_for = optional(serializers.DateTimeField())
@@ -289,6 +311,7 @@ class BookingSerializer(serializers.Serializer):
     actual_price = optional(serializers.FloatField())
     timing = optional(TimingSerializer())
     started_on_time = optional(serializers.BooleanField())
+    extension_hair = optional(ExtensionHairSerializer(help_text="The stylist's own record; only she sees it"))
     contested = optional(ContestedSerializer())
     review = optional(ReviewStateSerializer())
     check_in_due = optional(serializers.ChoiceField(choices=[2, 4]))
@@ -334,10 +357,13 @@ class BookingCreateRequestSerializer(serializers.Serializer):
     bringing_own_hair = serializers.BooleanField()
     requested_times = serializers.ListField(child=serializers.DateTimeField())
     notes = serializers.CharField(required=False)
+    occasion = serializers.ChoiceField(
+        choices=["wedding", "holiday", "event"], required=False, help_text="What it's for, if she says"
+    )
     policy_version = serializers.CharField()
     look_id = serializers.CharField(required=False, help_text="The look the booking is from")
     at_client = serializers.BooleanField(required=False, help_text="The stylist comes to the client")
-    client_address = serializers.CharField(required=False, help_text="Street and postcode, when at_client")
+    client_address = serializers.CharField(required=False, help_text="When at_client: street and postcode in the UK, else street then area (\"12 Lagos Avenue, East Legon\")")
 
 
 class AcceptRequestSerializer(serializers.Serializer):
@@ -358,6 +384,7 @@ class CloseRequestSerializer(serializers.Serializer):
     outcome = serializers.ChoiceField(choices=["attended", "no_show"])
     actual_price = serializers.FloatField(required=False)
     timing = TimingSerializer(required=False)
+    extension_hair = ExtensionHairSerializer(required=False)
 
 
 class MoveRequestBodySerializer(serializers.Serializer):
@@ -380,9 +407,16 @@ class ReviewCreateRequestSerializer(serializers.Serializer):
 class CheckInRequestSerializer(serializers.Serializer):
     week = serializers.ChoiceField(choices=[2, 4])
     holding = serializers.ChoiceField(choices=["fresh", "okay", "tired"])
-    scalp = serializers.ChoiceField(choices=["comfortable", "itchy", "sore"])
+    scalp = serializers.ChoiceField(
+        choices=["comfortable", "itchy", "sore"], required=False, help_text="Only with hair details consent"
+    )
     again = serializers.ChoiceField(choices=["yes", "maybe", "no"])
     still_in = serializers.BooleanField(required=False, help_text="Is the style still in?")
+    came_out = serializers.ChoiceField(
+        choices=["time", "hurt", "frizzy", "event", "other"],
+        required=False,
+        help_text="Why it came out, when it's out. \"hurt\" is kept only with hair details consent",
+    )
     local_at = serializers.CharField(required=False, help_text="The phone's own clock")
 
 

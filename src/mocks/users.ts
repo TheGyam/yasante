@@ -21,6 +21,18 @@ const own = (request: MockRequest) => {
   return accountId;
 };
 
+/** Her latest answer for each purpose, as the server works it out: the later time wins. */
+const latestConsents = (accountId: string) => {
+  const latest = new Map<string, (typeof db.consents)[number]>();
+  for (const c of db.consents) {
+    const seen = latest.get(c.purpose);
+    if (c.accountId === accountId && (!seen || c.recordedAt >= seen.recordedAt)) {
+      latest.set(c.purpose, c);
+    }
+  }
+  return [...latest.values()];
+};
+
 defineMocks({
   'GET /api/users/username-check/': request => {
     const me = requireAccount(request);
@@ -43,6 +55,12 @@ defineMocks({
   'PATCH /api/users/:id/hair-profile/': request => {
     requireAccount(request);
     const found = account(request.params.id);
+    if (!latestConsents(found.id).find(c => c.purpose === 'personalisation')?.granted) {
+      throw new MockError(
+        403,
+        'Turn on “Use your hair details” in Settings to save your hair profile.'
+      );
+    }
     found.hairProfile = { ...found.hairProfile, ...request.body };
     // The growth curve depends on history, so every change is kept as it was.
     db.hairSnapshots.push({
@@ -121,14 +139,18 @@ defineMocks({
     return null;
   },
 
+  'GET /api/consents/': request => {
+    const accountId = requireAccount(request);
+    return { consents: latestConsents(accountId).map(({ accountId: _, ...c }) => c) };
+  },
+
   'POST /api/events/': request => {
     const events = Array.isArray(request.body?.events) ? request.body.events : [];
-    // The server checks consent too: an account that has withdrawn it is dropped.
+    // The server checks consent too: a signed-in account without a yes is dropped.
     const accountId = request.accountId;
-    const latest = accountId
-      ? db.consents.filter(c => c.accountId === accountId && c.purpose === 'analytics').pop()
-      : undefined;
-    if (latest && !latest.granted) return null;
+    if (accountId && !latestConsents(accountId).find(c => c.purpose === 'analytics')?.granted) {
+      return null;
+    }
     for (const event of events) {
       db.events.push({
         accountId,

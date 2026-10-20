@@ -1278,3 +1278,85 @@ def test_staff_list_shows_a_few_covers_newest_first(page, work, make_user):
     item = client.get("/data/featured/").json()["items"][0]
     newest = sorted(looks, key=lambda look: look.created_at, reverse=True)[:3]
     assert item["covers"] == [look.thumb_uri or look.photo_uri for look in newest]
+
+
+def test_a_tiktok_only_stylist_gets_a_page_at_their_tiktok_handle(make_user):
+    page = featured.create_page(
+        display_name="Efe",
+        tiktok_handle="https://www.tiktok.com/@Efe.Braids?lang=en",
+        base_area="Croydon",
+        added_by=make_user(is_staff=True),
+    )
+    assert (page.instagram_handle, page.tiktok_handle) == ("", "efe.braids")
+    assert page.profile.handle == "efe.braids"
+    assert page.profile.tiktok_handle == "efe.braids"
+
+
+def test_with_both_the_yasante_address_follows_instagram(make_user):
+    page = featured.create_page(
+        display_name="Ama",
+        instagram_handle="@ama.ig",
+        tiktok_handle="@ama.tok",
+        base_area="Peckham",
+        added_by=make_user(is_staff=True),
+    )
+    assert page.profile.handle == "ama.ig"
+    assert (page.profile.instagram_handle, page.profile.tiktok_handle) == ("ama.ig", "ama.tok")
+
+
+@pytest.mark.parametrize(
+    "instagram, tiktok, message",
+    [("", "", "Add their Instagram or TikTok"), ("not a handle!", "", "doesn't look like")],
+)
+def test_a_page_needs_a_real_instagram_or_tiktok(make_user, instagram, tiktok, message):
+    with pytest.raises(ValueError, match=message):
+        featured.create_page(
+            display_name="Ama",
+            instagram_handle=instagram,
+            tiktok_handle=tiktok,
+            base_area="Peckham",
+            added_by=make_user(is_staff=True),
+        )
+
+
+def test_staff_can_add_tiktok_to_a_draft_but_not_change_a_live_page(page, work, make_user):
+    client, _ = staff_client(make_user, superuser=True)
+    item = f"/data/featured/{page.pk}/"
+    response = client.patch(item, {"tiktok_handle": "@ama.tok"}, content_type="application/json")
+    assert response.status_code == 200 and response.json()["tiktok_handle"] == "ama.tok"
+    page.refresh_from_db()
+    assert page.profile.handle == "ama.braids"  # Instagram still leads
+    # Dropping Instagram moves their address to the TikTok handle.
+    client.patch(item, {"instagram_handle": ""}, content_type="application/json")
+    page.refresh_from_db()
+    assert page.profile.handle == "ama.tok"
+    assert client.patch(item, {"tiktok_handle": ""}, content_type="application/json").status_code == 400
+    live(page, work)
+    response = client.patch(item, {"tiktok_handle": "@other"}, content_type="application/json")
+    assert response.json()["message"] == "Locked while the page is live"
+
+
+def test_stylists_can_add_their_tiktok_to_their_own_page(make_stylist):
+    profile = make_stylist()
+    client = APIClient()
+    client.force_authenticate(profile.account)
+    assert client.patch("/api/stylists/me/", {"tiktok_handle": "ama.tok"}, format="json").status_code == 200
+    profile.refresh_from_db()
+    assert profile.tiktok_handle == "ama.tok"
+    page = client.get(f"/api/stylists/by-handle/{profile.handle}/").json()
+    assert page["profile"]["tiktokHandle"] == "ama.tok"
+
+
+def test_staff_added_photos_have_whole_addresses_without_a_public_base(
+    page, make_user, styles, settings, tmp_path
+):
+    settings.MEDIA_ROOT = tmp_path
+    settings.PUBLIC_BASE_URL = ""
+    client, _ = staff_client(make_user, superuser=True)
+    response = client.post(
+        f"/data/featured/{page.pk}/looks/",
+        {"files": [image_file()], "styles": ["knotless"]},
+    )
+    assert response.status_code == 201, response.content
+    look = Look.objects.get(pk=response.json()["id"])
+    assert look.photo_uri.startswith("http://") and look.thumb_uri.startswith("http://")

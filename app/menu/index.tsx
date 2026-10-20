@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { ClipboardPaste, Plus, Scissors, WifiOff } from 'lucide-react-native';
-import { formatDuration, formatPrice, useMenu } from '@/features/stylist';
+import { formatDuration, formatPrice, useMenu, useMyCurrency } from '@/features/stylist';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
@@ -23,6 +23,7 @@ export default function MenuScreen() {
   const styles = useStyles();
   const router = useRouter();
   const { data: menu, isLoading, isError, refetch, isRefetching } = useMenu();
+  const currency = useMyCurrency();
 
   const actions = (
     <View style={styles.actions}>
@@ -81,7 +82,7 @@ export default function MenuScreen() {
                   key={item.id}
                   title={item.name}
                   subtitle={item.durationMinutes ? formatDuration(item.durationMinutes) : item.note}
-                  value={formatPrice(item)}
+                  value={formatPrice(item, currency)}
                   icon={Scissors}
                   onPress={() => router.push(`/menu/${item.id}`)}
                   testID={`menu-item-${item.id}`}

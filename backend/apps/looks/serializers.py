@@ -55,7 +55,16 @@ def present_looks(looks, viewer):
     people = load_people([look.author_id for look in looks] + stylist_ids)
     from apps.stylists.models import StylistProfile
 
-    featured = set(StylistProfile.objects.filter(featured=True, account_id__in=[i for i in stylist_ids if i]).values_list("account_id", flat=True))
+    # One read for every stylist on the page: whether she's featured, and her currency.
+    from apps.common.countries import currency_of
+
+    stylists = {
+        row[0]: row[1:]
+        for row in StylistProfile.objects.filter(account_id__in=[i for i in stylist_ids if i]).values_list(
+            "account_id", "featured", "country"
+        )
+    }
+    featured = {account for account, (is_featured, _) in stylists.items() if is_featured}
     out = []
     for look in looks:
         author = people.get(look.author_id, {})
@@ -93,6 +102,8 @@ def present_looks(looks, viewer):
                     else None
                 ),
                 "stylist_featured": stylist_id in featured,
+                # The price below is in the stylist's currency, as she charges it.
+                "currency": currency_of(stylists[stylist_id][1]) if stylist_id in stylists else None,
                 "service_id": look.service_id,
                 "service_name": look.service_name,
                 "price": float(look.price) if look.price is not None else None,
@@ -217,6 +228,7 @@ class LookPhotoSerializer(serializers.Serializer):
 
 class LookSerializer(serializers.Serializer):
     stylist_featured = serializers.BooleanField()
+    currency = optional(serializers.CharField(help_text="ISO 4217, with a price"))
     photos = LookPhotoSerializer(many=True)
     id = serializers.CharField()
     author_id = serializers.CharField()
@@ -313,6 +325,11 @@ class CommentCreateRequestSerializer(serializers.Serializer):
 class ReportRequestSerializer(serializers.Serializer):
     reason = serializers.ChoiceField(choices=list(LOOK_REPORT_REASONS))
     note = serializers.CharField(required=False, max_length=500)
+
+
+class NotForMeRequestSerializer(serializers.Serializer):
+    look_id = serializers.CharField(required=False, help_text="A look she'd rather not see")
+    stylist_id = serializers.CharField(required=False, help_text="A stylist's account, whose looks she'd rather not see")
 
 
 class BlockRequestSerializer(serializers.Serializer):

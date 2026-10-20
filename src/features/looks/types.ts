@@ -24,10 +24,14 @@ export interface Look {
   caption?: string;
   /** Who did the hair: the author when a stylist posts, the one she tagged when a client does. */
   stylist?: { id: string; name: string; handle?: string };
+  /** Her page was set up by Yasante and isn't taking bookings yet: no price, no booking. */
+  stylistFeatured?: boolean;
   /** Taken from her menu when she tagged one, so the price shown is the real price. */
   serviceId?: string;
   serviceName?: string;
   price?: number;
+  /** The currency the price is in: the stylist's (ISO 4217). */
+  currency?: string;
   fromPrice?: boolean;
   /** Style ids from the taxonomy. */
   styles: string[];

@@ -27,7 +27,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowUp, ChevronRight, ImageOff, MoreHorizontal, X } from 'lucide-react-native';
-import { formatMoney } from '@/shared/lib/format';
+import { DEFAULT_CURRENCY, formatMoney, SEP } from '@/shared/lib/format';
 import { errorMessage, useAuth } from '@/features/auth';
 import {
   LikeButton,
@@ -806,6 +806,9 @@ function WhoDoesThis({ style, name, lookId }: { style: string; name?: string; lo
   const { data: stylists = [] } = useStylistsForStyle(style, { within: near ? 10 : undefined });
   if (!stylists.length || !name) return null;
   const prices = stylists.map(s => s.fromPrice).filter((p): p is number => !!p);
+  // A lowest price only means something in one currency; mixed, it's left out.
+  const currencies = new Set(stylists.map(s => s.currency ?? DEFAULT_CURRENCY));
+  const currency = currencies.size === 1 ? [...currencies][0] : undefined;
   return (
     <Animated.View entering={FadeIn.duration(200)} style={{ marginBottom: space.xl }}>
       <PressableScale
@@ -836,7 +839,9 @@ function WhoDoesThis({ style, name, lookId }: { style: string; name?: string; lo
           <Text variant="footnote" tone="secondary">
             {stylists.length} {stylists.length === 1 ? 'stylist' : 'stylists'}
             {near ? ' near you' : ''}
-            {prices.length ? ` · from ${formatMoney(Math.min(...prices))}` : ''}
+            {prices.length && currency
+              ? `${SEP}from ${formatMoney(Math.min(...prices), currency)}`
+              : ''}
           </Text>
         </View>
         <ChevronRight size={18} color={theme.colors.text.tertiary} />

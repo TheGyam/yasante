@@ -1,4 +1,5 @@
 import type { ProductCategory, ShelfItem } from './types';
+import { SEP } from '@/shared/lib/format';
 
 export const CATEGORY_LABELS: Record<ProductCategory, string> = {
   shampoo: 'Shampoo',
@@ -22,5 +23,5 @@ export function shelfSummary(items: ShelfItem[]) {
     again && `${again} bought again`,
   ]
     .filter(Boolean)
-    .join(' · ');
+    .join(SEP);
 }

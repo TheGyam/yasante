@@ -18,7 +18,7 @@ import {
   useRefreshLooks,
   type Look,
 } from '@/features/looks';
-import { NudgeHost, useUser } from '@/features/profile';
+import { NudgeHost, useUser, useWhySuggested } from '@/features/profile';
 import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -128,6 +128,9 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
   const actions = useLookActions({ onNeedsAccount });
 
   const { query, filtered } = useFeedQuery();
+  // Her hair puts looks like it first, unless she's already filtered to it.
+  const because = useWhySuggested(['texture']);
+  const why = query.hair ? undefined : because;
   const clearFilters = useLookFilters(s => s.clear);
   const feed = useLooks(query);
   const focused = useIsFocused();
@@ -173,11 +176,16 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
         <View style={styles.feedHead}>
           <SectionHeader title="Looks" />
           <LookFilterBar />
+          {why && (
+            <Text variant="footnote" tone="secondary">
+              {why}
+            </Text>
+          )}
         </View>
         {loading && <FeedSkeleton />}
       </View>
     ),
-    [styles, firstName, isAuthenticated, router, loading]
+    [styles, firstName, isAuthenticated, router, loading, why]
   );
 
   return (

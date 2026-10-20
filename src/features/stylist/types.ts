@@ -73,12 +73,21 @@ export interface StylistProfile {
   serviceModels: ServiceModel[];
   /** District only. The full address is shared once a booking is confirmed. */
   baseArea: string;
+  /** Where she works (ISO 3166). */
+  country?: string;
+  /** Her country's currency (ISO 4217): every price on her page is in it. */
+  currency?: string;
   /** Her own page only: where clients go, shared with a booking once it's confirmed. */
   address?: string;
   /** Where her working hours are (IANA), from her phone. */
   timeZone?: string;
   travelRadiusMiles?: number;
   instagramHandle?: string;
+  tiktokHandle?: string;
+  /** Set up by Yasante, with their yes, and not taking bookings on Yasante yet. */
+  featured?: boolean;
+  /** Still Yasante's to hand over: the stylist can make it theirs. */
+  claimable?: boolean;
   policies: StylistPolicies;
   /** When she works. Absent until she sets it; until then, every day 9 to 6. */
   availability?: Availability;
@@ -100,10 +109,12 @@ export type StylistProfileDraft = Pick<
   | 'bio'
   | 'serviceModels'
   | 'baseArea'
+  | 'country'
   | 'address'
   | 'timeZone'
   | 'travelRadiusMiles'
   | 'instagramHandle'
+  | 'tiktokHandle'
   | 'policies'
   | 'proofPhotoUri'
   | 'availability'
@@ -164,6 +175,8 @@ export type PortfolioPhotoDraft = Pick<PortfolioPhoto, 'uri' | 'serviceId'>;
  */
 export interface StylistPage {
   profile: StylistProfile;
+  /** On a featured page, for someone signed in: whether they're on its waitlist. */
+  waitlistJoined?: boolean;
   menu: MenuItem[];
   photos: PortfolioPhoto[];
   /** Styles clients confirmed she did — a count she can't type in herself. */
@@ -188,7 +201,10 @@ export interface WeekCounts {
   noShows: number;
   lateCancellations: number;
   /** What she was paid for completed appointments, where she recorded it. */
+  /** Paid, in her own currency (for the week-on-week change). */
   earned: number;
+  /** Every currency she was paid in, each on its own. */
+  earnings?: { currency: string; amount: number }[];
 }
 
 /** How a service really runs against what she quotes. Private: no threshold. */
@@ -221,6 +237,8 @@ export interface StylistSearchResult {
   displayName: string;
   avatarUri?: string;
   baseArea: string;
+  /** The currency her prices are in (ISO 4217). */
+  currency?: string;
   /** Searching by style: their service for it, what it starts at, and their work in it. */
   serviceId?: string;
   fromPrice?: number;

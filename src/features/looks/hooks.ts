@@ -18,6 +18,7 @@ import type {
   LookFilters,
   LooksPage,
   ReportReason,
+  LookVisibility,
 } from './types';
 import { track } from '@/shared/lib/analytics';
 
@@ -198,6 +199,16 @@ export function usePostLook() {
   });
 }
 
+/** Her own look, shown to everyone or just her. It keeps its date either way. */
+export function useSetLookVisibility() {
+  const onSuccess = useRefreshFeed();
+  return useMutation({
+    mutationFn: (vars: { id: string; visibility: LookVisibility }) =>
+      looksApi.setVisibility(vars.id, vars.visibility),
+    onSuccess,
+  });
+}
+
 export function useRemoveLook() {
   const onSuccess = useRefreshFeed();
   return useMutation({ mutationFn: (id: string) => looksApi.remove(id), onSuccess });
@@ -362,6 +373,15 @@ export function useBlockAuthor() {
       queryClient.invalidateQueries({ queryKey: [KEY] });
       queryClient.invalidateQueries({ queryKey: [COMMENTS] });
     },
+  });
+}
+
+/** "Not for me": the feed shows fewer like it, so it's read again. */
+export function useNotForMe() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: looksApi.notForMe,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEY] }),
   });
 }
 

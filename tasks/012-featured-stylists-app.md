@@ -1,8 +1,8 @@
 ---
 id: 012
 slug: featured-stylists-app
-assignee: codex # codex | gemini | sonnet | haiku | opus
-status: ready # draft | ready | in-progress | review | blocked | done
+assignee: opus # codex | gemini | sonnet | haiku | opus
+status: done # draft | ready | in-progress | review | blocked | done
 branch: agent/codex/012-featured-stylists-app
 depends_on: [009]
 ---
@@ -115,10 +115,18 @@ npm run api:types && git diff --exit-code src/shared/lib/api/schema.d.ts
 
 ## Report to the lead
 
-_Filled in by the assignee when it sets `status: review` or `blocked`._
-
-- **Changed:**
-- **Checks run:** (each command and its result; "not run" if you didn't)
-- **Unsure about:**
-- **Skipped, and why:**
-- **Question for the lead:** (only if `blocked`)
+- **Done by the lead**, on Yaw's request, after TikTok support was added.
+- **Changed:** `src/features/claim/` (new: her link, Finish your page, the Today card,
+  their API and hooks), `FeaturedActions` and `ClaimNote` in the stylist feature
+  (Book on Instagram or TikTok, Also on TikTok, the waitlist shown at once and
+  rolled back on failure, joining after sign-up without a second tap, the "Is this
+  you?" note naming the app they're on), the stylist page showing only what's real
+  for a featured page, "Featured" in place of a look's price and no booking from it,
+  the tag edit (PATCH /api/looks/:id/), routes `claim/[code]` and `finish`, `claim`
+  and `finish` reserved in `NOT_HANDLES`, and `finish` behind the account gate.
+- **A choice:** tags are checked inside Finish your page, beside each look, rather
+  than on the portfolio screen, so the whole checklist is in one place.
+- **Checks run:** `npx tsc --noEmit` passed; `npm run lint` passed (0 errors, the
+  107 warnings were already there); `npx jest --ci` passed, 49 suites and 240 tests;
+  `npm run api:types` left `schema.d.ts` unchanged.
+- **Not checked:** on a device. The app needs a build for that, which waits for Yaw.

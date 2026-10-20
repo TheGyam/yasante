@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Check, Flag, Trash2, UserX } from 'lucide-react-native';
+import { Check, EyeOff, Flag, Globe, Lock, Trash2, UserX } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
   REPORT_REASONS,
   useBlockAuthor,
   useRemoveComment,
+  useLook,
+  useNotForMe,
   useRemoveLook,
   useReport,
+  useSetLookVisibility,
   type ReportReason,
   type ReportTarget,
 } from '@/features/looks';
@@ -32,7 +35,8 @@ const NOUN: Record<ReportTarget, string> = { look: 'look', comment: 'comment', p
 
 /**
  * What you can do about someone else's look, comment or page: say what's wrong
- * with it, or stop seeing them at all. Your own gets one option — take it down.
+ * with it, or stop seeing them at all. Your own look can be shown to everyone or kept
+ * to yourself, or taken down.
  */
 export default function ReportOptionsScreen() {
   const styles = useStyles();
@@ -68,7 +72,11 @@ export default function ReportOptionsScreen() {
 
   const report = useReport();
   const block = useBlockAuthor();
+  const notForMe = useNotForMe();
   const removeLook = useRemoveLook();
+  const setVisibility = useSetLookVisibility();
+  // Her own look, from what's already loaded: whether it's out there or just hers.
+  const { data: look } = useLook(kind === 'look' && isMine ? id : '');
   const removeComment = useRemoveComment(params.lookId ?? '');
 
   const fail = async (error: unknown, title: string) => {
@@ -108,6 +116,17 @@ export default function ReportOptionsScreen() {
     }
   };
 
+  // Not for me: quieter than a report, and nobody is told.
+  const hide = async () => {
+    try {
+      await notForMe.mutateAsync(kind === 'look' ? { lookId: id } : { stylistId: authorId });
+      haptics.success();
+      close(true);
+    } catch (error) {
+      await fail(error, 'Couldn’t do that');
+    }
+  };
+
   const confirmDelete = async () => {
     const yes = await confirm({
       title: `Take this ${noun} down?`,
@@ -127,9 +146,46 @@ export default function ReportOptionsScreen() {
     }
   };
 
+  const share = async () => {
+    if (!look) return;
+    const going = look.visibility === 'private' ? 'public' : 'private';
+    if (going === 'public') {
+      const yes = await confirm({
+        title: 'Show this look to everyone?',
+        message:
+          'It goes in the feed and on any stylist page it’s tagged to, at the date you posted it.',
+        confirmLabel: 'Show it',
+      });
+      if (!yes) return;
+    }
+    try {
+      await setVisibility.mutateAsync({ id, visibility: going });
+      haptics.success();
+      router.back();
+    } catch (error) {
+      await fail(error, 'Couldn’t change who sees it');
+    }
+  };
+
   if (isMine) {
     return (
       <Screen title={`Your ${noun}`} modal testID="look-options">
+        {look && (
+          <Section
+            footer={
+              look.visibility === 'private'
+                ? 'Only you can see it now.'
+                : 'Its likes and comments come back if you show it again.'
+            }
+          >
+            <ListRow
+              title={look.visibility === 'private' ? 'Show it to everyone' : 'Make it just for me'}
+              icon={look.visibility === 'private' ? Globe : Lock}
+              onPress={share}
+              testID="look-visibility"
+            />
+          </Section>
+        )}
         <Section footer={`Nobody is told when a ${noun} comes down.`}>
           <ListRow
             title={`Take this ${noun} down`}
@@ -146,6 +202,23 @@ export default function ReportOptionsScreen() {
   return (
     <Screen title={`Report this ${noun}`} modal keyboard testID="look-options">
       <View style={styles.body}>
+        {kind !== 'comment' && (
+          <Section footer="Nobody is told.">
+            <ListRow
+              title="Not for me"
+              subtitle={
+                kind === 'look'
+                  ? 'You’ll see fewer looks like this'
+                  : `You won’t see ${name}’s looks in your feed`
+              }
+              icon={EyeOff}
+              iconTone="neutral"
+              onPress={hide}
+              testID="look-not-for-me"
+            />
+          </Section>
+        )}
+
         <Text variant="subhead" tone="secondary">
           Tell us what’s wrong with it. {name} is never told who reported{' '}
           {kind === 'profile' ? 'their page' : `a ${noun}`}.

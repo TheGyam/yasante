@@ -11,7 +11,8 @@ import {
 import { api } from '@/api';
 import { useAuth } from '@/features/auth';
 import { useUserStore } from '@/features/profile';
-import { useConsentStore, type ConsentPurpose } from '@/shared/config/consentStore';
+import { useConsentStore } from '@/shared/config/consentStore';
+import { CONSENT_WORDING, type AskedPurpose } from '@/shared/config/consentWording';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { confirm, notify } from '@/shared/ui/dialog';
@@ -20,25 +21,11 @@ import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Toggle } from '@/shared/ui/Toggle';
 
-const CHOICES: { purpose: ConsentPurpose; title: string; subtitle: string; icon: LucideIcon }[] = [
-  {
-    purpose: 'analytics',
-    title: 'Usage analytics',
-    subtitle: 'Anonymous data that shows us what to fix',
-    icon: BarChart3,
-  },
-  {
-    purpose: 'personalisation',
-    title: 'Personalisation',
-    subtitle: 'Match what you see to your hair profile',
-    icon: SlidersHorizontal,
-  },
-  {
-    purpose: 'research',
-    title: 'Hair research',
-    subtitle: 'Let anonymised data inform research. Off until you turn it on',
-    icon: FlaskConical,
-  },
+// The same words as where each is first asked.
+const CHOICES: { purpose: AskedPurpose; icon: LucideIcon }[] = [
+  { purpose: 'analytics', icon: BarChart3 },
+  { purpose: 'personalisation', icon: SlidersHorizontal },
+  { purpose: 'research', icon: FlaskConical },
 ];
 
 const useStyles = makeStyles(() => ({
@@ -103,15 +90,16 @@ export default function PrivacyScreen() {
           {CHOICES.map(choice => (
             <ListRow
               key={choice.purpose}
-              title={choice.title}
-              subtitle={choice.subtitle}
+              title={CONSENT_WORDING[choice.purpose].title}
+              subtitle={CONSENT_WORDING[choice.purpose].body}
               icon={choice.icon}
               iconTone="neutral"
+              wrap
               trailing={
                 <Toggle
                   value={consents[choice.purpose]?.granted ?? false}
                   onValueChange={value => setConsent(choice.purpose, value)}
-                  accessibilityLabel={choice.title}
+                  accessibilityLabel={CONSENT_WORDING[choice.purpose].title}
                 />
               }
             />

@@ -18,6 +18,8 @@ from .models import (
     HairProfile,
     HairProfileSnapshot,
     PolicyDocument,
+    has_consent,
+    latest_consents,
 )
 from .serializers import (
     UsernameCheckSerializer,
@@ -117,7 +119,11 @@ class UserDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-NOT_SNAPSHOTTED = {"id", "user", "updated_at", "completed_at", "postcode", "latitude", "longitude"}
+# Where they live isn't history worth keeping, and nor is what they'd like next.
+NOT_SNAPSHOTTED = {
+    "id", "user", "updated_at", "completed_at", "postcode", "latitude", "longitude",
+    "next_styles", "next_length", "next_colour", "next_upkeep", "next_sit",
+}
 
 
 @extend_schema_view(patch=extend_schema(request=HairProfileRequestSerializer, responses=HairProfileResponseSerializer))
@@ -134,6 +140,12 @@ class HairProfileUpdateView(APIView):
         if str(request.user.pk) != str(pk):
             return Response(
                 {"message": "You can only edit your own hair profile."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        # Texture and scalp are special category details: kept only with her explicit yes.
+        if not has_consent(request.user, "personalisation"):
+            return Response(
+                {"message": "Turn on “Use your hair details” in Settings to save your hair profile."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -185,11 +197,18 @@ class DataExportView(APIView):
 
 
 
-@extend_schema_view(post=extend_schema(request=ConsentBatchSerializer, responses={201: None}))
+@extend_schema_view(
+    get=extend_schema(responses=ConsentBatchSerializer),
+    post=extend_schema(request=ConsentBatchSerializer, responses={201: None}),
+)
 class ConsentBatchView(APIView):
-    """POST /api/consents/"""
+    """GET /api/consents/ (her latest answer to each) and POST /api/consents/"""
 
     permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Only what she has answered: a purpose left out is one she's never been asked.
+        return Response(ConsentBatchSerializer({"consents": latest_consents(request.user)}).data)
 
     def post(self, request):
         serializer = ConsentBatchSerializer(data=request.data)
@@ -215,7 +234,7 @@ class EventBatchView(APIView):
     """
     POST /api/events/
 
-    Drops events when analytics consent is withdrawn.
+    Drops a signed-in person's events unless she has said yes to analytics.
     """
 
     permission_classes = [permissions.AllowAny]
@@ -226,16 +245,9 @@ class EventBatchView(APIView):
 
         user = request.user if request.user.is_authenticated else None
 
-        # Check analytics consent
-        if user:
-            latest_consent = (
-                ConsentRecord.objects.filter(user=user, purpose="analytics")
-                .order_by("-recorded_at")
-                .first()
-            )
-            if latest_consent and not latest_consent.granted:
-                # Consent withdrawn — drop events silently
-                return Response(status=status.HTTP_202_ACCEPTED)
+        # Belt and braces: the app already sends nothing without the consent.
+        if user and not has_consent(user, "analytics"):
+            return Response(status=status.HTTP_202_ACCEPTED)
 
         from apps.common.timeparse import local_parts
 
@@ -311,6 +323,7 @@ def present_hair_log(entry):
         "kind": entry.kind,
         "at": entry.at,
         "booking_id": str(entry.booking_id) if entry.booking_id else None,
+        "reason": entry.reason or None,
     }
 
 
@@ -341,7 +354,12 @@ class HairLogView(APIView):
         if booking_id and not Booking.objects.filter(pk=booking_id, client=request.user).exists():
             return Response({"message": "That appointment isn’t yours"}, status=404)
         entry = log_hair(
-            request.user, data["kind"], data.get("local_at"), at=at, booking_id=booking_id
+            request.user,
+            data["kind"],
+            data.get("local_at"),
+            at=at,
+            booking_id=booking_id,
+            reason=data.get("reason", ""),
         )
         if entry is None:
             return Response({"message": "Already noted"}, status=409)
