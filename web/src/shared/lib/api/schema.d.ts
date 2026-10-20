@@ -1211,6 +1211,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/not-for-me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/not-for-me/ — { lookId } or { stylistId }: her feed shows fewer like it. */
+        post: operations["not_for_me_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/notifications/preferences/": {
         parameters: {
             query?: never;
@@ -3078,6 +3095,12 @@ export interface components {
          * @enum {string}
          */
         NextUpkeepEnum: "low" | "medium" | "high";
+        NotForMeRequestRequest: {
+            /** @description A look she'd rather not see */
+            lookId?: string;
+            /** @description A stylist's account, whose looks she'd rather not see */
+            stylistId?: string;
+        };
         NotificationCategory: {
             id: string;
             label: string;
@@ -5842,6 +5865,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MyModeration"][];
                 };
+            };
+        };
+    };
+    not_for_me_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["NotForMeRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -212,6 +212,50 @@ class Report(TimeStampedModel):
         ordering = ["-created_at"]
 
 
+class NotForMe(models.Model):
+    """
+    "Not for me" on a look or a stylist: her feed shows fewer like it. A look goes from
+    her feed, and two of the same style take that style out too; a stylist's looks go.
+    Hers alone: nobody is told.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="not_for_me")
+    look = models.ForeignKey("Look", null=True, blank=True, on_delete=models.CASCADE, related_name="+")
+    stylist = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "looks_not_for_me"
+        constraints = [
+            models.UniqueConstraint(fields=["user", "look"], name="not_for_me_once_per_look"),
+            models.UniqueConstraint(fields=["user", "stylist"], name="not_for_me_once_per_stylist"),
+        ]
+
+
+# Two looks of a style marked "not for me" take the style out of her feed.
+NOT_FOR_ME_STYLE_AFTER = 2
+
+
+def not_for_me(user):
+    """(look ids, stylist account ids, style slugs) to keep out of her feed."""
+    if not user or not user.is_authenticated:
+        return set(), set(), set()
+    from collections import Counter
+
+    rows = list(
+        NotForMe.objects.filter(user=user).values_list("look_id", "stylist_id", "look__styles__slug")
+    )
+    looks = {look for look, _, _ in rows if look}
+    stylists = {stylist for _, stylist, _ in rows if stylist}
+    # Each look counts once for each of its styles.
+    per_style = Counter(slug for _, slug in {(look, slug) for look, _, slug in rows if look and slug})
+    styles = {slug for slug, n in per_style.items() if n >= NOT_FOR_ME_STYLE_AFTER}
+    return looks, stylists, styles
+
+
 class Block(models.Model):
     """
     Symmetric block. One row covers both directions.
