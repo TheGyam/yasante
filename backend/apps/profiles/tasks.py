@@ -27,7 +27,6 @@ EXPORT = {
     "notification_settings": ("common.NotificationPreference", "user"),
     "notifications_sent": ("common.NotificationLog", "user"),
     "uploads": ("common.Media", "owner"),
-    "searches": ("common.SearchLog", "user"),
     "activity": ("profiles.AnalyticsEvent", "user"),
     "devices": ("accounts.DeviceToken", "user"),
     "looks": ("looks.Look", "author"),
