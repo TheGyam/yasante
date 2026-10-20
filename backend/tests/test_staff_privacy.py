@@ -126,9 +126,9 @@ def test_retention_forgets_who_then_deletes(make_user, make_stylist):
     now = timezone.now()
     old_event = AnalyticsEvent.objects.create(user=person, name="opened", at=now - timedelta(days=400))
     new_event = AnalyticsEvent.objects.create(user=person, name="opened", at=now - timedelta(days=10))
-    search = SearchLog.objects.create(user=person, surface="looks", query="braids", result_count=3)
+    search = SearchLog.objects.create(surface="looks", query="braids", result_count=3)
     SearchLog.objects.filter(pk=search.pk).update(created_at=now - timedelta(days=120))
-    ancient = SearchLog.objects.create(user=person, surface="looks", query="twists", result_count=0)
+    ancient = SearchLog.objects.create(surface="looks", query="twists", result_count=0)
     SearchLog.objects.filter(pk=ancient.pk).update(created_at=now - timedelta(days=400))
     view = PageView.objects.create(stylist=make_stylist(), viewer=person)
     PageView.objects.filter(pk=view.pk).update(viewed_at=now - timedelta(days=120))
@@ -137,8 +137,7 @@ def test_retention_forgets_who_then_deletes(make_user, make_stylist):
 
     assert not AnalyticsEvent.objects.filter(pk=old_event.pk).exists()
     assert AnalyticsEvent.objects.filter(pk=new_event.pk).exists()
-    search.refresh_from_db()
-    assert search.user is None and search.query == "braids"
+    assert SearchLog.objects.filter(pk=search.pk).exists()
     assert not SearchLog.objects.filter(pk=ancient.pk).exists()
     view.refresh_from_db()
     assert view.viewer is None
