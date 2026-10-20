@@ -102,7 +102,7 @@ export default function SearchScreen() {
   const loading = looksSearch.isLoading || people.isLoading;
 
   useEffect(() => {
-    if (term) track('search', { surface: 'all', query: term, filter });
+    if (term) track('search', { surface: 'all', filter });
     // When the settled query or filter changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [term, filter]);

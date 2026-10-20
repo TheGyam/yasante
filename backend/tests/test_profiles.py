@@ -101,6 +101,16 @@ def test_events_are_kept_only_while_analytics_consent_is_given(api, make_user):
     assert AnalyticsEvent.objects.count() == 2
 
 
+def test_a_search_event_never_keeps_what_was_searched(api):
+    from apps.profiles.models import AnalyticsEvent
+
+    event = {"name": "search", "at": "2026-09-22T10:00:00Z", "properties": {
+        "surface": "looks", "query": "knotless", "hair": "4c", "style": "braids", "results": 3,
+    }}
+    assert api().post("/api/events/", {"events": [event], "anonymousId": "anon_1"}).status_code == 201
+    assert AnalyticsEvent.objects.get().properties == {"surface": "looks", "results": 3}
+
+
 def test_export_and_delete_are_hers_alone(api, make_user, make_stylist, book):
     from apps.accounts.models import User
     from apps.bookings.models import Booking

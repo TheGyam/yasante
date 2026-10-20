@@ -93,10 +93,11 @@ function LooksFeed() {
   const fallback = useLooks({}, { enabled: emptyFiltered });
   const fallbackLooks = (fallback.data?.pages[0]?.data ?? []).slice(0, 6);
 
-  // A filtered feed is a search: what was asked, and how much came back.
+  // A filtered feed is a search: which filters, never their values, and how much came back.
   useEffect(() => {
     if (filtered && !feedLoading && !feed.isPlaceholderData) {
-      track('search', { surface: 'looks', ...query, results: looks.length });
+      const filters = (['hair', 'style', 'area'] as const).filter(key => query[key]).join(',');
+      track('search', { surface: 'looks', filters, results: looks.length });
     }
     // When the results for a new set of filters arrive.
     // eslint-disable-next-line react-hooks/exhaustive-deps
