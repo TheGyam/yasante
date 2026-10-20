@@ -47,6 +47,12 @@ class SignupSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=["client", "stylist"])
     invite_code = serializers.CharField(required=False, allow_blank=True)
     age_confirmed = serializers.BooleanField()
+    age_band = serializers.ChoiceField(
+        choices=["18_24", "25_34", "35_44", "45_54", "55_plus"],
+        required=False,
+        allow_blank=True,
+        help_text="Optional: an age band, never a birthday",
+    )
     policy_version = serializers.CharField(max_length=50)
 
     def validate_age_confirmed(self, value):
@@ -102,6 +108,7 @@ class SignupSerializer(serializers.Serializer):
             password=validated_data["password"],
             roles=roles,
             age_confirmed=validated_data["age_confirmed"],
+            age_band=validated_data.get("age_band", ""),
             policy_version=validated_data["policy_version"],
         )
 

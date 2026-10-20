@@ -36,6 +36,17 @@ def test_signup_refuses_under_18_and_a_taken_email(api, make_user):
     assert taken.status_code == 400 and "already" in taken.json()["message"]
 
 
+def test_an_age_band_is_optional_at_sign_up_and_in_her_export(api):
+    from apps.accounts.models import User
+    from apps.profiles.tasks import collect_user_data
+
+    assert api().post("/api/auth/signup/", {**SIGNUP, "email": "band@test.dev", "age_band": "25_34"}).status_code == 201
+    assert api().post("/api/auth/signup/", {**SIGNUP, "email": "none@test.dev"}).status_code == 201
+    assert api().post("/api/auth/signup/", {**SIGNUP, "email": "odd@test.dev", "age_band": "30"}).status_code == 400
+    assert User.objects.get(email="none@test.dev").age_band == ""
+    assert collect_user_data(User.objects.get(email="band@test.dev"))["account"]["age_band"] == "25_34"
+
+
 def test_a_valid_invite_makes_a_stylist_once(api):
     from apps.accounts.models import Invite
 
