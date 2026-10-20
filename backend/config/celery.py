@@ -41,6 +41,11 @@ app.conf.beat_schedule = {
         "task": "apps.bookings.tasks.send_reminders",
         "schedule": crontab(minute="*/15"),
     },
+    # A week before a style usually comes out, with consent: time to rebook.
+    "nudge-rebooks": {
+        "task": "apps.bookings.tasks.nudge_rebooks",
+        "schedule": crontab(hour=10, minute=30),
+    },
     "open-check-ins": {
         "task": "apps.bookings.tasks.open_check_ins",
         "schedule": crontab(hour=10, minute=0),

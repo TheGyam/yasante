@@ -134,10 +134,15 @@ def prompt_length(now=None):
 
     from apps.common.notifications import notify
 
-    from .models import HairProfile, HairProfileSnapshot
+    from .models import HairProfile, HairProfileSnapshot, consenting
 
     now = now or timezone.now()
-    with_length = HairProfile.objects.exclude(length="", shrunk_length="").values_list("user_id", flat=True)
+    # Only people who let us use their hair details: their length is one of them.
+    with_length = (
+        HairProfile.objects.filter(user__in=consenting("personalisation"))
+        .exclude(length="", shrunk_length="")
+        .values_list("user_id", flat=True)
+    )
     last = dict(
         HairProfileSnapshot.objects.filter(user_id__in=with_length)
         .exclude(length="", shrunk_length="")
