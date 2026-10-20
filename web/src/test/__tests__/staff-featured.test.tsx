@@ -510,7 +510,8 @@ it('uses compact icon controls with accessible names and tooltips and hides impo
     photo('two.jpg'),
     photo('three.jpg'),
   ]);
-  await within(form).findByAltText('three.jpg');
+  // Each preview loads on its own: wait for all three before reading their order.
+  for (const name of ['one.jpg', 'two.jpg', 'three.jpg']) await within(form).findByAltText(name);
   expect(
     within(form).queryByRole('button', { name: 'Move photo 1 earlier' })
   ).not.toBeInTheDocument();
