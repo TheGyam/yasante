@@ -725,9 +725,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** @description GET /api/consents/ (her latest answer to each) and POST /api/consents/ */
+        get: operations["consents_retrieve"];
         put?: never;
-        /** @description POST /api/consents/ */
+        /** @description GET /api/consents/ (her latest answer to each) and POST /api/consents/ */
         post: operations["consents_create"];
         delete?: never;
         options?: never;
@@ -866,7 +867,7 @@ export interface paths {
         /**
          * @description POST /api/events/
          *
-         *     Drops events when analytics consent is withdrawn.
+         *     Drops a signed-in person's events unless she has said yes to analytics.
          */
         post: operations["events_create"];
         delete?: never;
@@ -2418,7 +2419,21 @@ export interface components {
             data: components["schemas"]["Comment"][];
             nextCursor?: string;
         };
-        /** @description POST /api/consents/ */
+        /** @description Single consent record within a batch. */
+        Consent: {
+            purpose: string;
+            granted: boolean;
+            policyVersion: string;
+            /** Format: date-time */
+            recordedAt: string;
+            /** @default app */
+            source: string;
+        };
+        /** @description GET and POST /api/consents/ */
+        ConsentBatch: {
+            consents: components["schemas"]["Consent"][];
+        };
+        /** @description GET and POST /api/consents/ */
         ConsentBatchRequest: {
             consents: components["schemas"]["ConsentRequest"][];
         };
@@ -5001,6 +5016,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    consents_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConsentBatch"];
+                };
             };
         };
     };

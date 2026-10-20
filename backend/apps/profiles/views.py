@@ -18,6 +18,8 @@ from .models import (
     HairProfile,
     HairProfileSnapshot,
     PolicyDocument,
+    has_consent,
+    latest_consents,
 )
 from .serializers import (
     UsernameCheckSerializer,
@@ -185,11 +187,18 @@ class DataExportView(APIView):
 
 
 
-@extend_schema_view(post=extend_schema(request=ConsentBatchSerializer, responses={201: None}))
+@extend_schema_view(
+    get=extend_schema(responses=ConsentBatchSerializer),
+    post=extend_schema(request=ConsentBatchSerializer, responses={201: None}),
+)
 class ConsentBatchView(APIView):
-    """POST /api/consents/"""
+    """GET /api/consents/ (her latest answer to each) and POST /api/consents/"""
 
     permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Only what she has answered: a purpose left out is one she's never been asked.
+        return Response(ConsentBatchSerializer({"consents": latest_consents(request.user)}).data)
 
     def post(self, request):
         serializer = ConsentBatchSerializer(data=request.data)
@@ -215,7 +224,7 @@ class EventBatchView(APIView):
     """
     POST /api/events/
 
-    Drops events when analytics consent is withdrawn.
+    Drops a signed-in person's events unless she has said yes to analytics.
     """
 
     permission_classes = [permissions.AllowAny]
@@ -226,16 +235,9 @@ class EventBatchView(APIView):
 
         user = request.user if request.user.is_authenticated else None
 
-        # Check analytics consent
-        if user:
-            latest_consent = (
-                ConsentRecord.objects.filter(user=user, purpose="analytics")
-                .order_by("-recorded_at")
-                .first()
-            )
-            if latest_consent and not latest_consent.granted:
-                # Consent withdrawn — drop events silently
-                return Response(status=status.HTTP_202_ACCEPTED)
+        # Belt and braces: the app already sends nothing without the consent.
+        if user and not has_consent(user, "analytics"):
+            return Response(status=status.HTTP_202_ACCEPTED)
 
         from apps.common.timeparse import local_parts
 

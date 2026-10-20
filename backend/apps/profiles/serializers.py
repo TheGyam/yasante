@@ -82,7 +82,7 @@ class ConsentSerializer(serializers.Serializer):
 
 
 class ConsentBatchSerializer(serializers.Serializer):
-    """POST /api/consents/"""
+    """GET and POST /api/consents/"""
 
     consents = ConsentSerializer(many=True)
 
