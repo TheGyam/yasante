@@ -720,7 +720,13 @@ class CheckInView(_BookingAction):
             # It's come out: how long styles last, the way she lives with them.
             from apps.profiles.models import log_hair
 
-            log_hair(request.user, "take_down", request.data.get("local_at"), booking_id=booking.pk)
+            log_hair(
+                request.user,
+                "take_down",
+                request.data.get("local_at"),
+                booking_id=booking.pk,
+                reason=str(request.data.get("came_out") or ""),
+            )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

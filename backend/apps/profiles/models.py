@@ -318,6 +318,14 @@ class HairLog(models.Model):
     """
 
     KIND_CHOICES = [("trim", "Trim"), ("wash", "Wash day"), ("take_down", "Style taken out")]
+    # Why a style came out, if she said. "hurt" is health data: kept only with her yes.
+    REASON_CHOICES = [
+        ("time", "It was time"),
+        ("hurt", "It hurt"),
+        ("frizzy", "It got frizzy"),
+        ("event", "For an event"),
+        ("other", "Other"),
+    ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="hair_log")
@@ -329,6 +337,7 @@ class HairLog(models.Model):
     local_hour = models.PositiveSmallIntegerField(null=True, blank=True)
     # The appointment whose style came out, for take-downs.
     booking_id = models.UUIDField(null=True, blank=True, db_index=True)
+    reason = models.CharField(max_length=10, choices=REASON_CHOICES, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -339,7 +348,7 @@ class HairLog(models.Model):
         return f"{self.user_id} {self.kind} {self.at:%Y-%m-%d}"
 
 
-def log_hair(user, kind, local_at=None, at=None, booking_id=None):
+def log_hair(user, kind, local_at=None, at=None, booking_id=None, reason=""):
     """Append one hair event with the phone's own time; once per kind per booking for take-downs."""
     from django.utils import timezone
 
@@ -358,4 +367,14 @@ def log_hair(user, kind, local_at=None, at=None, booking_id=None):
         local_weekday=weekday,
         local_hour=hour,
         booking_id=booking_id,
+        reason=_kept_reason(user, kind, reason),
     )
+
+
+def _kept_reason(user, kind, reason):
+    """Only take-downs have a reason, and "it hurt" only with her yes to hair details."""
+    if kind != "take_down" or reason not in dict(HairLog.REASON_CHOICES):
+        return ""
+    if reason == "hurt" and not has_consent(user, "personalisation"):
+        return ""
+    return reason

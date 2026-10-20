@@ -390,6 +390,11 @@ class CheckInRequestSerializer(serializers.Serializer):
     )
     again = serializers.ChoiceField(choices=["yes", "maybe", "no"])
     still_in = serializers.BooleanField(required=False, help_text="Is the style still in?")
+    came_out = serializers.ChoiceField(
+        choices=["time", "hurt", "frizzy", "event", "other"],
+        required=False,
+        help_text="Why it came out, when it's out. \"hurt\" is kept only with hair details consent",
+    )
     local_at = serializers.CharField(required=False, help_text="The phone's own clock")
 
 

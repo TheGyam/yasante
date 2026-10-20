@@ -217,6 +217,8 @@ export type CheckInWeek = 2 | 4;
 export interface CheckInAnswers {
   /** Is the style still in? "no" dates when it came out: how long styles last. */
   stillIn: 'yes' | 'no';
+  /** Why it came out, when it has. "hurt" is health data: only with hair details consent. */
+  cameOut?: 'time' | 'hurt' | 'frizzy' | 'event' | 'other';
   holding: 'fresh' | 'okay' | 'tired';
   /** Health data: asked only with her hair details consent. */
   scalp?: 'comfortable' | 'itchy' | 'sore';

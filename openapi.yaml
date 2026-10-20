@@ -3541,6 +3541,20 @@ components:
       description: |-
         * `client` - client
         * `stylist` - stylist
+    CameOutEnum:
+      enum:
+      - time
+      - hurt
+      - frizzy
+      - event
+      - other
+      type: string
+      description: |-
+        * `time` - time
+        * `hurt` - hurt
+        * `frizzy` - frizzy
+        * `event` - event
+        * `other` - other
     CarePlanRequestRequest:
       type: object
       properties:
@@ -3684,6 +3698,17 @@ components:
         stillIn:
           type: boolean
           description: Is the style still in?
+        cameOut:
+          allOf:
+          - $ref: '#/components/schemas/CameOutEnum'
+          description: |-
+            Why it came out, when it's out. "hurt" is kept only with hair details consent
+
+            * `time` - time
+            * `hurt` - hurt
+            * `frizzy` - frizzy
+            * `event` - event
+            * `other` - other
         localAt:
           type: string
           minLength: 1
@@ -4558,6 +4583,8 @@ components:
           format: date-time
         bookingId:
           type: string
+        reason:
+          type: string
       required:
       - at
       - id
@@ -4578,6 +4605,17 @@ components:
         bookingId:
           type: string
           format: uuid
+        reason:
+          allOf:
+          - $ref: '#/components/schemas/Reason5d7Enum'
+          description: |-
+            Why a style came out. "hurt" is kept only with hair details consent
+
+            * `time` - time
+            * `hurt` - hurt
+            * `frizzy` - frizzy
+            * `event` - event
+            * `other` - other
       required:
       - kind
     HairProfileResponse:
@@ -5968,6 +6006,20 @@ components:
       required:
       - average
       - count
+    Reason5d7Enum:
+      enum:
+      - time
+      - hurt
+      - frizzy
+      - event
+      - other
+      type: string
+      description: |-
+        * `time` - time
+        * `hurt` - hurt
+        * `frizzy` - frizzy
+        * `event` - event
+        * `other` - other
     ReasonRequestRequest:
       type: object
       properties:

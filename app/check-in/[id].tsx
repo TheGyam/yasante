@@ -5,6 +5,8 @@ import Animated, { FadeIn, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import {
   Check,
   CircleHelp,
+  Clock,
+  PartyPopper,
   Flame,
   Heart,
   Scissors,
@@ -47,6 +49,18 @@ const QUESTIONS: {
     ],
   },
   {
+    // Only once it's out (see `askedOf`).
+    key: 'cameOut',
+    title: style => `Why did your ${style} come out?`,
+    options: [
+      { value: 'time', label: 'It was time', icon: Clock },
+      { value: 'hurt', label: 'It hurt', icon: Flame },
+      { value: 'frizzy', label: 'It got frizzy', icon: Wind },
+      { value: 'event', label: 'For an event', icon: PartyPopper },
+      { value: 'other', label: 'Other', icon: CircleHelp },
+    ],
+  },
+  {
     key: 'holding',
     title: (style, answers) =>
       answers.stillIn === 'no'
@@ -85,8 +99,9 @@ const useStyles = makeStyles(t => ({
   body: { flex: 1 },
   progress: { marginTop: space.sm, marginBottom: space.xxl },
   heading: { gap: space.sm, marginBottom: space.xl },
-  options: { flexDirection: 'row', gap: space.sm },
-  option: { flex: 1 },
+  options: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  // Three to a row: more than that wraps onto a second.
+  option: { flex: 1, minWidth: '30%' },
   done: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space.lg },
   tick: {
     width: 72,
@@ -109,9 +124,13 @@ export default function CheckInScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: booking, isLoading } = useBooking(id);
   const checkIn = useCheckIn();
-  // How her scalp feels is health data: only asked with her yes to using hair details.
-  const askScalp = useConsentStore(s => s.consents.personalisation?.granted ?? false);
-  const questions = askScalp ? QUESTIONS : QUESTIONS.filter(q => q.key !== 'scalp');
+  // How her scalp feels, and whether a style hurt, are health data: only asked with her
+  // yes to using hair details.
+  const hairAllowed = useConsentStore(s => s.consents.personalisation?.granted ?? false);
+  const askedOf = (given: Partial<CheckInAnswers>) =>
+    QUESTIONS.filter(
+      q => (q.key !== 'scalp' || hairAllowed) && (q.key !== 'cameOut' || given.stillIn === 'no')
+    );
 
   const [answers, setAnswers] = useState<Partial<CheckInAnswers>>({});
   const [step, setStep] = useState(0);
@@ -120,11 +139,12 @@ export default function CheckInScreen() {
   const due = sent ?? booking?.checkInDue;
   const finished = !!sent && checkIn.isSuccess;
 
-  const answer = async (key: Key, value: string) => {
+  const questions = askedOf(answers);
+  const answer = async (key: Key, value: string | undefined) => {
     if (sent) return;
     const next = { ...answers, [key]: value };
     setAnswers(next);
-    if (step < questions.length - 1) {
+    if (step < askedOf(next).length - 1) {
       setStep(step + 1);
       return;
     }
@@ -219,26 +239,36 @@ export default function CheckInScreen() {
             </Text>
           </View>
           <View style={styles.options}>
-            {question.options.map(option => {
-              const Icon = option.icon;
-              const selected = answers[question.key] === option.value;
-              return (
-                <ChoiceCard
-                  key={option.value}
-                  label={(answers.stillIn === 'no' && option.outLabel) || option.label}
-                  selected={selected}
-                  onPress={() => answer(question.key, option.value)}
-                  style={styles.option}
-                >
-                  <Icon
-                    size={28}
-                    color={selected ? theme.colors.accent : theme.colors.text.secondary}
-                    strokeWidth={1.8}
-                  />
-                </ChoiceCard>
-              );
-            })}
+            {question.options
+              .filter(option => option.value !== 'hurt' || hairAllowed)
+              .map(option => {
+                const Icon = option.icon;
+                const selected = answers[question.key] === option.value;
+                return (
+                  <ChoiceCard
+                    key={option.value}
+                    label={(answers.stillIn === 'no' && option.outLabel) || option.label}
+                    selected={selected}
+                    onPress={() => answer(question.key, option.value)}
+                    style={styles.option}
+                  >
+                    <Icon
+                      size={28}
+                      color={selected ? theme.colors.accent : theme.colors.text.secondary}
+                      strokeWidth={1.8}
+                    />
+                  </ChoiceCard>
+                );
+              })}
           </View>
+          {question.key === 'cameOut' && (
+            <Button
+              label="Skip"
+              variant="ghost"
+              size="sm"
+              onPress={() => answer('cameOut', undefined)}
+            />
+          )}
         </Animated.View>
       </View>
     </Screen>
