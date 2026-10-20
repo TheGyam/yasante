@@ -62,6 +62,11 @@ app.conf.beat_schedule = {
         "task": "apps.stylists.tasks.monthly_recap",
         "schedule": crontab(hour=9, minute=0, day_of_month=1),
     },
+    # On the hour, so it lands at the hour she usually washes.
+    "wash-day-reminders": {
+        "task": "apps.profiles.tasks.wash_day_reminders",
+        "schedule": crontab(minute=0),
+    },
     "length-prompt": {
         "task": "apps.profiles.tasks.prompt_length",
         "schedule": crontab(hour=10, minute=0, day_of_week="sun"),
