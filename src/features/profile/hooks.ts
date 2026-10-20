@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api';
 import { User, HairProfile } from '@/features/profile';
 import { useAuth } from '@/features/auth';
-import { mergeGaps } from './format';
+import { becauseOf, mergeGaps } from './format';
 import { useUserStore } from './store';
 import { useConsentStore } from '@/shared/config/consentStore';
 
@@ -185,4 +185,15 @@ export function useHairProfileSync() {
     store.setHairProfile({ ...server, ...gaps });
     store.setHairProfileOwner(user.id);
   }, [isAuthenticated, user?.id, isSuccess, account, save]);
+}
+
+/**
+ * Why her feed or library comes in the order it does, or undefined when her hair
+ * isn't used for it: signed in, with her yes, exactly when the server matches on it.
+ */
+export function useWhySuggested(on: ('texture' | 'porosity')[]) {
+  const { user, isAuthenticated } = useAuth();
+  const { data: account } = useUser(user?.id, { enabled: isAuthenticated });
+  const allowed = useConsentStore(s => s.consents.personalisation?.granted ?? false);
+  return isAuthenticated && allowed ? becauseOf(account?.hairProfile, on) : undefined;
 }

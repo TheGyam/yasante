@@ -45,6 +45,21 @@ export function hairTraits(profile?: HairProfile | null): string[] {
   ].filter((trait): trait is string => !!trait);
 }
 
+/**
+ * "Because you have coily, low-porosity hair": said wherever her hair changed what's
+ * shown first. `on` is what the matching used there. Undefined when none of it is known.
+ */
+export function becauseOf(
+  profile: HairProfile | undefined,
+  on: ('texture' | 'porosity')[]
+): string | undefined {
+  const parts = [
+    on.includes('texture') && profile?.texture,
+    on.includes('porosity') && profile?.porosity && `${profile.porosity}-porosity`,
+  ].filter((part): part is string => !!part);
+  return parts.length ? `Because you have ${parts.join(', ')} hair` : undefined;
+}
+
 /** The answers in `local` the account doesn't have yet. */
 export function mergeGaps(server: HairProfile, local: HairProfile): Partial<HairProfile> {
   return Object.fromEntries(
