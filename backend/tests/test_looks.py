@@ -43,6 +43,32 @@ def test_with_her_yes_looks_on_hair_like_hers_come_first_newest_first(api, make_
     assert [l["id"] for l in api(me).get("/api/looks/", hair="straight").json()["data"]] == [str(other.pk)]
 
 
+def test_not_for_me_shows_her_fewer_like_it(api, make_user, make_stylist, make_look):
+    from apps.profiles.tasks import collect_user_data
+
+    author, stylist = make_user(), make_stylist()
+    one, two, three = (make_look(author, style="knotless") for _ in range(3))
+    twists = make_look(author, style="twists")
+    hers = make_look(make_user(), style="twists", stylist=stylist)
+    me = make_user()
+    feed = lambda **q: {l["id"] for l in api(me).get("/api/looks/", **q).json()["data"]}
+    nope = lambda **body: api(me).post("/api/not-for-me/", body)
+
+    assert nope(lookId=str(one.pk)).status_code == 204
+    assert feed() == {str(l.pk) for l in (two, three, twists, hers)}
+    # A second knotless look: knotless goes, unless she asks for it.
+    nope(lookId=str(two.pk))
+    assert feed() == {str(twists.pk), str(hers.pk)}
+    assert feed(style="knotless") == {str(three.pk)}
+    # A stylist: her looks go.
+    nope(stylistId=str(stylist.account_id))
+    assert feed() == {str(twists.pk)}
+    assert nope().status_code == 400
+    # Hers alone, and in her export.
+    assert len(api(make_user()).get("/api/looks/").json()["data"]) == 5
+    assert len(collect_user_data(me)["not_for_me"]) == 3
+
+
 def _walk(client, limit):
     """Every look in the feed, page by page."""
     seen, cursor = [], None

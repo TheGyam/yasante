@@ -36,6 +36,7 @@ EXPORT = {
     "comment_likes": ("looks.CommentLike", "user"),
     "reports_made": ("looks.Report", "reporter"),
     "people_blocked": ("looks.Block", "blocker"),
+    "not_for_me": ("looks.NotForMe", "user"),
     "moderation_of_your_content": ("looks.ModerationAction", "author"),
     "appeals": ("looks.Appeal", "author"),
     "collections": ("planner.Collection", "user"),

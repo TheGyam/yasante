@@ -327,5 +327,10 @@ class ReportRequestSerializer(serializers.Serializer):
     note = serializers.CharField(required=False, max_length=500)
 
 
+class NotForMeRequestSerializer(serializers.Serializer):
+    look_id = serializers.CharField(required=False, help_text="A look she'd rather not see")
+    stylist_id = serializers.CharField(required=False, help_text="A stylist's account, whose looks she'd rather not see")
+
+
 class BlockRequestSerializer(serializers.Serializer):
     account_id = serializers.CharField()

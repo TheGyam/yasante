@@ -13,7 +13,7 @@ from apps.common.client_errors import ClientErrorView
 from apps.content import compat as content
 from apps.common.countries import CountryListView
 from apps.common.places import PlaceSuggestionsView
-from apps.looks.views import StylistReportView
+from apps.looks.views import NotForMeView, StylistReportView
 from apps.web.api import WaitlistView
 from apps.profiles.views import ConsentBatchView, EventBatchView
 from apps.stylists.views import FeaturedClaimView
@@ -65,6 +65,7 @@ urlpatterns = API_DOCS + [
     path("api/comments/", include("apps.looks.comment_urls")),
     path("api/styles/", include("apps.looks.style_urls")),
     path("api/blocks/", include("apps.looks.block_urls")),
+    path("api/not-for-me/", NotForMeView.as_view(), name="not-for-me"),
     path("api/collections/", include("apps.planner.collection_urls")),
     path("api/care-plans/", include("apps.planner.care_plan_urls")),
     path("api/shelf/", include("apps.shelf.shelf_urls")),
