@@ -221,22 +221,27 @@ def has_consent(user, purpose):
     return current_consents(user).get(purpose, False)
 
 
+def consenting(purpose):
+    """Everyone whose latest answer for `purpose` is yes, as one query."""
+    from django.contrib.auth import get_user_model
+    from django.db.models import OuterRef, Subquery
+
+    latest = (
+        counted_consents()
+        .filter(user=OuterRef("pk"), purpose=purpose)
+        .order_by("-recorded_at", "-created_at")
+        .values("granted")[:1]
+    )
+    return get_user_model().objects.annotate(said_yes=Subquery(latest)).filter(said_yes=True)
+
+
 def research_participants():
     """
     Everyone whose latest research answer is yes. Every research or staff query that
     breaks results down by hair, scalp or growth starts here, so a no (or no answer)
     keeps her out from that moment.
     """
-    from django.contrib.auth import get_user_model
-    from django.db.models import OuterRef, Subquery
-
-    latest = (
-        counted_consents()
-        .filter(user=OuterRef("pk"), purpose="research")
-        .order_by("-recorded_at", "-created_at")
-        .values("granted")[:1]
-    )
-    return get_user_model().objects.annotate(research=Subquery(latest)).filter(research=True)
+    return consenting("research")
 
 
 class AnalyticsEvent(models.Model):

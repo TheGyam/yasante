@@ -338,6 +338,38 @@ def _completed(api, profile, client, book, days_ago=0):
     return booking_id
 
 
+def test_a_rebook_nudge_comes_a_week_before_her_style_usually_comes_out(api, setup, book, consent):
+    from apps.bookings.models import Booking
+    from apps.bookings.tasks import nudge_rebooks
+    from apps.common.models import NotificationLog
+    from apps.profiles.models import log_hair
+
+    profile, client = setup
+    now = timezone.now()
+
+    def styled(days_ago):
+        booking_id = _completed(api, profile, client, book)
+        Booking.objects.filter(pk=booking_id).update(scheduled_for=now - timedelta(days=days_ago))
+        return booking_id
+
+    # Her last style lasted four weeks; this one went in 23 days ago, so it's due in five.
+    before = styled(60)
+    log_hair(client, "take_down", at=now - timedelta(days=32), booking_id=before)
+    current = styled(23)
+    nudges = lambda: NotificationLog.objects.filter(user=client, event_key=f"booking:{current}:rebook")
+
+    nudge_rebooks(now=now)
+    assert not nudges().exists()  # not without her yes to using hair details
+
+    consent(client, "personalisation")
+    nudge_rebooks(now=now)
+    nudge_rebooks(now=now)
+    nudge = nudges().get()
+    assert nudge.category == "after_appointment" and nudge.data["url"] == f"/book/{profile.handle}"
+    assert nudge.body.startswith("It’s nearly time for your knotless braids to come out.")
+    assert "is free on" in nudge.body
+
+
 def test_reviews_follow_a_completed_appointment_once(api, setup, book):
     profile, client = setup
     pending = _confirmed(api, profile, client, book)

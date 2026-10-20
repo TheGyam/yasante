@@ -103,7 +103,7 @@ def test_length_keeps_neck_and_an_optional_measurement_in_history(api, make_user
     assert history[-2:] == [("neck", 30.5), ("shoulder", 30.5)]
 
 
-def test_monthly_length_prompt_goes_to_those_who_have_not_updated(make_user):
+def test_monthly_length_prompt_goes_to_those_who_have_not_updated(make_user, consent):
     from datetime import timedelta
 
     from apps.common.models import NotificationLog
@@ -111,11 +111,15 @@ def test_monthly_length_prompt_goes_to_those_who_have_not_updated(make_user):
     from apps.profiles.tasks import prompt_length
     from django.utils import timezone
 
-    stale, fresh, never = make_user(), make_user(), make_user()
-    for user in (stale, fresh):
+    stale, fresh, never, said_no = make_user(), make_user(), make_user(), make_user()
+    for user in (stale, fresh, said_no):
         HairProfile.objects.update_or_create(user=user, defaults={"length": "chin"})
         HairProfileSnapshot.objects.create(user=user, length="chin")
-    HairProfileSnapshot.objects.filter(user=stale).update(recorded_at=timezone.now() - timedelta(days=40))
+    HairProfileSnapshot.objects.filter(user__in=(stale, said_no)).update(recorded_at=timezone.now() - timedelta(days=40))
+    for user in (stale, fresh):
+        consent(user, "personalisation")
+    # Her length is a hair detail: without her yes, it isn't used to prompt her.
+    consent(said_no, "personalisation", granted=False)
     prompt_length()
     prompt_length()  # once a month, however often it runs
     told = list(NotificationLog.objects.values_list("user_id", flat=True))
