@@ -88,6 +88,10 @@ export function takeaway(insight: Insight): string {
         ? `${formatNumber(total)} ${total === 1 ? 'error' : 'errors'} in this period`
         : 'No errors in this period';
     }
+    case 'hair-trends':
+      return rows.length
+        ? `${rows[0].label.split(' · ')[0]} is the most booked style in a group big enough to show`
+        : `Not enough bookings yet to show trends: every group needs ${meta.minGroup ?? 20} or more`;
     default:
       return insight.title;
   }

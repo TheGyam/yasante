@@ -15,7 +15,8 @@ from ..insights import SOURCES, calculate
 def insight(request, name):
     if name not in SOURCES:
         raise Http404
-    if name in ("money", "top-stylists") and not request.user.is_superuser:
+    # Money, and the research report, are for superusers only.
+    if name in ("money", "top-stylists", "hair-trends") and not request.user.is_superuser:
         raise PermissionDenied
     admins = visible_admins(request)
     if any(key not in admins for key in SOURCES[name]):

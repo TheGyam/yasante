@@ -137,7 +137,7 @@ def test_error_issue_screen_and_actions(make_user):
     assert ErrorIssue.objects.get().status == "resolved"
 
 
-@pytest.mark.parametrize("name", ["money", "funnel", "growth", "booking-times", "areas", "empty-searches", "retention", "top-stylists", "community", "app-health", "area-suggestions"])
+@pytest.mark.parametrize("name", ["money", "funnel", "growth", "booking-times", "areas", "empty-searches", "retention", "top-stylists", "community", "app-health", "area-suggestions", "hair-trends"])
 def test_every_insight_answers(make_user, make_stylist, name):
     client, _ = staff_client(make_user, superuser=True)
     make_stylist()
@@ -151,6 +151,7 @@ def test_money_is_for_superusers_only(make_user):
     client, user = staff_client(make_user)
     user.user_permissions.add(Permission.objects.get(codename="view_booking"))
     assert client.get("/data/insights/money/").status_code == 403
+    assert client.get("/data/insights/hair-trends/").status_code == 403
     assert client.get("/data/insights/funnel/").status_code == 200
 
 
