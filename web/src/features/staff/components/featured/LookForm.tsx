@@ -13,6 +13,15 @@ import * as s from './Featured.css';
 
 const MAX = 5;
 
+// Each photo keeps its own key as it moves, so its preview isn't rebuilt (and blank
+// while the file is read again) every time the order changes.
+const fileKeys = new WeakMap<File, number>();
+let nextFileKey = 0;
+function keyOf(file: File) {
+  if (!fileKeys.has(file)) fileKeys.set(file, nextFileKey++);
+  return fileKeys.get(file)!;
+}
+
 function Preview({ file, alt }: { file: File; alt: string }) {
   const [uri, setUri] = useState('');
   useEffect(() => {
@@ -187,7 +196,7 @@ export function LookForm({
             <div className={s.thumbs}>
               {photos.map((file, index) => (
                 <div
-                  key={`${file.name}-${file.lastModified}-${file.size}-${index}`}
+                  key={keyOf(file)}
                   className={s.thumb}
                   data-cover={index === 0}
                   draggable={!write.isPending}
