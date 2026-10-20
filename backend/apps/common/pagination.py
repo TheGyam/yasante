@@ -72,9 +72,10 @@ class NoPagination:
         return Response(data)
 
 
-def keyset_page(qs, request, newest_first=True, default=20):
+def keyset_page(qs, request, newest_first=True, default=20, cursor=None):
     """
-    One page of `qs` by (created_at, id), newest or oldest first.
+    One page of `qs` by (created_at, id), newest or oldest first. `cursor` overrides
+    the request's, for a feed that pages through more than one list in turn.
 
     Keyset pagination: each page starts right after the last item seen, so it stays
     fast however deep someone scrolls and never skips or repeats an item when new
@@ -91,7 +92,8 @@ def keyset_page(qs, request, newest_first=True, default=20):
     except (TypeError, ValueError):
         limit = default
 
-    cursor = request.query_params.get("cursor")
+    if cursor is None:
+        cursor = request.query_params.get("cursor")
     if cursor:
         try:
             at_text, id_text = base64.urlsafe_b64decode(cursor.encode()).decode().split("|")

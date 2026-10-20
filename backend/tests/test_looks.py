@@ -22,6 +22,42 @@ def test_the_feed_is_public_newest_first_and_pages_by_cursor(api, make_user, mak
     assert ids(last) == [str(looks[0].pk)] and "nextCursor" not in last.json()
 
 
+
+def test_with_her_yes_looks_on_hair_like_hers_come_first_newest_first(api, make_user, make_look):
+    from django.utils import timezone
+
+    from apps.profiles.models import ConsentRecord
+
+    author = make_user()
+    old_coily, other, new_coily, newest_other = (
+        make_look(author, hair_texture="coily"),
+        make_look(author, hair_texture="straight"),
+        make_look(author, hair_texture="coily"),
+        make_look(author),
+    )
+    me = make_user(texture="coily")
+    walk = lambda viewer: _walk(api(viewer) if viewer else api(), limit=1)
+    newest_first = [str(l.pk) for l in (newest_other, new_coily, other, old_coily)]
+    # Without her yes, and signed out: just newest first.
+    assert walk(me) == newest_first and walk(None) == newest_first
+    ConsentRecord.objects.create(user=me, purpose="personalisation", granted=True, policy_version="2026-10-20", recorded_at=timezone.now())
+    # With it: hers first, then the rest, each newest first, nothing repeated or missed.
+    assert walk(me) == [str(l.pk) for l in (new_coily, old_coily, newest_other, other)]
+    # Choosing a hair type herself still wins.
+    assert [l["id"] for l in api(me).get("/api/looks/", hair="straight").json()["data"]] == [str(other.pk)]
+
+
+def _walk(client, limit):
+    """Every look in the feed, page by page."""
+    seen, cursor = [], None
+    for _ in range(20):
+        body = client.get("/api/looks/", limit=limit, **({"cursor": cursor} if cursor else {})).json()
+        seen += [l["id"] for l in body["data"]]
+        cursor = body.get("nextCursor")
+        if not cursor:
+            return seen
+    raise AssertionError("the feed never ended")
+
 def test_a_look_carries_everything_the_card_shows(api, make_user, make_stylist, make_look):
     profile = make_stylist()
     viewer = make_user()
