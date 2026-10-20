@@ -229,6 +229,10 @@ class ConsentBatchView(APIView):
         return Response(status=status.HTTP_201_CREATED)
 
 
+# A search event says where and how much, never what: no typed words, hair or styles.
+SEARCH_EVENT_KEYS = {"surface", "filter", "filters", "results"}
+
+
 @extend_schema_view(post=extend_schema(request=EventBatchSerializer, responses={201: None, 202: None}))
 class EventBatchView(APIView):
     """
@@ -267,7 +271,8 @@ class EventBatchView(APIView):
                     properties={
                         str(k)[:40]: v
                         for k, v in list(e.get("properties", {}).items())[:20]
-                        if v is None or isinstance(v, (str, int, float, bool))
+                        if (v is None or isinstance(v, (str, int, float, bool)))
+                        and (e["name"] != "search" or k in SEARCH_EVENT_KEYS)
                     },
                     app_version=e.get("app_version", "")[:30],
                 )
