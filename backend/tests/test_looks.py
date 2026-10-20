@@ -23,11 +23,7 @@ def test_the_feed_is_public_newest_first_and_pages_by_cursor(api, make_user, mak
 
 
 
-def test_with_her_yes_looks_on_hair_like_hers_come_first_newest_first(api, make_user, make_look):
-    from django.utils import timezone
-
-    from apps.profiles.models import ConsentRecord
-
+def test_with_her_yes_looks_on_hair_like_hers_come_first_newest_first(api, make_user, make_look, consent):
     author = make_user()
     old_coily, other, new_coily, newest_other = (
         make_look(author, hair_texture="coily"),
@@ -40,7 +36,7 @@ def test_with_her_yes_looks_on_hair_like_hers_come_first_newest_first(api, make_
     newest_first = [str(l.pk) for l in (newest_other, new_coily, other, old_coily)]
     # Without her yes, and signed out: just newest first.
     assert walk(me) == newest_first and walk(None) == newest_first
-    ConsentRecord.objects.create(user=me, purpose="personalisation", granted=True, policy_version="2026-10-20", recorded_at=timezone.now())
+    consent(me, "personalisation")
     # With it: hers first, then the rest, each newest first, nothing repeated or missed.
     assert walk(me) == [str(l.pk) for l in (new_coily, old_coily, newest_other, other)]
     # Choosing a hair type herself still wins.
