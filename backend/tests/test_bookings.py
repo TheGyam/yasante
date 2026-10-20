@@ -383,6 +383,16 @@ def test_the_extension_hair_she_used_is_her_own_record(api, setup, book):
     assert "extensionHair" not in api(client).get(f"{url}/").json()
 
 
+def test_a_booking_can_say_what_its_for(api, setup, book, make_user):
+    profile, client = setup
+    wedding = book(client, profile, occasion="wedding")
+    assert wedding["occasion"] == "wedding"
+    assert api(profile.account).get(f"/api/bookings/{wedding['id']}/").json()["occasion"] == "wedding"
+    # Optional, and only from the list: anything else is left out.
+    assert "occasion" not in book(client, profile)
+    assert "occasion" not in book(make_user(), profile, occasion="birthday")
+
+
 def test_reviews_follow_a_completed_appointment_once(api, setup, book):
     profile, client = setup
     pending = _confirmed(api, profile, client, book)

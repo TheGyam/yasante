@@ -300,6 +300,7 @@ class BookingListCreateView(APIView):
                 styles=list(service.styles),
                 from_look=_bookable_look(data.get("look_id")),
                 notes=str(data.get("notes") or "").strip()[:1000],
+                occasion=data.get("occasion") if data.get("occasion") in dict(Booking.OCCASION_CHOICES) else "",
                 requested_times=[start],
                 expires_at=answer_by(start, settings.BOOKING_REQUEST_LAPSE_HOURS),
                 # The client's postcode district (or area, outside the UK) when the stylist

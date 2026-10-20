@@ -63,6 +63,8 @@ export interface Booking {
   /** Whether the service includes the braiding hair, from her menu at the time. */
   hairIncluded?: boolean;
   notes?: string;
+  /** What it's for, if she said. */
+  occasion?: Occasion;
   /** An .ics link the server provides for the confirmed appointment. */
   calendarUrl?: string;
 
@@ -135,6 +137,7 @@ export interface BookingDraft {
   bringingOwnHair: boolean;
   requestedTimes: string[];
   notes?: string;
+  occasion?: Occasion;
   policyVersion: string;
   /** The look she's booking from, so the stylist sees the picture. */
   lookId?: string;
@@ -293,3 +296,11 @@ export interface CloseOut {
   actualPrice?: number;
   extensionHair?: ExtensionHair;
 }
+
+/** What a booking is for, if she says: optional, from this list only. */
+export type Occasion = 'wedding' | 'holiday' | 'event';
+export const OCCASIONS: { value: Occasion; label: string }[] = [
+  { value: 'wedding', label: 'A wedding' },
+  { value: 'holiday', label: 'A holiday' },
+  { value: 'event', label: 'An event' },
+];
