@@ -2221,6 +2221,15 @@ export interface components {
          * @enum {string}
          */
         ByEnum: "client" | "stylist";
+        /**
+         * @description * `time` - time
+         *     * `hurt` - hurt
+         *     * `frizzy` - frizzy
+         *     * `event` - event
+         *     * `other` - other
+         * @enum {string}
+         */
+        CameOutEnum: "time" | "hurt" | "frizzy" | "event" | "other";
         CarePlanRequestRequest: {
             name: string;
             frequency: components["schemas"]["FrequencyEnum"];
@@ -2287,6 +2296,16 @@ export interface components {
             again: components["schemas"]["AgainEnum"];
             /** @description Is the style still in? */
             stillIn?: boolean;
+            /**
+             * @description Why it came out, when it's out. "hurt" is kept only with hair details consent
+             *
+             *     * `time` - time
+             *     * `hurt` - hurt
+             *     * `frizzy` - frizzy
+             *     * `event` - event
+             *     * `other` - other
+             */
+            cameOut?: components["schemas"]["CameOutEnum"];
             /** @description The phone's own clock */
             localAt?: string;
         };
@@ -2702,6 +2721,7 @@ export interface components {
             /** Format: date-time */
             at: string;
             bookingId?: string;
+            reason?: string;
         };
         HairLogRequestRequest: {
             kind: components["schemas"]["Kind823Enum"];
@@ -2714,6 +2734,16 @@ export interface components {
             localAt?: string;
             /** Format: uuid */
             bookingId?: string;
+            /**
+             * @description Why a style came out. "hurt" is kept only with hair details consent
+             *
+             *     * `time` - time
+             *     * `hurt` - hurt
+             *     * `frizzy` - frizzy
+             *     * `event` - event
+             *     * `other` - other
+             */
+            reason?: components["schemas"]["Reason5d7Enum"];
         };
         /**
          * @description For output-only model serializers: a model field that may be blank or null can be
@@ -3307,6 +3337,15 @@ export interface components {
             average: number;
             count: number;
         };
+        /**
+         * @description * `time` - time
+         *     * `hurt` - hurt
+         *     * `frizzy` - frizzy
+         *     * `event` - event
+         *     * `other` - other
+         * @enum {string}
+         */
+        Reason5d7Enum: "time" | "hurt" | "frizzy" | "event" | "other";
         ReasonRequestRequest: {
             reason?: string;
         };

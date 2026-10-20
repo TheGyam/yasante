@@ -165,3 +165,24 @@ def test_a_booking_from_a_look_shows_the_stylist_that_look(api, setup, book, mak
     # A made-up look never stops a request.
     body["lookId"], body["requestedTimes"] = "not-a-look", [slot(api(client), profile, service)]
     assert api(client).post("/api/bookings/", body).status_code == 201
+
+
+def test_why_a_style_came_out_is_kept_and_it_hurt_only_with_her_yes(api, setup, book, consent):
+    from apps.profiles.models import HairLog
+
+    profile, client = setup
+    first, second, third = (_completed(api, profile, client, book) for _ in range(3))
+    post = lambda booking_id, reason: api(client).post(
+        "/api/hair-log/", {"kind": "take_down", "bookingId": booking_id, "reason": reason}
+    )
+    assert post(first, "event").json()["reason"] == "event"
+    # Pain is health data: without her yes it isn't kept.
+    assert "reason" not in post(second, "hurt").json()
+    consent(client, "personalisation")
+    assert post(third, "hurt").json()["reason"] == "hurt"
+
+    # The check-in can say it too, when the style's out.
+    due = _completed(api, profile, client, book, days_ago=29)
+    answers = {"week": 4, "holding": "okay", "scalp": "comfortable", "again": "yes", "stillIn": False, "cameOut": "frizzy"}
+    assert api(client).post(f"/api/bookings/{due}/check-in/", answers).status_code == 204
+    assert HairLog.objects.get(booking_id=due).reason == "frizzy"

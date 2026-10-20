@@ -6,6 +6,17 @@ import { localTimestamp } from '@/shared/lib/analytics';
 /** A trim, a wash day or a style taken out: appended, never edited. */
 export type HairLogEntry = ApiSchemas['HairLog'];
 export type HairLogKind = HairLogEntry['kind'];
+/** Why a style came out. "hurt" is health data: only offered with hair details consent. */
+export type TakeDownReason = 'time' | 'hurt' | 'frizzy' | 'event' | 'other';
+
+/** The answers to "why did it come out?", in the order they're offered. */
+export const TAKE_DOWN_REASONS: { value: TakeDownReason; label: string }[] = [
+  { value: 'time', label: 'It was time' },
+  { value: 'hurt', label: 'It hurt' },
+  { value: 'frizzy', label: 'It got frizzy' },
+  { value: 'event', label: 'For an event' },
+  { value: 'other', label: 'Other' },
+];
 
 const KEY = ['hair-log'];
 
@@ -21,7 +32,9 @@ export function useLogHair() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (
-      entry: HairLogKind | { kind: HairLogKind; at?: string; bookingId?: string }
+      entry:
+        | HairLogKind
+        | { kind: HairLogKind; at?: string; bookingId?: string; reason?: TakeDownReason }
     ) => {
       const { kind, ...rest } = typeof entry === 'string' ? { kind: entry } : entry;
       return (

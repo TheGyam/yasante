@@ -319,6 +319,7 @@ def present_hair_log(entry):
         "kind": entry.kind,
         "at": entry.at,
         "booking_id": str(entry.booking_id) if entry.booking_id else None,
+        "reason": entry.reason or None,
     }
 
 
@@ -349,7 +350,12 @@ class HairLogView(APIView):
         if booking_id and not Booking.objects.filter(pk=booking_id, client=request.user).exists():
             return Response({"message": "That appointment isn’t yours"}, status=404)
         entry = log_hair(
-            request.user, data["kind"], data.get("local_at"), at=at, booking_id=booking_id
+            request.user,
+            data["kind"],
+            data.get("local_at"),
+            at=at,
+            booking_id=booking_id,
+            reason=data.get("reason", ""),
         )
         if entry is None:
             return Response({"message": "Already noted"}, status=409)
