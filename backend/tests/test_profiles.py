@@ -42,8 +42,8 @@ def test_consents_are_kept_as_a_history(api, make_user):
     user = make_user()
     body = {
         "consents": [
-            {"purpose": "analytics", "granted": True, "policyVersion": "v1", "recordedAt": "2026-09-01T10:00:00Z", "source": "ios"},
-            {"purpose": "analytics", "granted": False, "policyVersion": "v1", "recordedAt": "2026-09-02T10:00:00Z"},
+            {"purpose": "analytics", "granted": True, "policyVersion": "2026-10-20", "recordedAt": "2026-09-01T10:00:00Z", "source": "ios"},
+            {"purpose": "analytics", "granted": False, "policyVersion": "2026-10-20", "recordedAt": "2026-09-02T10:00:00Z"},
         ]
     }
     assert api(user).post("/api/consents/", body).status_code == 201
@@ -55,7 +55,7 @@ def test_the_latest_answer_wins_and_anything_unanswered_is_a_no(api, make_user):
 
     user = make_user()
     assert current_consents(user) == {p: False for p in ("terms", "privacy", "analytics", "personalisation", "research")}
-    record = lambda purpose, granted, at: {"purpose": purpose, "granted": granted, "policyVersion": "v1", "recordedAt": at}
+    record = lambda purpose, granted, at: {"purpose": purpose, "granted": granted, "policyVersion": "2026-10-20", "recordedAt": at}
     # Sent out of order: the later time wins, not the later row.
     api(user).post("/api/consents/", {"consents": [
         record("research", False, "2026-09-03T10:00:00Z"),
@@ -66,18 +66,45 @@ def test_the_latest_answer_wins_and_anything_unanswered_is_a_no(api, make_user):
     assert not has_consent(make_user(), "analytics")
 
 
+def test_optional_answers_from_before_the_new_policy_count_as_unanswered(api, make_user):
+    from apps.profiles.models import current_consents
+
+    user = make_user()
+    # What the app used to send by itself: hair details ticked on, under the old policy.
+    old = lambda purpose: {"purpose": purpose, "granted": True, "policyVersion": "2026-09", "recordedAt": "2026-09-30T10:00:00Z"}
+    api(user).post("/api/consents/", {"consents": [old("terms"), old("analytics"), old("personalisation"), old("research")]})
+    assert current_consents(user) == {"terms": True, "privacy": False, "analytics": False, "personalisation": False, "research": False}
+    assert [c["purpose"] for c in api(user).get("/api/consents/").json()["consents"]] == ["terms"]
+    # Asked again under the new policy, her answer counts.
+    api(user).post("/api/consents/", {"consents": [
+        {"purpose": "personalisation", "granted": True, "policyVersion": "2026-10-20", "recordedAt": "2026-10-21T10:00:00Z"},
+    ]})
+    assert current_consents(user)["personalisation"] is True
+
+
+def test_the_new_privacy_policy_is_published_with_the_old_ones_kept(api):
+    from apps.profiles.models import PolicyDocument, OPTIONAL_CONSENTS_SINCE
+
+    current = api().get("/api/policies/privacy/").json()
+    assert current["version"] == OPTIONAL_CONSENTS_SINCE
+    assert "5. Research" in current["body"] and "7. Cookies and storage" in current["body"]
+    # Every gap is filled in before it goes out.
+    assert "[" not in current["body"]
+    assert PolicyDocument.objects.filter(type="privacy", version="2026-09-28").exists()
+
+
 def test_her_choices_come_back_with_their_version_and_time(api, make_user):
     user = make_user()
     api(user).post("/api/consents/", {"consents": [
-        {"purpose": "analytics", "granted": True, "policyVersion": "v1", "recordedAt": "2026-09-01T10:00:00Z"},
-        {"purpose": "analytics", "granted": False, "policyVersion": "v2", "recordedAt": "2026-09-02T10:00:00Z", "source": "web"},
+        {"purpose": "analytics", "granted": True, "policyVersion": "2026-10-20", "recordedAt": "2026-09-01T10:00:00Z"},
+        {"purpose": "analytics", "granted": False, "policyVersion": "2026-11-01", "recordedAt": "2026-09-02T10:00:00Z", "source": "web"},
     ]})
     api(make_user()).post("/api/consents/", {"consents": [
-        {"purpose": "research", "granted": True, "policyVersion": "v2", "recordedAt": "2026-09-02T10:00:00Z"},
+        {"purpose": "research", "granted": True, "policyVersion": "2026-11-01", "recordedAt": "2026-09-02T10:00:00Z"},
     ]})
     body = api(user).get("/api/consents/").json()
     assert body == {"consents": [
-        {"purpose": "analytics", "granted": False, "policyVersion": "v2", "recordedAt": "2026-09-02T10:00:00Z", "source": "web"},
+        {"purpose": "analytics", "granted": False, "policyVersion": "2026-11-01", "recordedAt": "2026-09-02T10:00:00Z", "source": "web"},
     ]}
     assert api().get("/api/consents/").status_code == 401
 
@@ -92,10 +119,10 @@ def test_events_are_kept_only_while_analytics_consent_is_given(api, make_user):
     # Never asked is a no.
     assert api(user).post("/api/events/", event).status_code == 202
     assert AnalyticsEvent.objects.count() == 1
-    ConsentRecord.objects.create(user=user, purpose="analytics", granted=True, policy_version="v1", recorded_at="2026-09-22T09:00:00Z")
+    ConsentRecord.objects.create(user=user, purpose="analytics", granted=True, policy_version="2026-10-20", recorded_at="2026-09-22T09:00:00Z")
     assert api(user).post("/api/events/", event).status_code == 201
     assert AnalyticsEvent.objects.count() == 2
-    ConsentRecord.objects.create(user=user, purpose="analytics", granted=False, policy_version="v1", recorded_at="2026-09-22T12:00:00Z")
+    ConsentRecord.objects.create(user=user, purpose="analytics", granted=False, policy_version="2026-10-20", recorded_at="2026-09-22T12:00:00Z")
     assert api(user).post("/api/events/", event).status_code == 202
     assert AnalyticsEvent.objects.count() == 2
 
