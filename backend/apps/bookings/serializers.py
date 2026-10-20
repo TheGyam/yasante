@@ -138,6 +138,15 @@ def present_booking(booking, viewer):
             else None
         ),
         "started_on_time": booking.started_on_time,
+        "extension_hair": (
+            {
+                "brand": booking.hair_brand or None,
+                "product": booking.hair_product or None,
+                "packs": booking.hair_packs,
+            }
+            if as_stylist and (booking.hair_brand or booking.hair_product or booking.hair_packs)
+            else None
+        ),
         "contested": (
             {"no_show": booking.contested_no_show or None, "timing": booking.contested_timing or None}
             if booking.contested_no_show or booking.contested_timing
@@ -252,6 +261,12 @@ class FromLookSerializer(serializers.Serializer):
     author_name = optional(serializers.CharField())
 
 
+class ExtensionHairSerializer(serializers.Serializer):
+    brand = optional(serializers.CharField(max_length=80))
+    product = optional(serializers.CharField(max_length=120))
+    packs = optional(serializers.IntegerField(min_value=1, max_value=50))
+
+
 class BookingSerializer(serializers.Serializer):
     id = serializers.CharField()
     status = serializers.ChoiceField(choices=[c for c, _ in BOOKING_STATUS_CHOICES])
@@ -294,6 +309,7 @@ class BookingSerializer(serializers.Serializer):
     actual_price = optional(serializers.FloatField())
     timing = optional(TimingSerializer())
     started_on_time = optional(serializers.BooleanField())
+    extension_hair = optional(ExtensionHairSerializer(help_text="The stylist's own record; only she sees it"))
     contested = optional(ContestedSerializer())
     review = optional(ReviewStateSerializer())
     check_in_due = optional(serializers.ChoiceField(choices=[2, 4]))
@@ -363,6 +379,7 @@ class CloseRequestSerializer(serializers.Serializer):
     outcome = serializers.ChoiceField(choices=["attended", "no_show"])
     actual_price = serializers.FloatField(required=False)
     timing = TimingSerializer(required=False)
+    extension_hair = ExtensionHairSerializer(required=False)
 
 
 class MoveRequestBodySerializer(serializers.Serializer):

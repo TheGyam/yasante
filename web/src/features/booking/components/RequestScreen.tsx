@@ -418,6 +418,11 @@ function CloseOut({ booking }: { booking: Booking }) {
   const [paid, setPaid] = useState(String(booking.price));
   const [timing, setTiming] = useState<(typeof TIMINGS)[number]['value']>('on_time');
   const [bucket, setBucket] = useState<(typeof BUCKETS)[number]['value']>('under_30');
+  // The extension hair she used, if any: her own record, never shown to the client.
+  const [brand, setBrand] = useState('');
+  const [product, setProduct] = useState('');
+  const [packs, setPacks] = useState('');
+  const usedHair = brand.trim() || product.trim() || packs.trim();
 
   const submit = () =>
     close.mutate({
@@ -427,6 +432,13 @@ function CloseOut({ booking }: { booking: Booking }) {
             outcome: 'attended',
             actualPrice: Number(paid.replace(/[^\d.]/g, '')) || booking.price,
             timing: timing === 'on_time' ? { outcome: timing } : { outcome: timing, bucket },
+            ...(usedHair && {
+              extensionHair: {
+                brand: brand.trim() || undefined,
+                product: product.trim() || undefined,
+                packs: Number(packs) || undefined,
+              },
+            }),
           }
         : { outcome: 'no_show' },
     });
@@ -450,6 +462,24 @@ function CloseOut({ booking }: { booking: Booking }) {
             inputMode="decimal"
             value={paid}
             onChange={e => setPaid(e.target.value)}
+          />
+          <Input
+            label="Extension hair brand (optional)"
+            value={brand}
+            maxLength={80}
+            onChange={e => setBrand(e.target.value)}
+          />
+          <Input
+            label="Product or colour (optional)"
+            value={product}
+            maxLength={120}
+            onChange={e => setProduct(e.target.value)}
+          />
+          <Input
+            label="Packs used (optional)"
+            inputMode="numeric"
+            value={packs}
+            onChange={e => setPacks(e.target.value.replace(/\D/g, '').slice(0, 2))}
           />
           <div className={styles.chips}>
             {TIMINGS.map(t => (

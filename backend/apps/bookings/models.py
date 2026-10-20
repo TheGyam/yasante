@@ -136,6 +136,10 @@ class Booking(TimeStampedModel):
         max_length=20, choices=TIMING_BUCKET_CHOICES, blank=True, default=""
     )
     timing_reason = models.CharField(max_length=30, blank=True, default="")
+    # Extension hair she used, from her close-out, if she said: her business record.
+    hair_brand = models.CharField(max_length=80, blank=True, default="")
+    hair_product = models.CharField(max_length=120, blank=True, default="")
+    hair_packs = models.PositiveSmallIntegerField(null=True, blank=True)
     started_on_time = models.BooleanField(null=True, blank=True)
     contested_no_show = models.BooleanField(default=False)
     contested_timing = models.BooleanField(default=False)
