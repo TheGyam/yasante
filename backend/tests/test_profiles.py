@@ -234,3 +234,17 @@ def test_her_data_comes_as_a_file_with_everything_of_hers(api, make_user, make_s
     stylist_data = collect_user_data(profile.account)
     assert stylist_data["bookings_as_stylist"] and "address" not in stylist_data["bookings_as_stylist"][0]
     assert stylist_data["stylist_menu"]
+
+
+def test_her_next_style_is_kept_in_her_profile_and_her_export_not_her_history(api, make_user, consent):
+    from apps.profiles.models import HairProfileSnapshot
+    from apps.profiles.tasks import collect_user_data
+
+    me = make_user()
+    consent(me, "personalisation")
+    wish = {"nextStyles": ["knotless", "boho"], "nextLength": "waist", "nextColour": "brown", "nextUpkeep": "low", "nextSit": "4_to_6"}
+    body = api(me).patch(f"/api/users/{me.pk}/hair-profile/", wish).json()
+    assert {k: body[k] for k in wish} == wish
+    assert api(me).patch(f"/api/users/{me.pk}/hair-profile/", {"nextUpkeep": "sometimes"}).status_code == 400
+    assert not hasattr(HairProfileSnapshot.objects.get(user=me), "next_styles")
+    assert collect_user_data(me)["hair_profile"][0]["next_styles"] == ["knotless", "boho"]

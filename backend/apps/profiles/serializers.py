@@ -155,6 +155,11 @@ class HairProfileRequestSerializer(serializers.Serializer):
     length_measured_at = serializers.DateTimeField(required=False, allow_null=True)
     length_cm = serializers.FloatField(required=False, allow_null=True, min_value=1, max_value=200)
     completed_at = serializers.DateTimeField(required=False, allow_null=True)
+    next_styles = serializers.ListField(child=serializers.CharField(), required=False, max_length=10)
+    next_length = serializers.CharField(required=False, allow_blank=True)
+    next_colour = serializers.CharField(required=False, allow_blank=True)
+    next_upkeep = serializers.CharField(required=False, allow_blank=True)
+    next_sit = serializers.CharField(required=False, allow_blank=True)
 
 
 class HairLogSerializer(serializers.Serializer):

@@ -26,6 +26,7 @@ import { AreaStep, BudgetStep, ChemicalStep, ScalpStep } from './MoreSteps';
 import { CORE, lengthLine, sectionFor, type SectionKey } from './sections';
 import { DensityStep, PorosityStep } from './TestStep';
 import { StrandArt, TextureStep } from './TextureStep';
+import { WishlistStep } from './WishlistStep';
 
 type StepKey = SectionKey | 'summary';
 
@@ -246,6 +247,7 @@ export function HairQuiz({ mode, section }: HairQuizProps) {
               onPostcode={v => set('postcode', v)}
             />
           )}
+          {key === 'wishlist' && <WishlistStep value={answers} onChange={set} />}
           {key === 'budget' && (
             <BudgetStep value={answers.budget} onChange={v => set('budget', v)} />
           )}
