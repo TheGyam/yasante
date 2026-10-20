@@ -2133,6 +2133,7 @@ export interface components {
             bringingOwnHair: boolean;
             hairIncluded?: boolean;
             notes?: string;
+            occasion?: components["schemas"]["OccasionEnum"];
             calendarUrl?: string;
             requestedTimes: string[];
             /** Format: date-time */
@@ -2180,6 +2181,14 @@ export interface components {
             bringingOwnHair: boolean;
             requestedTimes: string[];
             notes?: string;
+            /**
+             * @description What it's for, if she says
+             *
+             *     * `wedding` - wedding
+             *     * `holiday` - holiday
+             *     * `event` - event
+             */
+            occasion?: components["schemas"]["OccasionEnum"];
             policyVersion: string;
             /** @description The look the booking is from */
             lookId?: string;
@@ -3138,6 +3147,13 @@ export interface components {
             lastWeek: components["schemas"]["WeekCounts"];
             timing: components["schemas"]["ServiceTiming"][];
         };
+        /**
+         * @description * `wedding` - wedding
+         *     * `holiday` - holiday
+         *     * `event` - event
+         * @enum {string}
+         */
+        OccasionEnum: "wedding" | "holiday" | "event";
         PageReview: {
             id: string;
             bookingId: string;

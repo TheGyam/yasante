@@ -98,6 +98,7 @@ def present_booking(booking, viewer):
         "bringing_own_hair": booking.bringing_own_hair,
         "hair_included": booking.hair_included,
         "notes": booking.notes,
+        "occasion": booking.occasion or None,
         # A signed .ics link for this person: the phone's own "Add to calendar".
         "calendar_url": calendar_url(booking, viewer) if confirmed and viewer is not None and booking.scheduled_for else None,
         "requested_times": booking.requested_times,
@@ -289,6 +290,7 @@ class BookingSerializer(serializers.Serializer):
     bringing_own_hair = serializers.BooleanField()
     hair_included = optional(serializers.BooleanField())
     notes = optional(serializers.CharField())
+    occasion = optional(serializers.ChoiceField(choices=["wedding", "holiday", "event"]))
     calendar_url = optional(serializers.CharField())
     requested_times = serializers.ListField(child=serializers.DateTimeField())
     scheduled_for = optional(serializers.DateTimeField())
@@ -355,6 +357,9 @@ class BookingCreateRequestSerializer(serializers.Serializer):
     bringing_own_hair = serializers.BooleanField()
     requested_times = serializers.ListField(child=serializers.DateTimeField())
     notes = serializers.CharField(required=False)
+    occasion = serializers.ChoiceField(
+        choices=["wedding", "holiday", "event"], required=False, help_text="What it's for, if she says"
+    )
     policy_version = serializers.CharField()
     look_id = serializers.CharField(required=False, help_text="The look the booking is from")
     at_client = serializers.BooleanField(required=False, help_text="The stylist comes to the client")

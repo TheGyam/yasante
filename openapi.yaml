@@ -3335,6 +3335,8 @@ components:
           type: boolean
         notes:
           type: string
+        occasion:
+          $ref: '#/components/schemas/OccasionEnum'
         calendarUrl:
           type: string
         requestedTimes:
@@ -3453,6 +3455,15 @@ components:
         notes:
           type: string
           minLength: 1
+        occasion:
+          allOf:
+          - $ref: '#/components/schemas/OccasionEnum'
+          description: |-
+            What it's for, if she says
+
+            * `wedding` - wedding
+            * `holiday` - holiday
+            * `event` - event
         policyVersion:
           type: string
           minLength: 1
@@ -5497,6 +5508,16 @@ components:
       - thisWeek
       - timing
       - weekOf
+    OccasionEnum:
+      enum:
+      - wedding
+      - holiday
+      - event
+      type: string
+      description: |-
+        * `wedding` - wedding
+        * `holiday` - holiday
+        * `event` - event
     PageReview:
       type: object
       properties:

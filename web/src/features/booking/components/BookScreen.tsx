@@ -38,12 +38,21 @@ import { SlotPicker } from './SlotPicker';
 import * as styles from './BookScreen.css';
 
 /** What she's filled in, kept for this tab: signing in halfway loses nothing. */
+// What a booking is for, if she says: optional, from this list only.
+const OCCASIONS = [
+  { value: 'wedding', label: 'A wedding' },
+  { value: 'holiday', label: 'A holiday' },
+  { value: 'event', label: 'An event' },
+] as const;
+type Occasion = (typeof OCCASIONS)[number]['value'];
+
 interface Draft {
   serviceId?: string;
   chosen: ChosenOptions;
   time?: string;
   ownHair: boolean;
   notes: string;
+  occasion?: Occasion;
   atClient: boolean;
   /** Unset until she types one: her last home visit's address fills in meanwhile. */
   street?: string;
@@ -206,6 +215,7 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
         bringingOwnHair: draft.ownHair,
         requestedTimes: [time],
         notes: draft.notes.trim() || undefined,
+        occasion: draft.occasion,
         policyVersion: POLICY_VERSION,
         lookId: fromLook?.id,
         atClient: comesToMe,
@@ -445,6 +455,22 @@ export function BookScreen({ handle, serviceId: fromLookService, lookId, day }: 
           checked={draft.ownHair}
           onChange={event => set({ ownHair: event.target.checked })}
         />
+
+        <div className={styles.group}>
+          <Text variant="footnote" tone="secondary">
+            Is it for something? (optional)
+          </Text>
+          <div className={styles.chips}>
+            {OCCASIONS.map(o => (
+              <Chip
+                key={o.value}
+                label={o.label}
+                selected={draft.occasion === o.value}
+                onClick={() => set({ occasion: draft.occasion === o.value ? undefined : o.value })}
+              />
+            ))}
+          </div>
+        </div>
 
         <TextArea
           label="Anything they should know"
