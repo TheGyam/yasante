@@ -73,6 +73,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     # How times are worded to them in notifications: their phone's zone, kept in step.
     time_zone = models.CharField(max_length=64, blank=True, default="")
     age_confirmed = models.BooleanField(default=False)
+    # Optional, from sign-up: a band, never a birthday.
+    AGE_BAND_CHOICES = [
+        ("18_24", "18 to 24"),
+        ("25_34", "25 to 34"),
+        ("35_44", "35 to 44"),
+        ("45_54", "45 to 54"),
+        ("55_plus", "55 or over"),
+    ]
+    age_band = models.CharField(max_length=10, choices=AGE_BAND_CHOICES, blank=True, default="")
     policy_version = models.CharField(max_length=50, blank=True, default="")
 
     # Django admin fields

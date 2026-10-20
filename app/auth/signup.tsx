@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { type TextInput } from 'react-native';
+import { StyleSheet, View, type TextInput } from 'react-native';
 import { useNavigationState } from '@react-navigation/native';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useRouter } from '@/shared/lib/navigation';
@@ -18,13 +18,30 @@ import { POLICY_VERSION, PRIVACY_ROUTE, TERMS_ROUTE } from '@/shared/config/poli
 import { useConsentStore } from '@/shared/config/consentStore';
 import { haptics } from '@/shared/lib/haptics';
 import { Button } from '@/shared/ui/Button';
+import { space } from '@/shared/theme';
 import { Checkbox } from '@/shared/ui/Checkbox';
+import { Chip } from '@/shared/ui/Chip';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
 import { Input } from '@/shared/ui/Input';
 import { Text } from '@/shared/ui/Text';
 import { isRequired, isValidEmail, validatePassword } from '@/shared/utils/validation';
 
 type Field = 'name' | 'email' | 'password' | 'confirmPassword' | 'agreed';
+
+// Optional at sign-up: a band, never a birthday.
+const AGE_BANDS = [
+  { value: '18_24', label: '18 to 24' },
+  { value: '25_34', label: '25 to 34' },
+  { value: '35_44', label: '35 to 44' },
+  { value: '45_54', label: '45 to 54' },
+  { value: '55_plus', label: '55 or over' },
+] as const;
+type AgeBand = (typeof AGE_BANDS)[number]['value'];
+
+const local = StyleSheet.create({
+  ages: { gap: space.sm },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+});
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -43,6 +60,7 @@ export default function SignupScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
+  const [ageBand, setAgeBand] = useState<AgeBand>();
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [formError, setFormError] = useState('');
 
@@ -83,6 +101,7 @@ export default function SignupScreen() {
         role,
         invite_code: invite?.code,
         age_confirmed: true,
+        age_band: ageBand,
         policy_version: POLICY_VERSION,
       });
       setConsent('terms', true);
@@ -209,6 +228,22 @@ export default function SignupScreen() {
         error={errors.confirmPassword}
         testID="confirm-password-input"
       />
+
+      <View style={local.ages}>
+        <Text variant="subhead" tone="secondary">
+          Your age (optional)
+        </Text>
+        <View style={local.chips}>
+          {AGE_BANDS.map(band => (
+            <Chip
+              key={band.value}
+              label={band.label}
+              selected={ageBand === band.value}
+              onPress={() => setAgeBand(ageBand === band.value ? undefined : band.value)}
+            />
+          ))}
+        </View>
+      </View>
 
       <Checkbox
         checked={agreed}

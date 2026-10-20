@@ -3137,6 +3137,20 @@ components:
         * `yes` - yes
         * `maybe` - maybe
         * `no` - no
+    AgeBandEnum:
+      enum:
+      - '18_24'
+      - '25_34'
+      - '35_44'
+      - '45_54'
+      - 55_plus
+      type: string
+      description: |-
+        * `18_24` - 18_24
+        * `25_34` - 25_34
+        * `35_44` - 35_44
+        * `45_54` - 45_54
+        * `55_plus` - 55_plus
     AnswerRequestRequest:
       type: object
       properties:
@@ -6462,6 +6476,18 @@ components:
           type: string
         ageConfirmed:
           type: boolean
+        ageBand:
+          description: |-
+            Optional: an age band, never a birthday
+
+            * `18_24` - 18_24
+            * `25_34` - 25_34
+            * `35_44` - 35_44
+            * `45_54` - 45_54
+            * `55_plus` - 55_plus
+          oneOf:
+          - $ref: '#/components/schemas/AgeBandEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         policyVersion:
           type: string
           minLength: 1
