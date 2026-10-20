@@ -2,12 +2,14 @@ import { ScrollView } from 'react-native';
 import { ChevronDown, MapPin, Waves } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { useUser, useUserStore } from '@/features/profile';
+import { useQuery } from '@tanstack/react-query';
 import { useConsentStore } from '@/shared/config/consentStore';
+import { getRecentSearches } from '@/shared/utils/searchHistory';
 import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, space } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
 import { confirm } from '@/shared/ui/dialog';
-import { useLookFilters } from '../filters';
+import { searchedStyles, useLookFilters } from '../filters';
 import { useLookAreas, useStyleTaxonomy } from '../hooks';
 import type { LookFilters } from '../types';
 
@@ -28,16 +30,34 @@ function useTexture() {
   return allowed ? (account?.hairProfile?.texture ?? local?.texture) : undefined;
 }
 
+/** The key the feed reads recent searches under; searching refreshes it. */
+export const RECENT_SEARCHES = ['recent-searches'];
+
+/** Styles from her recent searches, kept on her phone, for the feed to mix in. */
+function useSearchedStyles() {
+  const recent = useQuery({ queryKey: RECENT_SEARCHES, queryFn: getRecentSearches });
+  const taxonomy = useStyleTaxonomy();
+  const queries = (recent.data ?? []).map(item => item.query);
+  // Ready once it's known, so the feed loads once rather than reshuffling as these arrive.
+  // Without the style list (offline, say) it goes ahead without them.
+  const ready = recent.isFetched && (!queries.length || taxonomy.isFetched);
+  return { styles: searchedStyles(queries, taxonomy.data ?? []), ready };
+}
+
 /** What the feed is narrowed to right now, as the API takes it. */
-export function useFeedQuery(): { query: LookFilters; filtered: boolean } {
+export function useFeedQuery(): { query: LookFilters; filtered: boolean; ready: boolean } {
   const texture = useTexture();
   const filters = useLookFilters();
+  const { styles: searched, ready } = useSearchedStyles();
   const query = {
     hair: filters.hairLikeMine ? texture : undefined,
     style: filters.style,
     area: filters.area,
   };
-  return { query, filtered: !!(query.hair || query.style || query.area) };
+  const filtered = !!(query.hair || query.style || query.area);
+  // Mixed in without a label, and only into the everyday feed, not a chosen style or hair.
+  const mix = !query.hair && !query.style && searched.length ? searched.join(',') : undefined;
+  return { query: { ...query, searched: mix }, filtered, ready };
 }
 
 /**

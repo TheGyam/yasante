@@ -1,5 +1,6 @@
 import React from 'react';
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useConsentStore } from '@/shared/config/consentStore';
 import { LookFilterBar, useFeedQuery } from '../components/LookFilterBar';
 import { useLookFilters } from '../filters';
@@ -12,6 +13,7 @@ jest.mock('@/features/profile', () => ({
   useUser: () => ({ data: { hairProfile: { texture: 'coily' } } }),
   useUserStore: (selector: any) => selector({ hairProfile: undefined }),
 }));
+jest.mock('@/shared/utils/searchHistory', () => ({ getRecentSearches: async () => [] }));
 jest.mock('../hooks', () => ({
   useLookAreas: () => ({ data: [] }),
   useStyleTaxonomy: () => ({ data: [] }),
@@ -34,7 +36,12 @@ describe('hair like mine', () => {
   it('matches on her hair only while she allows it', async () => {
     useConsentStore.getState().setConsent('personalisation', true);
     useLookFilters.getState().setHairLikeMine(true);
-    const { result } = renderHook(() => useFeedQuery());
+    const client = new QueryClient();
+    const { result } = renderHook(() => useFeedQuery(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      ),
+    });
     expect(result.current.query.hair).toBe('coily');
     // A store change reaches the hook only through an async act in this renderer.
     await act(async () => useConsentStore.getState().setConsent('personalisation', false));
