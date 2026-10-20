@@ -370,6 +370,19 @@ def test_a_rebook_nudge_comes_a_week_before_her_style_usually_comes_out(api, set
     assert "is free on" in nudge.body
 
 
+def test_the_extension_hair_she_used_is_her_own_record(api, setup, book):
+    profile, client = setup
+    booking_id = _confirmed(api, profile, client, book, hours_ahead=-6)
+    url = f"/api/bookings/{booking_id}"
+    hair = {"brand": "X-Pression", "product": "Ultra Braid 1B", "packs": 6}
+    bad = api(profile.account).post(f"{url}/close/", {"outcome": "attended", "extensionHair": {**hair, "packs": 99}})
+    assert bad.status_code == 400
+    closed = api(profile.account).post(f"{url}/close/", {"outcome": "attended", "extensionHair": hair})
+    assert closed.json()["extensionHair"] == hair
+    assert api(profile.account).get(f"{url}/").json()["extensionHair"] == hair
+    assert "extensionHair" not in api(client).get(f"{url}/").json()
+
+
 def test_reviews_follow_a_completed_appointment_once(api, setup, book):
     profile, client = setup
     pending = _confirmed(api, profile, client, book)

@@ -2160,6 +2160,8 @@ export interface components {
             actualPrice?: number;
             timing?: components["schemas"]["Timing"];
             startedOnTime?: boolean;
+            /** @description The stylist's own record; only she sees it */
+            extensionHair?: components["schemas"]["ExtensionHair"];
             contested?: components["schemas"]["Contested"];
             review?: components["schemas"]["ReviewState"];
             checkInDue?: components["schemas"]["CheckInDueEnum"];
@@ -2390,6 +2392,7 @@ export interface components {
             /** Format: double */
             actualPrice?: number;
             timing?: components["schemas"]["TimingRequest"];
+            extensionHair?: components["schemas"]["ExtensionHairRequest"];
         };
         ClosedDayRequestRequest: {
             /** Format: date */
@@ -2613,6 +2616,16 @@ export interface components {
             };
             /** @default  */
             appVersion: string;
+        };
+        ExtensionHair: {
+            brand?: string;
+            product?: string;
+            packs?: number;
+        };
+        ExtensionHairRequest: {
+            brand?: string | null;
+            product?: string | null;
+            packs?: number | null;
         };
         FavoriteResponse: {
             id: string;

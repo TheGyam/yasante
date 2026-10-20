@@ -104,6 +104,8 @@ export interface Booking {
   timing?: BookingTiming;
   /** The client's one tap: did it start on time? */
   startedOnTime?: boolean;
+  /** The extension hair she used, from her close-out. Only on the stylist's copy. */
+  extensionHair?: ExtensionHair;
   /** A client may contest a no-show or a timing record, once each. */
   contested?: { noShow?: boolean; timing?: boolean };
   /** Her review, once she's left one. Only on the client's copy. */
@@ -279,8 +281,15 @@ export interface SlotInterest {
 }
 
 /** What a close-out records. */
+export interface ExtensionHair {
+  brand?: string;
+  product?: string;
+  packs?: number;
+}
+
 export interface CloseOut {
   outcome: 'attended' | 'no_show';
   timing?: BookingTiming;
   actualPrice?: number;
+  extensionHair?: ExtensionHair;
 }

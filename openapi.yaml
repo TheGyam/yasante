@@ -3389,6 +3389,10 @@ components:
           - $ref: '#/components/schemas/Timing'
         startedOnTime:
           type: boolean
+        extensionHair:
+          allOf:
+          - $ref: '#/components/schemas/ExtensionHair'
+          description: The stylist's own record; only she sees it
         contested:
           allOf:
           - $ref: '#/components/schemas/Contested'
@@ -3863,6 +3867,8 @@ components:
           format: double
         timing:
           $ref: '#/components/schemas/TimingRequest'
+        extensionHair:
+          $ref: '#/components/schemas/ExtensionHairRequest'
       required:
       - outcome
     ClosedDayRequestRequest:
@@ -4353,6 +4359,37 @@ components:
       required:
       - at
       - name
+    ExtensionHair:
+      type: object
+      properties:
+        brand:
+          type: string
+          maxLength: 80
+        product:
+          type: string
+          maxLength: 120
+        packs:
+          type: integer
+          maximum: 50
+          minimum: 1
+    ExtensionHairRequest:
+      type: object
+      properties:
+        brand:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 80
+        product:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 120
+        packs:
+          type: integer
+          maximum: 50
+          minimum: 1
+          nullable: true
     FavoriteResponse:
       type: object
       properties:
