@@ -129,5 +129,5 @@ def unpublish(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [("profiles", "0013_replace_on_the_map")]
+    dependencies = [("profiles", "0015_next_style_wishlist")]
     operations = [migrations.RunPython(publish, unpublish)]
