@@ -2,10 +2,12 @@ import { View } from 'react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 import { Check, Droplets, Plus, Ruler, Scissors, type LucideIcon } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
+import { useConsentStore, useUnanswered } from '@/shared/config/consentStore';
 import { useRouter } from '@/shared/lib/navigation';
 import { EASE_OUT, makeStyles, space, useTheme } from '@/shared/theme';
 import { haptics } from '@/shared/lib/haptics';
 import { Card } from '@/shared/ui/Card';
+import { ConsentQuestion } from '@/shared/ui/ConsentQuestion';
 import { notify } from '@/shared/ui/dialog';
 import { ListRow } from '@/shared/ui/ListRow';
 import { ProgressBar } from '@/shared/ui/ProgressBar';
@@ -51,6 +53,9 @@ export function HairProfileHub() {
   const profile = { ...local, ...account?.hairProfile };
   const { done, total, next } = progressOf(profile);
   const stale = lengthIsStale(profile);
+  const askHair = useUnanswered('personalisation', isAuthenticated);
+  const hairAllowed = useConsentStore(s => s.consents.personalisation?.granted ?? false);
+  const askResearch = useUnanswered('research', isAuthenticated);
 
   const open = (key: string) => router.push(`/hair-profile/${key}`);
 
@@ -63,6 +68,22 @@ export function HairProfileHub() {
         notify({ title: 'Couldn’t save that', message: 'Check your connection and try again.' });
       },
     });
+
+  if (askHair) {
+    return (
+      <ConsentQuestion
+        purpose="personalisation"
+        modal
+        onAnswered={granted => {
+          if (!granted) router.back();
+        }}
+      />
+    );
+  }
+  // For a hair profile finished before research was asked about.
+  if (profile.completedAt && hairAllowed && askResearch) {
+    return <ConsentQuestion purpose="research" modal />;
+  }
 
   return (
     <Screen title="Your hair" modal testID="hair-profile-hub">

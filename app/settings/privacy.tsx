@@ -11,7 +11,8 @@ import {
 import { api } from '@/api';
 import { useAuth } from '@/features/auth';
 import { useUserStore } from '@/features/profile';
-import { useConsentStore, type ConsentPurpose } from '@/shared/config/consentStore';
+import { useConsentStore } from '@/shared/config/consentStore';
+import { CONSENT_WORDING, type AskedPurpose } from '@/shared/config/consentWording';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { confirm, notify } from '@/shared/ui/dialog';
@@ -21,28 +22,10 @@ import { Section } from '@/shared/ui/Section';
 import { Toggle } from '@/shared/ui/Toggle';
 
 // The same words as where each is first asked.
-const CHOICES: { purpose: ConsentPurpose; title: string; subtitle: string; icon: LucideIcon }[] = [
-  {
-    purpose: 'analytics',
-    title: 'Help make Yasante better',
-    subtitle:
-      'Share how you use Yasante, never what you post, so we can fix what’s slow or confusing.',
-    icon: BarChart3,
-  },
-  {
-    purpose: 'personalisation',
-    title: 'Use your hair details',
-    subtitle:
-      'We’ll use your hair and scalp details to match looks, stylists and products to your hair. Only you and stylists you book can see them.',
-    icon: SlidersHorizontal,
-  },
-  {
-    purpose: 'research',
-    title: 'Help research on hair',
-    subtitle:
-      'Let your hair data, without your name or photos, join anonymous research on hair, including reports for hair brands and studies with universities. You can stop any time in Settings.',
-    icon: FlaskConical,
-  },
+const CHOICES: { purpose: AskedPurpose; icon: LucideIcon }[] = [
+  { purpose: 'analytics', icon: BarChart3 },
+  { purpose: 'personalisation', icon: SlidersHorizontal },
+  { purpose: 'research', icon: FlaskConical },
 ];
 
 const useStyles = makeStyles(() => ({
@@ -107,8 +90,8 @@ export default function PrivacyScreen() {
           {CHOICES.map(choice => (
             <ListRow
               key={choice.purpose}
-              title={choice.title}
-              subtitle={choice.subtitle}
+              title={CONSENT_WORDING[choice.purpose].title}
+              subtitle={CONSENT_WORDING[choice.purpose].body}
               icon={choice.icon}
               iconTone="neutral"
               wrap
@@ -116,7 +99,7 @@ export default function PrivacyScreen() {
                 <Toggle
                   value={consents[choice.purpose]?.granted ?? false}
                   onValueChange={value => setConsent(choice.purpose, value)}
-                  accessibilityLabel={choice.title}
+                  accessibilityLabel={CONSENT_WORDING[choice.purpose].title}
                 />
               }
             />
