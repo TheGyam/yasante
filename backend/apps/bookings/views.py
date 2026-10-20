@@ -516,6 +516,18 @@ class BookingCloseView(_BookingAction):
             paid = 0
         if not no_show and paid > 0:
             booking.actual_price = paid
+        # The extension hair she used: optional, and only for an appointment that happened.
+        hair = request.data.get("extension_hair") or {}
+        if not no_show and isinstance(hair, dict):
+            booking.hair_brand = str(hair.get("brand") or "").strip()[:80]
+            booking.hair_product = str(hair.get("product") or "").strip()[:120]
+            try:
+                packs = int(hair.get("packs") or 0)
+            except (TypeError, ValueError):
+                return _err("Say how many packs, as a number", 400)
+            if not 0 <= packs <= 50:
+                return _err("Say how many packs, up to 50", 400)
+            booking.hair_packs = packs or None
         booking.status = to
         if to == "completed":
             booking.completed_at = timezone.now()
