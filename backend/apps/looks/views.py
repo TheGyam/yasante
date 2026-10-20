@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from apps.bookings.models import Booking
 from apps.common.blocks import blocked_account_ids, is_blocked
 from apps.common.models import log_search
-from apps.common.pagination import keyset_page
+from apps.common.pagination import keyset_page, page_limit
 from apps.common.people import person
 from apps.common.permissions import IsAuthenticatedOrReadOnly
 from apps.common.throttling import CommentThrottle, PostingThrottle, ReportThrottle
@@ -149,20 +149,67 @@ def _texture_to_match(viewer):
 REST = "rest."
 
 
-def matched_first(qs, texture, request):
+def matched_first(qs, texture, request, cursor=None, limit=None):
     """
     Looks on hair like hers first, newest first, then everything else, newest first.
     The cursor says which list she's in, so nothing repeats or goes missing between
     them. The page where the first list ends can be short; the next one starts the rest.
     """
-    cursor = request.query_params.get("cursor") or ""
+    if cursor is None:
+        cursor = request.query_params.get("cursor") or ""
     if not cursor.startswith(REST):
-        items, after = keyset_page(qs.filter(hair_texture=texture), request, cursor=cursor)
+        items, after = keyset_page(qs.filter(hair_texture=texture), request, cursor=cursor, limit=limit)
         if after or items:
             return items, after or REST
         cursor = REST
-    items, after = keyset_page(qs.exclude(hair_texture=texture), request, cursor=cursor[len(REST):])
+    items, after = keyset_page(qs.exclude(hair_texture=texture), request, cursor=cursor[len(REST):], limit=limit)
     return items, after and REST + after
+
+
+# A mixed feed's cursor: where each of its two lists is up to, and a list that's run out.
+MIX, DONE = "mix.", "-"
+# About one look in this many is from styles she's searched for, while there are some.
+MIX_EVERY = 4
+
+
+def mixed_in(qs, texture, styles, request):
+    """
+    The feed with looks in styles she's searched for mixed through it, about one in
+    MIX_EVERY, newest first, until they run out; everything else in its usual order.
+    Each list keeps its own place in the cursor, so nothing repeats or goes missing.
+    """
+    limit = page_limit(request)
+    cursor = request.query_params.get("cursor") or ""
+    searched_at, usual_at = cursor[len(MIX):].split("~", 1) if cursor.startswith(MIX) else ("", "")
+    searched = qs.filter(styles__slug__in=styles).distinct()
+    usual = qs.exclude(styles__slug__in=styles)
+
+    # Her share of the page, or all of it once the usual list has run out.
+    share = limit if usual_at == DONE else limit // MIX_EVERY
+    picks, searched_next = [], searched_at
+    if searched_at != DONE and share:
+        picks, searched_next = keyset_page(searched, request, cursor=searched_at, limit=share)
+        searched_next = searched_next or DONE
+    def usual_page(cursor, size):
+        if texture:
+            return matched_first(usual, texture, request, cursor=cursor, limit=size)
+        return keyset_page(usual, request, cursor=cursor, limit=size)
+
+    rest, usual_next = [], usual_at
+    if usual_at != DONE and limit - len(picks):
+        rest, usual_next = usual_page(usual_at, limit - len(picks))
+        usual_next = usual_next or DONE
+
+    # One of hers after every few of the rest, and whatever's left at the end.
+    items, picks = [], list(picks)
+    for i, look in enumerate(rest, 1):
+        items.append(look)
+        if i % (MIX_EVERY - 1) == 0 and picks:
+            items.append(picks.pop(0))
+    items += picks
+    if searched_next == DONE and usual_next == DONE:
+        return items, None
+    return items, f"{MIX}{searched_next}~{usual_next}"
 
 
 class FeedView(APIView):
@@ -210,7 +257,15 @@ class FeedView(APIView):
 
         # With her yes, looks on hair like hers come first, unless she's chosen a hair type.
         texture = "" if hair else _texture_to_match(viewer)
-        items, next_cursor = matched_first(qs, texture, request) if texture else keyset_page(qs, request)
+        # Styles she's searched for, sent by her phone for this page only: never kept or
+        # logged. Not when she's already chosen a style or a hair type.
+        searched = [s for s in (request.query_params.get("searched") or "").split(",") if s][:3]
+        if searched and not style and not hair:
+            items, next_cursor = mixed_in(qs, texture, searched, request)
+        elif texture:
+            items, next_cursor = matched_first(qs, texture, request)
+        else:
+            items, next_cursor = keyset_page(qs, request)
         q = request.query_params.get("q", "")
         filters = {"hair": hair, "style": style, "area": area}
         # Log what people search or filter for, on the first page only (not every scroll).
