@@ -2024,6 +2024,15 @@ export interface components {
          * @enum {string}
          */
         AgainEnum: "yes" | "maybe" | "no";
+        /**
+         * @description * `18_24` - 18_24
+         *     * `25_34` - 25_34
+         *     * `35_44` - 35_44
+         *     * `45_54` - 45_54
+         *     * `55_plus` - 55_plus
+         * @enum {string}
+         */
+        AgeBandEnum: "18_24" | "25_34" | "35_44" | "45_54" | "55_plus";
         AnswerRequestRequest: {
             accept: boolean;
             reason?: string;
@@ -3570,6 +3579,16 @@ export interface components {
             role: components["schemas"]["RoleEnum"];
             inviteCode?: string;
             ageConfirmed: boolean;
+            /**
+             * @description Optional: an age band, never a birthday
+             *
+             *     * `18_24` - 18_24
+             *     * `25_34` - 25_34
+             *     * `35_44` - 35_44
+             *     * `45_54` - 45_54
+             *     * `55_plus` - 55_plus
+             */
+            ageBand?: components["schemas"]["AgeBandEnum"] | components["schemas"]["BlankEnum"];
             policyVersion: string;
         };
         SlotInterest: {

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 import { errorMessage } from '@/shared/lib/errors';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
+import { Chip } from '@/shared/ui/Chip';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
 import { Input } from '@/shared/ui/Input';
 import { Link } from '@/shared/ui/Link';
@@ -19,6 +20,16 @@ type Field = 'name' | 'email' | 'password' | 'confirm' | 'agreed';
  * An account, as the app's sign-up: a stylist's by default, or a client's
  * (?role=client), who comes back to what she was doing (?next=/book/ama).
  */
+// Optional at sign-up: a band, never a birthday.
+const AGE_BANDS = [
+  { value: '18_24', label: '18 to 24' },
+  { value: '25_34', label: '25 to 34' },
+  { value: '35_44', label: '35 to 44' },
+  { value: '45_54', label: '45 to 54' },
+  { value: '55_plus', label: '55 or over' },
+] as const;
+type AgeBand = (typeof AGE_BANDS)[number]['value'];
+
 export function SignupScreen() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -30,6 +41,7 @@ export function SignupScreen() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [agreed, setAgreed] = useState(false);
+  const [ageBand, setAgeBand] = useState<AgeBand>();
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
 
   const clear = (field: Field) => {
@@ -58,6 +70,7 @@ export function SignupScreen() {
         passwordConfirm: confirm,
         role: client ? 'client' : 'stylist',
         ageConfirmed: true,
+        ageBand,
         policyVersion: POLICY_VERSION,
       },
       // Signed in now; the email is confirmed before anything else.
@@ -141,6 +154,21 @@ export function SignupScreen() {
             clear('confirm');
           }}
         />
+        <div className={styles.group}>
+          <Text variant="subhead" tone="secondary">
+            Your age (optional)
+          </Text>
+          <div className={styles.chips}>
+            {AGE_BANDS.map(band => (
+              <Chip
+                key={band.value}
+                label={band.label}
+                selected={ageBand === band.value}
+                onClick={() => setAgeBand(ageBand === band.value ? undefined : band.value)}
+              />
+            ))}
+          </div>
+        </div>
         <div>
           <Checkbox
             checked={agreed}
