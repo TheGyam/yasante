@@ -1,7 +1,7 @@
 """
 Privacy policy 2026-10-20: hair details as their own consent, usage analytics off
 until people say yes, research, the map services, cookies and storage, and how long
-each thing is kept. Approved by Yaw on 20 October 2026. The earlier versions stay, so
+each thing is kept. Approved by Yaw on 20 and 21 October 2026. The earlier versions stay, so
 every consent record still points at the text that was agreed to.
 """
 
@@ -16,13 +16,13 @@ BODY = """This policy explains what personal information Yasante collects, why, 
 
 1. What we collect
 
-Account details: your name, email address (which we confirm by emailing you a code), phone number if you add one, and password (stored only in scrambled form). If you choose to sign in with Apple or Google, they tell us your name, your email address (Apple can give us a private relay address instead) and an ID for your account with them, and you won't have a Yasante password. We never see your Apple or Google password.
+Account details: your name, email address (which we confirm by emailing you a code), phone number if you add one, and password (stored only in scrambled form). If you choose to sign in with Apple or Google, they tell us your name, your email address (Apple can give us a private relay address instead) and an ID for your account with them, and you won't have a Yasante password. We never see your Apple or Google password. If you choose to give it at sign-up, your age band (such as 25 to 34), never your date of birth.
 
-Your hair details, if you choose to share them: your hair's texture, length, density and porosity, your goals, your scalp, any chemical treatments, photos you add, your area and, if you add one, your postcode. We keep a history of changes, so you can see how your hair changes over time. After an appointment we ask how your style is holding, how your scalp feels and whether you'd book again. Your hair diary keeps the wash days, trims and take-downs you log, with the day and hour. Your product shelf remembers what your hair was like when you used each product. Section 3 explains how we use all of this.
+Your hair details, if you choose to share them: your hair's texture, length, density and porosity, your goals, your scalp, any chemical treatments, photos you add, your area and, if you add one, your postcode. We keep a history of changes, so you can see how your hair changes over time. After an appointment we ask how your style is holding, how your scalp feels and whether you'd book again. Your hair diary keeps the wash days, trims and take-downs you log, with the day and hour. Your product shelf remembers what your hair was like when you used each product. If you like, what you'd want for your next style: styles, length, colour, upkeep and time in the chair. When a style comes out, why, if you say; whether it hurt is only asked with your consent to use your hair details. Section 3 explains how we use all of this.
 
-What you post: looks, captions, comments, reviews, collections, your product shelf and check-ins.
+What you post: looks, captions, comments, reviews, collections, your product shelf and check-ins. Looks and stylists you mark “Not for me” are kept so your feed shows fewer like them. Nobody else sees them.
 
-Bookings: the stylist, service, times, deposit status, attendance, cancellations and reviews. If you are a stylist: your page, services, prices, hours, area, address (shown to a client only once their appointment is confirmed), portfolio, verification checks such as your phone number, a proof-of-work photo and any insurance certificate you upload, and your booking numbers.
+Bookings: the stylist, service, times, deposit status, attendance, cancellations and reviews, and what a booking is for, if you say (a wedding, a holiday or an event). If you are a stylist: your page, services, prices, hours, area, address (shown to a client only once their appointment is confirmed), portfolio, verification checks such as your phone number, a proof-of-work photo and any insurance certificate you upload, your booking numbers and, if you note it, the extension hair you used at an appointment.
 
 Device and usage: a push notification token for your phone, and basic technical logs (such as IP address and errors) kept for security. Usage analytics only if you turn them on (section 4).
 
