@@ -139,6 +139,34 @@ def test_library_and_favourites_on_the_apps_paths(api, make_user):
     assert me.post("/api/favorites/favorites/toggle/", {"contentId": str(article.pk)}).json() == {"isFavorite": False}
 
 
+def test_with_her_yes_articles_for_her_hair_come_first(api, make_user, consent):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.content.models import ContentItem
+    from apps.profiles.models import HairProfile
+
+    def article(title, days_ago, **tags):
+        item = ContentItem.objects.create(title=title, slug=title, kind="article", published=True, **tags)
+        ContentItem.objects.filter(pk=item.pk).update(created_at=timezone.now() - timedelta(days=days_ago))
+
+    article("both", 9, texture_tags=["coily"], porosity_tags=["low"])
+    article("texture", 7, texture_tags=["coily", "kinky"])
+    article("porosity", 5, porosity_tags=["low"])
+    article("other hair", 3, texture_tags=["straight"])
+    article("anyone", 1)
+    me = make_user()
+    HairProfile.objects.create(user=me, texture="coily", porosity="low")
+    titles = lambda: [c["title"] for c in api(me).get("/api/content/content/").json()]
+    # Without her yes, and signed out: newest first.
+    newest_first = ["anyone", "other hair", "porosity", "texture", "both"]
+    assert titles() == newest_first
+    assert [c["title"] for c in api().get("/api/content/content/").json()] == newest_first
+    consent(me, "personalisation")
+    assert titles() == ["both", "porosity", "texture", "anyone", "other hair"]
+
+
 def test_collections_list_their_newest_pictures_for_the_stack(api, make_user, make_look):
     me = api(make_user())
     collection = me.post("/api/collections/", {"name": "Ideas"}).json()
