@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Check, Flag, Globe, Lock, Trash2, UserX } from 'lucide-react-native';
+import { Check, EyeOff, Flag, Globe, Lock, Trash2, UserX } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
   REPORT_REASONS,
   useBlockAuthor,
   useRemoveComment,
   useLook,
+  useNotForMe,
   useRemoveLook,
   useReport,
   useSetLookVisibility,
@@ -71,6 +72,7 @@ export default function ReportOptionsScreen() {
 
   const report = useReport();
   const block = useBlockAuthor();
+  const notForMe = useNotForMe();
   const removeLook = useRemoveLook();
   const setVisibility = useSetLookVisibility();
   // Her own look, from what's already loaded: whether it's out there or just hers.
@@ -111,6 +113,17 @@ export default function ReportOptionsScreen() {
       close(kind !== 'comment');
     } catch (error) {
       await fail(error, 'Couldn’t block them');
+    }
+  };
+
+  // Not for me: quieter than a report, and nobody is told.
+  const hide = async () => {
+    try {
+      await notForMe.mutateAsync(kind === 'look' ? { lookId: id } : { stylistId: authorId });
+      haptics.success();
+      close(true);
+    } catch (error) {
+      await fail(error, 'Couldn’t do that');
     }
   };
 
@@ -189,6 +202,23 @@ export default function ReportOptionsScreen() {
   return (
     <Screen title={`Report this ${noun}`} modal keyboard testID="look-options">
       <View style={styles.body}>
+        {kind !== 'comment' && (
+          <Section footer="Nobody is told.">
+            <ListRow
+              title="Not for me"
+              subtitle={
+                kind === 'look'
+                  ? 'You’ll see fewer looks like this'
+                  : `You won’t see ${name}’s looks in your feed`
+              }
+              icon={EyeOff}
+              iconTone="neutral"
+              onPress={hide}
+              testID="look-not-for-me"
+            />
+          </Section>
+        )}
+
         <Text variant="subhead" tone="secondary">
           Tell us what’s wrong with it. {name} is never told who reported{' '}
           {kind === 'profile' ? 'their page' : `a ${noun}`}.

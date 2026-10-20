@@ -1898,6 +1898,23 @@ paths:
                 items:
                   $ref: '#/components/schemas/MyModeration'
           description: ''
+  /api/not-for-me/:
+    post:
+      operationId: not_for_me_create
+      description: 'POST /api/not-for-me/ — { lookId } or { stylistId }: her feed
+        shows fewer like it.'
+      tags:
+      - not-for-me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotForMeRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/notifications/preferences/:
     get:
       operationId: notifications_preferences_retrieve
@@ -5411,6 +5428,17 @@ components:
         * `low` - Low
         * `medium` - Medium
         * `high` - High
+    NotForMeRequestRequest:
+      type: object
+      properties:
+        lookId:
+          type: string
+          minLength: 1
+          description: A look she'd rather not see
+        stylistId:
+          type: string
+          minLength: 1
+          description: A stylist's account, whose looks she'd rather not see
     NotificationCategory:
       type: object
       properties:

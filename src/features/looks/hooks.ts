@@ -376,6 +376,15 @@ export function useBlockAuthor() {
   });
 }
 
+/** "Not for me": the feed shows fewer like it, so it's read again. */
+export function useNotForMe() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: looksApi.notForMe,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [KEY] }),
+  });
+}
+
 export function useStyleTaxonomy() {
   return useQuery({ queryKey: ['styles'], queryFn: looksApi.styles, staleTime: 60 * 60 * 1000 });
 }

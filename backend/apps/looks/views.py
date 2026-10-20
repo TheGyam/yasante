@@ -37,7 +37,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Cast, Extract, Greatest, Power
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import serializers, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -51,12 +51,15 @@ from .models import (
     LookLike,
     LookPhoto,
     ModerationAction,
+    NotForMe,
     Report,
     Style,
+    not_for_me,
 )
 from .serializers import (
     AppealRequestSerializer,
     BlockRequestSerializer,
+    NotForMeRequestSerializer,
     CommentCreateRequestSerializer,
     LookCreateRequestSerializer,
     ReportRequestSerializer,
@@ -177,11 +180,19 @@ class FeedView(APIView):
         blocked = blocked_account_ids(viewer)
         if blocked:
             qs = qs.exclude(author_id__in=blocked)
+        style = request.query_params.get("style")
+        # What she's said isn't for her, unless she's asked for that style herself.
+        looks, stylists, styles = not_for_me(viewer)
+        if looks:
+            qs = qs.exclude(pk__in=looks)
+        if stylists:
+            qs = qs.exclude(author_id__in=stylists).exclude(stylist_id__in=[str(s) for s in stylists])
+        if styles - {style}:
+            qs = qs.exclude(styles__slug__in=styles - {style})
 
         hair = request.query_params.get("hair")
         if hair:
             qs = qs.filter(hair_texture=hair)
-        style = request.query_params.get("style")
         if style:
             qs = qs.filter(styles__slug=style)
         area = request.query_params.get("area")
@@ -756,6 +767,25 @@ class BlockListCreateView(APIView):
             Block.objects.get_or_create(blocker=request.user, blocked_id=blocked_id)
         except IntegrityError:
             pass
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(post=extend_schema(request=NotForMeRequestSerializer, responses={204: None}))
+class NotForMeView(APIView):
+    """POST /api/not-for-me/ — { lookId } or { stylistId }: her feed shows fewer like it."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from apps.accounts.models import User
+
+        look_id, stylist_id = request.data.get("look_id"), request.data.get("stylist_id")
+        if look_id and _is_uuid(look_id) and Look.objects.filter(pk=look_id).exists():
+            NotForMe.objects.get_or_create(user=request.user, look_id=look_id)
+        elif stylist_id and _is_uuid(stylist_id) and User.objects.filter(pk=stylist_id).exists():
+            NotForMe.objects.get_or_create(user=request.user, stylist_id=stylist_id)
+        else:
+            return Response({"message": "Say which look or stylist"}, status=400)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
