@@ -80,17 +80,18 @@ def test_stylists_search_by_style_service_model_and_tier(api, make_stylist, make
     assert handles(area="peckham") == [braider.handle]
 
 
-def test_searches_are_logged_with_filters_and_counts(api, make_user, make_look):
+def test_searches_are_logged_with_filters_and_counts_but_never_who_searched(api, make_user, make_look):
     from apps.common.models import SearchLog
 
     make_look(make_user(), caption="Silk press")
-    api().get("/api/looks/", q="silk", hair="coily")
+    api(make_user()).get("/api/looks/", q="silk", hair="coily")
     api().get("/api/stylists/", q="nobody-like-this")
     api().get("/api/looks/")  # plain browsing isn't a search
     logs = {log.surface: log for log in SearchLog.objects.all()}
     assert set(logs) == {"looks", "stylists"}
     assert logs["looks"].query == "silk" and logs["looks"].filters == {"hair": "coily"}
     assert logs["stylists"].result_count == 0
+    assert not any(f.name == "user" for f in SearchLog._meta.get_fields())
 
 
 def test_api_docs_are_mounted_only_when_switched_on():

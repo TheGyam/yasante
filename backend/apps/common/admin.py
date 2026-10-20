@@ -51,7 +51,7 @@ class MediaAdmin(admin.ModelAdmin):
 class SearchLogAdmin(SuperusersOnly, admin.ModelAdmin):
     """What people search for: zero-result searches are the recruiting list."""
 
-    list_display = ("created_at", "surface", "query", "filters", "result_count", "user")
+    list_display = ("created_at", "surface", "query", "filters", "result_count")
     list_filter = ("surface",)
     search_fields = ("query",)
 
