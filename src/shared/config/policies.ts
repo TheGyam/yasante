@@ -12,4 +12,4 @@ export const PRIVACY_URL = 'https://yasante.com/privacy';
 /** In the app, policies open on their own screen (see app/policy/[type]). */
 export const TERMS_ROUTE = '/policy/terms';
 export const PRIVACY_ROUTE = '/policy/privacy';
-export const SUPPORT_EMAIL = 'admin@yasante.com';
+export const SUPPORT_EMAIL = 'support@yasante.com';

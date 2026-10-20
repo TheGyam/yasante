@@ -168,7 +168,7 @@ class SocialLoginView(APIView):
 
         if not user.is_active:
             return Response(
-                {"message": "This account has been closed. Contact admin@yasante.com if you think that’s a mistake."},
+                {"message": "This account has been closed. Contact support@yasante.com if you think that’s a mistake."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         return Response(
