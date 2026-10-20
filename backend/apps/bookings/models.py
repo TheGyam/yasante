@@ -95,6 +95,9 @@ class Booking(TimeStampedModel):
     bringing_own_hair = models.BooleanField(default=False)
     hair_included = models.BooleanField(null=True, blank=True)
     notes = models.TextField(max_length=1000, blank=True, default="")
+    # What it's for, if she said: it helps the stylist plan, and shows what people book for.
+    OCCASION_CHOICES = [("wedding", "A wedding"), ("holiday", "A holiday"), ("event", "An event")]
+    occasion = models.CharField(max_length=10, choices=OCCASION_CHOICES, blank=True, default="")
 
     # Scheduling
     requested_times = ArrayField(models.DateTimeField(), default=list)

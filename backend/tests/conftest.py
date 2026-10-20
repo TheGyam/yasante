@@ -249,7 +249,7 @@ def slot():
 def book(api, slot):
     """A client's request with a stylist, through the real endpoint."""
 
-    def make(client_user, profile, service=None, options=None, time=None):
+    def make(client_user, profile, service=None, options=None, time=None, **extra):
         service = service or profile.menu_items.get(name="Knotless braids")
         as_client = api(client_user)
         body = {
@@ -259,6 +259,7 @@ def book(api, slot):
             "bringingOwnHair": False,
             "requestedTimes": [time or slot(as_client, profile, service, options=options)],
             "policyVersion": "2026-09",
+            **extra,
         }
         response = as_client.post("/api/bookings/", body)
         assert response.status_code == 201, response.json()
