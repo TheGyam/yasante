@@ -17,6 +17,7 @@ import {
   useLookActions,
   useLookFilters,
   useLooks,
+  useFreshFeedOnReturn,
   useRefreshLooks,
   type Look,
 } from '@/features/looks';
@@ -123,6 +124,7 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
   const onScroll = useScreenScrollHandler();
   const listRef = useRef<FlashListRef<Look>>(null);
   useScrollToTop(listRef);
+  useFreshFeedOnReturn(() => listRef.current?.scrollToOffset({ offset: 0, animated: false }));
 
   const { user: authUser, isAuthenticated } = useAuth();
   const { data: user } = useUser(authUser?.id, { enabled: !!authUser?.id });
