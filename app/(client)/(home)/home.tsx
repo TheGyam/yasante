@@ -7,6 +7,7 @@ import Animated from 'react-native-reanimated';
 import { Images, Plus, Search, SearchX, WifiOff } from 'lucide-react-native';
 import { AuthPromptModal, GreetingBanner, useAuth } from '@/features/auth';
 import { BookingNudge } from '@/features/booking';
+import { SuggestedStylists } from '@/features/stylist';
 import { TipOfTheDay } from '@/features/education';
 import {
   LookFilterBar,
@@ -178,6 +179,7 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
           onPress={() => router.push('/search')}
         />
         <TipOfTheDay />
+        {isAuthenticated && <SuggestedStylists />}
         <View style={styles.feedHead}>
           <SectionHeader title="Looks" />
           <LookFilterBar />

@@ -53,6 +53,8 @@ export interface Look {
   createdAt: string;
   /** In a ranked feed: why it's there (a candidate source, such as "trending"). */
   source?: string;
+  /** The same, in words only she sees, for "Why you’re seeing this". */
+  reason?: string;
   /** True on your own looks: you can take one down, but not report it. */
   mine?: boolean;
 }

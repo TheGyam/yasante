@@ -10,6 +10,7 @@ urlpatterns = [
     path("mine/", views.MyLooksView.as_view(), name="look-mine"),
     path("<uuid:pk>/", views.LookDetailView.as_view(), name="look-detail"),
     path("<uuid:pk>/like/", views.LookLikeView.as_view(), name="look-like"),
+    path("<uuid:pk>/related/", views.LookRelatedView.as_view(), name="look-related"),
     path("<uuid:pk>/report/", views.LookReportView.as_view(), name="look-report"),
     path(
         "<uuid:look_id>/comments/",
