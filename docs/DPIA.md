@@ -84,7 +84,7 @@ and would need a new assessment.
 | What | How long |
 | --- | --- |
 | Account, hair profile, posts, shelf, consent records | Until the account is deleted |
-| Appointment records held by a stylist | Kept without the client's name after deletion |
+| Appointment records held by a stylist | Kept after deletion without the client's name, hair details, notes or address; reviews keep only their star rating |
 | Usage events | 12 months |
 | Searches | Never linked to anyone; deleted after 12 months |
 | Stylist page views | Viewer removed after 90 days; counts kept |
@@ -99,3 +99,7 @@ and would need a new assessment.
    named in the policy.
 3. **Contracts:** data processing terms should be confirmed with each service provider,
    including the two free map services.
+4. **Staff access to hair details:** the policy says nobody but the person and the
+   stylists they book sees their hair details, but staff can open hair profiles on the
+   staff site. Either hide them behind the logged "Show" button, as postcodes and
+   addresses are, or say in the policy that staff can see them.
