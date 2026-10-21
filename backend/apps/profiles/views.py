@@ -107,11 +107,21 @@ class UserDetailView(APIView):
 
         revoke_apple(user)
 
+        from apps.bookings.models import CheckIn, Review
+        from apps.looks.models import LookComment
+        from apps.web.models import WaitlistEntry
+
         with transaction.atomic():
-            # Anonymise bookings (keep for stylist records)
-            Booking.objects.filter(client=user).update(
-                client_name="Deleted account",
-            )
+            # The stylist keeps the appointment for her records: date, service, price and
+            # whether it went ahead. Nothing that says who the client was or about her hair.
+            bookings = Booking.objects.filter(client=user)
+            bookings.filter(at_client=True).update(address="")
+            bookings.update(client_name="Deleted account", client_hair="", notes="", occasion="")
+            CheckIn.objects.filter(booking__client=user).delete()
+            # The star rating stays so the stylist's average stays fair; the words and name go.
+            Review.objects.filter(booking__client=user).update(author_name="Deleted account", body="")
+            LookComment.objects.filter(reply_to__author=user).update(reply_to_name="")
+            WaitlistEntry.objects.filter(email__iexact=user.email).delete()
 
             # Delete everything else (cascading FKs handle most)
             user.delete()
@@ -229,6 +239,10 @@ class ConsentBatchView(APIView):
         return Response(status=status.HTTP_201_CREATED)
 
 
+# A search event says where and how much, never what: no typed words, hair or styles.
+SEARCH_EVENT_KEYS = {"surface", "filter", "filters", "results"}
+
+
 @extend_schema_view(post=extend_schema(request=EventBatchSerializer, responses={201: None, 202: None}))
 class EventBatchView(APIView):
     """
@@ -267,7 +281,8 @@ class EventBatchView(APIView):
                     properties={
                         str(k)[:40]: v
                         for k, v in list(e.get("properties", {}).items())[:20]
-                        if v is None or isinstance(v, (str, int, float, bool))
+                        if (v is None or isinstance(v, (str, int, float, bool)))
+                        and (e["name"] != "search" or k in SEARCH_EVENT_KEYS)
                     },
                     app_version=e.get("app_version", "")[:30],
                 )

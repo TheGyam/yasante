@@ -9,7 +9,6 @@ reporting and blocking, community guidelines, Sign in with Apple beside Google.
 | What | Where | Why |
 |---|---|---|
 | A reviewer account | Sign up in the app with a new email, e.g. `review@yasante.com`, and fill in a hair profile. Make a second one that's a stylist with a published page. | Apple and Google can't review what they can't sign into. |
-| `support@yasante.com` | IONOS → Email → add it as an alias of admin@yasante.com (free). | The terms mention it. The app and site now use admin@yasante.com. |
 | Server settings | Add to the server `.env`: `APPLE_TEAM_ID=` (developer.apple.com → Membership). Once Play Console shows its app signing key, add that SHA-256 to `ANDROID_CERT_SHA256` after the existing one, comma-separated. | Links to yasante.com open in the app. |
 | Google sign-in | See "Google sign-in setup" below. | The button only appears once it's set up. |
 | Apple sign-in key | developer.apple.com → Keys → + → Sign in with Apple. Put the Key ID in `APPLE_SIGN_IN_KEY_ID`, and the `.p8` contents (line breaks as `\n`) in `APPLE_SIGN_IN_PRIVATE_KEY`. | Apple requires deleting an account to also undo its Sign in with Apple link. |

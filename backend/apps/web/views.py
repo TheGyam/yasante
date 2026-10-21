@@ -374,7 +374,7 @@ def llms_txt(request):
         "- [Stylist terms](https://yasante.com/stylist-terms)",
         "- [Community guidelines](https://yasante.com/guidelines)",
         "",
-        "Contact: admin@yasante.com",
+        "Contact: support@yasante.com",
         "",
     ]
     return HttpResponse("\n".join(lines), content_type="text/markdown; charset=utf-8")

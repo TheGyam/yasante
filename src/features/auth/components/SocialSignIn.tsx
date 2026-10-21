@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import Svg, { Path } from 'react-native-svg';
 import type { LucideIcon } from 'lucide-react-native';
+import { useConsentStore } from '@/shared/config/consentStore';
 import { POLICY_VERSION, PRIVACY_ROUTE, TERMS_ROUTE } from '@/shared/config/policies';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
@@ -22,10 +23,22 @@ const useStyles = makeStyles(t => ({
 /** Google's "G", in its own colours, as their guidelines ask. */
 const GoogleG = (({ size = 18 }: { size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 48 48">
-    <Path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.9 6.2C12.5 13.6 17.8 9.5 24 9.5z" />
-    <Path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z" />
-    <Path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.6l-7.9-6.2A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.2z" />
-    <Path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.2-13.4-9.9l-7.9 6.2C6.6 42.6 14.6 48 24 48z" />
+    <Path
+      fill="#EA4335"
+      d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.2l7.9 6.2C12.5 13.6 17.8 9.5 24 9.5z"
+    />
+    <Path
+      fill="#4285F4"
+      d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"
+    />
+    <Path
+      fill="#FBBC05"
+      d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.6l-7.9-6.2A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.2z"
+    />
+    <Path
+      fill="#34A853"
+      d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.2-13.4-9.9l-7.9 6.2C6.6 42.6 14.6 48 24 48z"
+    />
   </Svg>
 )) as unknown as LucideIcon;
 
@@ -56,6 +69,10 @@ export function SocialSignIn({
     onError('');
     try {
       const session = await social.mutateAsync({ provider, role, policyVersion: POLICY_VERSION });
+      if (session.created) {
+        useConsentStore.getState().setConsent('terms', true);
+        useConsentStore.getState().setConsent('privacy', true);
+      }
       haptics.success();
       onDone?.(session.created);
     } catch (error) {
@@ -105,7 +122,11 @@ export function SocialSignIn({
         </Text>
         .
       </Text>
-      <View style={styles.or} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <View
+        style={styles.or}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
         <View style={styles.rule} />
         <Text variant="footnote" tone="tertiary">
           or with email

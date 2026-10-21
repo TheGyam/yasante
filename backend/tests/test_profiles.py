@@ -131,6 +131,16 @@ def test_events_are_kept_only_while_analytics_consent_is_given(api, make_user):
     assert AnalyticsEvent.objects.count() == 2
 
 
+def test_a_search_event_never_keeps_what_was_searched(api):
+    from apps.profiles.models import AnalyticsEvent
+
+    event = {"name": "search", "at": "2026-09-22T10:00:00Z", "properties": {
+        "surface": "looks", "query": "knotless", "hair": "4c", "style": "braids", "results": 3,
+    }}
+    assert api().post("/api/events/", {"events": [event], "anonymousId": "anon_1"}).status_code == 201
+    assert AnalyticsEvent.objects.get().properties == {"surface": "looks", "results": 3}
+
+
 def test_export_and_delete_are_hers_alone(api, make_user, make_stylist, book):
     from apps.accounts.models import User
     from apps.bookings.models import Booking
@@ -148,6 +158,34 @@ def test_export_and_delete_are_hers_alone(api, make_user, make_stylist, book):
     # Bookings stay for the stylist's records, with the name taken off.
     kept = Booking.objects.get(pk=booking["id"])
     assert kept.client_name == "Deleted account"
+
+
+def test_a_deleted_account_leaves_only_what_the_stylist_needs(api, make_user, make_stylist, book):
+    from apps.bookings.models import Booking, CheckIn, Review
+    from apps.web.models import WaitlistEntry
+
+    user = make_user()
+    WaitlistEntry.objects.create(email=user.email.upper())
+    booking = Booking.objects.get(pk=book(user, make_stylist())["id"])
+    Booking.objects.filter(pk=booking.pk).update(
+        client_hair="4C, shoulder length", notes="Tender scalp", occasion="wedding",
+        at_client=True, address="12 Her Road", status="completed",
+    )
+    CheckIn.objects.create(booking=booking, week=2, holding="fresh", scalp="sore", again="yes")
+    Review.objects.create(
+        booking=booking, rating=4, body="Lovely, but late", author_name="Ama",
+        service_name=booking.service_name, status="published",
+    )
+
+    assert api(user).delete(f"/api/users/{user.pk}/").status_code == 204
+    booking.refresh_from_db()
+    assert (booking.client_name, booking.client_hair, booking.notes, booking.occasion, booking.address) == (
+        "Deleted account", "", "", "", "",
+    )
+    assert not CheckIn.objects.exists()
+    review = Review.objects.get()
+    assert (review.rating, review.body, review.author_name) == (4, "", "Deleted account")
+    assert not WaitlistEntry.objects.exists()
 
 
 def test_an_account_is_only_readable_by_its_owner(api, make_user):

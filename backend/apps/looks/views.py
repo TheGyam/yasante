@@ -145,24 +145,38 @@ def _texture_to_match(viewer):
     return HairProfile.objects.filter(user=viewer).values_list("texture", flat=True).first() or ""
 
 
-# Where the second list starts in a cursor: everything after the looks on her hair.
+# Where the second list starts in a cursor: everything after the looks for her hair.
 REST = "rest."
+
+
+def for_her_hair(texture):
+    """
+    Looks on hair like hers, and looks by stylists or with products seen on hair like
+    hers in other public looks. Only what's been posted publicly says what goes together.
+    """
+    seen = Look.objects.filter(visibility="public", status="live", hair_texture=texture)
+    with_products = Look.products.through.objects.filter(product_id__in=seen.values("products"))
+    return (
+        Q(hair_texture=texture)
+        | Q(stylist_id__in=seen.exclude(stylist_id="").values("stylist_id"))
+        | Q(pk__in=with_products.values("look_id"))
+    )
 
 
 def matched_first(qs, texture, request, cursor=None, limit=None):
     """
-    Looks on hair like hers first, newest first, then everything else, newest first.
+    Looks for her hair first, newest first, then everything else, newest first.
     The cursor says which list she's in, so nothing repeats or goes missing between
     them. The page where the first list ends can be short; the next one starts the rest.
     """
     if cursor is None:
         cursor = request.query_params.get("cursor") or ""
     if not cursor.startswith(REST):
-        items, after = keyset_page(qs.filter(hair_texture=texture), request, cursor=cursor, limit=limit)
+        items, after = keyset_page(qs.filter(for_her_hair(texture)), request, cursor=cursor, limit=limit)
         if after or items:
             return items, after or REST
         cursor = REST
-    items, after = keyset_page(qs.exclude(hair_texture=texture), request, cursor=cursor[len(REST):], limit=limit)
+    items, after = keyset_page(qs.exclude(for_her_hair(texture)), request, cursor=cursor[len(REST):], limit=limit)
     return items, after and REST + after
 
 
@@ -255,7 +269,7 @@ class FeedView(APIView):
                 | Q(styles__name__icontains=word)
             ).distinct()
 
-        # With her yes, looks on hair like hers come first, unless she's chosen a hair type.
+        # With her yes, looks for her hair come first, unless she's chosen a hair type.
         texture = "" if hair else _texture_to_match(viewer)
         # Styles she's searched for, sent by her phone for this page only: never kept or
         # logged. Not when she's already chosen a style or a hair type.

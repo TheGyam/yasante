@@ -2,7 +2,9 @@ import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 import { apiClient } from '@/shared/lib/api/client';
 import { useRouter } from '@/shared/lib/navigation';
+import { confirm } from '@/shared/ui/dialog';
 import { useConsentStore, useUnanswered, type ServerConsent } from './consentStore';
+import { POLICY_VERSION, PRIVACY_ROUTE } from './policies';
 
 /** An attempt that hasn't settled by then is given up on; the records stay pending. */
 const GIVE_UP_MS = 20_000;
@@ -112,4 +114,30 @@ export function useAskForAnalytics(canAsk: boolean) {
     }, 600);
     return () => clearTimeout(timer);
   }, [canAsk, unanswered, router]);
+}
+
+/**
+ * Tells her once, as the privacy policy promises, when it has changed since she last
+ * saw it. Either answer counts as seen, and is kept with her consent records.
+ */
+export function useTellAboutPolicyChange(canAsk: boolean) {
+  const router = useRouter();
+  const changed = useConsentStore(
+    s => s.loaded && s.consents.privacy?.policyVersion !== POLICY_VERSION
+  );
+  const told = useRef(false);
+  useEffect(() => {
+    if (!canAsk || !changed || told.current) return;
+    told.current = true;
+    void confirm({
+      title: 'We’ve updated our privacy policy',
+      message:
+        'It says what we collect, why, and the choices you have. You can read it any time in Settings.',
+      confirmLabel: 'Read it',
+      cancelLabel: 'OK',
+    }).then(read => {
+      useConsentStore.getState().setConsent('privacy', true);
+      if (read) router.push(PRIVACY_ROUTE);
+    });
+  }, [canAsk, changed, router]);
 }
