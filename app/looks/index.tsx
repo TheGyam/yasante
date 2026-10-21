@@ -18,6 +18,7 @@ import {
   useLookActions,
   useLookFilters,
   useLooks,
+  useFreshFeedOnReturn,
   useRefreshLooks,
   type Look,
 } from '@/features/looks';
@@ -88,6 +89,7 @@ function LooksFeed() {
   const feedLoading = feed.isLoading || !ready;
   const focused = useIsFocused();
   const refresh = useRefreshLooks();
+  useFreshFeedOnReturn(() => listRef.current?.scrollToOffset({ offset: 0, animated: false }));
   const looks = useMemo(() => feed.data?.pages.flatMap(page => page.data) ?? [], [feed.data]);
   // While the ranked feed is on for her, what she sees and opens here is recorded.
   const tracking = useFeedTracking(feed.data?.pages[0]?.session, 'looks', looks, actions.onOpen);
