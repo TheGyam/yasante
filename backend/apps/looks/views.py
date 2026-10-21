@@ -6,6 +6,7 @@ likes, saves, blocks and her own. Blocking runs both ways.
 """
 
 import logging
+import secrets
 import uuid
 from datetime import datetime, timedelta
 
@@ -17,6 +18,7 @@ from apps.common.people import person
 from apps.common.permissions import IsAuthenticatedOrReadOnly
 from apps.common.throttling import CommentThrottle, PostingThrottle, ReportThrottle
 from apps.common.uploads import media_url, own_media
+from apps.feed.models import SWITCH as FEED_SWITCH
 from apps.features.switches import is_on
 from apps.shelf.models import Product
 from apps.stylists.models import StylistProfile
@@ -285,7 +287,12 @@ class FeedView(APIView):
         # Log what people search or filter for, on the first page only (not every scroll).
         if (q or any(filters.values())) and not request.query_params.get("cursor"):
             log_search(request, "looks", q, filters, len(items))
-        return Response({"data": present_looks(items, viewer), "next_cursor": next_cursor})
+        body = {"data": present_looks(items, viewer), "next_cursor": next_cursor}
+        # While the ranked feed is on for her, the first page starts a feed session that
+        # the app records what she sees and opens against (apps.feed).
+        if not request.query_params.get("cursor") and is_on(FEED_SWITCH, request.user):
+            body["session"] = secrets.token_urlsafe(12)
+        return Response(body)
 
     @extend_schema(request=LookCreateRequestSerializer, responses={201: LookSerializer})
     def post(self, request):

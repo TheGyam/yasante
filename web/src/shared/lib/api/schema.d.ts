@@ -960,6 +960,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/feed/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/feed/events/
+         *
+         *     What she saw and opened in the feed. Kept only while the ranked feed is on for her;
+         *     otherwise accepted and dropped, so an app that sends them never sees an error.
+         */
+        post: operations["feed_events_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hair-log/": {
         parameters: {
             query?: never;
@@ -2664,6 +2686,28 @@ export interface components {
                 [key: string]: boolean;
             };
         };
+        /** @description POST /api/feed/events/ */
+        FeedEventBatchRequest: {
+            events: components["schemas"]["FeedEventRequest"][];
+        };
+        /**
+         * @description * `impression` - impression
+         *     * `open` - open
+         *     * `dwell` - dwell
+         * @enum {string}
+         */
+        FeedEventKindEnum: "impression" | "open" | "dwell";
+        FeedEventRequest: {
+            session: string;
+            surface: components["schemas"]["SurfaceEnum"];
+            /** Format: uuid */
+            lookId: string;
+            kind: components["schemas"]["FeedEventKindEnum"];
+            position?: number;
+            /** @default  */
+            source: string;
+            ms?: number;
+        };
         Finish: {
             styles: components["schemas"]["FinishStyle"][];
             hoursSet: boolean;
@@ -2982,6 +3026,7 @@ export interface components {
         LooksPage: {
             data: components["schemas"]["Look"][];
             nextCursor?: string;
+            session?: string;
         };
         MenuImportRequestRequest: {
             items: components["schemas"]["MenuItemDraftRequest"][];
@@ -3743,6 +3788,13 @@ export interface components {
             pendingRequests: number;
             appointmentsToday: number;
         };
+        /**
+         * @description * `home` - home
+         *     * `looks` - looks
+         *     * `related` - related
+         * @enum {string}
+         */
+        SurfaceEnum: "home" | "looks" | "related";
         TaggedProduct: {
             id: string;
             brand: string;
@@ -5490,6 +5542,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["FeaturesResponse"];
                 };
+            };
+        };
+    };
+    feed_events_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedEventBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No response body */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -262,6 +262,8 @@ class LookSerializer(serializers.Serializer):
 class LooksPageSerializer(serializers.Serializer):
     data = LookSerializer(many=True)
     next_cursor = optional(serializers.CharField())
+    # Only while the ranked feed is on for her: what the app records the feed against.
+    session = optional(serializers.CharField())
 
 
 class CommentSerializer(serializers.Serializer):

@@ -12,6 +12,7 @@ import {
   LookFilterBar,
   LookTile,
   useFeedQuery,
+  useFeedTracking,
   useLookActions,
   useLookFilters,
   useLooks,
@@ -139,6 +140,8 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
   const refresh = useRefreshLooks();
   // One array per fetch, not per render: the list re-diffs whenever this changes.
   const looks = useMemo(() => feed.data?.pages.flatMap(page => page.data) ?? [], [feed.data]);
+  // While the ranked feed is on for her, what she sees and opens here is recorded.
+  const tracking = useFeedTracking(feed.data?.pages[0]?.session, 'home', looks, actions.onOpen);
   const emptyFiltered = filtered && !feedLoading && !feed.isPlaceholderData && !looks.length;
   // Nothing matched: rather than a blank page, the latest looks still show below.
   const fallback = useLooks({}, { enabled: emptyFiltered });
@@ -152,14 +155,14 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
     (look: Look) => (
       <LookTile
         look={look}
-        onOpen={actions.onOpen}
+        onOpen={tracking.onOpen}
         onLike={actions.onLike}
         onSave={look.mine ? undefined : actions.onSave}
         onFindStylists={actions.onFindStylists}
         dimmed={dimmed}
       />
     ),
-    [actions, dimmed]
+    [actions, dimmed, tracking.onOpen]
   );
   const renderItem = useCallback(({ item }: { item: Look }) => tile(item), [tile]);
 
@@ -199,6 +202,8 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
         numColumns={2}
         keyExtractor={look => look.id}
         renderItem={renderItem}
+        onViewableItemsChanged={tracking.onViewableItemsChanged}
+        viewabilityConfig={tracking.viewabilityConfig}
         ListHeaderComponent={header}
         ListEmptyComponent={
           feedLoading ? null : feed.isError ? (
