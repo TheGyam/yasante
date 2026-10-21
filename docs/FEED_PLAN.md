@@ -233,10 +233,13 @@ Greedy, from the top score down, with these rules:
 
 - **More like this** under a look: its co-engagement neighbours, other looks of the
   same styles and by the same stylist, scored for her and re-ranked for variety.
-- **Stylists for you**: a row at the top of the feed. Stylists whose work matches her
-  style affinities, people she's engaged with, near her (with the hair consent), with
-  a smoothed rating, a verified tier and taking bookings. Not stylists she's blocked,
-  said Not for me to, or is.
+- **Stylists for you**: a row at the top of the feed, for finding someone new. Ranked
+  on who people with her taste go to (looks saved alongside hers), how much of their
+  work is in styles she likes, nearness, a smoothed rating and a verified tier, with a
+  small shuffle that changes daily so close calls take turns. Never stylists she's
+  booked (they're in her bookings), blocked, said Not for me to, or is; those whose
+  work she's only liked or visited get a small lift and two places at most (Yaw,
+  21 Oct 2026).
 - **Why am I seeing this**, in a look's menu: the main reason, such as "You've saved
   looks in Knotless braids", "You've booked Ama before", "Popular this week", "New
   on Yasante", "Matches your hair" (only she sees it). Never "because you searched".

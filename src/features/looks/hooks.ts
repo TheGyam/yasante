@@ -10,6 +10,7 @@ import {
 import { useAuth } from '@/features/auth';
 import { prefetchImages } from '@/shared/ui/RemoteImage';
 import { looksApi, type UploadCache, type UploadProgress } from './api';
+import { sendFeedEvents } from './feedEvents';
 import type {
   CommentsPage,
   Look,
@@ -180,7 +181,9 @@ export function keepFirstPage(queryClient: QueryClient, queryKey: readonly unkno
 /** Pull to refresh: the newest page, fresh, without re-reading the rest. */
 export function useRefreshLooks() {
   const queryClient = useQueryClient();
-  return () => {
+  return async () => {
+    // What she's just seen goes first, so the fresh feed knows to show her something new.
+    await sendFeedEvents();
     keepFirstPage(queryClient, [KEY, 'feed']);
     return queryClient.refetchQueries({ queryKey: [KEY, 'feed'], type: 'active' });
   };
