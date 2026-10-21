@@ -52,3 +52,60 @@ describe('the site’s theme is the app’s', () => {
     }
   });
 });
+
+/** WCAG contrast of `colour` (hex or rgba) laid over the solid `ground`. */
+function contrast(colour: string, ground: string) {
+  const parse = (c: string) =>
+    c.startsWith('#')
+      ? [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)).concat(1)
+      : c
+          .replace(/[^\d.,]/g, '')
+          .split(',')
+          .map(Number);
+  const [r, g, b] = parse(ground);
+  const [cr, cg, cb, a] = parse(colour);
+  const mixed = [cr * a + r * (1 - a), cg * a + g * (1 - a), cb * a + b * (1 - a)];
+  const luminance = (rgb: number[]) => {
+    const [lr, lg, lb] = rgb.map(v => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+  };
+  const [hi, lo] = [luminance(mixed), luminance([r, g, b])].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+describe('text is readable', () => {
+  it.each([lightTheme, darkTheme])('meets 4.5:1 on the page and on cards, $scheme', theme => {
+    const { bg, glass, text, accent, gold, success, warning, danger } = theme.colors;
+    const [r, g, b, a] = glass.fill
+      .replace(/[^\d.,]/g, '')
+      .split(',')
+      .map(Number);
+    const bgRgb = [1, 3, 5].map(i => parseInt(bg.slice(i, i + 2), 16));
+    const card = `rgb(${[r, g, b].map((v, i) => Math.round(v * a + bgRgb[i] * (1 - a))).join(',')})`;
+    const asHex = (c: string) =>
+      '#' +
+      c
+        .replace(/[^\d,]/g, '')
+        .split(',')
+        .map(v => Number(v).toString(16).padStart(2, '0'))
+        .join('');
+    for (const ground of [bg, asHex(card)]) {
+      for (const colour of [
+        text.primary,
+        text.secondary,
+        text.tertiary,
+        accent,
+        gold,
+        success,
+        warning,
+        danger,
+      ]) {
+        expect(contrast(colour, ground)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+    expect(contrast(text.onAccent, accent)).toBeGreaterThanOrEqual(4.5);
+  });
+});
