@@ -15,17 +15,15 @@ from .models import (
 
 @admin.register(HairProfile)
 class HairProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "texture", "length", "density", "completed_at")
+    list_display = ("user", "area", "completed_at")
     # Where someone lives, to the metre, is for matching stylists nearby, not for reading.
     exclude = ("latitude", "longitude")
     search_fields = ("user__name", "user__email")
-    list_filter = ("texture", "density")
 
 
 @admin.register(HairProfileSnapshot)
 class HairProfileSnapshotAdmin(admin.ModelAdmin):
-    list_display = ("user", "texture", "length", "recorded_at")
-    list_filter = ("texture",)
+    list_display = ("user", "recorded_at")
     ordering = ("-recorded_at",)
 
 

@@ -62,7 +62,7 @@ class ReviewReportAdmin(admin.ModelAdmin):
 
 @admin.register(CheckIn)
 class CheckInAdmin(admin.ModelAdmin):
-    list_display = ("booking", "week", "holding", "scalp", "again", "created_at")
+    list_display = ("booking", "week", "created_at")
 
 
 @admin.register(SlotInterest)
