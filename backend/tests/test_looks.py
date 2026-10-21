@@ -43,6 +43,26 @@ def test_with_her_yes_looks_on_hair_like_hers_come_first_newest_first(api, make_
     assert [l["id"] for l in api(me).get("/api/looks/", hair="straight").json()["data"]] == [str(other.pk)]
 
 
+def test_stylists_and_products_seen_on_hair_like_hers_come_first_too(
+    api, make_user, make_stylist, make_look, consent
+):
+    from apps.shelf.models import Product
+
+    author, stylist = make_user(), make_stylist()
+    cream = Product.objects.create(brand="Cantu", name="Curling cream", category="styler")
+    on_her_hair = make_look(author, hair_texture="coily", stylist=stylist)
+    on_her_hair.products.add(cream)
+    plain = make_look(author, hair_texture="straight")
+    by_her_stylist = make_look(make_user(), hair_texture="straight", stylist=stylist)
+    with_her_cream = make_look(make_user(), hair_texture="wavy")
+    with_her_cream.products.add(cream)
+    me = make_user(texture="coily")
+    consent(me, "personalisation")
+    assert _walk(api(me), limit=2) == [
+        str(l.pk) for l in (with_her_cream, by_her_stylist, on_her_hair, plain)
+    ]
+
+
 def test_not_for_me_shows_her_fewer_like_it(api, make_user, make_stylist, make_look):
     from apps.profiles.tasks import collect_user_data
 
