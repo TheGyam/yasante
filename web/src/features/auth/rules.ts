@@ -8,11 +8,10 @@ export const PASSWORD_RULES = [
     error: 'Use at least 8 characters',
     test: (p: string) => p.length >= 8,
   },
-  { label: 'Uppercase', error: 'Add an uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
-  { label: 'Lowercase', error: 'Add a lowercase letter', test: (p: string) => /[a-z]/.test(p) },
-  { label: 'Number', error: 'Add a number', test: (p: string) => /[0-9]/.test(p) },
-  { label: 'Symbol', error: 'Add a symbol', test: (p: string) => /[^a-zA-Z0-9]/.test(p) },
 ] as const;
+
+/** Shown under a new password, as in the app. */
+export const PASSWORD_HINT = 'Three random words work well, like “teapot river mango”.';
 
 /** The first thing wrong with a password, or undefined when it's fine. */
 export function passwordProblem(password: string) {

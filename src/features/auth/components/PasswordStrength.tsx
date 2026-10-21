@@ -2,7 +2,7 @@ import { Platform, View } from 'react-native';
 import Animated, { FadeIn, Keyframe } from 'react-native-reanimated';
 import { Check, Circle } from 'lucide-react-native';
 import { EASE_OUT, makeStyles, space, useTheme } from '@/shared/theme';
-import { PASSWORD_RULES, getPasswordStrength } from '@/shared/utils/validation';
+import { PASSWORD_HINT, PASSWORD_RULES, getPasswordStrength } from '@/shared/utils/validation';
 import { ProgressBar } from '@/shared/ui/ProgressBar';
 import { Text } from '@/shared/ui/Text';
 
@@ -71,6 +71,9 @@ export function PasswordStrength({ password }: { password: string }) {
           );
         })}
       </View>
+      <Text variant="caption" tone="secondary">
+        {PASSWORD_HINT}
+      </Text>
     </Animated.View>
   );
 }
