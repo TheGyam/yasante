@@ -387,10 +387,11 @@ export default function RequestBookingScreen() {
         {!!service && !!quote && (
           <Section
             title="What it comes to"
+            // Until it's complete, the line under it asks for what's missing, once.
             footer={
               quote.complete
                 ? 'Worked out from their own price list. They confirm it when they accept.'
-                : `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')} to see what it comes to.`
+                : undefined
             }
           >
             <ListRow
@@ -425,7 +426,7 @@ export default function RequestBookingScreen() {
             {!service
               ? 'Pick a service to see when they’re free.'
               : !quoteReady
-                ? `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')} to see when they’re free.`
+                ? `Pick your ${groups.map(g => g.name.toLowerCase()).join(' and ')} to see the full price and when they’re free.`
                 : `When suits you? They ${hoursLabel(profile.availability) ? `work ${hoursLabel(profile.availability)}, and ` : ''}need ${noticeLabel(profile.availability?.leadHours)}.`}
           </Text>
           {quoteReady && (

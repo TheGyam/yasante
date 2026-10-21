@@ -95,8 +95,11 @@ const useStyles = makeStyles(t => ({
 }));
 
 /** "coily hair", but "zig-zag coils" — the word hair only where it reads. */
-const hairLabel = (label: string) =>
-  (/coils$/i.test(label) ? label : `${label} hair`).toLowerCase();
+// Mid-sentence: "kinky (4C) hair", keeping the type's own capitals.
+const hairLabel = (label: string) => {
+  const text = /coils$/i.test(label) ? label : `${label} hair`;
+  return text[0].toLowerCase() + text.slice(1);
+};
 
 /**
  * Posting a look. A stylist posts her own work, and most of the time the picture

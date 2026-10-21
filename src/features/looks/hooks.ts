@@ -122,7 +122,12 @@ export function useLook(id: string) {
   const { user } = useAuth();
   const query = useQuery({
     queryKey: [KEY, 'one', user?.id, id],
-    queryFn: () => looksApi.get(id),
+    queryFn: async () => {
+      const look = await looksApi.get(id);
+      // Why the feed showed it is only known to the feed: keep it for the look's menu.
+      const shown = findLook(queryClient, id);
+      return shown?.reason ? { ...look, reason: shown.reason, source: shown.source } : look;
+    },
     placeholderData: () => findLook(queryClient, id),
     enabled: !!id,
     staleTime: 30 * 1000,

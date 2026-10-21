@@ -764,6 +764,7 @@ function Composer({
             scaleTo={1}
             accessibilityRole="button"
             accessibilityLabel="Add a comment"
+            containerStyle={styles.fill}
             style={styles.input}
           >
             <Text variant="callout" tone="tertiary">
