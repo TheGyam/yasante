@@ -204,6 +204,7 @@ class ReviewReport(models.Model):
         ("not-real", "This appointment didn't happen"),
         ("private", "It shares private details"),
         ("hate", "Hateful or abusive"),
+        ("illegal", "Something illegal, or that puts someone in danger"),
         ("other", "Something else"),
     ]
 

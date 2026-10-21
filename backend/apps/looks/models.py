@@ -184,6 +184,7 @@ class Report(TimeStampedModel):
         ("nudity", "Nudity"),
         ("hate", "Hate"),
         ("scam", "Scam"),
+        ("illegal", "Illegal or dangerous"),
         ("other", "Other"),
     ]
 

@@ -321,8 +321,10 @@ class PolicyDetailView(APIView):
 
     def get(self, request, type):
         version = request.query_params.get("version")
+        # Terms and privacy share one version number, so a version names the text in
+        # force then: this one, or the latest before it.
         doc = (
-            PolicyDocument.objects.filter(type=type, version=version, published=True).first()
+            PolicyDocument.objects.filter(type=type, version__lte=version, published=True).order_by("-version").first()
             if version
             else PolicyDocument.current(type)
         )

@@ -232,6 +232,18 @@ def test_report_queue_decides_with_its_nullable_join(make_user, make_look):
     assert look.status == "hidden" and report.status == "actioned"
 
 
+def test_illegal_or_dangerous_reports_come_first_in_the_queue(api, make_user, make_look):
+    from apps.looks.models import Report
+
+    client, _ = staff_client(make_user, superuser=True)
+    reporter = make_user()
+    hateful, dangerous = make_look(make_user()), make_look(make_user())
+    assert api(reporter).post(f"/api/looks/{hateful.pk}/report/", {"reason": "hate"}).status_code == 201
+    assert api(reporter).post(f"/api/looks/{dangerous.pk}/report/", {"reason": "illegal"}).status_code == 201
+    first = Report.objects.get(reason="illegal")
+    assert client.get("/data/review/reports/").json()["items"][0]["id"] == str(first.pk)
+
+
 def test_a_review_report_shows_in_its_queue_and_on_today(make_user, make_stylist, book):
     # ReviewReport.reason had no choices, so previewing one raised AttributeError and the
     # overview behind every workspace page answered 500.

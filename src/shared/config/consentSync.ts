@@ -4,7 +4,7 @@ import { apiClient } from '@/shared/lib/api/client';
 import { useRouter } from '@/shared/lib/navigation';
 import { confirm } from '@/shared/ui/dialog';
 import { useConsentStore, useUnanswered, type ServerConsent } from './consentStore';
-import { POLICY_VERSION, PRIVACY_ROUTE } from './policies';
+import { POLICY_VERSION } from './policies';
 
 /** An attempt that hasn't settled by then is given up on; the records stay pending. */
 const GIVE_UP_MS = 20_000;
@@ -117,27 +117,32 @@ export function useAskForAnalytics(canAsk: boolean) {
 }
 
 /**
- * Tells her once, as the privacy policy promises, when it has changed since she last
- * saw it. Either answer counts as seen, and is kept with her consent records.
+ * Tells her once, as the terms and privacy policy promise, when they've changed since
+ * she last saw them. Either answer counts as seen, and is kept with her consent records.
  */
 export function useTellAboutPolicyChange(canAsk: boolean) {
   const router = useRouter();
   const changed = useConsentStore(
-    s => s.loaded && s.consents.privacy?.policyVersion !== POLICY_VERSION
+    s =>
+      s.loaded &&
+      (s.consents.privacy?.policyVersion !== POLICY_VERSION ||
+        s.consents.terms?.policyVersion !== POLICY_VERSION)
   );
   const told = useRef(false);
   useEffect(() => {
     if (!canAsk || !changed || told.current) return;
     told.current = true;
     void confirm({
-      title: 'We’ve updated our privacy policy',
+      title: 'We’ve updated our terms and privacy policy',
       message:
-        'It says what we collect, why, and the choices you have. You can read it any time in Settings.',
-      confirmLabel: 'Read it',
+        'They say what’s allowed on Yasante, how to report something or complain, and what we collect and why. You can read them any time in Settings.',
+      confirmLabel: 'Read them',
       cancelLabel: 'OK',
     }).then(read => {
+      useConsentStore.getState().setConsent('terms', true);
       useConsentStore.getState().setConsent('privacy', true);
-      if (read) router.push(PRIVACY_ROUTE);
+      // Settings ends with both, side by side.
+      if (read) router.push('/settings');
     });
   }, [canAsk, changed, router]);
 }

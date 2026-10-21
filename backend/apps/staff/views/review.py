@@ -5,6 +5,7 @@ from django.core import signing
 from django.core.cache import cache
 from django.core.exceptions import BadRequest, PermissionDenied
 from django.db import transaction
+from django.db.models import Case, When
 from django.http import Http404, JsonResponse, QueryDict
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_GET, require_POST
@@ -26,7 +27,13 @@ def review_queue(request, queue):
             raise ValueError
     except ValueError:
         raise BadRequest
-    rows = list(ma.get_queryset(request).filter(**filters).order_by("created_at", "pk")[offset:offset+21])
+    rows = ma.get_queryset(request).filter(**filters)
+    if queue in ("reports", "review-reports"):
+        # Anything illegal or dangerous is dealt with first.
+        rows = rows.annotate(urgent=Case(When(reason="illegal", then=0), default=1)).order_by("urgent", "created_at", "pk")
+    else:
+        rows = rows.order_by("created_at", "pk")
+    rows = list(rows[offset:offset+21])
     return {"name": label, "key": ma.opts.label_lower, "items": [preview(request, queue, obj) for obj in rows[:20] if ma.has_view_or_change_permission(request, obj)],
             "next": str(offset+20) if len(rows) > 20 else None,
             "actions": [{"key": key, "label": label, "shortcut": shortcut, "reversible": queue not in ("reports", "review-reports", "appeals") and not (queue == "photos" and key == "remove")}
