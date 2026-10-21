@@ -87,7 +87,7 @@ export const SECTIONS: readonly Section[] = [
     key: 'area',
     name: 'Area',
     title: 'Where would you like stylists near?',
-    help: 'So the stylists you see are ones you can get to.',
+    help: 'A district, like Peckham or Hackney.',
     answered: p => !!p.area?.trim(),
   },
   {

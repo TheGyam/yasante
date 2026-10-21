@@ -125,7 +125,7 @@ export default function SignupScreen() {
           ? 'Your page, menu and bookings in one place. Free for founding stylists.'
           : 'Plan your styles, track your growth and find stylists who know your hair.'
       }
-      back={pushed}
+      back={pushed || undefined}
       testID="signup-screen"
       footer={
         <AuthSwitch

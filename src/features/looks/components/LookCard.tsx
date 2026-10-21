@@ -88,7 +88,8 @@ const useStyles = makeStyles(t => ({
   },
   serviceText: { color: '#FFFFFF' },
   save: { position: 'absolute', right: space.sm, bottom: space.sm },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
+  // Each action is 44 wide already, so its own padding spaces them: room for Book.
+  actions: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
   // 44 square at least: a thumb, not a fingertip (the icons are 20).
   action: {
     flexDirection: 'row',

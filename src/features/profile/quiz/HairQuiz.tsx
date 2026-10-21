@@ -185,7 +185,8 @@ export function HairQuiz({ mode, section }: HairQuizProps) {
       scroll={false}
       keyboard
       modal={mode === 'section'}
-      back={index > 0 || mode === 'onboarding'}
+      // A section on its own keeps the modal's close button; `false` would hide it.
+      back={index > 0 || mode === 'onboarding' || undefined}
       onBack={index > 0 ? () => go(-1) : undefined}
       testID="quiz-screen"
     >

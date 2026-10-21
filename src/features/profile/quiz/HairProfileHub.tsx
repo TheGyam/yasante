@@ -119,7 +119,7 @@ export function HairProfileHub() {
             <Text variant="footnote" tone="secondary" align="center">
               {done === total
                 ? 'All of it — thank you. Change anything whenever it changes.'
-                : `${done} of ${total} answered${next ? `${SEP}${next.name} next` : ''}`}
+                : `${done} of ${total} answered${next ? `${SEP}Still to answer: ${next.name}` : ''}`}
             </Text>
           </View>
         </View>

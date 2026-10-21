@@ -146,7 +146,7 @@ export default function StylistSetupScreen() {
   return (
     <Screen
       modal
-      back={index > 0}
+      back={index > 0 || undefined}
       onBack={index > 0 ? () => go(-1) : undefined}
       keyboard
       testID="stylist-setup"

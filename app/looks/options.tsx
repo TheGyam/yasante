@@ -245,6 +245,7 @@ export default function ReportOptionsScreen() {
                 ) : null
               }
               onPress={() => setReason(option.value)}
+              wrap
               testID={`reason-${option.value}`}
             />
           ))}

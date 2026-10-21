@@ -25,7 +25,8 @@ export interface ScreenProps {
   /** Shown large at the top of the content, then compact in the bar once scrolled away. */
   title?: string;
   subtitle?: string;
-  /** Show a back button that pops the stack. `false` hides even a modal's close button. */
+  /** Show a back button that pops the stack. `false` hides even a modal's close button, so a
+   * screen that only sometimes shows back passes `undefined` the rest of the time. */
   back?: boolean;
   /** Inside a modal: sheet-aware insets, and a close button unless `back` is set. */
   modal?: boolean;
@@ -230,6 +231,15 @@ export function Screen({
         accessibilityElementsHidden={!focused}
       >
         {body}
+        {/* No bar: the status bar still gets glass once she scrolls, so text never
+            runs under the clock. */}
+        {!hasBar && fades && scroll !== 'list' && (
+          <View pointerEvents="none" style={[styles.bar, { height: top }]}>
+            <Animated.View style={[styles.barFill, barBackground]}>
+              <Glass variant="chrome" radius={0} style={styles.barGlass} />
+            </Animated.View>
+          </View>
+        )}
         {hasBar && (
           <View pointerEvents="box-none" style={[styles.bar, { height: top + HEADER_HEIGHT }]}>
             {/* The glass reaches past the top edge: at fractional pixel densities (2.625 on

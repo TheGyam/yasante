@@ -57,6 +57,9 @@ export default function NotificationSettingsScreen() {
               <ListRow
                 key={category.id}
                 title={category.label}
+                // Locked on: say so, rather than a switch that looks like it should move.
+                subtitle={category.id === 'account' ? 'Always on' : undefined}
+                wrap
                 trailing={
                   <Toggle
                     value={category.on}
