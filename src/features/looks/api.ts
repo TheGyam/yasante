@@ -86,9 +86,10 @@ export const looksApi = {
       })
     ).data,
 
-  /** GET /api/looks/:id/related/ — "More like this", best for her first. */
-  related: async (id: string) =>
-    (await apiClient.get<{ data: Look[] }>(`/api/looks/${id}/related/`)).data.data,
+  /** GET /api/looks/:id/related/ — "More like this", closest and best for her first, paged. */
+  related: async (id: string, cursor?: string, limit = 20) =>
+    (await apiClient.get<LooksPage>(`/api/looks/${id}/related/`, { params: { cursor, limit } }))
+      .data,
 
   /** GET /api/looks/mine/ — her own, private ones included. */
   mine: async () => (await apiClient.get<Look[]>('/api/looks/mine/')).data,

@@ -134,14 +134,17 @@ def _adapt(state, user, session, offset):
     return items[:offset] + own + [by_pk[str(c.pk)] for c in remixed]
 
 
-def ranked_page(user, searched, cursor, limit, now=None):
-    """([(look id, source)], next cursor or None, session) for one page of her ranked feed."""
+def ranked_page(user, searched, cursor, limit, now=None, scope="feed", rank=None):
+    """
+    ([(look id, source)], next cursor or None, session) for one page of her ranked feed,
+    or of another ranked list (`scope` names it, `rank()` ranks it: "More like this").
+    """
     now = now or timezone.now()
     owner = str(user.pk) if user else None
     session, offset = _parse(cursor)
     state = cache.get(_key(session)) if session else None
-    if state is not None and state["owner"] != owner:
-        # Someone else's scroll: theirs stays theirs.
+    if state is not None and (state["owner"] != owner or state.get("scope", "feed") != scope):
+        # Someone else's scroll, or another list's: theirs stays theirs.
         state, session, offset = None, None, 0
     if state is None:
         already = set()
@@ -150,8 +153,9 @@ def ranked_page(user, searched, cursor, limit, now=None):
             already = {str(pk) for pk in FeedEvent.objects.filter(session=session).values_list("look_id", flat=True)}
         else:
             session = secrets.token_urlsafe(12)
-        items = [d for d in _ranked(user, searched, now) if d["pk"] not in already]
-        state, offset = {"owner": owner, "items": items, "started": now.isoformat()}, 0
+        ranked = [_pack(c) for c in rank()] if rank else _ranked(user, searched, now)
+        items = [d for d in ranked if d["pk"] not in already]
+        state, offset = {"owner": owner, "scope": scope, "items": items, "started": now.isoformat()}, 0
     elif offset and user:
         state["items"] = _adapt(state, user, session, offset)
 
