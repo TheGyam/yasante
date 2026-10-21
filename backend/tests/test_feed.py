@@ -440,3 +440,54 @@ def test_signed_out_visitors_share_one_ranking_for_a_while(api, make_user, make_
     first, second = (api().get("/api/looks/").json() for _ in range(2))
     assert [i["id"] for i in first["data"]] == [i["id"] for i in second["data"]]
     assert first["session"] != second["session"]
+
+
+def test_more_like_this_leans_on_what_the_same_people_saved(api, make_user, make_look):
+    from apps.feed.models import LookNeighbour
+
+    poster = make_user()
+    look = make_look(poster, style="twists")
+    same_style, often_saved_with = make_look(make_user(), style="twists"), make_look(make_user(), style="silk-press")
+    more_from_her = make_look(poster, style="cornrows")
+    unrelated = make_look(make_user(), style="box-braids")
+    LookNeighbour.objects.create(look=look, neighbour=often_saved_with, score=0.9)
+    me = make_user()
+    api(me).post("/api/not-for-me/", {"lookId": str(same_style.pk)})
+
+    found = {item["id"]: item for item in api(me).get(f"/api/looks/{look.pk}/related/").json()["data"]}
+    assert set(found) == {str(often_saved_with.pk), str(more_from_her.pk)}
+    assert found[str(often_saved_with.pk)]["reason"] == "Saved by people who saved this look"
+    assert found[str(more_from_her.pk)]["reason"].startswith("More from")
+    signed_out = {item["id"] for item in api().get(f"/api/looks/{look.pk}/related/").json()["data"]}
+    assert str(same_style.pk) in signed_out and str(unrelated.pk) not in signed_out
+    assert api().get("/api/looks/00000000-0000-0000-0000-000000000000/related/").status_code == 404
+
+
+def test_stylists_for_you_match_what_she_likes(api, make_user, make_look, make_stylist):
+    me = make_user()
+    twists_pro, other, blocked = make_stylist(), make_stylist(), make_stylist()
+    for _ in range(3):
+        make_look(twists_pro.account, style="twists")
+        make_look(other.account, style="cornrows")
+        save(me, make_look(make_user(), style="twists"))
+    api(me).post("/api/blocks/", {"accountId": str(blocked.account_id)})
+    assert api(me).get("/api/stylists/suggested/").json() == []
+    ranked_feed()
+    found = api(me).get("/api/stylists/suggested/").json()
+    handles = [s["handle"] for s in found]
+    assert handles.index(twists_pro.handle) < handles.index(other.handle)
+    assert blocked.handle not in handles
+    assert found[0]["reason"] == "Does Twists, a style you like"
+    assert api().get("/api/stylists/suggested/").status_code == 401
+
+
+def test_why_am_i_seeing_this_never_says_she_searched(api, make_user, make_look):
+    me = make_user()
+    for _ in range(2):
+        save(me, make_look(make_user(), style="twists"))
+    twists, knotless = make_look(make_user(), style="twists"), make_look(make_user(), style="knotless")
+    ranked_feed()
+    found = {item["id"]: item for item in api(me).get("/api/looks/", searched="knotless").json()["data"]}
+    assert found[str(twists.pk)]["reason"] in ("Because you like Twists", "Like looks you’ve saved and liked")
+    assert found[str(knotless.pk)]["source"] == "searched"
+    assert "search" not in found[str(knotless.pk)]["reason"].lower()

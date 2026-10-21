@@ -39,6 +39,10 @@ export const stylistApi = {
   search: async (q: string) =>
     (await apiClient.get<StylistSearchResult[]>('/api/stylists/', { params: { q } })).data,
 
+  /** GET /api/stylists/suggested/ — "Stylists for you", while the ranked feed is on for her. */
+  suggested: async () =>
+    (await apiClient.get<StylistSearchResult[]>('/api/stylists/suggested/')).data,
+
   /** GET /api/stylists/?style= — who does a style: their price for it and their work in it. */
   byStyle: async (style: string, within?: Within) =>
     (

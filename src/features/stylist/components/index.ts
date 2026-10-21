@@ -8,3 +8,4 @@ export * from './SetupFields';
 export * from './PaymentMethodForm';
 export * from './FeaturedActions';
 export * from './CountryField';
+export * from './SuggestedStylists';

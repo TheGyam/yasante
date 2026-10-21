@@ -319,13 +319,46 @@ class FeedView(APIView):
         found = {str(look.pk): look for look in allowed.filter(pk__in=[pk for pk, _ in pairs])}
         shown = [(found[pk], source) for pk, source in pairs if pk in found]
         data = present_looks([look for look, _ in shown], viewer)
-        for item, (_, source) in zip(data, shown):
-            item["source"] = source
+        with_reasons(data, shown, viewer)
         return Response({"data": data, "next_cursor": next_cursor, "session": session})
 
     @extend_schema(request=LookCreateRequestSerializer, responses={201: LookSerializer})
     def post(self, request):
         return create_look(request)
+
+
+def with_reasons(data, shown, viewer, surface="feed"):
+    """Each look's source, and why it's there in words only she sees ("Why am I seeing this")."""
+    from apps.feed.suggestions import reasons
+
+    people = [(item.get("stylist") or {}).get("name") or item.get("author_name") for item in data]
+    texts = reasons([(look, source, person) for (look, source), person in zip(shown, people)], viewer, surface)
+    for item, (_, source), text in zip(data, shown, texts):
+        item["source"] = source
+        item["reason"] = text
+
+
+@extend_schema_view(get=extend_schema(responses=LooksPageSerializer))
+class LookRelatedView(APIView):
+    """GET /api/looks/:id/related/?limit= — "More like this", best for her first."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        from apps.feed.suggestions import related_looks
+
+        viewer = _viewer(request)
+        look = _visible_look(pk, viewer)
+        if look is None:
+            return _not_found()
+        limit = min(page_limit(request, default=12), 24)
+        picked = related_looks(look, viewer, limit)
+        found = {look.pk: look for look in _looks(viewer).filter(pk__in=[c.pk for c in picked])}
+        shown = [(found[c.pk], c.source) for c in picked if c.pk in found]
+        data = present_looks([look for look, _ in shown], viewer)
+        personal = viewer if viewer is not None and is_on(FEED_SWITCH, viewer) else None
+        with_reasons(data, shown, personal, surface="related")
+        return Response({"data": data})
 
 
 def create_look(request):

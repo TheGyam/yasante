@@ -57,6 +57,17 @@ export function useStylistSearch(q: string, { enabled = true } = {}) {
   });
 }
 
+/** "Stylists for you" at the top of the feed: empty unless the ranked feed is on for her. */
+export function useSuggestedStylists() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: [KEY, 'suggested', user?.id],
+    queryFn: stylistApi.suggested,
+    enabled: !!user,
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
 /** Her page, by handle — what a client opens from a look or a shared link. */
 export function useStylistPage(handle?: string) {
   return useQuery({

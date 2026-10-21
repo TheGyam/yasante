@@ -330,7 +330,16 @@ New versions via a migration like `0018_terms_reporting_and_complaints.py`:
   for 5 minutes among signed-out visitors. The feed view ranks only the everyday feed
   (no filters, no search) and adds each look's `source`. "Latest" (`order=latest`)
   is newest first with nothing personal; the app's "Latest" chip is remembered on the
-  phone. Next: phase 5.
+  phone. PR #104.
+- 21 Oct 2026: phase 5 done on `feed/5-suggestions`: `apps/feed/suggestions.py` with
+  `related_looks` (neighbours, same styles, same person; personal only while the switch
+  is on), `suggested_stylists` (style match, people, near her, smoothed rating, tier;
+  only while the switch is on) and `reasons` (never "because you searched"). Endpoints
+  `GET /api/looks/:id/related/` and `GET /api/stylists/suggested/`; ranked looks carry
+  `reason`. App: More like this under a look's comments, Stylists for you on home,
+  Why you're seeing this in a look's menu. Related looks aren't recorded as feed
+  events yet (no impressions from a plain grid); opens from them are ordinary opens.
+  Next: phase 6.
 
 ## Continuation prompt
 

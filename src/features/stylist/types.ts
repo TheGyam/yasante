@@ -233,6 +233,8 @@ export interface StylistNumbers {
 /** A live page as search lists it: enough to recognise her and open it. */
 export interface StylistSearchResult {
   accountId: string;
+  /** In "Stylists for you": why she's suggested, in words. */
+  reason?: string;
   handle: string;
   displayName: string;
   avatarUri?: string;
