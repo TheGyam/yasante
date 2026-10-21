@@ -714,8 +714,26 @@ class CommentListCreateView(APIView):
             )
             Look.objects.filter(pk=look.pk).update(comment_count=F("comment_count") + 1)
 
+        _tell_about_comment(look, user, answered, body)
         comment = comment_queryset(user, set()).get(pk=comment.pk)
         return Response(present_comments([comment], user)[0], status=201)
+
+
+def _tell_about_comment(look, commenter, answered, body):
+    """
+    The look's poster hears about a comment, and whoever was replied to hears about the
+    reply. At most one a look (or a comment) an hour, so a busy thread is one push.
+    """
+    from apps.common.notifications import notify
+
+    hour = timezone.now().strftime("%Y%m%d%H")
+    name = person(commenter.pk)["name"]
+    preview = body.strip()[:80]
+    url = f"/looks/{look.pk}"
+    if look.author_id != commenter.pk:
+        notify(look.author_id, "activity", f"comment:{look.pk}:{hour}", "New comment on your look", f"{name}: {preview}", url=url)
+    if answered and answered.author_id not in (commenter.pk, look.author_id):
+        notify(answered.author_id, "activity", f"reply:{answered.pk}:{hour}", f"{name} replied to you", preview, url=url)
 
 
 class CommentRepliesView(APIView):
