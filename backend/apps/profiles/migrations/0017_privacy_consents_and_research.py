@@ -12,7 +12,7 @@ from django.db import migrations
 VERSION = "2026-10-20"
 EFFECTIVE = datetime(2026, 10, 20, tzinfo=timezone.utc)
 
-BODY = """This policy explains what personal information Yasante collects, why, who sees it, and your rights. Yasante is responsible for your information as data controller. We follow UK data protection law (the UK GDPR and the Data Protection Act 2018) and, for people in the European Union, the EU GDPR. CYPA, [REGISTERED ADDRESS], company number [NUMBER]. Our representative in the European Union is Caleb Kyei (representative@yasante.com).
+BODY = """This policy explains what personal information Yasante collects, why, who sees it, and your rights. Yasante is responsible for your information as data controller. We follow UK data protection law (the UK GDPR and the Data Protection Act 2018) and, for people in the European Union, the EU GDPR. CYPA (privacy@yasante.com). Our representative in the European Union is Caleb Kyei (representative@yasante.com).
 
 1. What we collect
 

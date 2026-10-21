@@ -99,7 +99,9 @@ and would need a new assessment.
    named in the policy.
 3. **Contracts:** data processing terms should be confirmed with each service provider,
    including the two free map services.
-4. **Staff access to hair details:** the policy says nobody but the person and the
-   stylists they book sees their hair details, but staff can open hair profiles on the
-   staff site. Either hide them behind the logged "Show" button, as postcodes and
-   addresses are, or say in the policy that staff can see them.
+4. **Staff access to hair details:** decided 21 October 2026. On the staff site they're
+   hidden behind a Show button that needs the permission to reveal personal data, and
+   every showing is recorded. Keep the people with that permission few.
+5. **Company details:** the policy names CYPA with its email until the company is
+   registered. Then add its business address to the policy, and its number on the
+   website.
