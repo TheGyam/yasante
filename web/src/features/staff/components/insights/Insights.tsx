@@ -40,6 +40,7 @@ const CHARTS: {
   { name: 'community', heading: 'Community health' },
   { name: 'app-health', heading: 'App health', wide: true },
   { name: 'hair-trends', heading: 'Hair trends', money: true, wide: true, noExport: true },
+  { name: 'feed', heading: 'Ranked feed', money: true, wide: true },
 ];
 
 const iso = (date: Date) => date.toISOString().slice(0, 10);

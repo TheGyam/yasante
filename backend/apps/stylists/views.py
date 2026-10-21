@@ -1328,3 +1328,31 @@ class FinishTagsView(APIView):
         FeaturedPage.objects.filter(profile=profile).update(tags_checked_at=timezone.now())
         profile.featured_page.refresh_from_db()
         return Response(featured.finish_state(profile))
+
+
+@extend_schema_view(get=extend_schema(responses=StylistSearchResultSerializer(many=True)))
+class SuggestedStylistsView(APIView):
+    """GET /api/stylists/suggested/ — "Stylists for you", while the ranked feed is on for her."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.feed.suggestions import suggested_stylists
+
+        return Response(
+            [
+                {
+                    "account_id": str(p.account_id),
+                    "handle": p.handle,
+                    "display_name": p.display_name,
+                    "avatar_uri": p.avatar_uri,
+                    "base_area": p.base_area,
+                    "currency": p.currency,
+                    "rating": float(p.rating_average) if p.rating_count else None,
+                    "rating_count": p.rating_count,
+                    "verification_tier": p.verification_tier,
+                    "reason": reason,
+                }
+                for p, reason in suggested_stylists(request.user)
+            ]
+        )

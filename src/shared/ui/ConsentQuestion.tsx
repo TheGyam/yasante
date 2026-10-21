@@ -62,12 +62,14 @@ export function ConsentQuestion({
             {body}
           </Text>
         </View>
+        {/* Not now on the left and Allow on the right, as the phone's own permission
+            questions are laid out; equal weight either way. */}
         <View style={styles.buttons}>
           <View style={styles.button}>
-            <Button label="Allow" variant="secondary" onPress={() => answer(true)} fullWidth />
+            <Button label="Not now" variant="secondary" onPress={() => answer(false)} fullWidth />
           </View>
           <View style={styles.button}>
-            <Button label="Not now" variant="secondary" onPress={() => answer(false)} fullWidth />
+            <Button label="Allow" variant="secondary" onPress={() => answer(true)} fullWidth />
           </View>
         </View>
       </View>

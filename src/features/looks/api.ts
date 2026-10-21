@@ -86,6 +86,10 @@ export const looksApi = {
       })
     ).data,
 
+  /** GET /api/looks/:id/related/ — "More like this", best for her first. */
+  related: async (id: string) =>
+    (await apiClient.get<{ data: Look[] }>(`/api/looks/${id}/related/`)).data.data,
+
   /** GET /api/looks/mine/ — her own, private ones included. */
   mine: async () => (await apiClient.get<Look[]>('/api/looks/mine/')).data,
 

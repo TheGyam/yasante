@@ -19,6 +19,7 @@ from apps.common.permissions import IsAuthenticatedOrReadOnly
 from apps.common.throttling import CommentThrottle, PostingThrottle, ReportThrottle
 from apps.common.uploads import media_url, own_media
 from apps.feed.models import SWITCH as FEED_SWITCH
+from apps.feed.sessions import is_ranked_cursor, ranked_page
 from apps.features.switches import is_on
 from apps.shelf.models import Product
 from apps.stylists.models import StylistProfile
@@ -228,6 +229,26 @@ def mixed_in(qs, texture, styles, request):
     return items, f"{MIX}{searched_next}~{usual_next}"
 
 
+def everyday_looks(viewer, style=None, queryset=None):
+    """
+    The public, live looks she can be shown: nobody she's blocked, and nothing she's said
+    isn't for her (a style she's asked for herself still shows). The ranked feed starts
+    from the same set (apps.feed.ranking), so the two never disagree on what's allowed.
+    """
+    qs = (_looks(viewer) if queryset is None else queryset).filter(visibility="public", status="live")
+    blocked = blocked_account_ids(viewer)
+    if blocked:
+        qs = qs.exclude(author_id__in=blocked)
+    looks, stylists, styles = not_for_me(viewer)
+    if looks:
+        qs = qs.exclude(pk__in=looks)
+    if stylists:
+        qs = qs.exclude(author_id__in=stylists).exclude(stylist_id__in=[str(s) for s in stylists])
+    if styles - {style}:
+        qs = qs.exclude(styles__slug__in=styles - {style})
+    return qs
+
+
 class FeedView(APIView):
     """GET /api/looks/?cursor=&limit=&hair=&style=&area=&q= — also POST, to post a look."""
 
@@ -239,19 +260,19 @@ class FeedView(APIView):
     @extend_schema(responses=LooksPageSerializer)
     def get(self, request):
         viewer = _viewer(request)
-        qs = _looks(viewer).filter(visibility="public", status="live")
-        blocked = blocked_account_ids(viewer)
-        if blocked:
-            qs = qs.exclude(author_id__in=blocked)
         style = request.query_params.get("style")
-        # What she's said isn't for her, unless she's asked for that style herself.
-        looks, stylists, styles = not_for_me(viewer)
-        if looks:
-            qs = qs.exclude(pk__in=looks)
-        if stylists:
-            qs = qs.exclude(author_id__in=stylists).exclude(stylist_id__in=[str(s) for s in stylists])
-        if styles - {style}:
-            qs = qs.exclude(styles__slug__in=styles - {style})
+        qs = everyday_looks(viewer, style)
+        params = request.query_params
+        # Styles she's searched for, sent by her phone for this page only: never kept or
+        # logged.
+        searched = [s for s in (params.get("searched") or "").split(",") if s][:3]
+        # "Latest": newest first, nothing personal. Otherwise, while the ranked feed is on
+        # for her, the everyday feed (no filters, no search) is ranked (apps.feed).
+        latest = params.get("order") == "latest"
+        ranking = is_on(FEED_SWITCH, request.user)
+        everyday = not any(params.get(k) for k in ("hair", "style", "area", "q"))
+        if ranking and everyday and not latest and is_ranked_cursor(params.get("cursor")):
+            return self.ranked(request, viewer, qs, searched)
 
         hair = request.query_params.get("hair")
         if hair:
@@ -272,11 +293,9 @@ class FeedView(APIView):
             ).distinct()
 
         # With her yes, looks for her hair come first, unless she's chosen a hair type.
-        texture = "" if hair else _texture_to_match(viewer)
-        # Styles she's searched for, sent by her phone for this page only: never kept or
-        # logged. Not when she's already chosen a style or a hair type.
-        searched = [s for s in (request.query_params.get("searched") or "").split(",") if s][:3]
-        if searched and not style and not hair:
+        texture = "" if hair or latest else _texture_to_match(viewer)
+        # Her searched styles mix in, but not when she's chosen a style or a hair type.
+        if searched and not style and not hair and not latest:
             items, next_cursor = mixed_in(qs, texture, searched, request)
         elif texture:
             items, next_cursor = matched_first(qs, texture, request)
@@ -290,13 +309,56 @@ class FeedView(APIView):
         body = {"data": present_looks(items, viewer), "next_cursor": next_cursor}
         # While the ranked feed is on for her, the first page starts a feed session that
         # the app records what she sees and opens against (apps.feed).
-        if not request.query_params.get("cursor") and is_on(FEED_SWITCH, request.user):
+        if not request.query_params.get("cursor") and ranking:
             body["session"] = secrets.token_urlsafe(12)
         return Response(body)
+
+    def ranked(self, request, viewer, allowed, searched):
+        pairs, next_cursor, session = ranked_page(viewer, searched, request.query_params.get("cursor"), page_limit(request))
+        # Checked again now: anything blocked, removed or hidden since it was ranked stays out.
+        found = {str(look.pk): look for look in allowed.filter(pk__in=[pk for pk, _ in pairs])}
+        shown = [(found[pk], source) for pk, source in pairs if pk in found]
+        data = present_looks([look for look, _ in shown], viewer)
+        with_reasons(data, shown, viewer)
+        return Response({"data": data, "next_cursor": next_cursor, "session": session})
 
     @extend_schema(request=LookCreateRequestSerializer, responses={201: LookSerializer})
     def post(self, request):
         return create_look(request)
+
+
+def with_reasons(data, shown, viewer, surface="feed"):
+    """Each look's source, and why it's there in words only she sees ("Why am I seeing this")."""
+    from apps.feed.suggestions import reasons
+
+    people = [(item.get("stylist") or {}).get("name") or item.get("author_name") for item in data]
+    texts = reasons([(look, source, person) for (look, source), person in zip(shown, people)], viewer, surface)
+    for item, (_, source), text in zip(data, shown, texts):
+        item["source"] = source
+        item["reason"] = text
+
+
+@extend_schema_view(get=extend_schema(responses=LooksPageSerializer))
+class LookRelatedView(APIView):
+    """GET /api/looks/:id/related/?limit= — "More like this", best for her first."""
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        from apps.feed.suggestions import related_looks
+
+        viewer = _viewer(request)
+        look = _visible_look(pk, viewer)
+        if look is None:
+            return _not_found()
+        limit = min(page_limit(request, default=12), 24)
+        picked = related_looks(look, viewer, limit)
+        found = {look.pk: look for look in _looks(viewer).filter(pk__in=[c.pk for c in picked])}
+        shown = [(found[c.pk], c.source) for c in picked if c.pk in found]
+        data = present_looks([look for look, _ in shown], viewer)
+        personal = viewer if viewer is not None and is_on(FEED_SWITCH, viewer) else None
+        with_reasons(data, shown, personal, surface="related")
+        return Response({"data": data})
 
 
 def create_look(request):
@@ -652,8 +714,26 @@ class CommentListCreateView(APIView):
             )
             Look.objects.filter(pk=look.pk).update(comment_count=F("comment_count") + 1)
 
+        _tell_about_comment(look, user, answered, body)
         comment = comment_queryset(user, set()).get(pk=comment.pk)
         return Response(present_comments([comment], user)[0], status=201)
+
+
+def _tell_about_comment(look, commenter, answered, body):
+    """
+    The look's poster hears about a comment, and whoever was replied to hears about the
+    reply. At most one a look (or a comment) an hour, so a busy thread is one push.
+    """
+    from apps.common.notifications import notify
+
+    hour = timezone.now().strftime("%Y%m%d%H")
+    name = person(commenter.pk)["name"]
+    preview = body.strip()[:80]
+    url = f"/looks/{look.pk}"
+    if look.author_id != commenter.pk:
+        notify(look.author_id, "activity", f"comment:{look.pk}:{hour}", "New comment on your look", f"{name}: {preview}", url=url)
+    if answered and answered.author_id not in (commenter.pk, look.author_id):
+        notify(answered.author_id, "activity", f"reply:{answered.pk}:{hour}", f"{name} replied to you", preview, url=url)
 
 
 class CommentRepliesView(APIView):

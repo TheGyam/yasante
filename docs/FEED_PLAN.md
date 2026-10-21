@@ -146,8 +146,10 @@ And the score:
 - `quality`: a caption, more than one photo, a credited stylist, a verified stylist
   who takes bookings each add a little (between 0.9 and 1.3 in all).
 - `penalties`: seen before by her (x0.35 per showing in the last 7 days, x0.6 if she
-  opened it), two or more open reports (x0.2), a style she's said Not for me to once
-  (x0.5; twice removes it, as today).
+  opened it), a style she's said Not for me to once (x0.5; twice removes it, as today),
+  a poster with something removed in the last 30 days (x0.5).
+- Two or more open reports: the look waits at the end of the feed, whatever its
+  score, until a person decides (a popular look divided by 5 could still lead).
 
 All weights live in one place (`ranking/weights.py`) and can be replaced by learned
 weights (section 11).
@@ -211,7 +213,7 @@ Greedy, from the top score down, with these rules:
 
 - Looks whose photo is flagged as a near-copy and still waiting for review are left
   out.
-- Two or more open reports: pushed far down until a person decides.
+- Two or more open reports: at the end of the feed until a person decides.
 - A poster with a removal in the last 30 days: their looks count for less (x0.5).
 - Exploration never picks looks with open reports.
 
@@ -306,7 +308,61 @@ New versions via a migration like `0018_terms_reporting_and_complaints.py`:
   The feed's first page carries a `session` while the switch is on; the app records
   impressions (half visible for half a second), opens and dwell against it, in batches,
   and drops anything queued when the account changes. Two query-count tests now warm
-  the switch cache before counting (they still catch per-row queries). Next: phase 2.
+  the switch cache before counting (they still catch per-row queries). PR #101.
+- 21 Oct 2026: phase 2 done on `feed/2-stats`: `LookStats` (totals, last 3 days, feed
+  counts, open reports, bookings from the look) refreshed every 10 minutes;
+  `LookNeighbour` (cosine over likes, saves, comments, opens and bookings in the last
+  60 days, busy people damped, rare pairs discounted, top 50) nightly at 02:45;
+  `affinity_for(user)` (styles and people, 14-day half-life, cached 10 minutes, never a
+  hair type or price). PR #102.
+- 21 Oct 2026: phase 3 done on `feed/3-ranking`: `apps/feed/weights.py` (every number in
+  one place) and `apps/feed/ranking.py` (`rank_feed`: 11 candidate sources with quotas,
+  the value model with smoothed rates, personal lift, freshness, quality and penalties,
+  then variety rules and Thompson-sampled exploration every 8th slot). The feed's safety
+  filters moved into `looks.views.everyday_looks`, shared by both feeds. Learned in
+  testing: an unseen look is scored at the average, so it can lead a feed of average
+  looks (that's right); and a reported look must wait at the end, not just score less.
+  PR #103.
+- 21 Oct 2026: phase 4 done on `feed/4-sessions`: `apps/feed/sessions.py` keeps each
+  ranked scroll in the cache for 30 minutes (cursor `rk.<session>.<offset>`, owner
+  checked), re-ranks what's left from her opens, likes, saves and scroll-pasts in this
+  session, carries on without repeats when a session expires, and shares one ranking
+  for 5 minutes among signed-out visitors. The feed view ranks only the everyday feed
+  (no filters, no search) and adds each look's `source`. "Latest" (`order=latest`)
+  is newest first with nothing personal; the app's "Latest" chip is remembered on the
+  phone. PR #104.
+- 21 Oct 2026: phase 5 done on `feed/5-suggestions`: `apps/feed/suggestions.py` with
+  `related_looks` (neighbours, same styles, same person; personal only while the switch
+  is on), `suggested_stylists` (style match, people, near her, smoothed rating, tier;
+  only while the switch is on) and `reasons` (never "because you searched"). Endpoints
+  `GET /api/looks/:id/related/` and `GET /api/stylists/suggested/`; ranked looks carry
+  `reason`. App: More like this under a look's comments, Stylists for you on home,
+  Why you're seeing this in a look's menu. Related looks aren't recorded as feed
+  events yet (no impressions from a plain grid); opens from them are ordinary opens.
+  PR #105 (a slip that moved the feed's post method into the new view was caught by the
+  backend tests and fixed before committing).
+- 21 Oct 2026: phase 6 done on `feed/6-notifications`: new categories "Comments,
+  replies and activity on your looks" (on by default) and "Looks picked for you, once a
+  week" (opt-in). A comment tells the poster and a reply tells whoever was answered, at
+  most once an hour each; a daily summary at 19:00 gives counts of saves and likes,
+  never who; the weekly pick (Thursdays 18:30) needs the opt-in, the switch and at
+  least 3 new looks in her top styles. PR #106.
+- 21 Oct 2026: phase 7 done on `feed/7-learning`: impressions keep the ranking's
+  features from the session that showed them; `apps/feed/learning.py` and `manage.py
+  tune_feed` fit a logistic regression per action (save, like, open) with
+  position-bias weighting, and keep it (`FeedWeights`) only if it beats the hand-set
+  scoring on saves on the newest fifth of impressions (needs 5,000); the scorer then
+  uses it. Staff insight "Ranked feed" (superusers): saves, booking requests and Not
+  for me per 100 people, ranked against plain. Privacy policy 2026-10-22 (in force
+  from when it's published, in the feed app's migrations so it can't clash with the
+  stylist terms branch) and POLICY_VERSION bumped; DPIA updated.
+- 21 Oct 2026: after seeing a mock-up, Yaw asked for home to keep only a For you /
+  Latest switch (no line under it), with the full filters kept on the Looks screen.
+  Done on `feed/8-home-switch`; home's feed now ignores filters set on the Looks screen.
+- **The plan is complete.** Yaw approved the three privacy lines in PR #107 in chat on
+  21 Oct 2026. Still for Yaw: merge in order: #99, #101 to #107 (stacked), and #100
+  separately; turn `ranked_feed` on for staff, then a percentage, watching the
+  "Ranked feed" insight; run `manage.py tune_feed` once there are 5,000 impressions.
 
 ## Continuation prompt
 

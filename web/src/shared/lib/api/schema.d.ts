@@ -1149,6 +1149,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/looks/{id}/related/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/looks/:id/related/?limit= — "More like this", best for her first. */
+        get: operations["looks_related_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/looks/{id}/report/": {
         parameters: {
             query?: never;
@@ -1892,6 +1909,23 @@ export interface paths {
         };
         /** @description GET /api/stylists/me/summary/ — the badge on the mode switch. */
         get: operations["stylists_me_summary_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/suggested/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/stylists/suggested/ — "Stylists for you", while the ranked feed is on for her. */
+        get: operations["stylists_suggested_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3009,6 +3043,8 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             mine: boolean;
+            source?: string;
+            reason?: string;
         };
         LookCreateRequestRequest: {
             photoUri?: string;
@@ -3783,6 +3819,7 @@ export interface components {
         };
         StylistSearchResult: {
             accountId: string;
+            reason?: string;
             handle: string;
             displayName: string;
             avatarUri?: string;
@@ -5908,6 +5945,27 @@ export interface operations {
             };
         };
     };
+    looks_related_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooksPage"];
+                };
+            };
+        };
+    };
     looks_report_create: {
         parameters: {
             query?: never;
@@ -7079,6 +7137,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StylistSummary"];
+                };
+            };
+        };
+    };
+    stylists_suggested_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StylistSearchResult"][];
                 };
             };
         };

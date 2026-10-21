@@ -53,6 +53,8 @@ export interface Look {
   createdAt: string;
   /** In a ranked feed: why it's there (a candidate source, such as "trending"). */
   source?: string;
+  /** The same, in words only she sees, for "Why you’re seeing this". */
+  reason?: string;
   /** True on your own looks: you can take one down, but not report it. */
   mine?: boolean;
 }
@@ -143,6 +145,8 @@ export interface LookFilters {
   q?: string;
   /** Style ids from her recent searches, mixed through the feed. Never kept on the server. */
   searched?: string;
+  /** "latest": newest first, nothing personal. Otherwise the feed is picked for her. */
+  order?: 'latest';
 }
 
 /** Why someone reported a look. The wording is what the reporter sees. */

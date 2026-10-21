@@ -8,11 +8,10 @@ export const PASSWORD_RULES = [
     error: 'Use at least 8 characters',
     test: (p: string) => p.length >= 8,
   },
-  { label: 'Uppercase', error: 'Add an uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
-  { label: 'Lowercase', error: 'Add a lowercase letter', test: (p: string) => /[a-z]/.test(p) },
-  { label: 'Number', error: 'Add a number', test: (p: string) => /[0-9]/.test(p) },
-  { label: 'Symbol', error: 'Add a symbol', test: (p: string) => /[^a-zA-Z0-9]/.test(p) },
 ] as const;
+
+/** Shown under a new password, as in the app. */
+export const PASSWORD_HINT = 'Three random words work well, like “teapot river mango”.';
 
 /** The first thing wrong with a password, or undefined when it's fine. */
 export function passwordProblem(password: string) {
@@ -27,7 +26,7 @@ export function isValidEmail(email: string) {
  * The terms and privacy version she agrees to, the app's POLICY_VERSION
  * (src/shared/config/policies.ts). A test holds the two equal.
  */
-export const POLICY_VERSION = '2026-10-21';
+export const POLICY_VERSION = '2026-10-22';
 
 /** The stylist terms version she agrees to (backend migration 0008_first_stylist_terms). */
 export const STYLIST_TERMS_VERSION = '2026-09';

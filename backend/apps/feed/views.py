@@ -28,8 +28,12 @@ class FeedEventBatchView(APIView):
 
         from apps.looks.models import Look
 
+        from .sessions import features_shown
+
         events = serializer.validated_data["events"]
         known = set(Look.objects.filter(pk__in={e["look_id"] for e in events}).values_list("pk", flat=True))
+        # What the ranking knew about each look it showed, for learning the weights.
+        shown = features_shown({e["session"] for e in events if e["kind"] == "impression"})
         user = request.user if request.user.is_authenticated else None
         FeedEvent.objects.bulk_create(
             [
@@ -42,6 +46,7 @@ class FeedEventBatchView(APIView):
                     position=e.get("position"),
                     source=e["source"],
                     dwell_ms=e.get("ms") if e["kind"] == "dwell" else None,
+                    features=shown.get((e["session"], str(e["look_id"])), {}) if e["kind"] == "impression" else {},
                 )
                 for e in events
                 if e["look_id"] in known
