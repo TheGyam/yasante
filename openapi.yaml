@@ -1815,8 +1815,10 @@ paths:
   /api/looks/{id}/related/:
     get:
       operationId: looks_related_retrieve
-      description: GET /api/looks/:id/related/?limit= — "More like this", best for
-        her first.
+      description: |-
+        GET /api/looks/:id/related/?cursor=&limit= — "More like this", closest and best for
+        her first, a page at a time. One visit is ranked once and paged through, so a page
+        never repeats one before it.
       parameters:
       - in: path
         name: id

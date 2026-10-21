@@ -1156,7 +1156,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description GET /api/looks/:id/related/?limit= — "More like this", best for her first. */
+        /**
+         * @description GET /api/looks/:id/related/?cursor=&limit= — "More like this", closest and best for
+         *     her first, a page at a time. One visit is ranked once and paged through, so a page
+         *     never repeats one before it.
+         */
         get: operations["looks_related_retrieve"];
         put?: never;
         post?: never;
