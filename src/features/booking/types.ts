@@ -211,6 +211,7 @@ export const REVIEW_REPORT_REASONS = [
   { value: 'not-real', label: "This appointment didn't happen" },
   { value: 'private', label: 'It shares private details' },
   { value: 'hate', label: 'Hateful or abusive' },
+  { value: 'illegal', label: 'Something illegal, or that puts someone in danger' },
   { value: 'other', label: 'Something else' },
 ] as const;
 export type ReviewReportReason = (typeof REVIEW_REPORT_REASONS)[number]['value'];

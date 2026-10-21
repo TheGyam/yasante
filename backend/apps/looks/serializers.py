@@ -19,7 +19,7 @@ from apps.profiles.models import TEXTURE_CHOICES
 
 from .models import CommentLike, LookComment, LookLike
 
-REPORT_REASONS = ("not-their-work", "nudity", "hate", "scam", "other")
+REPORT_REASONS = ("not-their-work", "nudity", "hate", "scam", "other", "illegal")
 # A look can also be off-topic: Yasante is for hair.
 LOOK_REPORT_REASONS = REPORT_REASONS + ("not-hair",)
 COMMENT_REPORT_REASONS = REPORT_REASONS[1:]

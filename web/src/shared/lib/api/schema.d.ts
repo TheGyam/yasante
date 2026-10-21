@@ -3455,10 +3455,11 @@ export interface components {
          *     * `hate` - hate
          *     * `scam` - scam
          *     * `other` - other
+         *     * `illegal` - illegal
          *     * `not-hair` - not-hair
          * @enum {string}
          */
-        ReportRequestReasonEnum: "not-their-work" | "nudity" | "hate" | "scam" | "other" | "not-hair";
+        ReportRequestReasonEnum: "not-their-work" | "nudity" | "hate" | "scam" | "other" | "illegal" | "not-hair";
         ReportRequestRequest: {
             reason: components["schemas"]["ReportRequestReasonEnum"];
             note?: string;
