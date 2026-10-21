@@ -280,7 +280,7 @@ def _for_style(profiles, slug, name, viewer):
 @extend_schema_view(get=extend_schema(responses=StylistSearchResultSerializer(many=True)), post=extend_schema(request=StylistProfileDraftSerializer, responses={201: StylistProfileSerializer}))
 class StylistCreateView(APIView):
     """
-    GET /api/stylists/?q= — search live pages by name, handle or area.
+    GET /api/stylists/?q= — search live pages by name, handle, area, services or styles.
     POST /api/stylists/ — her page, as a draft only she can see.
     """
 
@@ -322,12 +322,23 @@ class StylistCreateView(APIView):
             qs = qs.filter(base_area__iexact=area)
         if min_tier:
             qs = qs.filter(verification_tier__gte=min_tier)
+        if words:
+            from apps.looks.views import public_looks as live_looks
+
         for word in words:
+            # What they do counts as much as who they are: "knotless" finds the stylists
+            # who offer it or post it, not only one with it in her name.
+            does_it = live_looks().filter(status="live", styles__name__icontains=word)
+            # A look's stylist is stored as text: compared as ids here.
+            doers = {str(a) for a in does_it.values_list("author_id", flat=True).distinct()}
+            doers |= {s for s in does_it.values_list("stylist_id", flat=True).distinct() if s}
             qs = qs.filter(
                 Q(display_name__icontains=word)
                 | Q(handle__icontains=word)
                 | Q(base_area__icontains=word)
-            )
+                | Q(menu_items__name__icontains=word)
+                | Q(account_id__in=doers)
+            ).distinct()
         viewer = request.user if request.user.is_authenticated else None
         blocked = blocked_account_ids(viewer) if viewer else set()
         if blocked:
