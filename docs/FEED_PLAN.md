@@ -339,7 +339,14 @@ New versions via a migration like `0018_terms_reporting_and_complaints.py`:
   `reason`. App: More like this under a look's comments, Stylists for you on home,
   Why you're seeing this in a look's menu. Related looks aren't recorded as feed
   events yet (no impressions from a plain grid); opens from them are ordinary opens.
-  Next: phase 6.
+  PR #105 (a slip that moved the feed's post method into the new view was caught by the
+  backend tests and fixed before committing).
+- 21 Oct 2026: phase 6 done on `feed/6-notifications`: new categories "Comments,
+  replies and activity on your looks" (on by default) and "Looks picked for you, once a
+  week" (opt-in). A comment tells the poster and a reply tells whoever was answered, at
+  most once an hour each; a daily summary at 19:00 gives counts of saves and likes,
+  never who; the weekly pick (Thursdays 18:30) needs the opt-in, the switch and at
+  least 3 new looks in her top styles. Next: phase 7.
 
 ## Continuation prompt
 

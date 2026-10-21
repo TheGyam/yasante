@@ -491,3 +491,64 @@ def test_why_am_i_seeing_this_never_says_she_searched(api, make_user, make_look)
     assert found[str(twists.pk)]["reason"] in ("Because you like Twists", "Like looks you’ve saved and liked")
     assert found[str(knotless.pk)]["source"] == "searched"
     assert "search" not in found[str(knotless.pk)]["reason"].lower()
+
+
+def sent(user, category="activity"):
+    from apps.common.models import NotificationLog
+
+    return list(NotificationLog.objects.filter(user=user, category=category).values_list("title", "body"))
+
+
+def test_a_comment_tells_the_poster_and_a_reply_tells_whoever_was_answered(api, make_user, make_look):
+    poster, ama, kofi = make_user(name="Poster"), make_user(name="Ama"), make_user(name="Kofi")
+    look = make_look(poster)
+    first = api(ama).post(f"/api/looks/{look.pk}/comments/", {"body": "Those parts are so neat"}).json()
+    api(ama).post(f"/api/looks/{look.pk}/comments/", {"body": "And the length!"})
+    api(kofi).post(f"/api/looks/{look.pk}/comments/", {"body": "Agreed", "replyTo": first["id"]})
+    api(poster).post(f"/api/looks/{look.pk}/comments/", {"body": "Thank you"})
+    # A busy hour is one push to the poster; she never hears about her own comment.
+    assert sent(poster) == [("New comment on your look", "Ama: Those parts are so neat")]
+    assert sent(ama) == [("Kofi replied to you", "Agreed")]
+    assert sent(kofi) == []
+
+
+def test_the_daily_activity_counts_saves_and_likes_but_never_says_who(api, make_user, make_look):
+    from apps.feed.notifications import look_activity_digest
+
+    poster, quiet = make_user(), make_user()
+    look = make_look(poster)
+    make_look(quiet)
+    for _ in range(2):
+        fan = make_user()
+        like(api, fan, look)
+        save(fan, look)
+    like(api, make_user(), look)
+    save(poster, look)  # her own save doesn't count
+    assert look_activity_digest() == 1
+    assert sent(poster) == [("Your looks today", "Your looks got 2 saves and 3 likes today.")]
+    assert look_activity_digest() == 0  # once a day
+
+
+def test_picked_for_you_is_only_for_people_who_asked_and_only_when_worth_it(api, make_user, make_look):
+    from apps.common.models import NotificationPreference
+    from apps.feed.notifications import picked_for_you
+
+    asked, didnt = make_user(), make_user()
+    NotificationPreference.objects.create(user=asked, opted_in=["for_you"])
+    for person in (asked, didnt):
+        save(person, make_look(make_user(), style="twists"))
+    ranked_feed()
+    assert picked_for_you() == 0  # two new twists looks aren’t worth a notification
+    for _ in range(3):
+        make_look(make_user(), style="twists")
+    assert picked_for_you() == 1
+    assert sent(asked, "for_you") == [("Picked for you", "5 new looks this week in Twists, a style you love.")]
+    assert sent(didnt, "for_you") == []
+    ranked_feed("off")
+    from django.core.cache import cache
+
+    cache.clear()
+    from apps.common.models import NotificationLog
+
+    NotificationLog.objects.all().delete()
+    assert picked_for_you() == 0
