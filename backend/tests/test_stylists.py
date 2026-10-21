@@ -252,6 +252,14 @@ def test_search_lists_live_pages_by_name_handle_or_area(api, make_stylist):
     assert api().get("/api/stylists/").json() == []
 
 
+def test_search_finds_stylists_by_what_they_do(api, make_stylist, make_look):
+    # Every test stylist offers Knotless braids; only one posts twists.
+    menu, twists = make_stylist(), make_stylist()
+    make_look(twists.account, style="twists")
+    assert {s["handle"] for s in api().get("/api/stylists/", q="knotless").json()} == {menu.handle, twists.handle}
+    assert [s["handle"] for s in api().get("/api/stylists/", q="twists").json()] == [twists.handle]
+
+
 def test_her_own_handle_is_available_to_her(api, make_stylist, make_user):
     profile = make_stylist()
     mine = api(profile.account).get("/api/stylists/handle-available/", handle=profile.handle).json()

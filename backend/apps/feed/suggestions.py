@@ -151,16 +151,17 @@ def suggested_stylists(user, limit=SUGGESTED_STYLISTS, today=None):
         # The same for her all day, different tomorrow.
         value *= random.Random(f"{user.pk}:{day}:{key}").uniform(1 - SHUFFLE, 1 + SHUFFLE)
 
+        # Short enough for two lines on her card.
         strongest = max(pull, key=pull.get)
         favourite = max(styles, key=lambda s: affinity.styles.get(s, 0) * styles[s], default=None)
         if not pull[strongest]:
-            reason = "Well reviewed on Yasante" if p.rating_count else "New on Yasante"
+            reason = "Well reviewed" if p.rating_count else "New on Yasante"
         elif strongest == "crowd":
-            reason = "Popular with people who save what you save"
+            reason = "Loved by people with your taste"
         elif strongest == "style":
-            reason = f"Does {names.get(favourite, favourite)}, a style you like"
+            reason = f"Does {names.get(favourite, favourite)}"
         elif strongest == "known":
-            reason = "You’ve liked or looked at their work"
+            reason = "You’ve liked their work"
         else:
             reason = "Near you"
         scored.append((value, p, reason, bool(known)))
