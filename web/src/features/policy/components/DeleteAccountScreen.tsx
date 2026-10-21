@@ -27,7 +27,7 @@ export function DeleteAccountScreen() {
           Without the app
         </Text>
         <Text as="p">
-          Email admin@yasante.com from the address you signed up with and ask us to delete your
+          Email privacy@yasante.com from the address you signed up with and ask us to delete your
           account. We’ll confirm by email and delete it within 30 days, usually much sooner.
         </Text>
         <Text as="h2" variant="title3">
@@ -42,8 +42,9 @@ export function DeleteAccountScreen() {
         </Text>
         <Text as="p">
           A stylist keeps a record of appointments you had with them, with your name replaced by
-          “Deleted account”. Reviews you left stay on the stylist’s page without your name. We may
-          keep records we’re required to by law, and backups are cleared within 30 days.
+          “Deleted account”, and without your hair details, notes or home address. Reviews you left
+          keep only their star rating, without your name or words. We may keep records we’re
+          required to by law, and backups are cleared within 7 days.
         </Text>
       </article>
     </Page>
