@@ -185,7 +185,9 @@ def test_the_privacy_policy_names_who_sends_our_emails(api):
 
 def test_stylist_terms_say_what_the_product_does(api):
     terms = api().get("/api/policies/stylist_terms/").json()
-    assert terms["version"] == "2026-09"
+    assert terms["version"] == "2026-10-21"
+    # Only the checks Yasante really makes.
+    assert "your identity or insurance" not in terms["body"]
     # The facts they state are the ones the booking rules enforce.
     from django.conf import settings
 
@@ -212,3 +214,12 @@ def test_the_privacy_policy_says_what_the_feed_uses_and_how_to_turn_it_off(api):
     assert "You can choose Latest" in body and "What you're shown and open in the feed: 90 days." in body
     # The text agreed to before stays readable by its version.
     assert api().get("/api/policies/privacy/", version="2026-10-20").json()["version"] == "2026-10-20"
+
+
+def test_the_guidelines_cover_all_hair_and_say_how_to_report(api):
+    guidelines = api().get("/api/policies/guidelines/").json()
+    assert guidelines["version"] == "2026-10-21"
+    body = guidelines["body"]
+    assert body.startswith("Yasante is for finding, sharing and booking hair:")
+    assert "with or without an account" in body and "within 14 days" in body
+    assert "support@yasante.com" in body and "admin@yasante.com" not in body
