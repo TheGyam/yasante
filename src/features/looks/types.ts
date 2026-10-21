@@ -143,6 +143,8 @@ export interface LookFilters {
   q?: string;
   /** Style ids from her recent searches, mixed through the feed. Never kept on the server. */
   searched?: string;
+  /** "latest": newest first, nothing personal. Otherwise the feed is picked for her. */
+  order?: 'latest';
 }
 
 /** Why someone reported a look. The wording is what the reporter sees. */

@@ -1,5 +1,5 @@
 import { ScrollView } from 'react-native';
-import { ChevronDown, MapPin, Waves } from 'lucide-react-native';
+import { ChevronDown, Clock, MapPin, Waves } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { useUser, useUserStore } from '@/features/profile';
 import { useQuery } from '@tanstack/react-query';
@@ -55,9 +55,14 @@ export function useFeedQuery(): { query: LookFilters; filtered: boolean; ready: 
     area: filters.area,
   };
   const filtered = !!(query.hair || query.style || query.area);
-  // Mixed in without a label, and only into the everyday feed, not a chosen style or hair.
-  const mix = !query.hair && !query.style && searched.length ? searched.join(',') : undefined;
-  return { query: { ...query, searched: mix }, filtered, ready };
+  // Mixed in without a label, and only into the everyday feed, not a chosen style or hair,
+  // and not into Latest, which is nothing personal.
+  const mix =
+    !filters.latest && !query.hair && !query.style && searched.length
+      ? searched.join(',')
+      : undefined;
+  const order = filters.latest ? ('latest' as const) : undefined;
+  return { query: { ...query, searched: mix, order }, filtered, ready };
 }
 
 /**
@@ -93,6 +98,13 @@ export function LookFilterBar({ inset = true }: { inset?: boolean }) {
       style={inset ? styles.bar : undefined}
       contentContainerStyle={styles.row}
     >
+      <Chip
+        label="Latest"
+        icon={Clock}
+        selected={filters.latest}
+        onPress={() => filters.setLatest(!filters.latest)}
+        accessibilityLabel="Newest first"
+      />
       <Chip
         label="Hair like mine"
         icon={Waves}

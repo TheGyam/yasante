@@ -322,7 +322,15 @@ New versions via a migration like `0018_terms_reporting_and_complaints.py`:
   filters moved into `looks.views.everyday_looks`, shared by both feeds. Learned in
   testing: an unseen look is scored at the average, so it can lead a feed of average
   looks (that's right); and a reported look must wait at the end, not just score less.
-  Next: phase 4.
+  PR #103.
+- 21 Oct 2026: phase 4 done on `feed/4-sessions`: `apps/feed/sessions.py` keeps each
+  ranked scroll in the cache for 30 minutes (cursor `rk.<session>.<offset>`, owner
+  checked), re-ranks what's left from her opens, likes, saves and scroll-pasts in this
+  session, carries on without repeats when a session expires, and shares one ranking
+  for 5 minutes among signed-out visitors. The feed view ranks only the everyday feed
+  (no filters, no search) and adds each look's `source`. "Latest" (`order=latest`)
+  is newest first with nothing personal; the app's "Latest" chip is remembered on the
+  phone. Next: phase 5.
 
 ## Continuation prompt
 
