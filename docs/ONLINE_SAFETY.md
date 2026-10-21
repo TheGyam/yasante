@@ -1,7 +1,7 @@
 # Online Safety Act assessments
 
-**A draft for Yaw and a lawyer to review.** It isn't legal advice and hasn't been
-signed off. Written 21 October 2026 from what the code does on that date. The law
+**Approved by Yaw on 21 October 2026.** Written that day from what the code does, and
+not legal advice: a lawyer should still look it over. The law
 expects these assessments to be kept up to date: review them at least once a year, and
 before any big change, such as adding private messages, opening to under-18s or
 launching in a new country.
@@ -28,9 +28,10 @@ less than a large one, but the steps above apply to everyone.
 
 ## 2. Who is accountable
 
-**Yaw is named as the person accountable for online safety**, until Yaw confirms
-someone else. That person makes sure the assessments are done and kept up to date,
-reports are handled and the records are kept.
+**Caleb Kyei is the person accountable for online safety** (decided by Yaw, 21 October
+2026). Caleb makes sure the assessments are done and kept up to date, reports are
+handled and the records are kept. How reports are handled is in
+[MODERATION.md](MODERATION.md).
 
 ## 3. How Yasante works, as far as safety goes
 
@@ -106,10 +107,10 @@ likely to attract them.
 - **Is it likely to attract children?** Probably. Hairstyle photos appeal to teenagers
   as much as to adults, even though the bookings and the terms are for adults.
 
-**Conclusion: treat Yasante as likely to be used by children.** That means a
-children's risk assessment is needed, below, unless Yasante brings in reliable age
-checks (for example an age estimate from a selfie, or an ID check) and checks
-again whether children can still get in.
+**Conclusion: treat Yasante as likely to be used by children.** Yaw decided on 21
+October 2026 to keep the age check as it is (people confirm they're 18 or over) and to
+apply the children's risk assessment below. If reliable age checks are added later,
+such as an age estimate from a selfie or an ID check, look at this again.
 
 ### Children's risk assessment
 
@@ -123,18 +124,18 @@ again whether children can still get in.
 | Dangerous challenges, violence, harmful substances | Low | Not the subject of the service | Reports, moderation |
 | Hair treatments that can harm, such as relaxers or bleach used wrongly | Low to medium | Looks can show chemical treatments | Stylists are checked; comments can be reported. Worth a line in the community guidelines |
 
-## 6. What still needs doing
+## 6. What's been done, and what's left
 
-| # | What | Why | Who |
-| --- | --- | --- | --- |
-| 1 | Confirm the accountable person (section 2) | Required for every service | Yaw |
-| 2 | Add a report reason for something illegal, or that puts a child at risk, and deal with those first | Easier to report the most serious content | Code |
-| 3 | Let people without an account report by email (support@yasante.com), and say so in the terms | Reporting has to be open to anyone affected, not only users | Terms |
-| 4 | Add to the terms: how Yasante protects people from illegal content, the automatic copy check, and how to complain | The terms have to explain these | Terms, for Yaw's approval |
-| 5 | Write a short guide for whoever handles reports: what to remove, what to escalate (to the police, or to the Internet Watch Foundation for child abuse images), and how fast | Moderators need clear rules | Docs |
-| 6 | Decide on age checks (section 5) | Without them, the children's assessment applies | Yaw |
-| 7 | For people in the EU (Digital Services Act): name a contact point in the terms, say whether automated tools are used, and keep giving reasons when content is removed | The EU's version of these rules | Terms |
-| 8 | Keep these records: this document, each review of it, and the moderation log (already kept) | Ofcom can ask to see them | Yaw |
+| # | What | Where it stands |
+| --- | --- | --- |
+| 1 | Name the accountable person | Done: Caleb Kyei (section 2) |
+| 2 | A report reason for something illegal or dangerous, dealt with first | Done: "Something illegal, or that puts someone in danger", top of the staff queues |
+| 3 | Let people without an account report by email | Done in the terms: support@yasante.com |
+| 4 | Explain in the terms how people are protected, the automatic copy check, and how to complain (replies within 14 days) | Done: terms of use, approved 21 October 2026 |
+| 5 | A guide for whoever handles reports | Done: [MODERATION.md](MODERATION.md) |
+| 6 | Decide on age checks | Decided: keep the 18+ confirmation, and apply the children's assessment |
+| 7 | For people in the EU: a contact point, saying automated tools are used, and reasons given when content is removed | Done in the terms; reasons are already sent from the app |
+| 8 | Keep records: this document, each review of it, and the moderation log | The moderation log is kept automatically; review this document by October 2027 |
 
 ## 7. Not covered here
 
