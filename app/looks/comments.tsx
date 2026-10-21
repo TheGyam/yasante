@@ -20,7 +20,7 @@ import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { useContentInsets } from '@/shared/ui/layout';
 import { FEED_LIST, ListFooter } from '@/shared/ui/ListFooter';
-import { Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
+import { Screen, ScreenTitle, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 
 /**
@@ -31,19 +31,15 @@ export default function CommentsScreen() {
   const { id = '' } = useLocalSearchParams<{ id: string }>();
   const { data: look } = useLook(id);
   const count = look?.commentCount ?? 0;
+  const title = count ? `${count} ${count === 1 ? 'comment' : 'comments'}` : 'Comments';
   return (
-    <Screen
-      modal
-      scroll="list"
-      title={count ? `${count} ${count === 1 ? 'comment' : 'comments'}` : 'Comments'}
-      testID="comments-screen"
-    >
-      <Conversation lookId={id} />
+    <Screen modal scroll="list" title={title} testID="comments-screen">
+      <Conversation lookId={id} title={title} />
     </Screen>
   );
 }
 
-function Conversation({ lookId }: { lookId: string }) {
+function Conversation({ lookId, title }: { lookId: string; title: string }) {
   const insets = useContentInsets({ modal: true });
   const safe = useSafeAreaInsets();
   const onScroll = useScreenScrollHandler();
@@ -69,6 +65,7 @@ function Conversation({ lookId }: { lookId: string }) {
         data={comments}
         keyExtractor={comment => comment.id}
         renderItem={renderItem}
+        ListHeaderComponent={<ScreenTitle title={title} />}
         ListEmptyComponent={
           thread.isLoading ? (
             <Skeleton height={60} />
