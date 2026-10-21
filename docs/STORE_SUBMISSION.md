@@ -47,10 +47,14 @@ reporting and blocking, community guidelines, Sign in with Apple beside Google.
 
 **App Privacy** (the nutrition label). Data linked to the user, none used for tracking:
 - Contact info: name, email address, physical address (a stylist's street, given only to clients whose booking she has confirmed). Used for app functionality.
-- Location: coarse location. A stylist's country, which sets her currency and is shown on her page, and her area name, which we turn into a rough point to measure distances. She types both; we never read the phone's location. Used for app functionality.
-- User content: photos, customer support messages, other user content (posts, comments, reviews, hair profile). Used for app functionality.
+- Health and fitness: health. Scalp details from the hair profile and the check-ins after an appointment, only with the person's consent to use their hair details. Used for app functionality and product personalization.
+- Location: coarse location. A stylist's country and area name, and a client's area or UK postcode if she adds one to her hair profile, which we turn into a rough point to measure distances. People type these; we never read the phone's location. Used for app functionality.
+- User content: photos, customer support messages, other user content (posts, comments, reviews, hair profile). Used for app functionality and, for the hair profile with consent, product personalization. With research consent, the hair profile also goes into anonymous research totals: declare "Other purposes" for it.
+- Search history: searches in the app, never linked to the person (declare it under "Data Not Linked to You"). Used for analytics. Recent searches also order the person's feed from their phone; the server doesn't keep them.
 - Identifiers: user ID. Used for app functionality.
 - Usage data: product interaction (only if they agree to analytics). Used for analytics.
+- Diagnostics: crash data (error reports the app sends when something breaks). Used for app functionality.
+- Sensitive info: no. We never ask for race or ethnicity; hair texture is declared under user content.
 - Tracking: no. There's no advertising and no third-party analytics.
 
 **Screenshots**: iPhone 6.9" (1320×2868). Five is enough: the feed, a look, a stylist's page, booking, hair profile. iPad isn't needed; the app is iPhone-only.
@@ -68,9 +72,10 @@ reporting and blocking, community guidelines, Sign in with Apple beside Google.
 - Content rating: user-generated content with moderation, no violence or gambling.
 - Target audience: 18+ (the terms say 18 or over).
 - Data safety:
-  - Collected: name, email, user ID, address (stylists who see clients at home or in a salon), approximate location (a stylist's country and area, typed by her and shown on her page), photos, other user-generated content, app interactions (optional).
-  - Location and address: collected, not shared, required for stylists only, used for app functionality. Not collected in the background and not read from the phone.
-  - Shared with third parties: no. Service providers acting for you don't count as sharing. That includes Photon (komoot's OpenStreetMap search), which sees the letters a stylist types in the area field to suggest names. Nothing that identifies her is sent with them.
+  - Collected: name, email, user ID, address (stylists who see clients at home or in a salon), approximate location (a stylist's country and area, and a client's area or UK postcode if she adds one), health info (scalp details, optional, only with consent), photos, other user-generated content, in-app search history (never linked to an account), app interactions (optional), crash logs.
+  - Health info: collected, not shared, optional, used for app functionality and personalization, only after the person agrees to the use of their hair details.
+  - Location and address: collected, not shared, used for app functionality. Not collected in the background and not read from the phone.
+  - Shared with third parties: no. Service providers acting for you don't count as sharing. That includes Photon (komoot's OpenStreetMap search), which sees the letters a stylist types in the area field to suggest names, and postcodes.io, which sees a UK postcode to find roughly where it is. Nothing that identifies the person is sent with either. Research reports contain only anonymous totals of at least 20 people, which isn't user data under Play's rules.
   - Encrypted in transit: yes.
   - Users can request deletion: yes, in the app and at https://yasante.com/delete-account.
 - Account deletion URL: https://yasante.com/delete-account

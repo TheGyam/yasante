@@ -42,7 +42,7 @@ def test_events_keep_local_time_properties_and_version(api, make_user):
     from apps.profiles.models import AnalyticsEvent, ConsentRecord
 
     user = make_user()
-    ConsentRecord.objects.create(user=user, purpose="analytics", granted=True, policy_version="v1", recorded_at="2026-09-27T08:00:00Z")
+    ConsentRecord.objects.create(user=user, purpose="analytics", granted=True, policy_version="2026-10-20", recorded_at="2026-09-27T08:00:00Z")
     api(user).post(
         "/api/events/",
         {
