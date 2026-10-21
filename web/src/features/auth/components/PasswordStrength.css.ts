@@ -22,3 +22,9 @@ export const rule = style({
 });
 
 export const met = style({ color: vars.color.success });
+
+export const hint = style({
+  margin: `${space.xs}px 0 0`,
+  fontSize: '0.75rem',
+  color: vars.color.text.secondary,
+});
