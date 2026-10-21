@@ -24,6 +24,7 @@ jest.mock('../hairLog', () => ({
   sinceLast: () => undefined,
   useHairLog: () => ({ data: [] }),
   useLogHair: () => ({ mutate: jest.fn() }),
+  useUnlogHair: () => ({ mutate: jest.fn() }),
 }));
 jest.mock('../hooks', () => ({
   useUser: () => ({ data: undefined }),

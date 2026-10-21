@@ -167,9 +167,11 @@ export function Screen({
   if (scroll === 'list') {
     body = <View style={styles.fill}>{children}</View>;
   } else if (scroll === false && keyboard) {
+    // The keyboard view sets its own bottom padding (the keyboard's height, 0 when it's
+    // down), which would wipe out the screen's: so the screen's spacing goes inside it.
     body = (
-      <KeyboardAvoidingView behavior="padding" style={[styles.fill, containerStyle]}>
-        {children}
+      <KeyboardAvoidingView behavior="padding" style={styles.fill}>
+        <View style={[styles.fill, containerStyle]}>{children}</View>
       </KeyboardAvoidingView>
     );
   } else if (scroll === false) {
