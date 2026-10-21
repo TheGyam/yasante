@@ -481,6 +481,27 @@ def test_stylists_for_you_match_what_she_likes(api, make_user, make_look, make_s
     assert api().get("/api/stylists/suggested/").status_code == 401
 
 
+def test_stylists_for_you_are_for_finding_someone_new(api, make_user, make_look, make_stylist, book):
+    me = make_user()
+    twists_pro, booked = make_stylist(), make_stylist()
+    liked = [make_stylist() for _ in range(3)]
+    for _ in range(3):
+        make_look(twists_pro.account, style="twists")
+        make_look(booked.account, style="twists")
+        save(me, make_look(make_user(), style="twists"))
+    for profile in liked:
+        like(api, me, make_look(profile.account, style="cornrows"))
+    book(me, booked)
+    ranked_feed()
+    found = api(me).get("/api/stylists/suggested/").json()
+    handles = [s["handle"] for s in found]
+    # Booked is in her bookings already; liking one look doesn't put a stylist first,
+    # and those she already knows take two places at most.
+    assert booked.handle not in handles
+    assert handles[0] == twists_pro.handle
+    assert len({p.handle for p in liked} & set(handles)) == 2
+
+
 def test_why_am_i_seeing_this_never_says_she_searched(api, make_user, make_look):
     me = make_user()
     for _ in range(2):

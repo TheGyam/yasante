@@ -20,7 +20,7 @@ import {
   useRefreshLooks,
   type Look,
 } from '@/features/looks';
-import { NudgeHost, useUser, useWhySuggested } from '@/features/profile';
+import { NudgeHost, useUser } from '@/features/profile';
 import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -133,9 +133,6 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
   const actions = useLookActions({ onNeedsAccount });
 
   const { query, filtered, ready } = useFeedQuery({ withFilters: false });
-  // Her hair puts looks like it first, but not in Latest, which is nothing personal.
-  const because = useWhySuggested(['texture']);
-  const why = query.order === 'latest' ? undefined : because;
   const clearFilters = useLookFilters(s => s.clear);
   const feed = useLooks(query, { enabled: ready });
   // Waiting for her recent searches counts as loading: the feed loads once, in order.
@@ -192,16 +189,11 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
               <FeedOrderSwitch />
             </View>
           </View>
-          {why && (
-            <Text variant="footnote" tone="secondary">
-              {why}
-            </Text>
-          )}
         </View>
         {loading && <FeedSkeleton />}
       </View>
     ),
-    [styles, firstName, isAuthenticated, router, loading, why]
+    [styles, firstName, isAuthenticated, router, loading]
   );
 
   return (

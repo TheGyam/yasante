@@ -1,6 +1,6 @@
 """
 Suggestions beyond the feed (docs/FEED_PLAN.md, section 12): "More like this" under a
-look, "Stylists for you" at the top of the feed, and the plain-English reason a look is
+look, "Stylists for you" above the feed, and the plain-English reason a look is
 in her feed, for "Why am I seeing this".
 """
 
@@ -22,6 +22,14 @@ from .ranking import Viewer, _allowed, _load, global_rates, mix, score, viewer_f
 RELATED_PULL = {"similar": 1.0, "style": 0.5, "people": 0.3}
 RELATED_QUOTAS = {"similar": 50, "style": 100, "people": 30}
 SUGGESTED_STYLISTS = 10
+# "Stylists for you" is for finding someone new: at most this many she already knows.
+KNOWN_SLOTS = 2
+# Her most engaged looks, for who people with her taste go to.
+CROWD_LOOKS = 50
+# Up to this much either way, changed daily, so close calls take turns.
+SHUFFLE = 0.15
+# A booking that never happened doesn't make a stylist one she's found.
+NOT_BOOKED = ("declined", "expired")
 
 
 def _personal(user):
@@ -68,34 +76,60 @@ def related_looks(look, user, limit=12, now=None, rng=None):
     return mix(candidates, rates, rng or random.Random(), limit)
 
 
-def suggested_stylists(user, limit=SUGGESTED_STYLISTS):
-    """[(profile, reason)]: stylists whose work matches what she's drawn to."""
+def suggested_stylists(user, limit=SUGGESTED_STYLISTS, today=None):
+    """
+    [(profile, reason)]: stylists she hasn't found yet whose work matches her taste.
+    Those she's booked are in her bookings already, so never here; those whose work she's
+    only liked or visited take at most KNOWN_SLOTS places. The rest are ranked on what
+    people with her taste go back to, the styles she likes, how near and how well
+    reviewed they are, with a little shuffle that changes daily so the row doesn't sit
+    still.
+    """
     if user is None or not is_on(SWITCH, user):
         return []
+    from apps.bookings.models import Booking
     from apps.common.blocks import blocked_account_ids
-    from apps.looks.models import Look, NotForMe, Style
+    from apps.looks.models import NotForMe, Style
     from apps.looks.views import public_looks
     from apps.stylists.models import StylistProfile
 
     viewer = viewer_for(user)
     affinity = viewer.affinity
-    hidden = set(blocked_account_ids(user)) | set(
-        NotForMe.objects.filter(user=user).exclude(stylist=None).values_list("stylist_id", flat=True)
-    )
-    profiles = list(
-        StylistProfile.objects.filter(published=True).exclude(account=user).exclude(account_id__in=hidden)
-    )
+    booked = Booking.objects.filter(client=user).exclude(status__in=NOT_BOOKED).values_list("stylist_id", flat=True)
+    hidden = {str(pk) for pk in blocked_account_ids(user)} | {str(pk) for pk in booked} | {
+        str(pk) for pk in NotForMe.objects.filter(user=user).exclude(stylist=None).values_list("stylist_id", flat=True)
+    }
+    profiles = [
+        p
+        for p in StylistProfile.objects.filter(published=True).exclude(account=user)
+        if str(p.account_id) not in hidden
+    ]
     if not profiles:
         return []
     accounts = {str(p.account_id) for p in profiles}
+
+    def credited(author, stylist):
+        """Whose work a look is: the stylist who did it, else whoever posted it."""
+        return str(stylist) if stylist and str(stylist) in accounts else str(author)
+
+    live = public_looks().filter(status="live", visibility="public")
     work = defaultdict(Counter)
-    for author, stylist, slug in public_looks().filter(status="live", visibility="public").filter(
-        Q(author_id__in=accounts) | Q(stylist_id__in=accounts)
-    ).values_list("author_id", "stylist_id", "styles__slug"):
-        who = stylist if stylist in accounts else str(author)
+    for author, stylist, slug in live.filter(Q(author_id__in=accounts) | Q(stylist_id__in=accounts)).values_list(
+        "author_id", "stylist_id", "styles__slug"
+    ):
         if slug:
-            work[who][slug] += 1
+            work[credited(author, stylist)][slug] += 1
+
+    # People who engaged with what she did also engaged with this stylist's work.
+    mine = sorted(affinity.looks, key=affinity.looks.get, reverse=True)[:CROWD_LOOKS]
+    crowd = defaultdict(float)
+    for look, author, stylist, closeness in LookNeighbour.objects.filter(
+        look_id__in=mine, neighbour_id__in=live.values("pk")
+    ).values_list("look_id", "neighbour__author_id", "neighbour__stylist_id", "score"):
+        crowd[credited(author, stylist)] += affinity.looks[look] * closeness
+    top = max((crowd[a] for a in accounts), default=0)
     names = dict(Style.objects.values_list("slug", "name"))
+    day = (today or timezone.localdate()).isoformat()
 
     scored = []
     for p in profiles:
@@ -103,27 +137,45 @@ def suggested_stylists(user, limit=SUGGESTED_STYLISTS):
         styles = work.get(key, Counter())
         total = sum(styles.values())
         match = sum(affinity.styles.get(s, 0) * n for s, n in styles.items()) / total if total else 0
+        shared = crowd.get(key, 0) / top if top else 0
         known = affinity.people.get(key, 0)
         near = 1.0 if viewer.area and p.base_area.lower() == viewer.area.lower() else 0.0
         # A smoothed rating: five reviews' worth of 4.5 stars to start from.
         rating = ((float(p.rating_average or 0) * p.rating_count) + 4.5 * 5) / (p.rating_count + 5) / 5
         quality = 0.5 + 0.2 * min(p.verification_tier, 2) / 2 + 0.3 * rating
-        value = (1 + 1.5 * match + 1.2 * known + 0.5 * near) * quality * (1 + 0.1 * math.log1p(total))
+        pull = {"crowd": 1.5 * shared, "style": 1.5 * match, "known": 0.3 * known, "near": 0.5 * near}
+        value = (1 + sum(pull.values())) * quality * (1 + 0.1 * math.log1p(total))
         if p.featured:
             # Set up by Yasante and not taking bookings yet: shown, after those who are.
             value *= 0.5
+        # The same for her all day, different tomorrow.
+        value *= random.Random(f"{user.pk}:{day}:{key}").uniform(1 - SHUFFLE, 1 + SHUFFLE)
+
+        strongest = max(pull, key=pull.get)
         favourite = max(styles, key=lambda s: affinity.styles.get(s, 0) * styles[s], default=None)
-        if known:
-            reason = "You’ve booked or liked their work before"
-        elif favourite and affinity.styles.get(favourite):
+        if not pull[strongest]:
+            reason = "Well reviewed on Yasante" if p.rating_count else "New on Yasante"
+        elif strongest == "crowd":
+            reason = "Popular with people who save what you save"
+        elif strongest == "style":
             reason = f"Does {names.get(favourite, favourite)}, a style you like"
-        elif near:
-            reason = "Near you"
+        elif strongest == "known":
+            reason = "You’ve liked or looked at their work"
         else:
-            reason = "Well reviewed on Yasante"
-        scored.append((value, p, reason))
+            reason = "Near you"
+        scored.append((value, p, reason, bool(known)))
     scored.sort(key=lambda row: -row[0])
-    return [(p, reason) for _, p, reason in scored[:limit]]
+
+    out, known_left = [], KNOWN_SLOTS
+    for _, p, reason, known in scored:
+        if known:
+            if not known_left:
+                continue
+            known_left -= 1
+        out.append((p, reason))
+        if len(out) == limit:
+            break
+    return out
 
 
 def reasons(items, user, surface="feed"):
