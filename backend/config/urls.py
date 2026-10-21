@@ -54,6 +54,7 @@ urlpatterns = API_DOCS + [
     path("api/users/", include("apps.profiles.urls")),
     path("api/consents/", ConsentBatchView.as_view(), name="consents"),
     path("api/events/", EventBatchView.as_view(), name="events"),
+    path("api/feed/", include("apps.feed.urls")),
     path("api/stylists/<uuid:pk>/report/", StylistReportView.as_view(), name="stylist-report"),
     path("api/stylists/", include("apps.stylists.urls")),
     path("api/countries/", CountryListView.as_view(), name="country-list"),

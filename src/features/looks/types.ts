@@ -51,6 +51,8 @@ export interface Look {
   /** Whether you have it in one of yours. */
   saved?: boolean;
   createdAt: string;
+  /** In a ranked feed: why it's there (a candidate source, such as "trending"). */
+  source?: string;
   /** True on your own looks: you can take one down, but not report it. */
   mine?: boolean;
 }
@@ -160,4 +162,6 @@ export interface LooksPage {
   data: Look[];
   /** Cursor for the next page, absent at the end. */
   nextCursor?: string;
+  /** On the first page while the ranked feed is on: what she sees is recorded against it. */
+  session?: string;
 }

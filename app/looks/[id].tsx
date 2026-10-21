@@ -36,6 +36,7 @@ import {
   takeHero,
   useAddComment,
   useComments,
+  useFeedDwell,
   useLook,
   useLookActions,
   useReplies,
@@ -153,6 +154,8 @@ export default function LookScreen() {
   const theme = useTheme();
   const reduced = useReducedMotion();
   const { height: screenHeight } = useWindowDimensions();
+  // How long she stayed, when she came from the feed.
+  useFeedDwell(id);
   useEffect(() => {
     track('view_look', { lookId: id });
   }, [id]);

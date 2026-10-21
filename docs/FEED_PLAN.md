@@ -297,8 +297,16 @@ New versions via a migration like `0018_terms_reporting_and_complaints.py`:
 
 - 21 Oct 2026: plan written; Yaw approved it in advance, asked for it to be thorough,
   for no merging, and for work to continue without stopping.
-- 21 Oct 2026: full design written (this file). Next: phase 0 branch, the stylist terms
-  and guidelines branch, then phase 1.
+- 21 Oct 2026: full design written (this file), PR #99. Stylist terms and guidelines on
+  `docs/stylist-terms-guidelines`, PR #100 (the "broken" dash in the guidelines was a
+  terminal display problem; the stored text is a proper dash, so it's unchanged).
+- 21 Oct 2026: phase 1 done on `feed/1-signals`: new `apps/feed` with `FeedEvent`,
+  `POST /api/feed/events/`, the `ranked_feed` switch (seeded off), 90-day retention,
+  deletion with the account, in the data download, superusers only on the staff site.
+  The feed's first page carries a `session` while the switch is on; the app records
+  impressions (half visible for half a second), opens and dwell against it, in batches,
+  and drops anything queued when the account changes. Two query-count tests now warm
+  the switch cache before counting (they still catch per-row queries). Next: phase 2.
 
 ## Continuation prompt
 

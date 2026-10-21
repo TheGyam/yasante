@@ -773,7 +773,11 @@ def test_feed_adds_at_most_one_query_and_search_orders_featured_last(
         present_looks(rows, None)
     for _ in range(4):
         work()
-    with django_assert_max_num_queries(len(baseline)):
+    # Feature switches are read once and cached: warm them before counting. (A request
+    # clears the query log, so the budget is taken first.)
+    budget = len(baseline)
+    signed().get("/api/looks/")
+    with django_assert_max_num_queries(budget):
         data = signed().get("/api/looks/")
     assert all(item["stylist_featured"] for item in data.data["data"])
     normal = make_stylist()
