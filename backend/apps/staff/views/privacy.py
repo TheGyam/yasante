@@ -1,3 +1,5 @@
+import json
+
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.views.decorators.http import require_GET
@@ -19,4 +21,6 @@ def reveal(request, app_label, model_name, object_id, field):
     if not (can_reveal(request.user) and ma.has_view_or_change_permission(request, obj)):
         raise PermissionDenied
     log_access(request, ma.model, f"Viewed {ma.model._meta.get_field(field).verbose_name}", obj)
-    return {"value": getattr(obj, field) or ""}
+    value = getattr(obj, field)
+    # A list stays a list for a multiple choice; anything else structured is shown as text.
+    return {"value": json.dumps(value) if isinstance(value, dict) else value or ""}

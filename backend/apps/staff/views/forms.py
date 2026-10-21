@@ -1,3 +1,5 @@
+import json
+
 from django import forms
 from django.contrib import admin
 from django.contrib.admin.utils import quote
@@ -15,6 +17,15 @@ from ..presentation import Conflict, form_data, fingerprint
 from ..audit import security_event
 
 
+def as_form_value(value):
+    """A stored value as the form would have sent it: lists comma-joined, JSON as text."""
+    if isinstance(value, list):
+        return ",".join(str(item) for item in value)
+    if isinstance(value, dict):
+        return json.dumps(value)
+    return "" if value is None else value
+
+
 def keep_hidden_values(request, ma, object_id):
     """A field left hidden isn't in the form that was sent; keep what's stored, don't blank it."""
     from ..privacy import masked_fields
@@ -26,7 +37,7 @@ def keep_hidden_values(request, ma, object_id):
     if stored:
         request.POST = request.POST.copy()
         for name in missing:
-            request.POST[name] = stored[name] or ""
+            request.POST[name] = as_form_value(stored[name])
 
 
 def send_initial_values(request, ma, object_id):

@@ -8,7 +8,7 @@ from django.views.decorators.http import require_GET
 
 from ..access import staff_data, visible_admins, model_admin, workspace_url, validate_parameters
 from ..names import field_label, model_name as friendly
-from ..privacy import log_access
+from ..privacy import log_access, masked_fields
 
 SEARCH_MODELS = ("accounts.user", "stylists.stylistprofile", "bookings.booking", "looks.look", "accounts.invite", "shelf.product")
 
@@ -79,7 +79,7 @@ def export_csv(request, app_label, model_name):
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = f'attachment; filename="{model_name}.csv"'
     writer = csv.writer(response)
-    fields = [name for name in cl.list_display if name != "action_checkbox"]
+    fields = [name for name in cl.list_display if name != "action_checkbox" and name not in masked_fields(ma.model)]
     writer.writerow([field_label(label_for_field(name, ma.model, ma)) for name in fields])
     for obj in cl.queryset.iterator(chunk_size=500):
         if not ma.has_view_or_change_permission(request, obj):

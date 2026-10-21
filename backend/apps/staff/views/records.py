@@ -6,6 +6,7 @@ from django.utils.html import strip_tags
 from django.views.decorators.http import require_GET
 from ..access import staff_data, visible_admins, model_admin, workspace_url, validate_parameters
 from ..names import model_name as friendly_name, field_label, saved_views
+from ..privacy import masked_fields
 from datetime import datetime, date
 from decimal import Decimal
 
@@ -30,8 +31,9 @@ def records(request, app_label, model_name):
         raise IncorrectLookupParameters
     columns = []
     ordering = cl.get_ordering_field_columns()
+    hidden = masked_fields(ma.model)
     for index, name in enumerate(cl.list_display):
-        if name == "action_checkbox":
+        if name == "action_checkbox" or name in hidden:
             continue
         label = label_for_field(name, ma.model, ma)
         sortable = name in cl.sortable_by and bool(cl.get_ordering_field(name))
