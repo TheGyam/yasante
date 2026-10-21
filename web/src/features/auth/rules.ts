@@ -27,7 +27,7 @@ export function isValidEmail(email: string) {
  * The terms and privacy version she agrees to, the app's POLICY_VERSION
  * (src/shared/config/policies.ts). A test holds the two equal.
  */
-export const POLICY_VERSION = '2026-10-20';
+export const POLICY_VERSION = '2026-10-21';
 
 /** The stylist terms version she agrees to (backend migration 0008_first_stylist_terms). */
 export const STYLIST_TERMS_VERSION = '2026-09';

@@ -192,3 +192,15 @@ def test_stylist_terms_say_what_the_product_does(api):
     assert f"within {settings.BOOKING_REQUEST_LAPSE_HOURS} hours lapses" in terms["body"]
     assert f"within {settings.BOOKING_DEPOSIT_LAPSE_HOURS} hours of your acceptance" in terms["body"]
     assert "Yasante never takes, holds, or refunds money" in terms["body"]
+
+
+def test_the_terms_explain_reporting_and_complaints_with_the_old_ones_kept(api):
+    from apps.profiles.models import PolicyDocument
+
+    current = api().get("/api/policies/terms/").json()
+    assert current["version"] == "2026-10-21"
+    assert "with or without an account" in current["body"] and "within 14 days" in current["body"]
+    assert PolicyDocument.objects.filter(type="terms", version="2026-09").exists()
+    # Signing up today agrees to privacy "2026-10-21": the text in force then.
+    assert api().get("/api/policies/privacy/", version="2026-10-21").json()["version"] == "2026-10-20"
+    assert api().get("/api/policies/terms/", version="2026-09").json()["version"] == "2026-09"
