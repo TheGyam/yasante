@@ -257,11 +257,17 @@ class LookSerializer(serializers.Serializer):
     saved = serializers.BooleanField()
     created_at = serializers.DateTimeField()
     mine = serializers.BooleanField()
+    # In a ranked feed: which candidate source put it there (apps.feed.weights), and why
+    # in words, for "Why am I seeing this" (only she sees it).
+    source = optional(serializers.CharField())
+    reason = optional(serializers.CharField())
 
 
 class LooksPageSerializer(serializers.Serializer):
     data = LookSerializer(many=True)
     next_cursor = optional(serializers.CharField())
+    # Only while the ranked feed is on for her: what the app records the feed against.
+    session = optional(serializers.CharField())
 
 
 class CommentSerializer(serializers.Serializer):

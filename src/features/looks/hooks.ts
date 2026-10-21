@@ -99,6 +99,17 @@ export function useMyLooks() {
 const gone = (error: unknown) =>
   (error as { response?: { status?: number } } | null)?.response?.status === 404;
 
+/** "More like this" under a look. Kept with the looks, so a like or save shows here too. */
+export function useRelatedLooks(id: string) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: [KEY, 'related', user?.id, id],
+    queryFn: () => looksApi.related(id),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useLook(id: string) {
   const queryClient = useQueryClient();
   const { user } = useAuth();

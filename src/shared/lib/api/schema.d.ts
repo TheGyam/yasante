@@ -960,6 +960,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/feed/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/feed/events/
+         *
+         *     What she saw and opened in the feed. Kept only while the ranked feed is on for her;
+         *     otherwise accepted and dropped, so an app that sends them never sees an error.
+         */
+        post: operations["feed_events_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hair-log/": {
         parameters: {
             query?: never;
@@ -1105,6 +1127,23 @@ export interface paths {
         post: operations["looks_like_create"];
         /** @description POST / DELETE /api/looks/:id/like/ — idempotent. */
         delete: operations["looks_like_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/looks/{id}/related/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/looks/:id/related/?limit= — "More like this", best for her first. */
+        get: operations["looks_related_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1853,6 +1892,23 @@ export interface paths {
         };
         /** @description GET /api/stylists/me/summary/ — the badge on the mode switch. */
         get: operations["stylists_me_summary_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stylists/suggested/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/stylists/suggested/ — "Stylists for you", while the ranked feed is on for her. */
+        get: operations["stylists_suggested_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2664,6 +2720,28 @@ export interface components {
                 [key: string]: boolean;
             };
         };
+        /** @description POST /api/feed/events/ */
+        FeedEventBatchRequest: {
+            events: components["schemas"]["FeedEventRequest"][];
+        };
+        /**
+         * @description * `impression` - impression
+         *     * `open` - open
+         *     * `dwell` - dwell
+         * @enum {string}
+         */
+        FeedEventKindEnum: "impression" | "open" | "dwell";
+        FeedEventRequest: {
+            session: string;
+            surface: components["schemas"]["SurfaceEnum"];
+            /** Format: uuid */
+            lookId: string;
+            kind: components["schemas"]["FeedEventKindEnum"];
+            position?: number;
+            /** @default  */
+            source: string;
+            ms?: number;
+        };
         Finish: {
             styles: components["schemas"]["FinishStyle"][];
             hoursSet: boolean;
@@ -2948,6 +3026,8 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             mine: boolean;
+            source?: string;
+            reason?: string;
         };
         LookCreateRequestRequest: {
             photoUri?: string;
@@ -2982,6 +3062,7 @@ export interface components {
         LooksPage: {
             data: components["schemas"]["Look"][];
             nextCursor?: string;
+            session?: string;
         };
         MenuImportRequestRequest: {
             items: components["schemas"]["MenuItemDraftRequest"][];
@@ -3721,6 +3802,7 @@ export interface components {
         };
         StylistSearchResult: {
             accountId: string;
+            reason?: string;
             handle: string;
             displayName: string;
             avatarUri?: string;
@@ -3743,6 +3825,13 @@ export interface components {
             pendingRequests: number;
             appointmentsToday: number;
         };
+        /**
+         * @description * `home` - home
+         *     * `looks` - looks
+         *     * `related` - related
+         * @enum {string}
+         */
+        SurfaceEnum: "home" | "looks" | "related";
         TaggedProduct: {
             id: string;
             brand: string;
@@ -5493,6 +5582,35 @@ export interface operations {
             };
         };
     };
+    feed_events_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedEventBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No response body */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     hair_log_list: {
         parameters: {
             query?: never;
@@ -5787,6 +5905,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    looks_related_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooksPage"];
+                };
             };
         };
     };
@@ -6961,6 +7100,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StylistSummary"];
+                };
+            };
+        };
+    };
+    stylists_suggested_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StylistSearchResult"][];
                 };
             };
         };

@@ -107,12 +107,14 @@ NOTIFICATION_CATEGORIES = [
     ("wash_day", "Wash-day reminders"),
     ("weekly_digest", "Your weekly numbers"),
     ("account", "Your account, badges and important updates"),
+    ("activity", "Comments, replies and activity on your looks"),
+    ("for_you", "Looks picked for you, once a week"),
     ("news", "News and offers from Yasante"),
 ]
 
 # Off until switched on: promotional messages need a yes first (App Store guideline
-# 4.5.4), and a wash-day reminder is only worth having if she asks for it.
-OPT_IN_CATEGORIES = {"news", "wash_day"}
+# 4.5.4), and a wash-day reminder or a weekly pick is only worth having if she asks.
+OPT_IN_CATEGORIES = {"news", "wash_day", "for_you"}
 
 
 class NotificationPreference(models.Model):

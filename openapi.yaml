@@ -1479,6 +1479,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/FeaturesResponse'
           description: ''
+  /api/feed/events/:
+    post:
+      operationId: feed_events_create
+      description: |-
+        POST /api/feed/events/
+
+        What she saw and opened in the feed. Kept only while the ranked feed is on for her;
+        otherwise accepted and dropped, so an app that sends them never sees an error.
+      tags:
+      - feed
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedEventBatchRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          description: No response body
+        '202':
+          description: No response body
   /api/hair-log/:
     get:
       operationId: hair_log_list
@@ -1769,6 +1793,30 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/looks/{id}/related/:
+    get:
+      operationId: looks_related_retrieve
+      description: GET /api/looks/:id/related/?limit= — "More like this", best for
+        her first.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LooksPage'
+          description: ''
   /api/looks/{id}/report/:
     post:
       operationId: looks_report_create
@@ -2900,6 +2948,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StylistSummary'
+          description: ''
+  /api/stylists/suggested/:
+    get:
+      operationId: stylists_suggested_list
+      description: GET /api/stylists/suggested/ — "Stylists for you", while the ranked
+        feed is on for her.
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StylistSearchResult'
           description: ''
   /api/tips/:
     get:
@@ -4459,6 +4525,58 @@ components:
             type: boolean
       required:
       - features
+    FeedEventBatchRequest:
+      type: object
+      description: POST /api/feed/events/
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeedEventRequest'
+          maxItems: 100
+      required:
+      - events
+    FeedEventKindEnum:
+      enum:
+      - impression
+      - open
+      - dwell
+      type: string
+      description: |-
+        * `impression` - impression
+        * `open` - open
+        * `dwell` - dwell
+    FeedEventRequest:
+      type: object
+      properties:
+        session:
+          type: string
+          minLength: 1
+          pattern: ^[A-Za-z0-9_-]{8,40}$
+        surface:
+          $ref: '#/components/schemas/SurfaceEnum'
+        lookId:
+          type: string
+          format: uuid
+        kind:
+          $ref: '#/components/schemas/FeedEventKindEnum'
+        position:
+          type: integer
+          maximum: 10000
+          minimum: 0
+        source:
+          type: string
+          default: ''
+          maxLength: 20
+        ms:
+          type: integer
+          maximum: 3600000
+          minimum: 0
+      required:
+      - kind
+      - lookId
+      - session
+      - surface
     Finish:
       type: object
       properties:
@@ -5047,6 +5165,10 @@ components:
           format: date-time
         mine:
           type: boolean
+        source:
+          type: string
+        reason:
+          type: string
       required:
       - authorId
       - authorName
@@ -5148,6 +5270,8 @@ components:
           items:
             $ref: '#/components/schemas/Look'
         nextCursor:
+          type: string
+        session:
           type: string
       required:
       - data
@@ -6842,6 +6966,8 @@ components:
       properties:
         accountId:
           type: string
+        reason:
+          type: string
         handle:
           type: string
         displayName:
@@ -6889,6 +7015,16 @@ components:
       required:
       - appointmentsToday
       - pendingRequests
+    SurfaceEnum:
+      enum:
+      - home
+      - looks
+      - related
+      type: string
+      description: |-
+        * `home` - home
+        * `looks` - looks
+        * `related` - related
     TaggedProduct:
       type: object
       properties:

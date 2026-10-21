@@ -32,10 +32,12 @@ import { errorMessage, useAuth } from '@/features/auth';
 import {
   LikeButton,
   LookCard,
+  MoreLikeThis,
   postedLabel,
   takeHero,
   useAddComment,
   useComments,
+  useFeedDwell,
   useLook,
   useLookActions,
   useReplies,
@@ -153,6 +155,8 @@ export default function LookScreen() {
   const theme = useTheme();
   const reduced = useReducedMotion();
   const { height: screenHeight } = useWindowDimensions();
+  // How long she stayed, when she came from the feed.
+  useFeedDwell(id);
   useEffect(() => {
     track('view_look', { lookId: id });
   }, [id]);
@@ -612,7 +616,13 @@ function LookThread({
             </Text>
           )
         }
-        ListFooterComponent={<ListFooter more={!!thread.hasNextPage} />}
+        ListFooterComponent={
+          <>
+            <ListFooter more={!!thread.hasNextPage} />
+            {/* Below every comment, once they're all in. */}
+            {stage >= 3 && !thread.hasNextPage && <MoreLikeThis lookId={id} />}
+          </>
+        }
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
           if (settled && focused && thread.hasNextPage && !thread.isFetchingNextPage) {

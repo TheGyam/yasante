@@ -47,6 +47,8 @@ def fill(me, make_user, make_look, stylist, n):
 def test_the_busy_screens_do_not_query_per_row(url, api, make_user, make_look, make_stylist):
     stylist = make_stylist()
     me = api(make_user())
+    # Switches and other settings are read once and cached: warm them before counting.
+    me.client.get(url.format(look="00000000-0000-0000-0000-000000000000", col="0", handle=stylist.handle))
     counts = []
     for n in (3, 12):
         col, look = fill(me, make_user, make_look, stylist, n)

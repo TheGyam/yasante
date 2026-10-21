@@ -14,6 +14,7 @@ import {
   LookCard,
   LookFilterBar,
   useFeedQuery,
+  useFeedTracking,
   useLookActions,
   useLookFilters,
   useLooks,
@@ -88,6 +89,8 @@ function LooksFeed() {
   const focused = useIsFocused();
   const refresh = useRefreshLooks();
   const looks = useMemo(() => feed.data?.pages.flatMap(page => page.data) ?? [], [feed.data]);
+  // While the ranked feed is on for her, what she sees and opens here is recorded.
+  const tracking = useFeedTracking(feed.data?.pages[0]?.session, 'looks', looks, actions.onOpen);
   const emptyFiltered = filtered && !feedLoading && !feed.isPlaceholderData && !looks.length;
   // Nothing matched: rather than a blank page, the latest looks still show below.
   const fallback = useLooks({}, { enabled: emptyFiltered });
@@ -117,9 +120,14 @@ function LooksFeed() {
 
   const card = useCallback(
     (look: Look) => (
-      <LookCard look={look} {...actions} onSave={look.mine ? undefined : actions.onSave} />
+      <LookCard
+        look={look}
+        {...actions}
+        onOpen={tracking.onOpen}
+        onSave={look.mine ? undefined : actions.onSave}
+      />
     ),
-    [actions]
+    [actions, tracking.onOpen]
   );
   const renderItem = useCallback(
     ({ item }: { item: Look }) => <Dim opacity={opacity}>{card(item)}</Dim>,
@@ -145,6 +153,8 @@ function LooksFeed() {
       data={feedLoading ? [] : looks}
       keyExtractor={look => look.id}
       renderItem={renderItem}
+      onViewableItemsChanged={tracking.onViewableItemsChanged}
+      viewabilityConfig={tracking.viewabilityConfig}
       ListHeaderComponent={header}
       ListEmptyComponent={
         feedLoading ? null : feed.isError ? (

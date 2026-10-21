@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Check, EyeOff, Flag, Globe, Lock, Trash2, UserX } from 'lucide-react-native';
+import { Check, EyeOff, Flag, Globe, Info, Lock, Trash2, UserX } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
   REPORT_REASONS,
@@ -52,6 +52,8 @@ export default function ReportOptionsScreen() {
     mine: string;
     /** Set when the screen underneath has nothing left once this one is gone. */
     leave?: string;
+    /** Why it's in her feed, in words: for "Why you’re seeing this". */
+    why?: string;
   }>();
   const kind = params.kind ?? 'look';
   const { id, name, authorId } = params;
@@ -203,6 +205,11 @@ export default function ReportOptionsScreen() {
   return (
     <Screen title={`Report this ${noun}`} modal keyboard testID="look-options">
       <View style={styles.body}>
+        {kind === 'look' && !!params.why && (
+          <Section footer="Only you see this.">
+            <ListRow title="Why you’re seeing this" subtitle={params.why} icon={Info} />
+          </Section>
+        )}
         {kind !== 'comment' && (
           <Section footer="Nobody is told.">
             <ListRow

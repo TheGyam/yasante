@@ -10,6 +10,7 @@ urlpatterns = [
     path("me/finish/price/", views.FinishPriceView.as_view(), name="stylist-finish-price"),
     path("me/finish/tags-checked/", views.FinishTagsView.as_view(), name="stylist-finish-tags"),
     path("handle-available/", views.HandleCheckView.as_view(), name="handle-check"),
+    path("suggested/", views.SuggestedStylistsView.as_view(), name="stylists-suggested"),
     path("", views.StylistCreateView.as_view(), name="stylist-create"),
     path("me/", views.StylistMeView.as_view(), name="stylist-me"),
     path("me/publish/", views.StylistPublishView.as_view(), name="stylist-publish"),

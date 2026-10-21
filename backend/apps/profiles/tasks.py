@@ -28,6 +28,7 @@ EXPORT = {
     "notifications_sent": ("common.NotificationLog", "user"),
     "uploads": ("common.Media", "owner"),
     "activity": ("profiles.AnalyticsEvent", "user"),
+    "feed_activity": ("feed.FeedEvent", "user"),
     "devices": ("accounts.DeviceToken", "user"),
     "looks": ("looks.Look", "author"),
     "look_likes": ("looks.LookLike", "user"),
