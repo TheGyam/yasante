@@ -70,5 +70,11 @@ const REVIEW_REASONS: Record<string, string> = {
   private: 'It shares private details',
 };
 
+/** What she's told once a report is sent; anyone in danger now needs more than a report. */
+export const reportSentMessage = (reason: string) =>
+  reason === 'illegal'
+    ? 'We’ll look at this first. If anyone is in danger right now, call 999. We won’t say who reported it.'
+    : 'Someone will look at this. We won’t say who reported it.';
+
 export const reportReasonLabel = (reason: string) =>
   REPORT_REASONS.find(r => r.value === reason)?.label ?? REVIEW_REASONS[reason] ?? 'Something else';

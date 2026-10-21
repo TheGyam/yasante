@@ -6217,6 +6217,7 @@ components:
       - hate
       - scam
       - other
+      - illegal
       - not-hair
       type: string
       description: |-
@@ -6225,6 +6226,7 @@ components:
         * `hate` - hate
         * `scam` - scam
         * `other` - other
+        * `illegal` - illegal
         * `not-hair` - not-hair
     ReportRequestRequest:
       type: object

@@ -150,6 +150,7 @@ export const REPORT_REASONS = [
   { value: 'nudity', label: 'Nudity or sexual content' },
   { value: 'hate', label: 'Hateful or abusive' },
   { value: 'scam', label: 'A scam, or selling something else' },
+  { value: 'illegal', label: 'Something illegal, or that puts someone in danger' },
   { value: 'other', label: 'Something else' },
 ] as const;
 
