@@ -179,7 +179,7 @@ def test_terms_and_privacy_are_published():
 
 def test_the_privacy_policy_names_who_sends_our_emails(api):
     current = api().get("/api/policies/privacy/").json()
-    assert current["version"] == "2026-10-20"
+    assert current["version"] == "2026-10-22"
     assert "IONOS" in current["body"] and "confirm by emailing you a code" in current["body"]
 
 
@@ -204,3 +204,11 @@ def test_the_terms_explain_reporting_and_complaints_with_the_old_ones_kept(api):
     # Signing up today agrees to privacy "2026-10-21": the text in force then.
     assert api().get("/api/policies/privacy/", version="2026-10-21").json()["version"] == "2026-10-20"
     assert api().get("/api/policies/terms/", version="2026-09").json()["version"] == "2026-09"
+
+
+def test_the_privacy_policy_says_what_the_feed_uses_and_how_to_turn_it_off(api):
+    body = api().get("/api/policies/privacy/").json()["body"]
+    assert "To choose and order what you see in your feed" in body
+    assert "You can choose Latest" in body and "What you're shown and open in the feed: 90 days." in body
+    # The text agreed to before stays readable by its version.
+    assert api().get("/api/policies/privacy/", version="2026-10-20").json()["version"] == "2026-10-20"

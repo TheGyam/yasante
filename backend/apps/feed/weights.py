@@ -83,3 +83,12 @@ SOURCE_ORDER = [
     "fresh",
     "evergreen",
 ]
+
+# What each impression records about the look, and what learned weights read.
+FEATURES = [
+    "p_save", "p_book", "p_comment", "p_like", "p_open",
+    "style", "people", "similar", "hair", "near", "searched",
+    "fresh", "quality", "penalty",
+]
+# Learned weights are fitted for these actions, each worth VALUE above.
+LEARNED_ACTIONS = ["save", "like", "open"]
