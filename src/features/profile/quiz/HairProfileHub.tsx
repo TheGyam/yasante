@@ -9,7 +9,7 @@ import { haptics } from '@/shared/lib/haptics';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { ConsentQuestion } from '@/shared/ui/ConsentQuestion';
-import { notify } from '@/shared/ui/dialog';
+import { confirm, notify } from '@/shared/ui/dialog';
 import { ListRow } from '@/shared/ui/ListRow';
 import { ProgressBar } from '@/shared/ui/ProgressBar';
 import { Rise } from '@/shared/ui/Rise';
@@ -17,7 +17,7 @@ import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Text } from '@/shared/ui/Text';
 import { hairTraits } from '../format';
-import { sinceLast, useHairLog, useLogHair, type HairLogKind } from '../hairLog';
+import { sinceLast, useHairLog, useLogHair, useUnlogHair, type HairLogKind } from '../hairLog';
 import { useUser } from '../hooks';
 import { useUserStore } from '../store';
 import { lengthIsStale, progressOf, sectionSummary, SECTIONS } from './sections';
@@ -25,9 +25,9 @@ import { StrandArt } from './TextureStep';
 import { SEP } from '@/shared/lib/format';
 
 /** One tap each, dated by the phone. */
-const LOGGABLE: { kind: HairLogKind; title: string; icon: LucideIcon }[] = [
-  { kind: 'trim', title: 'I had a trim', icon: Scissors },
-  { kind: 'wash', title: 'Wash day done', icon: Droplets },
+const LOGGABLE: { kind: HairLogKind; title: string; icon: LucideIcon; noun: string }[] = [
+  { kind: 'trim', title: 'I had a trim', icon: Scissors, noun: 'trim' },
+  { kind: 'wash', title: 'Wash day done', icon: Droplets, noun: 'wash day' },
 ];
 
 const useStyles = makeStyles(() => ({
@@ -50,6 +50,7 @@ export function HairProfileHub() {
   const { user, isAuthenticated } = useAuth();
   const log = useHairLog(isAuthenticated);
   const logHair = useLogHair();
+  const unlogHair = useUnlogHair();
   const { data: account } = useUser(user?.id);
   const local = useUserStore(s => s.hairProfile);
   const profile = { ...local, ...account?.hairProfile };
@@ -71,6 +72,26 @@ export function HairProfileHub() {
         notify({ title: 'Couldn’t save that', message: 'Check your connection and try again.' });
       },
     });
+
+  // A mis-tap is easy on a one-tap row: today's entry can be taken back.
+  const takeBack = async (kind: HairLogKind, noun: string) => {
+    const today = log.data?.find(e => e.kind === kind);
+    if (!today) return;
+    const yes = await confirm({
+      title: `Take back today’s ${noun}?`,
+      message: 'It comes off your hair history, as if you hadn’t tapped it.',
+      confirmLabel: 'Take it back',
+      cancelLabel: 'Keep it',
+    });
+    if (!yes) return;
+    unlogHair.mutate(today.id, {
+      onError: () =>
+        notify({
+          title: 'Couldn’t take that back',
+          message: 'Check your connection and try again.',
+        }),
+    });
+  };
 
   if (askHair) {
     return (
@@ -160,18 +181,24 @@ export function HairProfileHub() {
             title="Between appointments"
             footer="Over time this shows how often you trim and wash, and which day is wash day."
           >
-            {LOGGABLE.map(({ kind, title, icon }) => {
+            {LOGGABLE.map(({ kind, title, icon, noun }) => {
               const last = sinceLast(log.data, kind);
               const doneToday = last === 'Today';
               return (
                 <ListRow
                   key={kind}
                   title={title}
-                  subtitle={last ? `Last: ${last}` : 'Tap when it happens'}
+                  subtitle={
+                    doneToday
+                      ? 'Noted today. Tap to take it back'
+                      : last
+                        ? `Last: ${last}`
+                        : 'Tap when it happens'
+                  }
                   icon={icon}
                   iconTone={doneToday ? 'success' : 'neutral'}
-                  // Once a day is enough: a second tap would count a second trim.
-                  onPress={doneToday ? undefined : () => note(kind)}
+                  // Once a day is enough; a second tap offers to take today's back instead.
+                  onPress={doneToday ? () => takeBack(kind, noun) : () => note(kind)}
                   trailing={
                     doneToday ? (
                       <Animated.View entering={ZoomIn.duration(240).easing(EASE_OUT)}>
@@ -179,7 +206,7 @@ export function HairProfileHub() {
                       </Animated.View>
                     ) : null
                   }
-                  accessibilityLabel={doneToday ? `${title}, noted today` : title}
+                  accessibilityLabel={doneToday ? `${title}, noted today. Take it back` : title}
                   testID={`log-${kind}`}
                 />
               );

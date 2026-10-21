@@ -50,6 +50,16 @@ export function useLogHair() {
   });
 }
 
+/** Take back something noted by mistake (the server allows it within a day). */
+export function useUnlogHair() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => apiClient.delete(`/api/hair-log/${id}/`),
+    onSuccess: (_, id) =>
+      queryClient.setQueryData<HairLogEntry[]>(KEY, list => (list ?? []).filter(e => e.id !== id)),
+  });
+}
+
 /** "Today", "Yesterday", "12 days ago" — since the last one of a kind, if there is one. */
 export function sinceLast(
   entries: HairLogEntry[] | undefined,

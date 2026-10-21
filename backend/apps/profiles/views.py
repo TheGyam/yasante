@@ -383,6 +383,24 @@ class HairLogView(APIView):
         return Response(present_hair_log(entry), status=201)
 
 
+class HairLogEntryView(APIView):
+    """DELETE /api/hair-log/:id/ — take back something noted by mistake, within a day."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk):
+        from datetime import timedelta
+
+        entry = request.user.hair_log.filter(pk=pk).first()
+        if entry is None:
+            return Response({"message": "That’s gone already"}, status=404)
+        # Undo is for a mis-tap; the history after that is hers to keep as it was.
+        if entry.created_at < timezone.now() - timedelta(days=1):
+            return Response({"message": "Only something noted in the last day can be taken back"}, status=400)
+        entry.delete()
+        return Response(status=204)
+
+
 
 @extend_schema_view(get=extend_schema(responses=UsernameCheckSerializer))
 class UsernameCheckView(APIView):

@@ -1000,6 +1000,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/hair-log/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description DELETE /api/hair-log/:id/ — take back something noted by mistake, within a day. */
+        delete: operations["hair_log_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/insights/": {
         parameters: {
             query?: never;
@@ -5650,6 +5667,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HairLog"];
                 };
+            };
+        };
+    };
+    hair_log_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
