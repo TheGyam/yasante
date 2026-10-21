@@ -2992,6 +2992,7 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             mine: boolean;
+            source?: string;
         };
         LookCreateRequestRequest: {
             photoUri?: string;

@@ -19,6 +19,7 @@ from apps.common.permissions import IsAuthenticatedOrReadOnly
 from apps.common.throttling import CommentThrottle, PostingThrottle, ReportThrottle
 from apps.common.uploads import media_url, own_media
 from apps.feed.models import SWITCH as FEED_SWITCH
+from apps.feed.sessions import is_ranked_cursor, ranked_page
 from apps.features.switches import is_on
 from apps.shelf.models import Product
 from apps.stylists.models import StylistProfile
@@ -261,6 +262,17 @@ class FeedView(APIView):
         viewer = _viewer(request)
         style = request.query_params.get("style")
         qs = everyday_looks(viewer, style)
+        params = request.query_params
+        # Styles she's searched for, sent by her phone for this page only: never kept or
+        # logged.
+        searched = [s for s in (params.get("searched") or "").split(",") if s][:3]
+        # "Latest": newest first, nothing personal. Otherwise, while the ranked feed is on
+        # for her, the everyday feed (no filters, no search) is ranked (apps.feed).
+        latest = params.get("order") == "latest"
+        ranking = is_on(FEED_SWITCH, request.user)
+        everyday = not any(params.get(k) for k in ("hair", "style", "area", "q"))
+        if ranking and everyday and not latest and is_ranked_cursor(params.get("cursor")):
+            return self.ranked(request, viewer, qs, searched)
 
         hair = request.query_params.get("hair")
         if hair:
@@ -281,11 +293,9 @@ class FeedView(APIView):
             ).distinct()
 
         # With her yes, looks for her hair come first, unless she's chosen a hair type.
-        texture = "" if hair else _texture_to_match(viewer)
-        # Styles she's searched for, sent by her phone for this page only: never kept or
-        # logged. Not when she's already chosen a style or a hair type.
-        searched = [s for s in (request.query_params.get("searched") or "").split(",") if s][:3]
-        if searched and not style and not hair:
+        texture = "" if hair or latest else _texture_to_match(viewer)
+        # Her searched styles mix in, but not when she's chosen a style or a hair type.
+        if searched and not style and not hair and not latest:
             items, next_cursor = mixed_in(qs, texture, searched, request)
         elif texture:
             items, next_cursor = matched_first(qs, texture, request)
@@ -299,9 +309,19 @@ class FeedView(APIView):
         body = {"data": present_looks(items, viewer), "next_cursor": next_cursor}
         # While the ranked feed is on for her, the first page starts a feed session that
         # the app records what she sees and opens against (apps.feed).
-        if not request.query_params.get("cursor") and is_on(FEED_SWITCH, request.user):
+        if not request.query_params.get("cursor") and ranking:
             body["session"] = secrets.token_urlsafe(12)
         return Response(body)
+
+    def ranked(self, request, viewer, allowed, searched):
+        pairs, next_cursor, session = ranked_page(viewer, searched, request.query_params.get("cursor"), page_limit(request))
+        # Checked again now: anything blocked, removed or hidden since it was ranked stays out.
+        found = {str(look.pk): look for look in allowed.filter(pk__in=[pk for pk, _ in pairs])}
+        shown = [(found[pk], source) for pk, source in pairs if pk in found]
+        data = present_looks([look for look, _ in shown], viewer)
+        for item, (_, source) in zip(data, shown):
+            item["source"] = source
+        return Response({"data": data, "next_cursor": next_cursor, "session": session})
 
     @extend_schema(request=LookCreateRequestSerializer, responses={201: LookSerializer})
     def post(self, request):

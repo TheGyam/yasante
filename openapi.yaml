@@ -5123,6 +5123,8 @@ components:
           format: date-time
         mine:
           type: boolean
+        source:
+          type: string
       required:
       - authorId
       - authorName

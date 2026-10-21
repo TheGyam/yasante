@@ -49,13 +49,18 @@ def test_what_she_sees_and_opens_is_recorded_once_per_scroll(api, make_user, mak
     assert FeedEvent.objects.filter(kind="impression").count() == 2
 
 
-def test_a_feed_session_starts_on_the_first_page_only_while_on(api, make_user, make_look):
+def test_a_feed_session_lasts_one_scroll_and_is_hers_alone(api, make_user, make_look):
     for _ in range(3):
         make_look(make_user())
+    me = make_user()
+    assert "session" not in api(me).get("/api/looks/").json()
     ranked_feed()
-    first = api(make_user()).get("/api/looks/", limit=2).json()
+    first = api(me).get("/api/looks/", limit=2).json()
     assert len(first["session"]) >= 8
-    assert "session" not in api(make_user()).get("/api/looks/", limit=2, cursor=first["nextCursor"]).json()
+    assert api(me).get("/api/looks/", limit=2, cursor=first["nextCursor"]).json()["session"] == first["session"]
+    # Someone else with her cursor gets a scroll of their own, from the top.
+    theirs = api(make_user()).get("/api/looks/", limit=2, cursor=first["nextCursor"]).json()
+    assert theirs["session"] != first["session"] and len(theirs["data"]) == 2
 
 
 def test_signed_out_events_are_counted_without_anyone_attached(api, make_user, make_look):
@@ -350,3 +355,88 @@ def test_ranking_queries_do_not_grow_with_the_number_of_looks(api, make_user, ma
             ranked(me)
         counts.append(len(queries))
     assert counts[0] == counts[1] and counts[0] <= 40
+
+
+def walk(client, limit, **params):
+    pages, cursor = [], None
+    for _ in range(30):
+        body = client.get("/api/looks/", limit=limit, **params, **({"cursor": cursor} if cursor else {})).json()
+        pages.append(body)
+        cursor = body.get("nextCursor")
+        if not cursor:
+            return pages
+    raise AssertionError("the feed never ended")
+
+
+def test_the_ranked_feed_pages_through_everything_once(api, make_user, make_look):
+    looks = [make_look(make_user()) for _ in range(12)]
+    ranked_feed()
+    pages = walk(api(make_user()), 5)
+    ids = [item["id"] for page in pages for item in page["data"]]
+    assert sorted(ids) == sorted(str(l.pk) for l in looks)
+    assert all(page.get("nextCursor", "rk.").startswith("rk.") for page in pages)
+    assert all(item["source"] for page in pages for item in page["data"])
+
+
+def test_filters_and_latest_keep_the_plain_feed(api, make_user, make_look, consent):
+    me = make_user(texture="coily")
+    consent(me, "personalisation")
+    older_coily = make_look(make_user(), hair_texture="coily", style="twists")
+    newer = make_look(make_user(), hair_texture="straight", style="twists")
+    ranked_feed()
+    chosen = api(me).get("/api/looks/", style="twists", limit=1).json()
+    assert not chosen["nextCursor"].startswith("rk.") and "source" not in chosen["data"][0]
+    latest = [item["id"] for page in walk(api(me), 1, order="latest") for item in page["data"]]
+    # Newest first, even though the older one matches her hair.
+    assert latest == [str(newer.pk), str(older_coily.pk)]
+
+
+def test_each_page_leans_toward_what_she_engaged_with(api, make_user, make_look):
+    for _ in range(10):
+        numbers(make_look(make_user(), style="twists"), impressions=300, saves=30)
+        numbers(make_look(make_user(), style="knotless"), impressions=300, saves=35)
+    ranked_feed()
+    from apps.looks.models import Look
+
+    style_of = {str(pk): slug for pk, slug in Look.objects.values_list("pk", "styles__slug")}
+
+    def second_page(person, engage):
+        client = api(person)
+        first = client.get("/api/looks/", limit=4).json()
+        if engage:
+            for item in first["data"]:
+                if style_of[item["id"]] == "twists":
+                    client.post(f"/api/looks/{item['id']}/like/")
+        nxt = client.get("/api/looks/", limit=8, cursor=first["nextCursor"]).json()
+        return sum(style_of[item["id"]] == "twists" for item in nxt["data"])
+
+    assert second_page(make_user(), engage=True) > second_page(make_user(), engage=False)
+
+
+def test_an_expired_scroll_carries_on_without_repeats(api, make_user, make_look):
+    from django.core.cache import cache
+
+    looks = [make_look(make_user()) for _ in range(10)]
+    ranked_feed()
+    client = api(make_user())
+    first = client.get("/api/looks/", limit=4).json()
+    client.post("/api/feed/events/", {"events": [
+        {"session": first["session"], "surface": "home", "lookId": item["id"], "kind": "impression"} for item in first["data"]
+    ]})
+    cache.clear()
+    cursor, shown = first["nextCursor"], {item["id"] for item in first["data"]}
+    while cursor:
+        body = client.get("/api/looks/", limit=4, cursor=cursor).json()
+        assert not shown & {item["id"] for item in body["data"]}
+        shown |= {item["id"] for item in body["data"]}
+        cursor = body.get("nextCursor")
+    assert shown == {str(l.pk) for l in looks}
+
+
+def test_signed_out_visitors_share_one_ranking_for_a_while(api, make_user, make_look):
+    for _ in range(5):
+        make_look(make_user())
+    ranked_feed()
+    first, second = (api().get("/api/looks/").json() for _ in range(2))
+    assert [i["id"] for i in first["data"]] == [i["id"] for i in second["data"]]
+    assert first["session"] != second["session"]

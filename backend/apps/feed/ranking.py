@@ -74,13 +74,6 @@ class Candidate:
         return next((s for s in W.SOURCE_ORDER if s in self.sources), "fresh")
 
 
-@dataclass
-class Ranked:
-    pk: object
-    source: str
-    score: float
-
-
 def viewer_for(user, searched=()):
     """Who's looking: her affinities, and her hair and area only with her consent."""
     if user is None or not getattr(user, "is_authenticated", False):
@@ -308,7 +301,8 @@ def score(c, viewer, similar, rates, now):
 
 
 def _fits(c, out):
-    """Variety: no person twice in 4, no style thrice in 5, one repeat in 10."""
+    """Variety: no person twice in 4, no style thrice in 5, one repeat in 10. `out` is
+    what's been placed so far, including the end of what was already served."""
     for prev in out[-(W.AUTHOR_GAP - 1):]:
         if ({c.author, c.stylist} - {""}) & ({prev.author, prev.stylist} - {""}):
             return False
@@ -328,10 +322,13 @@ def _thompson(c, rates, rng):
     return rng.betavariate(alpha, beta)
 
 
-def mix(candidates, rates, rng, limit=W.SESSION_SIZE):
+def mix(candidates, rates, rng, limit=W.SESSION_SIZE, served=(), slots_served=0):
     """
     Best first, with variety and exploration. Her own fresh looks lead; looks with open
     reports wait at the end, whatever their score, until a person has decided.
+
+    Mid-feed, `served` is what she's already been shown (variety carries on from it) and
+    `slots_served` how many of the ranked slots that was (exploration keeps its rhythm).
     """
     own = sorted((c for c in candidates if "own" in c.sources), key=lambda c: c.created_at, reverse=True)
     rest = sorted((c for c in candidates if "own" not in c.sources), key=lambda c: c.score, reverse=True)
@@ -339,7 +336,7 @@ def mix(candidates, rates, rng, limit=W.SESSION_SIZE):
     pool = [c for c in rest if c.open_reports < W.REPORTS_TO_DEMOTE]
     out = list(own)
     while pool and len(out) < limit:
-        slot = len(out) + 1 - len(own)
+        slot = slots_served + len(out) + 1 - len(own)
         pick = None
         if slot % W.EXPLORE_EVERY == 0:
             unproven = [
@@ -351,14 +348,15 @@ def mix(candidates, rates, rng, limit=W.SESSION_SIZE):
                 pick.explore = True
         if pick is None:
             # The best that keeps the variety rules; if none can, the best there is.
-            pick = next((c for c in pool if _fits(c, out)), pool[0])
+            recent = [*served, *out][-W.SEEN_PER:]
+            pick = next((c for c in pool if _fits(c, recent)), pool[0])
         pool.remove(pick)
         out.append(pick)
     return (out + held)[:limit]
 
 
 def rank_feed(user, searched=(), now=None, rng=None, limit=W.SESSION_SIZE):
-    """Her everyday feed, ranked: [Ranked(pk, source, score)], best first."""
+    """Her everyday feed, ranked: candidates best first, each with its .source and .score."""
     now = now or timezone.now()
     rng = rng or random.Random()
     viewer = viewer_for(user, searched)
@@ -369,4 +367,4 @@ def rank_feed(user, searched=(), now=None, rng=None, limit=W.SESSION_SIZE):
     candidates = _load(found, viewer.user, now)
     for c in candidates:
         c.score = score(c, viewer, similar, rates, now)
-    return [Ranked(c.pk, c.source, c.score) for c in mix(candidates, rates, rng, limit)]
+    return mix(candidates, rates, rng, limit)

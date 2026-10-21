@@ -22,6 +22,7 @@ jest.mock('../hooks', () => ({
 beforeEach(() => {
   mockPush.mockReset();
   useLookFilters.getState().clear();
+  useLookFilters.getState().setLatest(false);
   useConsentStore.setState({ consents: {} });
 });
 
@@ -46,5 +47,23 @@ describe('hair like mine', () => {
     // A store change reaches the hook only through an async act in this renderer.
     await act(async () => useConsentStore.getState().setConsent('personalisation', false));
     expect(result.current.query.hair).toBeUndefined();
+  });
+});
+
+describe('latest', () => {
+  it('asks for newest first, and stays on when the filters are cleared', async () => {
+    render(<LookFilterBar />);
+    fireEvent.press(screen.getByText('Latest'));
+    expect(useLookFilters.getState().latest).toBe(true);
+    const client = new QueryClient();
+    const { result } = renderHook(() => useFeedQuery(), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      ),
+    });
+    expect(result.current.query.order).toBe('latest');
+    // It's how she sees the feed, not a filter.
+    await act(async () => useLookFilters.getState().clear());
+    expect(useLookFilters.getState().latest).toBe(true);
   });
 });
