@@ -1525,13 +1525,13 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description GET /api/stylists/?q= — search live pages by name, handle or area.
+         * @description GET /api/stylists/?q= — search live pages by name, handle, area, services or styles.
          *     POST /api/stylists/ — her page, as a draft only she can see.
          */
         get: operations["stylists_list"];
         put?: never;
         /**
-         * @description GET /api/stylists/?q= — search live pages by name, handle or area.
+         * @description GET /api/stylists/?q= — search live pages by name, handle, area, services or styles.
          *     POST /api/stylists/ — her page, as a draft only she can see.
          */
         post: operations["stylists_create"];

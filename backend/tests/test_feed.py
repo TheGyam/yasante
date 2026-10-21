@@ -477,7 +477,7 @@ def test_stylists_for_you_match_what_she_likes(api, make_user, make_look, make_s
     handles = [s["handle"] for s in found]
     assert handles.index(twists_pro.handle) < handles.index(other.handle)
     assert blocked.handle not in handles
-    assert found[0]["reason"] == "Does Twists, a style you like"
+    assert found[0]["reason"] == "Does Twists"
     assert api().get("/api/stylists/suggested/").status_code == 401
 
 
