@@ -228,6 +228,26 @@ def mixed_in(qs, texture, styles, request):
     return items, f"{MIX}{searched_next}~{usual_next}"
 
 
+def everyday_looks(viewer, style=None, queryset=None):
+    """
+    The public, live looks she can be shown: nobody she's blocked, and nothing she's said
+    isn't for her (a style she's asked for herself still shows). The ranked feed starts
+    from the same set (apps.feed.ranking), so the two never disagree on what's allowed.
+    """
+    qs = (_looks(viewer) if queryset is None else queryset).filter(visibility="public", status="live")
+    blocked = blocked_account_ids(viewer)
+    if blocked:
+        qs = qs.exclude(author_id__in=blocked)
+    looks, stylists, styles = not_for_me(viewer)
+    if looks:
+        qs = qs.exclude(pk__in=looks)
+    if stylists:
+        qs = qs.exclude(author_id__in=stylists).exclude(stylist_id__in=[str(s) for s in stylists])
+    if styles - {style}:
+        qs = qs.exclude(styles__slug__in=styles - {style})
+    return qs
+
+
 class FeedView(APIView):
     """GET /api/looks/?cursor=&limit=&hair=&style=&area=&q= — also POST, to post a look."""
 
@@ -239,19 +259,8 @@ class FeedView(APIView):
     @extend_schema(responses=LooksPageSerializer)
     def get(self, request):
         viewer = _viewer(request)
-        qs = _looks(viewer).filter(visibility="public", status="live")
-        blocked = blocked_account_ids(viewer)
-        if blocked:
-            qs = qs.exclude(author_id__in=blocked)
         style = request.query_params.get("style")
-        # What she's said isn't for her, unless she's asked for that style herself.
-        looks, stylists, styles = not_for_me(viewer)
-        if looks:
-            qs = qs.exclude(pk__in=looks)
-        if stylists:
-            qs = qs.exclude(author_id__in=stylists).exclude(stylist_id__in=[str(s) for s in stylists])
-        if styles - {style}:
-            qs = qs.exclude(styles__slug__in=styles - {style})
+        qs = everyday_looks(viewer, style)
 
         hair = request.query_params.get("hair")
         if hair:
