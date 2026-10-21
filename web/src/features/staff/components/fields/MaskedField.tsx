@@ -9,7 +9,7 @@ import { FieldValue } from './FieldValue';
 import * as s from './MaskedField.css';
 
 /**
- * A home address, postcode or phone number: hidden until someone allowed to see it
+ * A home address, postcode, phone number or hair detail: hidden until someone allowed to see it
  * asks. Asking is written to the staff activity trail. Left hidden, it can't be
  * changed, and saving keeps what's stored.
  */
