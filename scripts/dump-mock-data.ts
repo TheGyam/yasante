@@ -5,9 +5,9 @@ import path from 'path';
 (global as any).__DEV__ = true;
 
 // Import the database and seed it.
-import { db } from './src/mocks/db';
-import './src/mocks/seed';
-import { CATALOGUE } from './src/mocks/shelf';
+import { db } from '../src/mocks/db';
+import '../src/mocks/seed';
+import { CATALOGUE } from '../src/mocks/shelf';
 
 const dump = {
   accounts: Array.from(db.accounts.values()),
@@ -42,5 +42,5 @@ const dump = {
   ].map(([id, name]) => ({ id, name })),
 };
 
-fs.writeFileSync(path.join(__dirname, 'backend', 'seed.json'), JSON.stringify(dump, null, 2));
+fs.writeFileSync(path.join(__dirname, '..', 'backend', 'seed.json'), JSON.stringify(dump, null, 2));
 console.log('Successfully dumped mock data to backend/seed.json');
