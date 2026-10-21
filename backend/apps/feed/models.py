@@ -49,3 +49,41 @@ class FeedEvent(models.Model):
                 fields=["session", "look"], condition=models.Q(kind="impression"), name="one_impression_per_session"
             ),
         ]
+
+
+class LookStats(models.Model):
+    """
+    How each look is doing, for ranking: totals, the last 3 days for what's rising, and
+    what the feed recorded. Nothing here says who; refreshed every 10 minutes.
+    """
+
+    look = models.OneToOneField("looks.Look", primary_key=True, on_delete=models.CASCADE, related_name="stats")
+    impressions = models.PositiveIntegerField(default=0)
+    opens = models.PositiveIntegerField(default=0)
+    dwell_ms = models.BigIntegerField(default=0)
+    likes = models.PositiveIntegerField(default=0)
+    saves = models.PositiveIntegerField(default=0)
+    comments = models.PositiveIntegerField(default=0)
+    bookings = models.PositiveIntegerField(default=0)
+    not_for_me = models.PositiveIntegerField(default=0)
+    open_reports = models.PositiveIntegerField(default=0)
+    # The last 3 days, for what's rising now.
+    recent_impressions = models.PositiveIntegerField(default=0)
+    recent_engagements = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "feed_look_stats"
+
+
+class LookNeighbour(models.Model):
+    """People who engaged with this look also engaged with that one: top 50 per look."""
+
+    look = models.ForeignKey("looks.Look", on_delete=models.CASCADE, related_name="neighbours")
+    neighbour = models.ForeignKey("looks.Look", on_delete=models.CASCADE, related_name="+")
+    score = models.FloatField()
+
+    class Meta:
+        db_table = "feed_look_neighbour"
+        ordering = ["-score"]
+        constraints = [models.UniqueConstraint(fields=["look", "neighbour"], name="one_neighbour_row_per_pair")]

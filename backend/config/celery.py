@@ -75,6 +75,10 @@ app.conf.beat_schedule = {
         "task": "apps.bookings.tasks.insurance_reminders",
         "schedule": crontab(hour=9, minute=0),
     },
+    # How each look is doing, for ranking the feed.
+    "feed-look-stats": {"task": "apps.feed.tasks.refresh_look_stats", "schedule": crontab(minute="*/10")},
+    # Which looks the same people engage with: "more like this" and the feed's "similar".
+    "feed-neighbours": {"task": "apps.feed.tasks.refresh_neighbours", "schedule": crontab(hour=2, minute=45)},
     "product-import": {
         "task": "apps.shelf.tasks.weekly_product_import",
         "schedule": crontab(hour=3, minute=30, day_of_week="wed"),

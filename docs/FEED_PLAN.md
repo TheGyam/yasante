@@ -306,7 +306,13 @@ New versions via a migration like `0018_terms_reporting_and_complaints.py`:
   The feed's first page carries a `session` while the switch is on; the app records
   impressions (half visible for half a second), opens and dwell against it, in batches,
   and drops anything queued when the account changes. Two query-count tests now warm
-  the switch cache before counting (they still catch per-row queries). Next: phase 2.
+  the switch cache before counting (they still catch per-row queries). PR #101.
+- 21 Oct 2026: phase 2 done on `feed/2-stats`: `LookStats` (totals, last 3 days, feed
+  counts, open reports, bookings from the look) refreshed every 10 minutes;
+  `LookNeighbour` (cosine over likes, saves, comments, opens and bookings in the last
+  60 days, busy people damped, rare pairs discounted, top 50) nightly at 02:45;
+  `affinity_for(user)` (styles and people, 14-day half-life, cached 10 minutes, never a
+  hair type or price). Next: phase 3.
 
 ## Continuation prompt
 
