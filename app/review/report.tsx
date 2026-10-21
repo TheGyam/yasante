@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Check, Flag } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
+import { reportSentMessage } from '@/features/looks';
 import {
   REVIEW_REPORT_REASONS,
   useReportReview,
@@ -42,7 +43,7 @@ export default function ReportReviewScreen() {
       router.back();
       await notify({
         title: 'Thanks for telling us',
-        message: 'Someone will look at this. We won’t say who reported it.',
+        message: reportSentMessage(reason),
       });
     } catch (error) {
       haptics.error();

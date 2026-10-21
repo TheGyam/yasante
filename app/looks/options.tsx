@@ -14,6 +14,7 @@ import {
   useSetLookVisibility,
   type ReportReason,
   type ReportTarget,
+  reportSentMessage,
 } from '@/features/looks';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
@@ -92,7 +93,7 @@ export default function ReportOptionsScreen() {
       router.back();
       await notify({
         title: 'Thanks for telling us',
-        message: 'Someone will look at this. We won’t say who reported it.',
+        message: reportSentMessage(reason),
       });
     } catch (error) {
       await fail(error, 'Couldn’t send that');
