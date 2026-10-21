@@ -1793,6 +1793,30 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/looks/{id}/related/:
+    get:
+      operationId: looks_related_retrieve
+      description: GET /api/looks/:id/related/?limit= — "More like this", best for
+        her first.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - looks
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LooksPage'
+          description: ''
   /api/looks/{id}/report/:
     post:
       operationId: looks_report_create
@@ -2924,6 +2948,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StylistSummary'
+          description: ''
+  /api/stylists/suggested/:
+    get:
+      operationId: stylists_suggested_list
+      description: GET /api/stylists/suggested/ — "Stylists for you", while the ranked
+        feed is on for her.
+      tags:
+      - stylists
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StylistSearchResult'
           description: ''
   /api/tips/:
     get:
@@ -5123,6 +5165,10 @@ components:
           format: date-time
         mine:
           type: boolean
+        source:
+          type: string
+        reason:
+          type: string
       required:
       - authorId
       - authorName
@@ -6919,6 +6965,8 @@ components:
       type: object
       properties:
         accountId:
+          type: string
+        reason:
           type: string
         handle:
           type: string

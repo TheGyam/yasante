@@ -44,10 +44,10 @@ describe('a forgotten password, on the web', () => {
     const typist = userEvent.setup();
     renderSite('/auth/reset-password?uid=u1&token=abc-123');
 
-    await typist.type(screen.getByLabelText('New password'), 'weakpass');
-    await typist.type(screen.getByLabelText('Confirm new password'), 'weakpass');
+    await typist.type(screen.getByLabelText('New password'), 'short');
+    await typist.type(screen.getByLabelText('Confirm new password'), 'short');
     await typist.click(screen.getByRole('button', { name: 'Change password' }));
-    expect(screen.getByText('Add an uppercase letter')).toBeInTheDocument();
+    expect(screen.getByText('Use at least 8 characters')).toBeInTheDocument();
 
     await typist.clear(screen.getByLabelText('New password'));
     await typist.type(screen.getByLabelText('New password'), 'Braids#2027');

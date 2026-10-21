@@ -37,6 +37,9 @@ class FeedEvent(models.Model):
     # Which candidate source put it there (see apps.feed.ranking), when ranked.
     source = models.CharField(max_length=20, blank=True, default="")
     dwell_ms = models.PositiveIntegerField(null=True, blank=True)
+    # On an impression: what the ranking knew about the look when it was shown, so the
+    # weights can be learned from what people did next (manage.py tune_feed).
+    features = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
@@ -49,3 +52,54 @@ class FeedEvent(models.Model):
                 fields=["session", "look"], condition=models.Q(kind="impression"), name="one_impression_per_session"
             ),
         ]
+
+
+class LookStats(models.Model):
+    """
+    How each look is doing, for ranking: totals, the last 3 days for what's rising, and
+    what the feed recorded. Nothing here says who; refreshed every 10 minutes.
+    """
+
+    look = models.OneToOneField("looks.Look", primary_key=True, on_delete=models.CASCADE, related_name="stats")
+    impressions = models.PositiveIntegerField(default=0)
+    opens = models.PositiveIntegerField(default=0)
+    dwell_ms = models.BigIntegerField(default=0)
+    likes = models.PositiveIntegerField(default=0)
+    saves = models.PositiveIntegerField(default=0)
+    comments = models.PositiveIntegerField(default=0)
+    bookings = models.PositiveIntegerField(default=0)
+    not_for_me = models.PositiveIntegerField(default=0)
+    open_reports = models.PositiveIntegerField(default=0)
+    # The last 3 days, for what's rising now.
+    recent_impressions = models.PositiveIntegerField(default=0)
+    recent_engagements = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "feed_look_stats"
+
+
+class LookNeighbour(models.Model):
+    """People who engaged with this look also engaged with that one: top 50 per look."""
+
+    look = models.ForeignKey("looks.Look", on_delete=models.CASCADE, related_name="neighbours")
+    neighbour = models.ForeignKey("looks.Look", on_delete=models.CASCADE, related_name="+")
+    score = models.FloatField()
+
+    class Meta:
+        db_table = "feed_look_neighbour"
+        ordering = ["-score"]
+        constraints = [models.UniqueConstraint(fields=["look", "neighbour"], name="one_neighbour_row_per_pair")]
+
+
+class FeedWeights(models.Model):
+    """Weights learned from what people did (manage.py tune_feed). The newest is used."""
+
+    weights = models.JSONField()
+    metrics = models.JSONField(default=dict)
+    impressions = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "feed_weights"
+        ordering = ["-created_at"]

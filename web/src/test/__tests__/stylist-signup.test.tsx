@@ -74,7 +74,7 @@ describe('a stylist setting up on the web', () => {
       email: 'ama@example.com',
       role: 'stylist',
       ageConfirmed: true,
-      policyVersion: '2026-10-21',
+      policyVersion: '2026-10-22',
     });
     await waitFor(() => expect(calls.some(c => c.url === '/api/auth/email/start/')).toBe(true));
     // What she agreed to is on the record, stylist terms included.
@@ -85,8 +85,8 @@ describe('a stylist setting up on the web', () => {
         c => [c.purpose, c.policyVersion]
       )
     ).toEqual([
-      ['terms', '2026-10-21'],
-      ['privacy', '2026-10-21'],
+      ['terms', '2026-10-22'],
+      ['privacy', '2026-10-22'],
       ['stylist_terms', '2026-09'],
     ]);
     await typist.type(screen.getByLabelText('The code from the email'), '123456');

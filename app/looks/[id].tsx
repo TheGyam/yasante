@@ -32,6 +32,7 @@ import { errorMessage, useAuth } from '@/features/auth';
 import {
   LikeButton,
   LookCard,
+  MoreLikeThis,
   postedLabel,
   takeHero,
   useAddComment,
@@ -615,7 +616,13 @@ function LookThread({
             </Text>
           )
         }
-        ListFooterComponent={<ListFooter more={!!thread.hasNextPage} />}
+        ListFooterComponent={
+          <>
+            <ListFooter more={!!thread.hasNextPage} />
+            {/* Below every comment, once they're all in. */}
+            {stage >= 3 && !thread.hasNextPage && <MoreLikeThis lookId={id} />}
+          </>
+        }
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
           if (settled && focused && thread.hasNextPage && !thread.isFetchingNextPage) {

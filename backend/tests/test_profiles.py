@@ -89,7 +89,7 @@ def test_optional_answers_from_before_the_new_policy_count_as_unanswered(api, ma
 def test_the_new_privacy_policy_is_published_with_the_old_ones_kept(api):
     from apps.profiles.models import PolicyDocument, OPTIONAL_CONSENTS_SINCE
 
-    current = api().get("/api/policies/privacy/").json()
+    current = api().get("/api/policies/privacy/", version=OPTIONAL_CONSENTS_SINCE).json()
     assert current["version"] == OPTIONAL_CONSENTS_SINCE
     assert "5. Research" in current["body"] and "7. Cookies and storage" in current["body"]
     # Every gap is filled in before it goes out.

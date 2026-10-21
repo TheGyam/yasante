@@ -5,7 +5,7 @@
  * every consent record stores the version it was given against, so we can always
  * show what a user actually agreed to.
  */
-export const POLICY_VERSION = '2026-10-21';
+export const POLICY_VERSION = '2026-10-22';
 
 export const TERMS_URL = 'https://yasante.com/terms';
 export const PRIVACY_URL = 'https://yasante.com/privacy';

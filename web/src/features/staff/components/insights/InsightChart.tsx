@@ -338,6 +338,21 @@ export function InsightChart({ insight }: { insight: Insight }) {
           {typeof insight.meta.note === 'string' && <p className={ui.muted}>{insight.meta.note}</p>}
         </>
       );
+    case 'feed':
+      return (
+        <>
+          <TimeChart
+            labels={rows.map(row => row.label)}
+            series={labels.map((name, index) => ({
+              name,
+              values: rows.map(row => row.values[index]),
+            }))}
+            label="Saves, booking requests and Not for me per 100 people, ranked feed against plain"
+            onSelect={open}
+          />
+          {typeof insight.meta.note === 'string' && <p className={ui.muted}>{insight.meta.note}</p>}
+        </>
+      );
     default:
       return null;
   }
