@@ -231,8 +231,13 @@ Greedy, from the top score down, with these rules:
 
 ## 12. Suggestions
 
-- **More like this** under a look: its co-engagement neighbours, other looks of the
-  same styles and by the same stylist, scored for her and re-ranked for variety.
+- **More like this** under a look, as Pinterest does under a pin (Yaw, 21 Oct 2026): the
+  look, the top two comments with "View all" opening the conversation in a sheet, then
+  the home grid of related looks, loading as she scrolls. Ranked on closeness first
+  (co-engagement neighbours, shared styles out of all either has, the same stylist),
+  then her own score; one visit is ranked once and paged like a feed session, and what
+  she sees there is recorded (surface `related`), so it sinks on her next visit instead
+  of the same looks every time.
 - **Stylists for you**: a row at the top of the feed, for finding someone new. Ranked
   on who people with her taste go to (looks saved alongside hers), how much of their
   work is in styles she likes, nearness, a smoothed rating and a verified tier, with a

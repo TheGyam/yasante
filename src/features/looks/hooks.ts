@@ -107,13 +107,25 @@ const gone = (error: unknown) =>
   (error as { response?: { status?: number } } | null)?.response?.status === 404;
 
 /** "More like this" under a look. Kept with the looks, so a like or save shows here too. */
-export function useRelatedLooks(id: string) {
+/**
+ * "More like this" under a look, a page at a time as she scrolls, like the feed. Each
+ * visit is ranked afresh (what she's seen sinks), then paged without repeats.
+ */
+export function useRelatedLooks(id: string, { enabled = true } = {}) {
   const { user } = useAuth();
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [KEY, 'related', user?.id, id],
-    queryFn: () => looksApi.related(id),
-    enabled: !!id,
+    queryFn: async ({ pageParam }: { pageParam?: string }) => {
+      const page = await looksApi.related(id, pageParam);
+      prefetchImages(page.data.map(look => look.thumbUri ?? look.photoUri));
+      return page;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: page => page.nextCursor,
+    enabled: enabled && !!id,
     staleTime: 5 * 60 * 1000,
+    // Never re-read under her mid-scroll, as with the feed.
+    refetchOnWindowFocus: false,
   });
 }
 

@@ -340,7 +340,11 @@ def with_reasons(data, shown, viewer, surface="feed"):
 
 @extend_schema_view(get=extend_schema(responses=LooksPageSerializer))
 class LookRelatedView(APIView):
-    """GET /api/looks/:id/related/?limit= — "More like this", best for her first."""
+    """
+    GET /api/looks/:id/related/?cursor=&limit= — "More like this", closest and best for
+    her first, a page at a time. One visit is ranked once and paged through, so a page
+    never repeats one before it.
+    """
 
     permission_classes = [permissions.AllowAny]
 
@@ -351,14 +355,22 @@ class LookRelatedView(APIView):
         look = _visible_look(pk, viewer)
         if look is None:
             return _not_found()
-        limit = min(page_limit(request, default=12), 24)
-        picked = related_looks(look, viewer, limit)
-        found = {look.pk: look for look in _looks(viewer).filter(pk__in=[c.pk for c in picked])}
-        shown = [(found[c.pk], c.source) for c in picked if c.pk in found]
+        limit = min(page_limit(request, default=20), 40)
+        pairs, next_cursor, session = ranked_page(
+            viewer, (), request.query_params.get("cursor"), limit,
+            scope=f"related:{look.pk}", rank=lambda: related_looks(look, viewer),
+        )
+        # Checked again now: anything blocked, removed or hidden since it was ranked stays out.
+        found = {str(item.pk): item for item in _looks(viewer).filter(pk__in=[pk for pk, _ in pairs])}
+        shown = [(found[pk], source) for pk, source in pairs if pk in found]
         data = present_looks([look for look, _ in shown], viewer)
         personal = viewer if viewer is not None and is_on(FEED_SWITCH, viewer) else None
         with_reasons(data, shown, personal, surface="related")
-        return Response({"data": data})
+        body = {"data": data, "next_cursor": next_cursor}
+        # What she sees here is recorded against this, like the feed, so it sinks next time.
+        if personal is not None:
+            body["session"] = session
+        return Response(body)
 
 
 def create_look(request):

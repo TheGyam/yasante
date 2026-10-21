@@ -17,10 +17,15 @@ from .affinity import affinity_for
 from .models import SWITCH, LookNeighbour
 from .ranking import Viewer, _allowed, _load, global_rates, mix, score, viewer_for
 
-# What "More like this" leans on most: looks the same people saved, then the same styles,
-# then more from the same person.
-RELATED_PULL = {"similar": 1.0, "style": 0.5, "people": 0.3}
-RELATED_QUOTAS = {"similar": 50, "style": 100, "people": 30}
+# "More like this", as Pinterest ranks related pins: how close each look is to this one
+# comes first (what the same people saved, how many styles they share, the same
+# stylist), then how good it is for her. Each part is 0..1, times these.
+CLOSENESS = {"similar": 1.0, "styles": 0.8, "people": 0.3}
+# How far closeness outweighs her taste and how well a look is doing.
+CLOSENESS_PULL = 2.0
+RELATED_QUOTAS = {"similar": 100, "style": 200, "people": 30}
+# One visit's worth, paged through like the feed.
+RELATED_SIZE = 150
 SUGGESTED_STYLISTS = 10
 # "Stylists for you" is for finding someone new: at most this many she already knows.
 KNOWN_SLOTS = 2
@@ -37,8 +42,11 @@ def _personal(user):
     return viewer_for(user) if user is not None and is_on(SWITCH, user) else Viewer()
 
 
-def related_looks(look, user, limit=12, now=None, rng=None):
-    """Looks like this one, best for her first, with variety."""
+def related_looks(look, user, limit=RELATED_SIZE, now=None, rng=None):
+    """
+    Looks like this one, closest and best for her first, with variety. What she's seen
+    or opened this week sinks (as in her feed), so it isn't the same looks every visit.
+    """
     from apps.looks.models import Look
 
     now = now or timezone.now()
@@ -55,7 +63,7 @@ def related_looks(look, user, limit=12, now=None, rng=None):
         for pk in allowed.filter(pk__in=list(neighbours)).values_list("pk", flat=True):
             found[pk].add("similar")
             similar[pk] = neighbours[pk] / top
-    slugs = list(look.styles.values_list("slug", flat=True))
+    slugs = set(look.styles.values_list("slug", flat=True))
     if slugs:
         same = allowed.filter(pk__in=Look.objects.filter(styles__slug__in=slugs).values("pk")).order_by("-created_at")
         for pk in same.values_list("pk", flat=True)[: RELATED_QUOTAS["style"]]:
@@ -70,9 +78,15 @@ def related_looks(look, user, limit=12, now=None, rng=None):
     rates = global_rates()
     candidates = _load(found, viewer.user, now)
     for c in candidates:
-        closeness = sum(RELATED_PULL[s] for s in c.sources) + RELATED_PULL["similar"] * similar.get(c.pk, 0)
+        # Shared styles out of all the styles either has: one in common of five says less.
+        shared = len(slugs & set(c.styles)) / len(slugs | set(c.styles)) if slugs else 0
+        closeness = (
+            CLOSENESS["similar"] * similar.get(c.pk, 0)
+            + CLOSENESS["styles"] * shared
+            + CLOSENESS["people"] * ("people" in c.sources)
+        )
         # Her own pull, without counting "similar" twice: here it means like this look.
-        c.score = score(c, viewer, {}, rates, now) * (1 + closeness)
+        c.score = score(c, viewer, {}, rates, now) * (1 + CLOSENESS_PULL * closeness)
     return mix(candidates, rates, rng or random.Random(), limit)
 
 

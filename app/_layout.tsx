@@ -288,6 +288,7 @@ function RootNavigator() {
         <Stack.Screen name="hair-profile/[section]" options={modal} />
         <Stack.Screen name="looks/index" />
         <Stack.Screen name="looks/area" options={modal} />
+        <Stack.Screen name="looks/comments" options={modal} />
         <Stack.Screen name="looks/[id]" options={overlay} />
         <Stack.Screen name="stylist/[handle]" />
         <Stack.Screen name="who/[style]" options={modal} />

@@ -463,6 +463,28 @@ def test_more_like_this_leans_on_what_the_same_people_saved(api, make_user, make
     assert api().get("/api/looks/00000000-0000-0000-0000-000000000000/related/").status_code == 404
 
 
+def test_more_like_this_pages_without_repeats_and_moves_past_what_she_has_seen(api, make_user, make_look):
+    look = make_look(make_user(), style="twists")
+    others = [make_look(make_user(), style="twists") for _ in range(6)]
+    me = make_user()
+    ranked_feed()
+    url = f"/api/looks/{look.pk}/related/"
+    first = api(me).get(url, limit=3).json()
+    second = api(me).get(url, limit=3, cursor=first["nextCursor"]).json()
+    ids = [item["id"] for item in first["data"] + second["data"]]
+    assert len(ids) == len(set(ids)) == 6 and first["session"] == second["session"]
+    # A feed cursor isn't this list's: it starts this one afresh.
+    feed = api(me).get("/api/looks/", limit=2).json()
+    assert len(api(me).get(url, limit=3, cursor=feed["nextCursor"]).json()["data"]) == 3
+
+    # What she saw here three times this week comes last next visit.
+    tired = first["data"][0]["id"]
+    events = [{**seen(next(o for o in others if str(o.pk) == tired), session=f"session-{n}"), "surface": "related"} for n in range(3)]
+    assert api(me).post("/api/feed/events/", {"events": events}).status_code == 201
+    again = [item["id"] for item in api(me).get(url).json()["data"]]
+    assert again[-1] == tired
+
+
 def test_stylists_for_you_match_what_she_likes(api, make_user, make_look, make_stylist):
     me = make_user()
     twists_pro, other, blocked = make_stylist(), make_stylist(), make_stylist()
@@ -489,8 +511,9 @@ def test_stylists_for_you_are_for_finding_someone_new(api, make_user, make_look,
         make_look(twists_pro.account, style="twists")
         make_look(booked.account, style="twists")
         save(me, make_look(make_user(), style="twists"))
-    for profile in liked:
-        like(api, me, make_look(profile.account, style="cornrows"))
+    # One like each, on three different styles.
+    for profile, style in zip(liked, ("cornrows", "box-braids", "silk-press")):
+        like(api, me, make_look(profile.account, style=style))
     book(me, booked)
     ranked_feed()
     found = api(me).get("/api/stylists/suggested/").json()
