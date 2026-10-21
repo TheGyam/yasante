@@ -1542,6 +1542,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/HairLog'
           description: ''
+  /api/hair-log/{id}/:
+    delete:
+      operationId: hair_log_destroy
+      description: DELETE /api/hair-log/:id/ — take back something noted by mistake,
+        within a day.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - hair-log
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/insights/:
     get:
       operationId: insights_retrieve
