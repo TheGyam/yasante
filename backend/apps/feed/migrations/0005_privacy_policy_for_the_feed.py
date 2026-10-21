@@ -1,7 +1,7 @@
 """
 Privacy policy 2026-10-22, for the ranked feed (docs/FEED_PLAN.md): what it uses to
 choose and order what people see, the looks they're shown and open, how long that's
-kept, and Latest. Written for Yaw to read before merging; merging publishes it.
+kept, and Latest. Approved by Yaw on 21 October 2026; merging publishes it.
 Earlier versions stay, so every consent record still points at the text agreed to.
 """
 

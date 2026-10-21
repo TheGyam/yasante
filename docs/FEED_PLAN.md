@@ -356,8 +356,8 @@ New versions via a migration like `0018_terms_reporting_and_complaints.py`:
   for me per 100 people, ranked against plain. Privacy policy 2026-10-22 (in force
   from when it's published, in the feed app's migrations so it can't clash with the
   stylist terms branch) and POLICY_VERSION bumped; DPIA updated.
-- **The plan is complete.** Still for Yaw: read and approve the privacy lines in PR
-  #107 before merging, then merge in order: #99, #101 to #107 (stacked), and #100
+- **The plan is complete.** Yaw approved the three privacy lines in PR #107 in chat on
+  21 Oct 2026. Still for Yaw: merge in order: #99, #101 to #107 (stacked), and #100
   separately; turn `ranked_feed` on for staff, then a percentage, watching the
   "Ranked feed" insight; run `manage.py tune_feed` once there are 5,000 impressions.
 
