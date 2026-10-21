@@ -44,16 +44,26 @@ function useSearchedStyles() {
   return { styles: searchedStyles(queries, taxonomy.data ?? []), ready };
 }
 
-/** What the feed is narrowed to right now, as the API takes it. */
-export function useFeedQuery(): { query: LookFilters; filtered: boolean; ready: boolean } {
+/**
+ * What the feed is narrowed to right now, as the API takes it. Home has no filters, only
+ * For you and Latest (`withFilters: false`), so a filter set on the Looks screen never
+ * narrows it out of sight.
+ */
+export function useFeedQuery({ withFilters = true } = {}): {
+  query: LookFilters;
+  filtered: boolean;
+  ready: boolean;
+} {
   const texture = useTexture();
   const filters = useLookFilters();
   const { styles: searched, ready } = useSearchedStyles();
-  const query = {
-    hair: filters.hairLikeMine ? texture : undefined,
-    style: filters.style,
-    area: filters.area,
-  };
+  const query = withFilters
+    ? {
+        hair: filters.hairLikeMine ? texture : undefined,
+        style: filters.style,
+        area: filters.area,
+      }
+    : {};
   const filtered = !!(query.hair || query.style || query.area);
   // Mixed in without a label, and only into the everyday feed, not a chosen style or hair,
   // and not into Latest, which is nothing personal.
@@ -66,8 +76,8 @@ export function useFeedQuery(): { query: LookFilters; filtered: boolean; ready: 
 }
 
 /**
- * The feed's filters: hair like mine, area, and every style. Shared by the home
- * grid and the looks screen, so a filter set in one is set in both.
+ * The feed's filters on the Looks screen: Latest, hair like mine, area, and every style.
+ * Home has only For you and Latest (FeedOrderSwitch), which shares Latest with this.
  */
 export function LookFilterBar({ inset = true }: { inset?: boolean }) {
   const styles = useStyles();

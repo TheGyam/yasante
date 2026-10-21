@@ -10,7 +10,7 @@ import { BookingNudge } from '@/features/booking';
 import { SuggestedStylists } from '@/features/stylist';
 import { TipOfTheDay } from '@/features/education';
 import {
-  LookFilterBar,
+  FeedOrderSwitch,
   LookTile,
   useFeedQuery,
   useFeedTracking,
@@ -43,6 +43,9 @@ const CARD_INSET = space.xs + 1;
 const useStyles = makeStyles(() => ({
   header: { gap: space.xl, marginHorizontal: CARD_INSET, marginBottom: space.md },
   feedHead: { gap: space.md },
+  looksRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  looksTitle: { flex: 1 },
+  order: { width: 184 },
   skeletons: { flexDirection: 'row', gap: space.sm + 2 },
   skeletonColumn: { flex: 1, gap: space.sm + 2 },
   footer: { paddingVertical: space.xxl },
@@ -129,10 +132,10 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
 
   const actions = useLookActions({ onNeedsAccount });
 
-  const { query, filtered, ready } = useFeedQuery();
-  // Her hair puts looks like it first, unless she's already filtered to it.
+  const { query, filtered, ready } = useFeedQuery({ withFilters: false });
+  // Her hair puts looks like it first, but not in Latest, which is nothing personal.
   const because = useWhySuggested(['texture']);
-  const why = query.hair ? undefined : because;
+  const why = query.order === 'latest' ? undefined : because;
   const clearFilters = useLookFilters(s => s.clear);
   const feed = useLooks(query, { enabled: ready });
   // Waiting for her recent searches counts as loading: the feed loads once, in order.
@@ -181,8 +184,14 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
         <TipOfTheDay />
         {isAuthenticated && <SuggestedStylists />}
         <View style={styles.feedHead}>
-          <SectionHeader title="Looks" />
-          <LookFilterBar />
+          <View style={styles.looksRow}>
+            <View style={styles.looksTitle}>
+              <SectionHeader title="Looks" />
+            </View>
+            <View style={styles.order}>
+              <FeedOrderSwitch />
+            </View>
+          </View>
           {why && (
             <Text variant="footnote" tone="secondary">
               {why}

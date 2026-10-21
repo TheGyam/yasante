@@ -356,6 +356,9 @@ New versions via a migration like `0018_terms_reporting_and_complaints.py`:
   for me per 100 people, ranked against plain. Privacy policy 2026-10-22 (in force
   from when it's published, in the feed app's migrations so it can't clash with the
   stylist terms branch) and POLICY_VERSION bumped; DPIA updated.
+- 21 Oct 2026: after seeing a mock-up, Yaw asked for home to keep only a For you /
+  Latest switch (no line under it), with the full filters kept on the Looks screen.
+  Done on `feed/8-home-switch`; home's feed now ignores filters set on the Looks screen.
 - **The plan is complete.** Yaw approved the three privacy lines in PR #107 in chat on
   21 Oct 2026. Still for Yaw: merge in order: #99, #101 to #107 (stacked), and #100
   separately; turn `ranked_feed` on for staff, then a percentage, watching the
