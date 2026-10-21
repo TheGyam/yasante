@@ -202,3 +202,151 @@ def test_affinity_knows_people_from_what_she_did_but_never_hair_or_price(
     # Liking looks on coily hair says nothing about her hair, and nothing about money.
     assert set(found.styles) == {"knotless"}
     assert set(vars(found)) == {"styles", "people", "looks"}
+
+
+def numbers(look, **values):
+    from apps.feed.models import LookStats
+
+    LookStats.objects.update_or_create(look=look, defaults=values)
+
+
+def ranked(user=None, **options):
+    import random
+
+    from apps.feed.ranking import rank_feed
+
+    return rank_feed(user, rng=random.Random(7), **options)
+
+
+def order(user=None, **options):
+    return [r.pk for r in ranked(user, **options)]
+
+
+def test_looks_people_save_come_before_looks_they_scroll_past(make_user, make_look):
+    loved, ignored, unknown = (make_look(make_user()) for _ in range(3))
+    numbers(loved, impressions=100, saves=30, likes=40)
+    numbers(ignored, impressions=100)
+    # Nothing known yet: the average, which beats a look nobody wanted.
+    assert order() == [loved.pk, unknown.pk, ignored.pk]
+
+
+def test_her_own_pull_toward_a_style_lifts_it(api, make_user, make_look):
+    me = make_user()
+    for _ in range(2):
+        save(me, make_look(make_user(), style="twists"))
+    twists, knotless = make_look(make_user(), style="twists"), make_look(make_user(), style="knotless")
+    found = {r.pk: r for r in ranked(me)}
+    assert found[twists.pk].score > found[knotless.pk].score
+    assert found[twists.pk].source in ("style", "similar")
+
+
+def test_hair_matching_needs_her_consent_and_is_never_learned(api, make_user, make_look, consent):
+    me = make_user(texture="coily")
+    coily, straight = make_look(make_user(), hair_texture="coily"), make_look(make_user(), hair_texture="straight")
+    # Liking looks on coily hair, without her consent, teaches the feed nothing about hair.
+    for _ in range(3):
+        like(api, me, make_look(make_user(), style="twists", hair_texture="coily"))
+    without = {r.pk: r for r in ranked(me)}
+    assert without[coily.pk].score == pytest.approx(without[straight.pk].score, rel=0.01)
+    assert all(r.source != "hair" for r in without.values())
+    consent(me, "personalisation")
+    from django.core.cache import cache
+
+    cache.clear()
+    found = {r.pk: r for r in ranked(me)}
+    assert found[coily.pk].score > found[straight.pk].score
+    assert found[coily.pk].source == "hair"
+
+
+def test_the_feed_never_runs_one_person_together(make_user, make_look):
+    busy = make_user()
+    for style in ("knotless", "box-braids", "cornrows", "twists"):
+        numbers(make_look(busy, style=style), impressions=300, saves=90)
+    for style in ("silk-press", "knotless", "box-braids"):
+        numbers(make_look(make_user(), style=style), impressions=300, saves=10)
+    from apps.looks.models import Look
+
+    authors = dict(Look.objects.values_list("pk", "author_id"))
+    first = [authors[pk] for pk in order()[:4]]
+    assert len(set(first)) == 4
+
+
+def test_every_eighth_look_gives_a_new_one_a_chance(make_user, make_look):
+    styles = ["knotless", "box-braids", "cornrows", "twists", "silk-press"]
+    for i in range(8):
+        numbers(make_look(make_user(), style=styles[i % 5]), impressions=500, saves=100 - i)
+    # Most looks are ordinary: a new one is expected to be ordinary too, until shown.
+    for i in range(10):
+        numbers(make_look(make_user(), style=styles[i % 5]), impressions=500, saves=5)
+    newcomer = make_look(make_user())
+    found = ranked()
+    assert found[7].pk == newcomer.pk and found[7].source == "explore"
+
+
+def test_reported_copied_blocked_and_unwanted_looks_stay_out_of_the_way(api, make_user, make_look):
+    from apps.common.models import Media
+    from apps.looks.models import Look
+
+    me = make_user()
+    reported, fine = make_look(make_user()), make_look(make_user())
+    numbers(reported, impressions=100, saves=50, open_reports=2)
+    numbers(fine, impressions=100, saves=5)
+    copied = make_look(make_user())
+    Media.objects.create(owner=copied.author, kind="look", full_path="uploads/x/copy.jpg", moderation_status="flagged")
+    Look.objects.filter(pk=copied.pk).update(photo_uri="https://example.com/media/uploads/x/copy.jpg")
+    rude, unwanted = make_look(make_user()), make_look(make_user())
+    assert api(me).post("/api/blocks/", {"accountId": str(rude.author_id)}).status_code in (200, 201, 204)
+    api(me).post("/api/not-for-me/", {"lookId": str(unwanted.pk)})
+
+    found = order(me)
+    assert found == [fine.pk, reported.pk]
+
+
+def test_looks_she_has_seen_this_week_make_way_for_new_ones(api, make_user, make_look):
+    ranked_feed()
+    me = make_user()
+    seen_twice, unseen = make_look(make_user(), style="twists"), make_look(make_user(), style="cornrows")
+    for session in ("session-1", "session-2"):
+        api(me).post("/api/feed/events/", {"events": [seen(seen_twice, session=session)]})
+    assert order(me) == [unseen.pk, seen_twice.pk]
+
+
+def test_her_fresh_look_comes_first_and_older_ones_stay_on_her_profile(make_user, make_look):
+    from apps.looks.models import Look
+
+    me = make_user()
+    old = make_look(me)
+    Look.objects.filter(pk=old.pk).update(created_at=timezone.now() - timedelta(days=3))
+    other = make_look(make_user())
+    numbers(other, impressions=100, saves=60)
+    mine = make_look(me)
+    found = ranked(me)
+    assert [r.pk for r in found] == [mine.pk, other.pk] and found[0].source == "own"
+
+
+def test_styles_from_her_searches_are_lifted_without_being_kept(make_user, make_look):
+    twists, knotless = make_look(make_user(), style="twists"), make_look(make_user(), style="knotless")
+    found = {r.pk: r for r in ranked(searched=["twists"])}
+    assert found[twists.pk].score > found[knotless.pk].score and found[twists.pk].source == "searched"
+
+
+def test_ranking_queries_do_not_grow_with_the_number_of_looks(api, make_user, make_look, consent):
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    me = make_user(texture="coily")
+    consent(me, "personalisation")
+    save(me, make_look(make_user(), style="twists"))
+    counts = []
+    for n in (3, 15):
+        for _ in range(n):
+            numbers(make_look(make_user(), style="twists"), impressions=50, saves=5)
+        ranked(me)  # warm the caches
+        from django.core.cache import cache
+
+        cache.delete("feed:rates")
+        cache.delete(f"feed:affinity:{me.pk}")
+        with CaptureQueriesContext(connection) as queries:
+            ranked(me)
+        counts.append(len(queries))
+    assert counts[0] == counts[1] and counts[0] <= 40

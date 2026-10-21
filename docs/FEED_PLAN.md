@@ -146,8 +146,10 @@ And the score:
 - `quality`: a caption, more than one photo, a credited stylist, a verified stylist
   who takes bookings each add a little (between 0.9 and 1.3 in all).
 - `penalties`: seen before by her (x0.35 per showing in the last 7 days, x0.6 if she
-  opened it), two or more open reports (x0.2), a style she's said Not for me to once
-  (x0.5; twice removes it, as today).
+  opened it), a style she's said Not for me to once (x0.5; twice removes it, as today),
+  a poster with something removed in the last 30 days (x0.5).
+- Two or more open reports: the look waits at the end of the feed, whatever its
+  score, until a person decides (a popular look divided by 5 could still lead).
 
 All weights live in one place (`ranking/weights.py`) and can be replaced by learned
 weights (section 11).
@@ -211,7 +213,7 @@ Greedy, from the top score down, with these rules:
 
 - Looks whose photo is flagged as a near-copy and still waiting for review are left
   out.
-- Two or more open reports: pushed far down until a person decides.
+- Two or more open reports: at the end of the feed until a person decides.
 - A poster with a removal in the last 30 days: their looks count for less (x0.5).
 - Exploration never picks looks with open reports.
 
@@ -312,7 +314,15 @@ New versions via a migration like `0018_terms_reporting_and_complaints.py`:
   `LookNeighbour` (cosine over likes, saves, comments, opens and bookings in the last
   60 days, busy people damped, rare pairs discounted, top 50) nightly at 02:45;
   `affinity_for(user)` (styles and people, 14-day half-life, cached 10 minutes, never a
-  hair type or price). Next: phase 3.
+  hair type or price). PR #102.
+- 21 Oct 2026: phase 3 done on `feed/3-ranking`: `apps/feed/weights.py` (every number in
+  one place) and `apps/feed/ranking.py` (`rank_feed`: 11 candidate sources with quotas,
+  the value model with smoothed rates, personal lift, freshness, quality and penalties,
+  then variety rules and Thompson-sampled exploration every 8th slot). The feed's safety
+  filters moved into `looks.views.everyday_looks`, shared by both feeds. Learned in
+  testing: an unseen look is scored at the average, so it can lead a feed of average
+  looks (that's right); and a reported look must wait at the end, not just score less.
+  Next: phase 4.
 
 ## Continuation prompt
 
