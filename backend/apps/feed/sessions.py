@@ -29,6 +29,16 @@ SESSION_SKIP = 0.3
 SESSION_FLOOR = 0.3
 
 
+def features_shown(sessions):
+    """{(session, look id): features} for what these sessions ranked, while still cached."""
+    found = {}
+    for session in sessions:
+        state = cache.get(_key(session))
+        for d in (state or {}).get("items", []):
+            found[(session, d["pk"])] = d.get("features") or {}
+    return found
+
+
 def is_ranked_cursor(cursor):
     return not cursor or cursor.startswith(PREFIX)
 
@@ -53,6 +63,7 @@ def _pack(c):
         "pk": str(c.pk), "source": c.source, "base": c.score, "score": c.score, "author": c.author,
         "stylist": c.stylist, "styles": list(c.styles), "seen": c.seen, "impressions": c.impressions,
         "reports": c.open_reports, "saves": c.saves, "likes": c.likes, "own": "own" in c.sources,
+        "features": c.features,
     }
 
 

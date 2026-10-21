@@ -552,3 +552,89 @@ def test_picked_for_you_is_only_for_people_who_asked_and_only_when_worth_it(api,
 
     NotificationLog.objects.all().delete()
     assert picked_for_you() == 0
+
+
+def test_an_impression_keeps_what_the_ranking_knew_about_the_look(api, make_user, make_look):
+    from apps.feed.models import FeedEvent
+
+    look = make_look(make_user())
+    numbers(look, impressions=50, saves=10)
+    ranked_feed()
+    me = make_user()
+    page = api(me).get("/api/looks/").json()
+    api(me).post("/api/feed/events/", {"events": [seen(look, session=page["session"]), seen(look, kind="open", session=page["session"])]})
+    shown = FeedEvent.objects.get(kind="impression")
+    assert shown.features["p_save"] > 0 and "score" in shown.features and "style" in shown.features
+    assert FeedEvent.objects.get(kind="open").features == {}
+
+
+def _impressions(make_user, make_look, saves_follow):
+    """30 people each shown 10 looks; who saves what is decided by `saves_follow`."""
+    import random as rnd
+
+    from apps.feed.models import FeedEvent
+
+    rng = rnd.Random(3)
+    looks = [make_look(make_user()) for _ in range(10)]
+    people = [make_user() for _ in range(30)]
+    events = []
+    for u, person in enumerate(people):
+        for l, look in enumerate(looks):
+            features = {
+                "p_save": 0.05, "p_book": 0.01, "p_comment": 0.01, "p_like": 0.05, "p_open": 0.1,
+                "style": 1.0 if l < 5 else 0.0, "people": 0, "similar": 0, "hair": 0, "near": 0, "searched": 0,
+                "fresh": 1, "quality": 1, "penalty": 1, "score": rng.random(),
+            }
+            events.append(FeedEvent(user=person, session=f"session-{u}-{l}", look=look, kind="impression", surface="home", position=l, features=features))
+    FeedEvent.objects.bulk_create(events)
+    for event in events:
+        if saves_follow(event):
+            save(event.user, event.look)
+
+
+def test_learned_weights_are_kept_only_when_they_predict_saves_better(make_user, make_look):
+    from apps.feed.learning import learned_value, learned_weights, tune
+    from apps.feed.models import FeedWeights
+
+    assert tune(min_impressions=200)["saved"] is False  # nothing to learn from yet
+    # People save looks in a style they like; the hand-set score here is noise.
+    _impressions(make_user, make_look, lambda e: e.features["style"] and int(e.session.split("-")[1]) % 5 != 0)
+    report = tune(min_impressions=200, save=True)
+    assert report["saved"], report
+    assert report["actions"]["save"]["learned_auc"] > report["actions"]["save"]["hand_set_auc"]
+    learned = learned_weights()
+    assert FeedWeights.objects.count() == 1
+    liked_style = {"p_save": 0.05, "p_book": 0.01, "p_comment": 0.01, "p_like": 0.05, "p_open": 0.1, "style": 1.0, "fresh": 1, "quality": 1, "penalty": 1}
+    other = {**liked_style, "style": 0.0}
+    assert learned_value(liked_style, learned) > learned_value(other, learned)
+
+
+def test_learned_weights_that_do_no_better_are_refused(make_user, make_look):
+    from apps.feed.learning import tune
+    from apps.feed.models import FeedWeights
+
+    # Saves follow the hand-set score exactly: there's nothing better to learn.
+    _impressions(make_user, make_look, lambda e: e.features["score"] > 0.7)
+    report = tune(min_impressions=200, save=True)
+    assert not report["saved"] and not FeedWeights.objects.exists()
+
+
+def test_the_feed_insight_compares_people_on_the_ranked_feed_with_everyone_else(api, make_user, make_look):
+    from tests.test_staff import staff_client
+
+    client, _ = staff_client(make_user, superuser=True)
+    ranked_feed()
+    on, off = make_user(), make_user()
+    look = make_look(make_user())
+    api(on).post("/api/feed/events/", {"events": [seen(look)]})
+    save(on, look)
+    save(off, make_look(make_user()))
+    like(api, off, look)
+    response = client.get("/data/insights/feed/")
+    data = response.json()
+    assert "meta" in data, data
+    assert data["meta"]["rankedPeople"] == 1 and data["meta"]["plainPeople"] == 1
+    today = [row for row in data["rows"] if any(v for v in row["values"])][-1]
+    assert today["values"][:2] == [100.0, 100.0]
+    limited, _ = staff_client(make_user)
+    assert limited.get("/data/insights/feed/").status_code == 403

@@ -37,6 +37,9 @@ class FeedEvent(models.Model):
     # Which candidate source put it there (see apps.feed.ranking), when ranked.
     source = models.CharField(max_length=20, blank=True, default="")
     dwell_ms = models.PositiveIntegerField(null=True, blank=True)
+    # On an impression: what the ranking knew about the look when it was shown, so the
+    # weights can be learned from what people did next (manage.py tune_feed).
+    features = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
@@ -87,3 +90,16 @@ class LookNeighbour(models.Model):
         db_table = "feed_look_neighbour"
         ordering = ["-score"]
         constraints = [models.UniqueConstraint(fields=["look", "neighbour"], name="one_neighbour_row_per_pair")]
+
+
+class FeedWeights(models.Model):
+    """Weights learned from what people did (manage.py tune_feed). The newest is used."""
+
+    weights = models.JSONField()
+    metrics = models.JSONField(default=dict)
+    impressions = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "feed_weights"
+        ordering = ["-created_at"]

@@ -66,6 +66,8 @@ class Candidate:
     opened: bool = False
     not_for_me_once: bool = False
     recently_removed: bool = False
+    # What scoring found, recorded with each impression for learning (apps.feed.learning).
+    features: dict = field(default_factory=dict)
 
     @property
     def source(self):
@@ -262,7 +264,8 @@ def score(c, viewer, similar, rates, now):
         "save": s.saves if s else 0, "book": s.bookings if s else 0, "comment": s.comments if s else 0,
         "like": s.likes if s else 0, "open": s.opens if s else 0,
     }
-    value = sum(W.VALUE[a] * _rate(counts[a], c.impressions, rates[a]) for a in W.VALUE)
+    predicted = {a: _rate(counts[a], c.impressions, rates[a]) for a in W.VALUE}
+    value = sum(W.VALUE[a] * predicted[a] for a in W.VALUE)
 
     affinity = viewer.affinity
     pulls = {
@@ -297,7 +300,13 @@ def score(c, viewer, similar, rates, now):
         penalty *= W.NOT_FOR_ME_ONCE
     if c.recently_removed:
         penalty *= W.RECENT_REMOVAL
-    return value * lift * fresh * quality * penalty
+    total = value * lift * fresh * quality * penalty
+    c.features = {
+        **{f"p_{a}": round(p, 6) for a, p in predicted.items()},
+        **{k: round(v, 4) for k, v in pulls.items()},
+        "fresh": round(fresh, 4), "quality": round(quality, 4), "penalty": round(penalty, 6), "score": round(total, 6),
+    }
+    return total
 
 
 def _fits(c, out):
@@ -363,8 +372,14 @@ def rank_feed(user, searched=(), now=None, rng=None, limit=W.SESSION_SIZE):
     found, similar = _gather(viewer, now)
     if not found:
         return []
+    from .learning import learned_value, learned_weights
+
     rates = global_rates()
     candidates = _load(found, viewer.user, now)
+    learned = learned_weights()
     for c in candidates:
         c.score = score(c, viewer, similar, rates, now)
+        if learned:
+            # Learned from what people did, once it predicts better than the hand-set weights.
+            c.score = learned_value(c.features, learned)
     return mix(candidates, rates, rng, limit)
