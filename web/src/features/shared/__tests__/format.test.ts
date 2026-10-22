@@ -6,7 +6,7 @@ describe('shared pages', () => {
     expect(describePlan({ frequency: 'weekly', timeOfDay: 'evening' })).toContain('Every week');
     expect(
       describePlan({ frequency: 'specific-days', specificDays: [3, 0], timeOfDay: 'morning' })
-    ).toMatch(/^Sun, Wed/);
+    ).toMatch(/^Wed, Sun/);
   });
 
   it('says when it last changed in words', () => {

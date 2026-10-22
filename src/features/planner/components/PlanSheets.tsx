@@ -10,7 +10,7 @@ import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Sheet } from '@/shared/ui/Sheet';
 import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
-import { DAY_LABELS, FREQUENCY_LABELS, TIME_OF_DAY_LABELS } from '../format';
+import { DAY_LABELS, FREQUENCY_LABELS, TIME_OF_DAY_LABELS, WEEK } from '../format';
 import { ensureReminderPermission, reminderAt } from '../reminders';
 import type { CarePlanFrequency, CarePlanSchedule, TimeOfDay } from '../types';
 
@@ -130,6 +130,12 @@ export function ScheduleSheet({
     setSchedule(current => ({ ...current, [key]: value }));
   const days = schedule.specificDays ?? [];
   const needsDays = schedule.frequency === 'specific-days' && !days.length;
+  // Reminders can start on: they only stay on if the phone will show them.
+  const confirm = async () =>
+    onConfirm({
+      ...schedule,
+      remindersOn: schedule.remindersOn && (await ensureReminderPermission()),
+    });
 
   return (
     <Sheet visible={visible} onClose={onClose}>
@@ -159,10 +165,10 @@ export function ScheduleSheet({
 
         {schedule.frequency === 'specific-days' && (
           <View style={styles.chips}>
-            {DAY_LABELS.map((label, day) => (
+            {WEEK.map(day => (
               <Chip
-                key={label}
-                label={label}
+                key={day}
+                label={DAY_LABELS[day]}
                 selected={days.includes(day)}
                 onPress={() =>
                   set(
@@ -204,7 +210,7 @@ export function ScheduleSheet({
 
         <Button
           label={confirmLabel}
-          onPress={() => onConfirm(schedule)}
+          onPress={confirm}
           disabled={needsDays}
           loading={busy}
           fullWidth

@@ -17,7 +17,8 @@ export function describePlan(
   const often =
     plan.frequency === 'specific-days' && plan.specificDays?.length
       ? [...plan.specificDays]
-          .sort()
+          // Monday first, as the app reads a week.
+          .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
           .map(day => DAYS[day])
           .join(', ')
       : OFTEN[plan.frequency];

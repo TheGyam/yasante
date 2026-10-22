@@ -32,8 +32,13 @@ describe('describing a care plan', () => {
 describe('when a care plan is next due', () => {
   const now = new Date('2026-09-20T09:00:00Z'); // a Sunday
 
-  it('is due today when it has never been done', () => {
+  it('is due today when it has never been done, or on the first of its days', () => {
     expect(dueLabel({ frequency: 'weekly' }, now)).toBe('Due today');
+    // A Sunday, for a plan done on Wednesdays and Fridays.
+    expect(dueLabel({ frequency: 'specific-days', specificDays: [3, 5] }, now)).toBe(
+      'Due Wednesday'
+    );
+    expect(dueLabel({ frequency: 'specific-days', specificDays: [0, 3] }, now)).toBe('Due today');
   });
 
   it('counts from the last time it was done', () => {

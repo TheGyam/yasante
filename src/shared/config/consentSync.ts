@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '@/shared/lib/api/client';
 import { useRouter } from '@/shared/lib/navigation';
+import { pushPermission, registerPush } from '@/shared/lib/push';
 import { confirm } from '@/shared/ui/dialog';
 import { useConsentStore, useUnanswered, type ServerConsent } from './consentStore';
-import { POLICY_VERSION } from './policies';
+import { POLICY_CHANGES, POLICY_VERSION } from './policies';
 
 /** An attempt that hasn't settled by then is given up on; the records stay pending. */
 const GIVE_UP_MS = 20_000;
@@ -104,16 +106,65 @@ export function useConsentSync(signedIn: boolean) {
 export function useAskForAnalytics(canAsk: boolean) {
   const router = useRouter();
   const unanswered = useUnanswered('analytics', true);
+  const policyChanged = usePolicyChanged();
   const asked = useRef(false);
   useEffect(() => {
-    if (!canAsk || !unanswered || asked.current) return;
+    // One question a launch: a policy notice goes first, and this waits for next time.
+    if (!canAsk || !unanswered || asked.current || policyChanged || toldThisLaunch) return;
     // A moment after the screens that signing in closes have gone.
     const timer = setTimeout(() => {
       asked.current = true;
       router.push('/settings/privacy-choices' as never);
     }, 600);
     return () => clearTimeout(timer);
-  }, [canAsk, unanswered, router]);
+  }, [canAsk, unanswered, policyChanged, router]);
+}
+
+const usePolicyChanged = () =>
+  useConsentStore(
+    s =>
+      s.loaded &&
+      (s.consents.privacy?.policyVersion !== POLICY_VERSION ||
+        s.consents.terms?.policyVersion !== POLICY_VERSION)
+  );
+
+/** Set once something has asked her a question this launch: one is enough. */
+let toldThisLaunch = false;
+
+const NOTIFICATIONS_ASKED = 'yasante.notifications.asked';
+const ASK_AGAIN_AFTER = 14 * 24 * 60 * 60 * 1000;
+
+/**
+ * Notifications, asked with a reason, never at the door: once she's in and nothing
+ * else has asked her anything this launch. "Not now" waits two weeks; the phone's
+ * own question only follows a yes, so its one chance isn't spent on a stranger.
+ * Turning on a care plan reminder asks too.
+ */
+export function useAskForNotifications(canAsk: boolean) {
+  const analyticsUnanswered = useUnanswered('analytics', true);
+  const policyChanged = usePolicyChanged();
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!canAsk || asked.current || analyticsUnanswered || policyChanged || toldThisLaunch) return;
+    const timer = setTimeout(async () => {
+      asked.current = true;
+      const { granted, canAsk: phoneWouldAsk } = await pushPermission();
+      if (granted) return void registerPush();
+      const last = Number(await AsyncStorage.getItem(NOTIFICATIONS_ASKED).catch(() => 0)) || 0;
+      if (!phoneWouldAsk || Date.now() - last < ASK_AGAIN_AFTER || toldThisLaunch) return;
+      toldThisLaunch = true;
+      await AsyncStorage.setItem(NOTIFICATIONS_ASKED, String(Date.now())).catch(() => {});
+      const yes = await confirm({
+        title: 'Turn on notifications?',
+        message:
+          'So you know when a stylist answers, when your appointment is near, and when it’s time for your care plan.',
+        confirmLabel: 'Turn on',
+        cancelLabel: 'Not now',
+      });
+      if (yes) void registerPush(true);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [canAsk, analyticsUnanswered, policyChanged]);
 }
 
 /**
@@ -122,20 +173,15 @@ export function useAskForAnalytics(canAsk: boolean) {
  */
 export function useTellAboutPolicyChange(canAsk: boolean) {
   const router = useRouter();
-  const changed = useConsentStore(
-    s =>
-      s.loaded &&
-      (s.consents.privacy?.policyVersion !== POLICY_VERSION ||
-        s.consents.terms?.policyVersion !== POLICY_VERSION)
-  );
+  const changed = usePolicyChanged();
   const told = useRef(false);
   useEffect(() => {
     if (!canAsk || !changed || told.current) return;
     told.current = true;
+    toldThisLaunch = true;
     void confirm({
       title: 'We’ve updated our terms and privacy policy',
-      message:
-        'They say what’s allowed on Yasante, how to report something or complain, and what we collect and why. You can read them any time in Settings.',
+      message: `${POLICY_CHANGES} You can read them any time in Settings.`,
       confirmLabel: 'Read them',
       cancelLabel: 'OK',
     }).then(read => {

@@ -25,6 +25,7 @@ import { registerPush } from '@/shared/lib/push';
 import {
   useAskForAnalytics,
   useConsentSync,
+  useAskForNotifications,
   useTellAboutPolicyChange,
 } from '@/shared/config/consentSync';
 import { featuresQuery } from '@/shared/config/features';
@@ -239,6 +240,7 @@ function RootNavigator() {
   const inApp = ready && isAuthenticated && !inAuthFlowNow && !startAs;
   useAskForAnalytics(inApp);
   useTellAboutPolicyChange(inApp);
+  useAskForNotifications(inApp);
 
   // Opened the app signed in but with her email still unconfirmed (she left mid
   // sign-up): straight back to the code. Checked once at launch; sign-up and sign-in

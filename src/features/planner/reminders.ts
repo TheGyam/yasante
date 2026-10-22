@@ -21,10 +21,14 @@ export const REMINDER_TIMES: Record<TimeOfDay, [hour: number, minute: number]> =
   night: [21, 30],
 };
 
-/** "8:00", "21:30": when that part of her day's reminder comes. */
+/** When that part of her day's reminder comes. */
 export const reminderAt = (timeOfDay: TimeOfDay) => {
   const [hour, minute] = REMINDER_TIMES[timeOfDay] ?? REMINDER_TIMES.evening;
-  return `${hour}:${String(minute).padStart(2, '0')}`;
+  // In the phone's own way of writing times: "19:00", or "7:00 PM".
+  return new Date(2000, 0, 1, hour, minute).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 };
 
 const PREFIX = 'care-plan:';

@@ -5,6 +5,7 @@ import { Droplets } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
   DAY_LABELS,
+  WEEK,
   FREQUENCY_LABELS,
   ensureReminderPermission,
   reminderAt,
@@ -146,10 +147,10 @@ export default function CarePlanFormScreen() {
         {form.frequency === 'specific-days' && (
           <View style={styles.group}>
             <View style={styles.chips}>
-              {DAY_LABELS.map((label, day) => (
+              {WEEK.map(day => (
                 <Chip
-                  key={label}
-                  label={label}
+                  key={day}
+                  label={DAY_LABELS[day]}
                   selected={form.specificDays.includes(day)}
                   onPress={() => toggleDay(day)}
                 />
