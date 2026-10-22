@@ -14,9 +14,11 @@ import {
   LookCard,
   LookFilterBar,
   useFeedQuery,
+  useFeedTracking,
   useLookActions,
   useLookFilters,
   useLooks,
+  useFreshFeedOnReturn,
   useRefreshLooks,
   type Look,
 } from '@/features/looks';
@@ -80,25 +82,31 @@ function LooksFeed() {
   const actions = useLookActions();
   const listRef = useRef<FlashListRef<Look>>(null);
 
-  const { query, filtered } = useFeedQuery();
+  const { query, filtered, ready } = useFeedQuery();
   const clearFilters = useLookFilters(s => s.clear);
-  const feed = useLooks(query);
+  const feed = useLooks(query, { enabled: ready });
+  // Waiting for her recent searches counts as loading: the feed loads once, in order.
+  const feedLoading = feed.isLoading || !ready;
   const focused = useIsFocused();
   const refresh = useRefreshLooks();
+  useFreshFeedOnReturn(() => listRef.current?.scrollToOffset({ offset: 0, animated: false }));
   const looks = useMemo(() => feed.data?.pages.flatMap(page => page.data) ?? [], [feed.data]);
-  const emptyFiltered = filtered && !feed.isLoading && !feed.isPlaceholderData && !looks.length;
+  // While the ranked feed is on for her, what she sees and opens here is recorded.
+  const tracking = useFeedTracking(feed.data?.pages[0]?.session, 'looks', looks, actions.onOpen);
+  const emptyFiltered = filtered && !feedLoading && !feed.isPlaceholderData && !looks.length;
   // Nothing matched: rather than a blank page, the latest looks still show below.
   const fallback = useLooks({}, { enabled: emptyFiltered });
   const fallbackLooks = (fallback.data?.pages[0]?.data ?? []).slice(0, 6);
 
-  // A filtered feed is a search: what was asked, and how much came back.
+  // A filtered feed is a search: which filters, never their values, and how much came back.
   useEffect(() => {
-    if (filtered && !feed.isLoading && !feed.isPlaceholderData) {
-      track('search', { surface: 'looks', ...query, results: looks.length });
+    if (filtered && !feedLoading && !feed.isPlaceholderData) {
+      const filters = (['hair', 'style', 'area'] as const).filter(key => query[key]).join(',');
+      track('search', { surface: 'looks', filters, results: looks.length });
     }
     // When the results for a new set of filters arrive.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query.hair, query.style, query.area, feed.isPlaceholderData, feed.isLoading]);
+  }, [query.hair, query.style, query.area, feed.isPlaceholderData, feedLoading]);
 
   // A new filter starts at the top, where the new results are.
   useEffect(() => {
@@ -114,9 +122,14 @@ function LooksFeed() {
 
   const card = useCallback(
     (look: Look) => (
-      <LookCard look={look} {...actions} onSave={look.mine ? undefined : actions.onSave} />
+      <LookCard
+        look={look}
+        {...actions}
+        onOpen={tracking.onOpen}
+        onSave={look.mine ? undefined : actions.onSave}
+      />
     ),
-    [actions]
+    [actions, tracking.onOpen]
   );
   const renderItem = useCallback(
     ({ item }: { item: Look }) => <Dim opacity={opacity}>{card(item)}</Dim>,
@@ -127,7 +140,7 @@ function LooksFeed() {
     <View style={styles.header}>
       <ScreenTitle title="Looks" subtitle="Real work, by the people who did it" />
       <LookFilterBar />
-      {feed.isLoading && (
+      {feedLoading && (
         <View style={styles.skeletons}>
           <Skeleton height={320} />
           <Skeleton height={320} />
@@ -139,12 +152,14 @@ function LooksFeed() {
   return (
     <AnimatedFlashList
       ref={listRef}
-      data={feed.isLoading ? [] : looks}
+      data={feedLoading ? [] : looks}
       keyExtractor={look => look.id}
       renderItem={renderItem}
+      onViewableItemsChanged={tracking.onViewableItemsChanged}
+      viewabilityConfig={tracking.viewabilityConfig}
       ListHeaderComponent={header}
       ListEmptyComponent={
-        feed.isLoading ? null : feed.isError ? (
+        feedLoading ? null : feed.isError ? (
           <EmptyState
             icon={WifiOff}
             title="Couldn’t load the feed"

@@ -20,7 +20,14 @@ const RANGES = [
   { value: '365', label: '12 months' },
 ];
 
-const CHARTS: { name: string; heading: string; money?: boolean; wide?: boolean }[] = [
+// `money`: superusers only. `noExport`: no CSV until a partner is agreed.
+const CHARTS: {
+  name: string;
+  heading: string;
+  money?: boolean;
+  wide?: boolean;
+  noExport?: boolean;
+}[] = [
   { name: 'money', heading: 'Money', money: true, wide: true },
   { name: 'funnel', heading: 'From request to appointment' },
   { name: 'growth', heading: 'People joining' },
@@ -32,6 +39,8 @@ const CHARTS: { name: string; heading: string; money?: boolean; wide?: boolean }
   { name: 'top-stylists', heading: 'Top stylists', money: true },
   { name: 'community', heading: 'Community health' },
   { name: 'app-health', heading: 'App health', wide: true },
+  { name: 'hair-trends', heading: 'Hair trends', money: true, wide: true, noExport: true },
+  { name: 'feed', heading: 'Ranked feed', money: true, wide: true },
 ];
 
 const iso = (date: Date) => date.toISOString().slice(0, 10);
@@ -74,6 +83,7 @@ export function Insights({ superuser }: { superuser: boolean }) {
             name={chart.name}
             heading={chart.heading}
             wide={chart.wide}
+            noExport={chart.noExport}
             query={query}
           />
         ))}
@@ -86,11 +96,13 @@ function InsightCard({
   name,
   heading,
   wide,
+  noExport,
   query,
 }: {
   name: string;
   heading: string;
   wide?: boolean;
+  noExport?: boolean;
   query: string;
 }) {
   const insight = useInsight(name, query);
@@ -104,7 +116,7 @@ function InsightCard({
           </Text>
           <Text variant="title3">{data ? takeaway(data) : ' '}</Text>
         </div>
-        {data && data.rows.length > 0 && (
+        {data && data.rows.length > 0 && !noExport && (
           <Button
             label=""
             aria-label={`Download ${heading} as CSV`}

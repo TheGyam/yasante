@@ -11,10 +11,12 @@ SOURCES = {
     "booking-times": ["bookings.booking"], "areas": ["profiles.hairprofile", "stylists.stylistprofile"], "empty-searches": ["common.searchlog"], "area-suggestions": ["common.searchlog"],
     "retention": ["accounts.user", "profiles.analyticsevent"], "top-stylists": ["bookings.booking", "stylists.stylistprofile"],
     "community": ["looks.look", "looks.lookcomment", "looks.report"], "app-health": ["common.clienterror", "profiles.analyticsevent"],
+    "hair-trends": ["bookings.booking", "looks.look", "common.searchlog"],
+    "feed": ["feed.feedevent"],
 }
 TITLES = {"money": "Booking value", "funnel": "From request to appointment", "growth": "People joining Yasante", "booking-times": "When people book",
           "areas": "Where to recruit", "empty-searches": "Searches that found nothing", "area-suggestions": "Area suggestions", "retention": "People coming back", "top-stylists": "Top stylists",
-          "community": "Community health", "app-health": "App health"}
+          "community": "Community health", "app-health": "App health", "hair-trends": "Hair trends", "feed": "Ranked feed"}
 
 
 class Median(Aggregate):
@@ -125,4 +127,17 @@ def calculate(name, sources, start, end, currency=None):
                  "url": f"/errors?since={day}"} for day in days]
         labels, kind = [label for _, label in platforms], "line"
         meta["note"] = "Rate = app and website errors per 1,000 people active that day."
+    elif name == "hair-trends":
+        from .trends import hair_trends
+
+        rows, meta = hair_trends(source, sources["looks.look"], sources["common.searchlog"], start, end, UK, Median)
+        labels, kind = ["Bookings", "Looks", "Searches", "Median price", "Change on the month before (%)"], "table"
+    elif name == "feed":
+        from .feed_insight import feed_comparison
+
+        rows, meta = feed_comparison(source, start, end, UK, buckets)
+        labels = [
+            "Saves, ranked feed", "Saves, plain feed", "Booking requests, ranked feed",
+            "Booking requests, plain feed", "Not for me, ranked feed", "Not for me, plain feed",
+        ]
     return {"name": name, "title": TITLES[name], "kind": kind, "labels": labels, "rows": rows, "meta": meta}

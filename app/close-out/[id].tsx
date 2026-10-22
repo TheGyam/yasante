@@ -189,7 +189,7 @@ export default function CloseOutScreen() {
       modal
       scroll={step === 'reason' || step === 'paid'}
       keyboard={step === 'paid'}
-      back={history.length > 1}
+      back={history.length > 1 || undefined}
       onBack={history.length > 1 ? back : undefined}
       testID="close-out"
     >

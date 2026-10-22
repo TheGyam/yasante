@@ -72,10 +72,18 @@ class NoPagination:
         return Response(data)
 
 
-def keyset_page(qs, request, newest_first=True, default=20, cursor=None):
+def page_limit(request, default=20):
+    """How many items a page holds: the request's `limit`, between 1 and 50."""
+    try:
+        return max(1, min(int(request.query_params.get("limit", default)), 50))
+    except (TypeError, ValueError):
+        return default
+
+
+def keyset_page(qs, request, newest_first=True, default=20, cursor=None, limit=None):
     """
-    One page of `qs` by (created_at, id), newest or oldest first. `cursor` overrides
-    the request's, for a feed that pages through more than one list in turn.
+    One page of `qs` by (created_at, id), newest or oldest first. `cursor` and `limit`
+    override the request's, for a feed that pages through more than one list at once.
 
     Keyset pagination: each page starts right after the last item seen, so it stays
     fast however deep someone scrolls and never skips or repeats an item when new
@@ -87,10 +95,8 @@ def keyset_page(qs, request, newest_first=True, default=20, cursor=None):
     from apps.common.timeparse import parse_iso
     from django.db.models import Q
 
-    try:
-        limit = max(1, min(int(request.query_params.get("limit", default)), 50))
-    except (TypeError, ValueError):
-        limit = default
+    if limit is None:
+        limit = page_limit(request, default)
 
     if cursor is None:
         cursor = request.query_params.get("cursor")

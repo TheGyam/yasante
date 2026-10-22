@@ -280,7 +280,7 @@ def _for_style(profiles, slug, name, viewer):
 @extend_schema_view(get=extend_schema(responses=StylistSearchResultSerializer(many=True)), post=extend_schema(request=StylistProfileDraftSerializer, responses={201: StylistProfileSerializer}))
 class StylistCreateView(APIView):
     """
-    GET /api/stylists/?q= — search live pages by name, handle or area.
+    GET /api/stylists/?q= — search live pages by name, handle, area, services or styles.
     POST /api/stylists/ — her page, as a draft only she can see.
     """
 
@@ -322,12 +322,23 @@ class StylistCreateView(APIView):
             qs = qs.filter(base_area__iexact=area)
         if min_tier:
             qs = qs.filter(verification_tier__gte=min_tier)
+        if words:
+            from apps.looks.views import public_looks as live_looks
+
         for word in words:
+            # What they do counts as much as who they are: "knotless" finds the stylists
+            # who offer it or post it, not only one with it in her name.
+            does_it = live_looks().filter(status="live", styles__name__icontains=word)
+            # A look's stylist is stored as text: compared as ids here.
+            doers = {str(a) for a in does_it.values_list("author_id", flat=True).distinct()}
+            doers |= {s for s in does_it.values_list("stylist_id", flat=True).distinct() if s}
             qs = qs.filter(
                 Q(display_name__icontains=word)
                 | Q(handle__icontains=word)
                 | Q(base_area__icontains=word)
-            )
+                | Q(menu_items__name__icontains=word)
+                | Q(account_id__in=doers)
+            ).distinct()
         viewer = request.user if request.user.is_authenticated else None
         blocked = blocked_account_ids(viewer) if viewer else set()
         if blocked:
@@ -1328,3 +1339,31 @@ class FinishTagsView(APIView):
         FeaturedPage.objects.filter(profile=profile).update(tags_checked_at=timezone.now())
         profile.featured_page.refresh_from_db()
         return Response(featured.finish_state(profile))
+
+
+@extend_schema_view(get=extend_schema(responses=StylistSearchResultSerializer(many=True)))
+class SuggestedStylistsView(APIView):
+    """GET /api/stylists/suggested/ — "Stylists for you", while the ranked feed is on for her."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.feed.suggestions import suggested_stylists
+
+        return Response(
+            [
+                {
+                    "account_id": str(p.account_id),
+                    "handle": p.handle,
+                    "display_name": p.display_name,
+                    "avatar_uri": p.avatar_uri,
+                    "base_area": p.base_area,
+                    "currency": p.currency,
+                    "rating": float(p.rating_average) if p.rating_count else None,
+                    "rating_count": p.rating_count,
+                    "verification_tier": p.verification_tier,
+                    "reason": reason,
+                }
+                for p, reason in suggested_stylists(request.user)
+            ]
+        )

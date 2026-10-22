@@ -43,6 +43,26 @@ def test_with_her_yes_looks_on_hair_like_hers_come_first_newest_first(api, make_
     assert [l["id"] for l in api(me).get("/api/looks/", hair="straight").json()["data"]] == [str(other.pk)]
 
 
+def test_stylists_and_products_seen_on_hair_like_hers_come_first_too(
+    api, make_user, make_stylist, make_look, consent
+):
+    from apps.shelf.models import Product
+
+    author, stylist = make_user(), make_stylist()
+    cream = Product.objects.create(brand="Cantu", name="Curling cream", category="styler")
+    on_her_hair = make_look(author, hair_texture="coily", stylist=stylist)
+    on_her_hair.products.add(cream)
+    plain = make_look(author, hair_texture="straight")
+    by_her_stylist = make_look(make_user(), hair_texture="straight", stylist=stylist)
+    with_her_cream = make_look(make_user(), hair_texture="wavy")
+    with_her_cream.products.add(cream)
+    me = make_user(texture="coily")
+    consent(me, "personalisation")
+    assert _walk(api(me), limit=2) == [
+        str(l.pk) for l in (with_her_cream, by_her_stylist, on_her_hair, plain)
+    ]
+
+
 def test_not_for_me_shows_her_fewer_like_it(api, make_user, make_stylist, make_look):
     from apps.profiles.tasks import collect_user_data
 
@@ -67,6 +87,50 @@ def test_not_for_me_shows_her_fewer_like_it(api, make_user, make_stylist, make_l
     # Hers alone, and in her export.
     assert len(api(make_user()).get("/api/looks/").json()["data"]) == 5
     assert len(collect_user_data(me)["not_for_me"]) == 3
+
+
+def test_styles_she_searched_for_are_mixed_through_her_feed_not_put_first(api, make_user, make_look):
+    from apps.common.models import SearchLog
+
+    author = make_user()
+    knotless = [make_look(author, style="knotless") for _ in range(3)]
+    others = [make_look(author, style="twists") for _ in range(9)]
+    me = api(make_user())
+    pages, cursor = [], None
+    while True:
+        body = me.get("/api/looks/", limit=4, searched="knotless", **({"cursor": cursor} if cursor else {})).json()
+        pages.append([l["id"] for l in body["data"]])
+        cursor = body.get("nextCursor")
+        if not cursor:
+            break
+    seen = [look for page in pages for look in page]
+    # Everything once, nothing missed.
+    assert sorted(seen) == sorted(str(l.pk) for l in knotless + others)
+    # One knotless look in each full page, after the usual three, newest first.
+    newest = lambda looks: [str(l.pk) for l in reversed(looks)]
+    assert [page[3] for page in pages[:3]] == newest(knotless)
+    assert [l for page in pages for l in page[:3]] == newest(others)
+    # Only for that page: never kept or logged.
+    assert not SearchLog.objects.exists()
+
+
+def test_her_hair_still_comes_first_in_the_usual_part_of_a_mixed_feed(api, make_user, make_look, consent):
+    author = make_user()
+    searched = make_look(author, style="knotless")
+    straight = make_look(author, style="twists", hair_texture="straight")
+    coily = make_look(author, style="twists", hair_texture="coily")
+    me = make_user(texture="coily")
+    consent(me, "personalisation")
+    seen, cursor = [], None
+    while True:
+        body = api(me).get("/api/looks/", limit=4, searched="knotless", **({"cursor": cursor} if cursor else {})).json()
+        seen += [l["id"] for l in body["data"]]
+        cursor = body.get("nextCursor")
+        if not cursor:
+            break
+    # Hers first among the usual looks, the searched one mixed in, each once.
+    assert sorted(seen) == sorted(str(l.pk) for l in (searched, straight, coily))
+    assert seen.index(str(coily.pk)) < seen.index(str(straight.pk))
 
 
 def _walk(client, limit):

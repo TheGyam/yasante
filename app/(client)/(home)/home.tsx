@@ -7,18 +7,21 @@ import Animated from 'react-native-reanimated';
 import { Images, Plus, Search, SearchX, WifiOff } from 'lucide-react-native';
 import { AuthPromptModal, GreetingBanner, useAuth } from '@/features/auth';
 import { BookingNudge } from '@/features/booking';
+import { SuggestedStylists } from '@/features/stylist';
 import { TipOfTheDay } from '@/features/education';
 import {
-  LookFilterBar,
+  FeedOrderSwitch,
   LookTile,
   useFeedQuery,
+  useFeedTracking,
   useLookActions,
   useLookFilters,
   useLooks,
+  useFreshFeedOnReturn,
   useRefreshLooks,
   type Look,
 } from '@/features/looks';
-import { NudgeHost, useUser, useWhySuggested } from '@/features/profile';
+import { NudgeHost, useUser } from '@/features/profile';
 import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -41,6 +44,9 @@ const CARD_INSET = space.xs + 1;
 const useStyles = makeStyles(() => ({
   header: { gap: space.xl, marginHorizontal: CARD_INSET, marginBottom: space.md },
   feedHead: { gap: space.md },
+  looksRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  looksTitle: { flex: 1 },
+  order: { width: 184 },
   skeletons: { flexDirection: 'row', gap: space.sm + 2 },
   skeletonColumn: { flex: 1, gap: space.sm + 2 },
   footer: { paddingVertical: space.xxl },
@@ -118,6 +124,7 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
   const onScroll = useScreenScrollHandler();
   const listRef = useRef<FlashListRef<Look>>(null);
   useScrollToTop(listRef);
+  useFreshFeedOnReturn(() => listRef.current?.scrollToOffset({ offset: 0, animated: false }));
 
   const { user: authUser, isAuthenticated } = useAuth();
   const { data: user } = useUser(authUser?.id, { enabled: !!authUser?.id });
@@ -127,17 +134,18 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
 
   const actions = useLookActions({ onNeedsAccount });
 
-  const { query, filtered } = useFeedQuery();
-  // Her hair puts looks like it first, unless she's already filtered to it.
-  const because = useWhySuggested(['texture']);
-  const why = query.hair ? undefined : because;
+  const { query, filtered, ready } = useFeedQuery({ withFilters: false });
   const clearFilters = useLookFilters(s => s.clear);
-  const feed = useLooks(query);
+  const feed = useLooks(query, { enabled: ready });
+  // Waiting for her recent searches counts as loading: the feed loads once, in order.
+  const feedLoading = feed.isLoading || !ready;
   const focused = useIsFocused();
   const refresh = useRefreshLooks();
   // One array per fetch, not per render: the list re-diffs whenever this changes.
   const looks = useMemo(() => feed.data?.pages.flatMap(page => page.data) ?? [], [feed.data]);
-  const emptyFiltered = filtered && !feed.isLoading && !feed.isPlaceholderData && !looks.length;
+  // While the ranked feed is on for her, what she sees and opens here is recorded.
+  const tracking = useFeedTracking(feed.data?.pages[0]?.session, 'home', looks, actions.onOpen);
+  const emptyFiltered = filtered && !feedLoading && !feed.isPlaceholderData && !looks.length;
   // Nothing matched: rather than a blank page, the latest looks still show below.
   const fallback = useLooks({}, { enabled: emptyFiltered });
   const fallbackLooks = (fallback.data?.pages[0]?.data ?? []).slice(0, 6);
@@ -150,19 +158,19 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
     (look: Look) => (
       <LookTile
         look={look}
-        onOpen={actions.onOpen}
+        onOpen={tracking.onOpen}
         onLike={actions.onLike}
         onSave={look.mine ? undefined : actions.onSave}
         onFindStylists={actions.onFindStylists}
         dimmed={dimmed}
       />
     ),
-    [actions, dimmed]
+    [actions, dimmed, tracking.onOpen]
   );
   const renderItem = useCallback(({ item }: { item: Look }) => tile(item), [tile]);
 
   // Built only when what's in it changes: the list re-renders its header otherwise.
-  const loading = feed.isLoading;
+  const loading = feedLoading;
   const header = useMemo(
     () => (
       <View style={styles.header}>
@@ -173,33 +181,37 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
           onPress={() => router.push('/search')}
         />
         <TipOfTheDay />
+        {isAuthenticated && <SuggestedStylists />}
         <View style={styles.feedHead}>
-          <SectionHeader title="Looks" />
-          <LookFilterBar />
-          {why && (
-            <Text variant="footnote" tone="secondary">
-              {why}
-            </Text>
-          )}
+          <View style={styles.looksRow}>
+            <View style={styles.looksTitle}>
+              <SectionHeader title="Looks" />
+            </View>
+            <View style={styles.order}>
+              <FeedOrderSwitch />
+            </View>
+          </View>
         </View>
         {loading && <FeedSkeleton />}
       </View>
     ),
-    [styles, firstName, isAuthenticated, router, loading, why]
+    [styles, firstName, isAuthenticated, router, loading]
   );
 
   return (
     <>
       <AnimatedFlashList
         ref={listRef}
-        data={feed.isLoading ? [] : looks}
+        data={feedLoading ? [] : looks}
         masonry
         numColumns={2}
         keyExtractor={look => look.id}
         renderItem={renderItem}
+        onViewableItemsChanged={tracking.onViewableItemsChanged}
+        viewabilityConfig={tracking.viewabilityConfig}
         ListHeaderComponent={header}
         ListEmptyComponent={
-          feed.isLoading ? null : feed.isError ? (
+          feedLoading ? null : feed.isError ? (
             <EmptyState
               icon={WifiOff}
               title="Couldn’t load looks"

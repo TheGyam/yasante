@@ -88,6 +88,18 @@ export function takeaway(insight: Insight): string {
         ? `${formatNumber(total)} ${total === 1 ? 'error' : 'errors'} in this period`
         : 'No errors in this period';
     }
+    case 'hair-trends':
+      return rows.length
+        ? `${rows[0].label.split(' · ')[0]} is the most booked style in a group big enough to show`
+        : `Not enough bookings yet to show trends: every group needs ${meta.minGroup ?? 20} or more`;
+    case 'feed': {
+      if (!meta.rankedPeople) return 'Nobody used the ranked feed in this period';
+      const average = (index: number) => {
+        const values = rows.map(row => row.values[index]).filter((v): v is number => v != null);
+        return values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+      };
+      return `${average(0).toFixed(1)} saves a day per 100 people on the ranked feed, against ${average(1).toFixed(1)} on the plain feed`;
+    }
     default:
       return insight.title;
   }

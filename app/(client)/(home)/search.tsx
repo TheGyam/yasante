@@ -10,7 +10,8 @@ import {
   useContent,
   type Content,
 } from '@/features/education';
-import { openWithHero, useLooks, type Look } from '@/features/looks';
+import { useQueryClient } from '@tanstack/react-query';
+import { openWithHero, RECENT_SEARCHES, useLooks, type Look } from '@/features/looks';
 import { useStylistSearch, type StylistSearchResult } from '@/features/stylist';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import { GUTTER, makeStyles, radius, space } from '@/shared/theme';
@@ -101,18 +102,21 @@ export default function SearchScreen() {
   const loading = looksSearch.isLoading || people.isLoading;
 
   useEffect(() => {
-    if (term) track('search', { surface: 'all', query: term, filter });
+    if (term) track('search', { surface: 'all', filter });
     // When the settled query or filter changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [term, filter]);
 
+  // The feed mixes in styles from recent searches: tell it when they change.
+  const queryClient = useQueryClient();
+  const searchesChanged = () => queryClient.invalidateQueries({ queryKey: RECENT_SEARCHES });
   const remember = (text: string) => {
     if (!text) return;
-    addToSearchHistory(text);
+    void addToSearchHistory(text).then(searchesChanged);
     setRecents(prev => [text, ...prev.filter(q => q !== text)].slice(0, 10));
   };
   const forget = (text: string) => {
-    removeFromSearchHistory(text);
+    void removeFromSearchHistory(text).then(searchesChanged);
     setRecents(prev => prev.filter(q => q !== text));
   };
   const open = (content: Content) => {
@@ -254,7 +258,7 @@ export default function SearchScreen() {
                 title="Recent"
                 actionLabel="Clear"
                 onAction={() => {
-                  clearSearchHistory();
+                  void clearSearchHistory().then(searchesChanged);
                   setRecents([]);
                 }}
               />

@@ -23,13 +23,11 @@ class TimeStampedModel(models.Model):
 class SearchLog(models.Model):
     """
     Every search, with its filters and how many results came back: what people want
-    that isn't there yet is the case for the next stylists to recruit.
+    that isn't there yet is the case for the next stylists to recruit. Never who searched:
+    the totals are all it's for.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
-    )
     surface = models.CharField(max_length=20, db_index=True)  # looks, stylists, content
     query = models.CharField(max_length=200, blank=True, default="")
     filters = models.JSONField(default=dict, blank=True)
@@ -44,7 +42,6 @@ def log_search(request, surface, query="", filters=None, result_count=0):
     """Record a search. Never lets logging break the search itself."""
     try:
         SearchLog.objects.create(
-            user=request.user if request.user.is_authenticated else None,
             surface=surface,
             query=(query or "")[:200],
             filters={k: v for k, v in (filters or {}).items() if v},
@@ -110,12 +107,14 @@ NOTIFICATION_CATEGORIES = [
     ("wash_day", "Wash-day reminders"),
     ("weekly_digest", "Your weekly numbers"),
     ("account", "Your account, badges and important updates"),
+    ("activity", "Comments, replies and activity on your looks"),
+    ("for_you", "Looks picked for you, once a week"),
     ("news", "News and offers from Yasante"),
 ]
 
 # Off until switched on: promotional messages need a yes first (App Store guideline
-# 4.5.4), and a wash-day reminder is only worth having if she asks for it.
-OPT_IN_CATEGORIES = {"news", "wash_day"}
+# 4.5.4), and a wash-day reminder or a weekly pick is only worth having if she asks.
+OPT_IN_CATEGORIES = {"news", "wash_day", "for_you"}
 
 
 class NotificationPreference(models.Model):

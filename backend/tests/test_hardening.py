@@ -42,7 +42,7 @@ def test_events_keep_local_time_properties_and_version(api, make_user):
     from apps.profiles.models import AnalyticsEvent, ConsentRecord
 
     user = make_user()
-    ConsentRecord.objects.create(user=user, purpose="analytics", granted=True, policy_version="v1", recorded_at="2026-09-27T08:00:00Z")
+    ConsentRecord.objects.create(user=user, purpose="analytics", granted=True, policy_version="2026-10-20", recorded_at="2026-09-27T08:00:00Z")
     api(user).post(
         "/api/events/",
         {
@@ -80,17 +80,18 @@ def test_stylists_search_by_style_service_model_and_tier(api, make_stylist, make
     assert handles(area="peckham") == [braider.handle]
 
 
-def test_searches_are_logged_with_filters_and_counts(api, make_user, make_look):
+def test_searches_are_logged_with_filters_and_counts_but_never_who_searched(api, make_user, make_look):
     from apps.common.models import SearchLog
 
     make_look(make_user(), caption="Silk press")
-    api().get("/api/looks/", q="silk", hair="coily")
+    api(make_user()).get("/api/looks/", q="silk", hair="coily")
     api().get("/api/stylists/", q="nobody-like-this")
     api().get("/api/looks/")  # plain browsing isn't a search
     logs = {log.surface: log for log in SearchLog.objects.all()}
     assert set(logs) == {"looks", "stylists"}
     assert logs["looks"].query == "silk" and logs["looks"].filters == {"hair": "coily"}
     assert logs["stylists"].result_count == 0
+    assert not any(f.name == "user" for f in SearchLog._meta.get_fields())
 
 
 def test_api_docs_are_mounted_only_when_switched_on():

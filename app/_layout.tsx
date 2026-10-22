@@ -21,7 +21,11 @@ import { useHairProfileSync, useUserStore } from '@/features/profile';
 import { ModeSwitchOverlay, useActiveMode, useModeStore } from '@/features/stylist';
 import { useNotifications } from '@/shared/hooks/useNotifications';
 import { registerPush } from '@/shared/lib/push';
-import { useAskForAnalytics, useConsentSync } from '@/shared/config/consentSync';
+import {
+  useAskForAnalytics,
+  useConsentSync,
+  useTellAboutPolicyChange,
+} from '@/shared/config/consentSync';
 import { featuresQuery } from '@/shared/config/features';
 import { startAnalytics, track } from '@/shared/lib/analytics';
 import { reportError, startCrashReports } from '@/shared/lib/crashReport';
@@ -229,7 +233,9 @@ function RootNavigator() {
   }, [ready, startAs, isAuthenticated, inAuthFlowNow]);
 
   // Her privacy choices, once she's past sign-up and in the app.
-  useAskForAnalytics(ready && isAuthenticated && !inAuthFlowNow && !startAs);
+  const inApp = ready && isAuthenticated && !inAuthFlowNow && !startAs;
+  useAskForAnalytics(inApp);
+  useTellAboutPolicyChange(inApp);
 
   // Opened the app signed in but with her email still unconfirmed (she left mid
   // sign-up): straight back to the code. Checked once at launch; sign-up and sign-in
@@ -282,6 +288,7 @@ function RootNavigator() {
         <Stack.Screen name="hair-profile/[section]" options={modal} />
         <Stack.Screen name="looks/index" />
         <Stack.Screen name="looks/area" options={modal} />
+        <Stack.Screen name="looks/comments" options={modal} />
         <Stack.Screen name="looks/[id]" options={overlay} />
         <Stack.Screen name="stylist/[handle]" />
         <Stack.Screen name="who/[style]" options={modal} />

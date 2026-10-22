@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Link } from '@/shared/ui/Link';
 import { Tabs } from '@/shared/ui/Tabs';
-import { formatMoney, formatMoneyList, formatNumber } from '../../format';
+import { formatMoney, formatMoneyList, formatNumber, percent } from '../../format';
 import type { Insight, InsightRow } from '../../types';
 import { BarChart } from '../charts/BarChart';
 import { Funnel } from '../charts/Funnel';
@@ -240,6 +240,61 @@ export function InsightChart({ insight }: { insight: Insight }) {
           </table>
         </div>
       );
+    case 'hair-trends': {
+      // Groups under the minimum come back empty (null): shown as a dash, never a number.
+      const shown = (value: number | null | undefined, format = formatNumber) =>
+        value == null ? '—' : format(value);
+      const rising = (insight.meta.rising ?? []) as unknown as { style: string; change: number }[];
+      const byHair = (insight.meta.byHair ?? []) as unknown as {
+        style: string;
+        hair: string;
+        bookings: number;
+      }[];
+      return (
+        <div className={ui.stack}>
+          <div className={s.tableWrap}>
+            <table className={s.table}>
+              <thead>
+                <tr>
+                  <th scope="col">Style, area and month</th>
+                  {labels.map(label => (
+                    <th key={label} scope="col" className={s.number}>
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(row => (
+                  <tr key={row.label}>
+                    <td>{row.label}</td>
+                    <td className={s.number}>{shown(row.values[0])}</td>
+                    <td className={s.number}>{shown(row.values[1])}</td>
+                    <td className={s.number}>{shown(row.values[2])}</td>
+                    <td className={s.number}>
+                      {shown(row.values[3], v => formatMoney(v, row.currency ?? 'GBP'))}
+                    </td>
+                    <td className={s.number}>{shown(row.values[4], percent)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {rising.length > 0 && (
+            <p>Rising: {rising.map(r => `${r.style} (${percent(r.change)})`).join(', ')}</p>
+          )}
+          {byHair.length > 0 && (
+            <p>
+              By hair, from people who said yes to research:{' '}
+              {byHair
+                .map(r => `${r.style} on ${r.hair} hair (${formatNumber(r.bookings)})`)
+                .join(', ')}
+            </p>
+          )}
+          <p>{String(insight.meta.note ?? '')}</p>
+        </div>
+      );
+    }
     case 'community':
       return (
         <TimeChart
@@ -278,6 +333,21 @@ export function InsightChart({ insight }: { insight: Insight }) {
               values: rows.map(row => row.values[index]),
             }))}
             label="Errors per day by platform"
+            onSelect={open}
+          />
+          {typeof insight.meta.note === 'string' && <p className={ui.muted}>{insight.meta.note}</p>}
+        </>
+      );
+    case 'feed':
+      return (
+        <>
+          <TimeChart
+            labels={rows.map(row => row.label)}
+            series={labels.map((name, index) => ({
+              name,
+              values: rows.map(row => row.values[index]),
+            }))}
+            label="Saves, booking requests and Not for me per 100 people, ranked feed against plain"
             onSelect={open}
           />
           {typeof insight.meta.note === 'string' && <p className={ui.muted}>{insight.meta.note}</p>}

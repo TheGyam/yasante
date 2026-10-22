@@ -16,7 +16,7 @@ export interface ListRowProps {
   iconTone?: ListRowTone;
   onPress?: (event: GestureResponderEvent) => void;
   haptic?: HapticKind;
-  /** Replaces the chevron, e.g. a Toggle. */
+  /** Replaces the chevron, e.g. a Toggle; `null` for none (a choice, not a new screen). */
   trailing?: ReactNode;
   destructive?: boolean;
   /**
@@ -119,10 +119,12 @@ export function ListRow({
             {value}
           </Text>
         )}
-        {trailing ??
-          (onPress && !destructive && (
-            <ChevronRight size={18} color={theme.colors.text.tertiary} strokeWidth={2} />
-          ))}
+        {trailing !== undefined
+          ? trailing
+          : onPress &&
+            !destructive && (
+              <ChevronRight size={18} color={theme.colors.text.tertiary} strokeWidth={2} />
+            )}
       </View>
     </>
   );

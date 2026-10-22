@@ -68,9 +68,9 @@ def test_revealing_needs_the_permission(make_user):
     assert client.get("/data/" + phone["revealPath"]).json() == {"value": person.phone}
 
 
-def form_as_shown(client, person):
+def form_as_shown(client, person, url=None):
     """The body the workspace sends back for a record saved without touching anything."""
-    form = client.get(f"/data/forms/accounts/user/{person.pk}/").json()
+    form = client.get(url or f"/data/forms/accounts/user/{person.pk}/").json()
     body = {"_revision": form["revision"]}
     for section in form["sections"]:
         for field in section["fields"]:
@@ -96,6 +96,35 @@ def test_saving_without_revealing_keeps_the_hidden_value(make_user):
     assert client.post(f"/data/forms/accounts/user/{person.pk}/", body).status_code == 200
     person.refresh_from_db()
     assert person.name == "Ama Mensah" and person.phone == before
+
+
+def test_hair_details_are_hidden_until_revealed_and_kept_when_saved(make_user):
+    from apps.profiles.models import HairProfile
+
+    client, admin = staff_client(make_user, superuser=True)
+    person = make_user(name="Ama")
+    profile = HairProfile.objects.create(
+        user=person, texture="coily", scalp=["dry", "flaky"], goals=["growth"], area="Peckham"
+    )
+    url = f"/data/forms/profiles/hairprofile/{profile.pk}/"
+    shown = fields(client.get(url))
+    assert all(shown[name]["masked"] for name in ("texture", "scalp", "goals", "porosity"))
+    assert shown["texture"]["value"] == shown["scalp"]["value"] == "" and shown["texture"]["hasValue"]
+    # Not in the list or an export either, and no filtering by hair type.
+    listed = client.get("/data/records/profiles/hairprofile/").json()
+    assert {column["key"] for column in listed["columns"]} & {"texture", "length", "density"} == set()
+    assert not listed["filters"]
+    assert "coily" not in client.get("/data/export/profiles/hairprofile/").content.decode()
+
+    assert client.get("/data/" + shown["scalp"]["revealPath"]).json() == {"value": ["dry", "flaky"]}
+    assert LogEntry.objects.filter(user=admin, object_id=str(profile.pk)).latest("action_time").change_message.startswith("Viewed")
+
+    body = form_as_shown(client, person, url)
+    body["area"] = "Brixton"
+    saved = client.post(url, body)
+    assert saved.status_code == 200, saved.content
+    profile.refresh_from_db()
+    assert (profile.area, profile.texture, profile.scalp, profile.goals) == ("Brixton", "coily", ["dry", "flaky"], ["growth"])
 
 
 def test_exports_are_logged(make_user):
@@ -126,9 +155,9 @@ def test_retention_forgets_who_then_deletes(make_user, make_stylist):
     now = timezone.now()
     old_event = AnalyticsEvent.objects.create(user=person, name="opened", at=now - timedelta(days=400))
     new_event = AnalyticsEvent.objects.create(user=person, name="opened", at=now - timedelta(days=10))
-    search = SearchLog.objects.create(user=person, surface="looks", query="braids", result_count=3)
+    search = SearchLog.objects.create(surface="looks", query="braids", result_count=3)
     SearchLog.objects.filter(pk=search.pk).update(created_at=now - timedelta(days=120))
-    ancient = SearchLog.objects.create(user=person, surface="looks", query="twists", result_count=0)
+    ancient = SearchLog.objects.create(surface="looks", query="twists", result_count=0)
     SearchLog.objects.filter(pk=ancient.pk).update(created_at=now - timedelta(days=400))
     view = PageView.objects.create(stylist=make_stylist(), viewer=person)
     PageView.objects.filter(pk=view.pk).update(viewed_at=now - timedelta(days=120))
@@ -137,8 +166,7 @@ def test_retention_forgets_who_then_deletes(make_user, make_stylist):
 
     assert not AnalyticsEvent.objects.filter(pk=old_event.pk).exists()
     assert AnalyticsEvent.objects.filter(pk=new_event.pk).exists()
-    search.refresh_from_db()
-    assert search.user is None and search.query == "braids"
+    assert SearchLog.objects.filter(pk=search.pk).exists()
     assert not SearchLog.objects.filter(pk=ancient.pk).exists()
     view.refresh_from_db()
     assert view.viewer is None

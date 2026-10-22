@@ -56,7 +56,7 @@ export function useLookActions({
       ),
       onMore: signedIn((look: Look) =>
         router.push(
-          `/looks/options?kind=look&id=${look.id}&name=${encodeURIComponent(look.authorName)}&authorId=${look.authorId}&mine=${look.mine ? 1 : 0}${onItsOwnPage ? '&leave=1' : ''}`
+          `/looks/options?kind=look&id=${look.id}&name=${encodeURIComponent(look.authorName)}&authorId=${look.authorId}&mine=${look.mine ? 1 : 0}${onItsOwnPage ? '&leave=1' : ''}${look.reason ? `&why=${encodeURIComponent(look.reason)}` : ''}`
         )
       ),
     };

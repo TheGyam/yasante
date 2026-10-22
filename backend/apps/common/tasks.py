@@ -24,10 +24,11 @@ DELETE_AFTER = timedelta(days=365)
 @shared_task
 def enforce_retention():
     """
-    Analytics events go after 12 months. Searches lose the person after 90 days and go
-    after 12 months. Stylist page views lose the viewer after 90 days; the counts stay,
-    because stylists see them.
+    Analytics events go after 12 months. Searches, never linked to anyone, go after 12
+    months. Stylist page views lose the viewer after 90 days; the counts stay, because
+    stylists see them. What people saw and opened in the feed goes after 90 days.
     """
+    from apps.feed.models import FeedEvent
     from apps.accounts.models import ReleasedName
     from apps.profiles.models import AnalyticsEvent
     from apps.stylists.models import PageView
@@ -38,8 +39,8 @@ def enforce_retention():
     return {
         "analytics_deleted": AnalyticsEvent.objects.filter(at__lt=now - DELETE_AFTER).delete()[0],
         "searches_deleted": SearchLog.objects.filter(created_at__lt=now - DELETE_AFTER).delete()[0],
-        "searches_anonymised": SearchLog.objects.filter(created_at__lt=now - FORGET_WHO_AFTER, user__isnull=False).update(user=None),
         "views_anonymised": PageView.objects.filter(viewed_at__lt=now - FORGET_WHO_AFTER, viewer__isnull=False).update(viewer=None),
+        "feed_events_deleted": FeedEvent.objects.filter(created_at__lt=now - FORGET_WHO_AFTER).delete()[0],
         # A given-up name, once its hold is over, is nobody's business.
         "name_holds_deleted": ReleasedName.objects.filter(
             released_at__lt=now - timedelta(days=settings.NAME_HOLD_DAYS)

@@ -317,6 +317,8 @@ class StylistPageSerializer(serializers.Serializer):
 # ── Response shapes, for the schema the app's types are generated from ──────────
 class StylistSearchResultSerializer(serializers.Serializer):
     account_id = serializers.CharField()
+    # In "Stylists for you": why she's suggested, in words.
+    reason = optional(serializers.CharField())
     handle = serializers.CharField()
     display_name = serializers.CharField()
     avatar_uri = optional(serializers.CharField())

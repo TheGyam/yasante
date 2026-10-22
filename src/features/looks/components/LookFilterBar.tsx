@@ -1,13 +1,15 @@
 import { ScrollView } from 'react-native';
-import { ChevronDown, MapPin, Waves } from 'lucide-react-native';
+import { ChevronDown, Clock, MapPin, Waves } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { useUser, useUserStore } from '@/features/profile';
+import { useQuery } from '@tanstack/react-query';
 import { useConsentStore } from '@/shared/config/consentStore';
+import { getRecentSearches } from '@/shared/utils/searchHistory';
 import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, space } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
 import { confirm } from '@/shared/ui/dialog';
-import { useLookFilters } from '../filters';
+import { searchedStyles, useLookFilters } from '../filters';
 import { useLookAreas, useStyleTaxonomy } from '../hooks';
 import type { LookFilters } from '../types';
 
@@ -28,21 +30,54 @@ function useTexture() {
   return allowed ? (account?.hairProfile?.texture ?? local?.texture) : undefined;
 }
 
-/** What the feed is narrowed to right now, as the API takes it. */
-export function useFeedQuery(): { query: LookFilters; filtered: boolean } {
-  const texture = useTexture();
-  const filters = useLookFilters();
-  const query = {
-    hair: filters.hairLikeMine ? texture : undefined,
-    style: filters.style,
-    area: filters.area,
-  };
-  return { query, filtered: !!(query.hair || query.style || query.area) };
+/** The key the feed reads recent searches under; searching refreshes it. */
+export const RECENT_SEARCHES = ['recent-searches'];
+
+/** Styles from her recent searches, kept on her phone, for the feed to mix in. */
+function useSearchedStyles() {
+  const recent = useQuery({ queryKey: RECENT_SEARCHES, queryFn: getRecentSearches });
+  const taxonomy = useStyleTaxonomy();
+  const queries = (recent.data ?? []).map(item => item.query);
+  // Ready once it's known, so the feed loads once rather than reshuffling as these arrive.
+  // Without the style list (offline, say) it goes ahead without them.
+  const ready = recent.isFetched && (!queries.length || taxonomy.isFetched);
+  return { styles: searchedStyles(queries, taxonomy.data ?? []), ready };
 }
 
 /**
- * The feed's filters: hair like mine, area, and every style. Shared by the home
- * grid and the looks screen, so a filter set in one is set in both.
+ * What the feed is narrowed to right now, as the API takes it. Home has no filters, only
+ * For you and Latest (`withFilters: false`), so a filter set on the Looks screen never
+ * narrows it out of sight.
+ */
+export function useFeedQuery({ withFilters = true } = {}): {
+  query: LookFilters;
+  filtered: boolean;
+  ready: boolean;
+} {
+  const texture = useTexture();
+  const filters = useLookFilters();
+  const { styles: searched, ready } = useSearchedStyles();
+  const query = withFilters
+    ? {
+        hair: filters.hairLikeMine ? texture : undefined,
+        style: filters.style,
+        area: filters.area,
+      }
+    : {};
+  const filtered = !!(query.hair || query.style || query.area);
+  // Mixed in without a label, and only into the everyday feed, not a chosen style or hair,
+  // and not into Latest, which is nothing personal.
+  const mix =
+    !filters.latest && !query.hair && !query.style && searched.length
+      ? searched.join(',')
+      : undefined;
+  const order = filters.latest ? ('latest' as const) : undefined;
+  return { query: { ...query, searched: mix, order }, filtered, ready };
+}
+
+/**
+ * The feed's filters on the Looks screen: Latest, hair like mine, area, and every style.
+ * Home has only For you and Latest (FeedOrderSwitch), which shares Latest with this.
  */
 export function LookFilterBar({ inset = true }: { inset?: boolean }) {
   const styles = useStyles();
@@ -73,6 +108,13 @@ export function LookFilterBar({ inset = true }: { inset?: boolean }) {
       style={inset ? styles.bar : undefined}
       contentContainerStyle={styles.row}
     >
+      <Chip
+        label="Latest"
+        icon={Clock}
+        selected={filters.latest}
+        onPress={() => filters.setLatest(!filters.latest)}
+        accessibilityLabel="Newest first"
+      />
       <Chip
         label="Hair like mine"
         icon={Waves}

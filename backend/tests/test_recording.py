@@ -186,3 +186,20 @@ def test_why_a_style_came_out_is_kept_and_it_hurt_only_with_her_yes(api, setup, 
     answers = {"week": 4, "holding": "okay", "scalp": "comfortable", "again": "yes", "stillIn": False, "cameOut": "frizzy"}
     assert api(client).post(f"/api/bookings/{due}/check-in/", answers).status_code == 204
     assert HairLog.objects.get(booking_id=due).reason == "frizzy"
+
+
+def test_something_noted_by_mistake_can_be_taken_back_within_a_day(api, make_user):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.profiles.models import HairLog
+
+    me, other = make_user(), make_user()
+    trim = api(me).post("/api/hair-log/", {"kind": "trim"}).json()
+    assert api(other).delete(f"/api/hair-log/{trim['id']}/").status_code == 404
+    assert api(me).delete(f"/api/hair-log/{trim['id']}/").status_code == 204
+    assert api(me).get("/api/hair-log/").json() == []
+    wash = api(me).post("/api/hair-log/", {"kind": "wash"}).json()
+    HairLog.objects.filter(pk=wash["id"]).update(created_at=timezone.now() - timedelta(days=2))
+    assert api(me).delete(f"/api/hair-log/{wash['id']}/").status_code == 400

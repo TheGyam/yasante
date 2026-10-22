@@ -7,9 +7,12 @@ import {
   type InfiniteData,
   type QueryClient,
 } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { useAuth } from '@/features/auth';
 import { prefetchImages } from '@/shared/ui/RemoteImage';
 import { looksApi, type UploadCache, type UploadProgress } from './api';
+import { sendFeedEvents } from './feedEvents';
 import type {
   CommentsPage,
   Look,
@@ -44,6 +47,10 @@ export function useLooks(filters: LookFilters = {}, { enabled = true } = {}) {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: page => page.nextCursor,
     staleTime: 60 * 1000,
+    // Never re-read under her mid-scroll: coming back is useFreshFeedOnReturn's call,
+    // and a dropped connection only retries a feed that failed to load.
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: query => query.state.status === 'error',
     // Changing a filter keeps the last results up, dimmed, until the new ones land.
     placeholderData: keepPreviousData,
     enabled,
@@ -99,12 +106,40 @@ export function useMyLooks() {
 const gone = (error: unknown) =>
   (error as { response?: { status?: number } } | null)?.response?.status === 404;
 
+/** "More like this" under a look. Kept with the looks, so a like or save shows here too. */
+/**
+ * "More like this" under a look, a page at a time as she scrolls, like the feed. Each
+ * visit is ranked afresh (what she's seen sinks), then paged without repeats.
+ */
+export function useRelatedLooks(id: string, { enabled = true } = {}) {
+  const { user } = useAuth();
+  return useInfiniteQuery({
+    queryKey: [KEY, 'related', user?.id, id],
+    queryFn: async ({ pageParam }: { pageParam?: string }) => {
+      const page = await looksApi.related(id, pageParam);
+      prefetchImages(page.data.map(look => look.thumbUri ?? look.photoUri));
+      return page;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: page => page.nextCursor,
+    enabled: enabled && !!id,
+    staleTime: 5 * 60 * 1000,
+    // Never re-read under her mid-scroll, as with the feed.
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useLook(id: string) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const query = useQuery({
     queryKey: [KEY, 'one', user?.id, id],
-    queryFn: () => looksApi.get(id),
+    queryFn: async () => {
+      const look = await looksApi.get(id);
+      // Why the feed showed it is only known to the feed: keep it for the look's menu.
+      const shown = findLook(queryClient, id);
+      return shown?.reason ? { ...look, reason: shown.reason, source: shown.source } : look;
+    },
     placeholderData: () => findLook(queryClient, id),
     enabled: !!id,
     staleTime: 30 * 1000,
@@ -169,10 +204,44 @@ export function keepFirstPage(queryClient: QueryClient, queryKey: readonly unkno
 /** Pull to refresh: the newest page, fresh, without re-reading the rest. */
 export function useRefreshLooks() {
   const queryClient = useQueryClient();
-  return () => {
+  return async () => {
+    // What she's just seen goes first, so the fresh feed knows to show her something new.
+    await sendFeedEvents();
     keepFirstPage(queryClient, [KEY, 'feed']);
     return queryClient.refetchQueries({ queryKey: [KEY, 'feed'], type: 'active' });
   };
+}
+
+/** Away this long, she comes back to a fresh feed from the top, as long as the server keeps her place. */
+const FRESH_AFTER_MS = 30 * 60 * 1000;
+// Home and the Looks screen both listen: one reload between them.
+let lastFresh = 0;
+
+/**
+ * As the big apps do: a quick trip to another app leaves the feed as she left it; back
+ * after half an hour or more, it starts again from the top with what's new. Opening
+ * the app from closed always loads a fresh feed (it's stale by then).
+ */
+export function useFreshFeedOnReturn(toTop: () => void) {
+  const refresh = useRefreshLooks();
+  const latest = useRef({ refresh, toTop });
+  latest.current = { refresh, toTop };
+  useEffect(() => {
+    let left: number | undefined;
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'background') left = Date.now();
+      if (state !== 'active' || left === undefined) return;
+      const away = Date.now() - left;
+      left = undefined;
+      if (away < FRESH_AFTER_MS) return;
+      latest.current.toTop();
+      if (Date.now() - lastFresh > 5000) {
+        lastFresh = Date.now();
+        void latest.current.refresh();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 }
 
 /** Anything that changes what the feed should contain re-reads it — its first page. */

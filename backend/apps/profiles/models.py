@@ -215,10 +215,18 @@ class ConsentRecord(models.Model):
 
 CONSENT_PURPOSES = ("terms", "privacy", "analytics", "personalisation", "research")
 
+# Before this policy the app sent its untouched defaults as if they were answers (hair
+# details ticked on), so optional answers from older versions don't count: everyone is
+# asked again. Versions are dates, so they compare as text.
+OPTIONAL_CONSENTS = ("analytics", "personalisation", "research")
+OPTIONAL_CONSENTS_SINCE = "2026-10-20"
+
 
 def counted_consents():
     """Every consent record that counts as an answer."""
-    return ConsentRecord.objects.all()
+    return ConsentRecord.objects.exclude(
+        purpose__in=OPTIONAL_CONSENTS, policy_version__lt=OPTIONAL_CONSENTS_SINCE
+    )
 
 
 def latest_consents(user):

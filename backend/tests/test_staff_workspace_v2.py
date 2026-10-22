@@ -137,7 +137,7 @@ def test_error_issue_screen_and_actions(make_user):
     assert ErrorIssue.objects.get().status == "resolved"
 
 
-@pytest.mark.parametrize("name", ["money", "funnel", "growth", "booking-times", "areas", "empty-searches", "retention", "top-stylists", "community", "app-health", "area-suggestions"])
+@pytest.mark.parametrize("name", ["money", "funnel", "growth", "booking-times", "areas", "empty-searches", "retention", "top-stylists", "community", "app-health", "area-suggestions", "hair-trends", "feed"])
 def test_every_insight_answers(make_user, make_stylist, name):
     client, _ = staff_client(make_user, superuser=True)
     make_stylist()
@@ -151,6 +151,7 @@ def test_money_is_for_superusers_only(make_user):
     client, user = staff_client(make_user)
     user.user_permissions.add(Permission.objects.get(codename="view_booking"))
     assert client.get("/data/insights/money/").status_code == 403
+    assert client.get("/data/insights/hair-trends/").status_code == 403
     assert client.get("/data/insights/funnel/").status_code == 200
 
 
@@ -229,6 +230,18 @@ def test_report_queue_decides_with_its_nullable_join(make_user, make_look):
     look.refresh_from_db()
     report.refresh_from_db()
     assert look.status == "hidden" and report.status == "actioned"
+
+
+def test_illegal_or_dangerous_reports_come_first_in_the_queue(api, make_user, make_look):
+    from apps.looks.models import Report
+
+    client, _ = staff_client(make_user, superuser=True)
+    reporter = make_user()
+    hateful, dangerous = make_look(make_user()), make_look(make_user())
+    assert api(reporter).post(f"/api/looks/{hateful.pk}/report/", {"reason": "hate"}).status_code == 201
+    assert api(reporter).post(f"/api/looks/{dangerous.pk}/report/", {"reason": "illegal"}).status_code == 201
+    first = Report.objects.get(reason="illegal")
+    assert client.get("/data/review/reports/").json()["items"][0]["id"] == str(first.pk)
 
 
 def test_a_review_report_shows_in_its_queue_and_on_today(make_user, make_stylist, book):

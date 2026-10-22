@@ -21,9 +21,10 @@ export function Toggle({ value, onValueChange, disabled, accessibilityLabel }: T
         haptics.selection();
         onValueChange(next);
       }}
-      trackColor={{ false: theme.colors.glass.fillStrong, true: theme.colors.accent }}
+      // Off has to read as a switch too: a white track on a white card disappears.
+      trackColor={{ false: theme.colors.text.tertiary, true: theme.colors.accent }}
       thumbColor="#FFFFFF"
-      ios_backgroundColor={theme.colors.glass.fillStrong}
+      ios_backgroundColor={theme.colors.text.tertiary}
     />
   );
 }

@@ -42,7 +42,7 @@ export function SiteFooter({ links }: SiteFooterProps) {
           </Link>
         ))}
         {/* Where to reach a person: the stores ask for it, and so do people. */}
-        <a href="mailto:admin@yasante.com">Contact us</a>
+        <a href="mailto:support@yasante.com">Contact us</a>
         <Link to="/delete-account">Delete your account</Link>
       </nav>
     </footer>

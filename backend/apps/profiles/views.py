@@ -107,11 +107,21 @@ class UserDetailView(APIView):
 
         revoke_apple(user)
 
+        from apps.bookings.models import CheckIn, Review
+        from apps.looks.models import LookComment
+        from apps.web.models import WaitlistEntry
+
         with transaction.atomic():
-            # Anonymise bookings (keep for stylist records)
-            Booking.objects.filter(client=user).update(
-                client_name="Deleted account",
-            )
+            # The stylist keeps the appointment for her records: date, service, price and
+            # whether it went ahead. Nothing that says who the client was or about her hair.
+            bookings = Booking.objects.filter(client=user)
+            bookings.filter(at_client=True).update(address="")
+            bookings.update(client_name="Deleted account", client_hair="", notes="", occasion="")
+            CheckIn.objects.filter(booking__client=user).delete()
+            # The star rating stays so the stylist's average stays fair; the words and name go.
+            Review.objects.filter(booking__client=user).update(author_name="Deleted account", body="")
+            LookComment.objects.filter(reply_to__author=user).update(reply_to_name="")
+            WaitlistEntry.objects.filter(email__iexact=user.email).delete()
 
             # Delete everything else (cascading FKs handle most)
             user.delete()
@@ -229,6 +239,10 @@ class ConsentBatchView(APIView):
         return Response(status=status.HTTP_201_CREATED)
 
 
+# A search event says where and how much, never what: no typed words, hair or styles.
+SEARCH_EVENT_KEYS = {"surface", "filter", "filters", "results"}
+
+
 @extend_schema_view(post=extend_schema(request=EventBatchSerializer, responses={201: None, 202: None}))
 class EventBatchView(APIView):
     """
@@ -267,7 +281,8 @@ class EventBatchView(APIView):
                     properties={
                         str(k)[:40]: v
                         for k, v in list(e.get("properties", {}).items())[:20]
-                        if v is None or isinstance(v, (str, int, float, bool))
+                        if (v is None or isinstance(v, (str, int, float, bool)))
+                        and (e["name"] != "search" or k in SEARCH_EVENT_KEYS)
                     },
                     app_version=e.get("app_version", "")[:30],
                 )
@@ -306,8 +321,10 @@ class PolicyDetailView(APIView):
 
     def get(self, request, type):
         version = request.query_params.get("version")
+        # Terms and privacy share one version number, so a version names the text in
+        # force then: this one, or the latest before it.
         doc = (
-            PolicyDocument.objects.filter(type=type, version=version, published=True).first()
+            PolicyDocument.objects.filter(type=type, version__lte=version, published=True).order_by("-version").first()
             if version
             else PolicyDocument.current(type)
         )
@@ -364,6 +381,24 @@ class HairLogView(APIView):
         if entry is None:
             return Response({"message": "Already noted"}, status=409)
         return Response(present_hair_log(entry), status=201)
+
+
+class HairLogEntryView(APIView):
+    """DELETE /api/hair-log/:id/ — take back something noted by mistake, within a day."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk):
+        from datetime import timedelta
+
+        entry = request.user.hair_log.filter(pk=pk).first()
+        if entry is None:
+            return Response({"message": "That’s gone already"}, status=404)
+        # Undo is for a mis-tap; the history after that is hers to keep as it was.
+        if entry.created_at < timezone.now() - timedelta(days=1):
+            return Response({"message": "Only something noted in the last day can be taken back"}, status=400)
+        entry.delete()
+        return Response(status=204)
 
 
 

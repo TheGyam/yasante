@@ -6,17 +6,20 @@ likes, saves, blocks and her own. Blocking runs both ways.
 """
 
 import logging
+import secrets
 import uuid
 from datetime import datetime, timedelta
 
 from apps.bookings.models import Booking
 from apps.common.blocks import blocked_account_ids, is_blocked
 from apps.common.models import log_search
-from apps.common.pagination import keyset_page
+from apps.common.pagination import keyset_page, page_limit
 from apps.common.people import person
 from apps.common.permissions import IsAuthenticatedOrReadOnly
 from apps.common.throttling import CommentThrottle, PostingThrottle, ReportThrottle
 from apps.common.uploads import media_url, own_media
+from apps.feed.models import SWITCH as FEED_SWITCH
+from apps.feed.sessions import is_ranked_cursor, ranked_page
 from apps.features.switches import is_on
 from apps.shelf.models import Product
 from apps.stylists.models import StylistProfile
@@ -145,24 +148,105 @@ def _texture_to_match(viewer):
     return HairProfile.objects.filter(user=viewer).values_list("texture", flat=True).first() or ""
 
 
-# Where the second list starts in a cursor: everything after the looks on her hair.
+# Where the second list starts in a cursor: everything after the looks for her hair.
 REST = "rest."
 
 
-def matched_first(qs, texture, request):
+def for_her_hair(texture):
     """
-    Looks on hair like hers first, newest first, then everything else, newest first.
+    Looks on hair like hers, and looks by stylists or with products seen on hair like
+    hers in other public looks. Only what's been posted publicly says what goes together.
+    """
+    seen = Look.objects.filter(visibility="public", status="live", hair_texture=texture)
+    with_products = Look.products.through.objects.filter(product_id__in=seen.values("products"))
+    return (
+        Q(hair_texture=texture)
+        | Q(stylist_id__in=seen.exclude(stylist_id="").values("stylist_id"))
+        | Q(pk__in=with_products.values("look_id"))
+    )
+
+
+def matched_first(qs, texture, request, cursor=None, limit=None):
+    """
+    Looks for her hair first, newest first, then everything else, newest first.
     The cursor says which list she's in, so nothing repeats or goes missing between
     them. The page where the first list ends can be short; the next one starts the rest.
     """
-    cursor = request.query_params.get("cursor") or ""
+    if cursor is None:
+        cursor = request.query_params.get("cursor") or ""
     if not cursor.startswith(REST):
-        items, after = keyset_page(qs.filter(hair_texture=texture), request, cursor=cursor)
+        items, after = keyset_page(qs.filter(for_her_hair(texture)), request, cursor=cursor, limit=limit)
         if after or items:
             return items, after or REST
         cursor = REST
-    items, after = keyset_page(qs.exclude(hair_texture=texture), request, cursor=cursor[len(REST):])
+    items, after = keyset_page(qs.exclude(for_her_hair(texture)), request, cursor=cursor[len(REST):], limit=limit)
     return items, after and REST + after
+
+
+# A mixed feed's cursor: where each of its two lists is up to, and a list that's run out.
+MIX, DONE = "mix.", "-"
+# About one look in this many is from styles she's searched for, while there are some.
+MIX_EVERY = 4
+
+
+def mixed_in(qs, texture, styles, request):
+    """
+    The feed with looks in styles she's searched for mixed through it, about one in
+    MIX_EVERY, newest first, until they run out; everything else in its usual order.
+    Each list keeps its own place in the cursor, so nothing repeats or goes missing.
+    """
+    limit = page_limit(request)
+    cursor = request.query_params.get("cursor") or ""
+    searched_at, usual_at = cursor[len(MIX):].split("~", 1) if cursor.startswith(MIX) else ("", "")
+    searched = qs.filter(styles__slug__in=styles).distinct()
+    usual = qs.exclude(styles__slug__in=styles)
+
+    # Her share of the page, or all of it once the usual list has run out.
+    share = limit if usual_at == DONE else limit // MIX_EVERY
+    picks, searched_next = [], searched_at
+    if searched_at != DONE and share:
+        picks, searched_next = keyset_page(searched, request, cursor=searched_at, limit=share)
+        searched_next = searched_next or DONE
+    def usual_page(cursor, size):
+        if texture:
+            return matched_first(usual, texture, request, cursor=cursor, limit=size)
+        return keyset_page(usual, request, cursor=cursor, limit=size)
+
+    rest, usual_next = [], usual_at
+    if usual_at != DONE and limit - len(picks):
+        rest, usual_next = usual_page(usual_at, limit - len(picks))
+        usual_next = usual_next or DONE
+
+    # One of hers after every few of the rest, and whatever's left at the end.
+    items, picks = [], list(picks)
+    for i, look in enumerate(rest, 1):
+        items.append(look)
+        if i % (MIX_EVERY - 1) == 0 and picks:
+            items.append(picks.pop(0))
+    items += picks
+    if searched_next == DONE and usual_next == DONE:
+        return items, None
+    return items, f"{MIX}{searched_next}~{usual_next}"
+
+
+def everyday_looks(viewer, style=None, queryset=None):
+    """
+    The public, live looks she can be shown: nobody she's blocked, and nothing she's said
+    isn't for her (a style she's asked for herself still shows). The ranked feed starts
+    from the same set (apps.feed.ranking), so the two never disagree on what's allowed.
+    """
+    qs = (_looks(viewer) if queryset is None else queryset).filter(visibility="public", status="live")
+    blocked = blocked_account_ids(viewer)
+    if blocked:
+        qs = qs.exclude(author_id__in=blocked)
+    looks, stylists, styles = not_for_me(viewer)
+    if looks:
+        qs = qs.exclude(pk__in=looks)
+    if stylists:
+        qs = qs.exclude(author_id__in=stylists).exclude(stylist_id__in=[str(s) for s in stylists])
+    if styles - {style}:
+        qs = qs.exclude(styles__slug__in=styles - {style})
+    return qs
 
 
 class FeedView(APIView):
@@ -176,19 +260,19 @@ class FeedView(APIView):
     @extend_schema(responses=LooksPageSerializer)
     def get(self, request):
         viewer = _viewer(request)
-        qs = _looks(viewer).filter(visibility="public", status="live")
-        blocked = blocked_account_ids(viewer)
-        if blocked:
-            qs = qs.exclude(author_id__in=blocked)
         style = request.query_params.get("style")
-        # What she's said isn't for her, unless she's asked for that style herself.
-        looks, stylists, styles = not_for_me(viewer)
-        if looks:
-            qs = qs.exclude(pk__in=looks)
-        if stylists:
-            qs = qs.exclude(author_id__in=stylists).exclude(stylist_id__in=[str(s) for s in stylists])
-        if styles - {style}:
-            qs = qs.exclude(styles__slug__in=styles - {style})
+        qs = everyday_looks(viewer, style)
+        params = request.query_params
+        # Styles she's searched for, sent by her phone for this page only: never kept or
+        # logged.
+        searched = [s for s in (params.get("searched") or "").split(",") if s][:3]
+        # "Latest": newest first, nothing personal. Otherwise, while the ranked feed is on
+        # for her, the everyday feed (no filters, no search) is ranked (apps.feed).
+        latest = params.get("order") == "latest"
+        ranking = is_on(FEED_SWITCH, request.user)
+        everyday = not any(params.get(k) for k in ("hair", "style", "area", "q"))
+        if ranking and everyday and not latest and is_ranked_cursor(params.get("cursor")):
+            return self.ranked(request, viewer, qs, searched)
 
         hair = request.query_params.get("hair")
         if hair:
@@ -208,19 +292,85 @@ class FeedView(APIView):
                 | Q(styles__name__icontains=word)
             ).distinct()
 
-        # With her yes, looks on hair like hers come first, unless she's chosen a hair type.
-        texture = "" if hair else _texture_to_match(viewer)
-        items, next_cursor = matched_first(qs, texture, request) if texture else keyset_page(qs, request)
+        # With her yes, looks for her hair come first, unless she's chosen a hair type.
+        texture = "" if hair or latest else _texture_to_match(viewer)
+        # Her searched styles mix in, but not when she's chosen a style or a hair type.
+        if searched and not style and not hair and not latest:
+            items, next_cursor = mixed_in(qs, texture, searched, request)
+        elif texture:
+            items, next_cursor = matched_first(qs, texture, request)
+        else:
+            items, next_cursor = keyset_page(qs, request)
         q = request.query_params.get("q", "")
         filters = {"hair": hair, "style": style, "area": area}
         # Log what people search or filter for, on the first page only (not every scroll).
         if (q or any(filters.values())) and not request.query_params.get("cursor"):
             log_search(request, "looks", q, filters, len(items))
-        return Response({"data": present_looks(items, viewer), "next_cursor": next_cursor})
+        body = {"data": present_looks(items, viewer), "next_cursor": next_cursor}
+        # While the ranked feed is on for her, the first page starts a feed session that
+        # the app records what she sees and opens against (apps.feed).
+        if not request.query_params.get("cursor") and ranking:
+            body["session"] = secrets.token_urlsafe(12)
+        return Response(body)
+
+    def ranked(self, request, viewer, allowed, searched):
+        pairs, next_cursor, session = ranked_page(viewer, searched, request.query_params.get("cursor"), page_limit(request))
+        # Checked again now: anything blocked, removed or hidden since it was ranked stays out.
+        found = {str(look.pk): look for look in allowed.filter(pk__in=[pk for pk, _ in pairs])}
+        shown = [(found[pk], source) for pk, source in pairs if pk in found]
+        data = present_looks([look for look, _ in shown], viewer)
+        with_reasons(data, shown, viewer)
+        return Response({"data": data, "next_cursor": next_cursor, "session": session})
 
     @extend_schema(request=LookCreateRequestSerializer, responses={201: LookSerializer})
     def post(self, request):
         return create_look(request)
+
+
+def with_reasons(data, shown, viewer, surface="feed"):
+    """Each look's source, and why it's there in words only she sees ("Why am I seeing this")."""
+    from apps.feed.suggestions import reasons
+
+    people = [(item.get("stylist") or {}).get("name") or item.get("author_name") for item in data]
+    texts = reasons([(look, source, person) for (look, source), person in zip(shown, people)], viewer, surface)
+    for item, (_, source), text in zip(data, shown, texts):
+        item["source"] = source
+        item["reason"] = text
+
+
+@extend_schema_view(get=extend_schema(responses=LooksPageSerializer))
+class LookRelatedView(APIView):
+    """
+    GET /api/looks/:id/related/?cursor=&limit= — "More like this", closest and best for
+    her first, a page at a time. One visit is ranked once and paged through, so a page
+    never repeats one before it.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, pk):
+        from apps.feed.suggestions import related_looks
+
+        viewer = _viewer(request)
+        look = _visible_look(pk, viewer)
+        if look is None:
+            return _not_found()
+        limit = min(page_limit(request, default=20), 40)
+        pairs, next_cursor, session = ranked_page(
+            viewer, (), request.query_params.get("cursor"), limit,
+            scope=f"related:{look.pk}", rank=lambda: related_looks(look, viewer),
+        )
+        # Checked again now: anything blocked, removed or hidden since it was ranked stays out.
+        found = {str(item.pk): item for item in _looks(viewer).filter(pk__in=[pk for pk, _ in pairs])}
+        shown = [(found[pk], source) for pk, source in pairs if pk in found]
+        data = present_looks([look for look, _ in shown], viewer)
+        personal = viewer if viewer is not None and is_on(FEED_SWITCH, viewer) else None
+        with_reasons(data, shown, personal, surface="related")
+        body = {"data": data, "next_cursor": next_cursor}
+        # What she sees here is recorded against this, like the feed, so it sinks next time.
+        if personal is not None:
+            body["session"] = session
+        return Response(body)
 
 
 def create_look(request):
@@ -576,8 +726,26 @@ class CommentListCreateView(APIView):
             )
             Look.objects.filter(pk=look.pk).update(comment_count=F("comment_count") + 1)
 
+        _tell_about_comment(look, user, answered, body)
         comment = comment_queryset(user, set()).get(pk=comment.pk)
         return Response(present_comments([comment], user)[0], status=201)
+
+
+def _tell_about_comment(look, commenter, answered, body):
+    """
+    The look's poster hears about a comment, and whoever was replied to hears about the
+    reply. At most one a look (or a comment) an hour, so a busy thread is one push.
+    """
+    from apps.common.notifications import notify
+
+    hour = timezone.now().strftime("%Y%m%d%H")
+    name = person(commenter.pk)["name"]
+    preview = body.strip()[:80]
+    url = f"/looks/{look.pk}"
+    if look.author_id != commenter.pk:
+        notify(look.author_id, "activity", f"comment:{look.pk}:{hour}", "New comment on your look", f"{name}: {preview}", url=url)
+    if answered and answered.author_id not in (commenter.pk, look.author_id):
+        notify(answered.author_id, "activity", f"reply:{answered.pk}:{hour}", f"{name} replied to you", preview, url=url)
 
 
 class CommentRepliesView(APIView):

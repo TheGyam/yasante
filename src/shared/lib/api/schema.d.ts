@@ -960,6 +960,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/feed/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/feed/events/
+         *
+         *     What she saw and opened in the feed. Kept only while the ranked feed is on for her;
+         *     otherwise accepted and dropped, so an app that sends them never sees an error.
+         */
+        post: operations["feed_events_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/hair-log/": {
         parameters: {
             query?: never;
@@ -973,6 +995,23 @@ export interface paths {
         /** @description GET / POST /api/hair-log/ — trims, wash days, styles taken out. Appended only. */
         post: operations["hair_log_create"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/hair-log/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description DELETE /api/hair-log/:id/ — take back something noted by mistake, within a day. */
+        delete: operations["hair_log_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1105,6 +1144,27 @@ export interface paths {
         post: operations["looks_like_create"];
         /** @description POST / DELETE /api/looks/:id/like/ — idempotent. */
         delete: operations["looks_like_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/looks/{id}/related/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /api/looks/:id/related/?cursor=&limit= — "More like this", closest and best for
+         *     her first, a page at a time. One visit is ranked once and paged through, so a page
+         *     never repeats one before it.
+         */
+        get: operations["looks_related_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1469,13 +1529,13 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description GET /api/stylists/?q= — search live pages by name, handle or area.
+         * @description GET /api/stylists/?q= — search live pages by name, handle, area, services or styles.
          *     POST /api/stylists/ — her page, as a draft only she can see.
          */
         get: operations["stylists_list"];
         put?: never;
         /**
-         * @description GET /api/stylists/?q= — search live pages by name, handle or area.
+         * @description GET /api/stylists/?q= — search live pages by name, handle, area, services or styles.
          *     POST /api/stylists/ — her page, as a draft only she can see.
          */
         post: operations["stylists_create"];
@@ -1861,6 +1921,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stylists/suggested/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/stylists/suggested/ — "Stylists for you", while the ranked feed is on for her. */
+        get: operations["stylists_suggested_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tips/": {
         parameters: {
             query?: never;
@@ -2024,6 +2101,15 @@ export interface components {
          * @enum {string}
          */
         AgainEnum: "yes" | "maybe" | "no";
+        /**
+         * @description * `18_24` - 18_24
+         *     * `25_34` - 25_34
+         *     * `35_44` - 35_44
+         *     * `45_54` - 45_54
+         *     * `55_plus` - 55_plus
+         * @enum {string}
+         */
+        AgeBandEnum: "18_24" | "25_34" | "35_44" | "45_54" | "55_plus";
         AnswerRequestRequest: {
             accept: boolean;
             reason?: string;
@@ -2655,6 +2741,28 @@ export interface components {
                 [key: string]: boolean;
             };
         };
+        /** @description POST /api/feed/events/ */
+        FeedEventBatchRequest: {
+            events: components["schemas"]["FeedEventRequest"][];
+        };
+        /**
+         * @description * `impression` - impression
+         *     * `open` - open
+         *     * `dwell` - dwell
+         * @enum {string}
+         */
+        FeedEventKindEnum: "impression" | "open" | "dwell";
+        FeedEventRequest: {
+            session: string;
+            surface: components["schemas"]["SurfaceEnum"];
+            /** Format: uuid */
+            lookId: string;
+            kind: components["schemas"]["FeedEventKindEnum"];
+            position?: number;
+            /** @default  */
+            source: string;
+            ms?: number;
+        };
         Finish: {
             styles: components["schemas"]["FinishStyle"][];
             hoursSet: boolean;
@@ -2939,6 +3047,8 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
             mine: boolean;
+            source?: string;
+            reason?: string;
         };
         LookCreateRequestRequest: {
             photoUri?: string;
@@ -2973,6 +3083,7 @@ export interface components {
         LooksPage: {
             data: components["schemas"]["Look"][];
             nextCursor?: string;
+            session?: string;
         };
         MenuImportRequestRequest: {
             items: components["schemas"]["MenuItemDraftRequest"][];
@@ -3446,10 +3557,11 @@ export interface components {
          *     * `hate` - hate
          *     * `scam` - scam
          *     * `other` - other
+         *     * `illegal` - illegal
          *     * `not-hair` - not-hair
          * @enum {string}
          */
-        ReportRequestReasonEnum: "not-their-work" | "nudity" | "hate" | "scam" | "other" | "not-hair";
+        ReportRequestReasonEnum: "not-their-work" | "nudity" | "hate" | "scam" | "other" | "illegal" | "not-hair";
         ReportRequestRequest: {
             reason: components["schemas"]["ReportRequestReasonEnum"];
             note?: string;
@@ -3570,6 +3682,16 @@ export interface components {
             role: components["schemas"]["RoleEnum"];
             inviteCode?: string;
             ageConfirmed: boolean;
+            /**
+             * @description Optional: an age band, never a birthday
+             *
+             *     * `18_24` - 18_24
+             *     * `25_34` - 25_34
+             *     * `35_44` - 35_44
+             *     * `45_54` - 45_54
+             *     * `55_plus` - 55_plus
+             */
+            ageBand?: components["schemas"]["AgeBandEnum"] | components["schemas"]["BlankEnum"];
             policyVersion: string;
         };
         SlotInterest: {
@@ -3701,6 +3823,7 @@ export interface components {
         };
         StylistSearchResult: {
             accountId: string;
+            reason?: string;
             handle: string;
             displayName: string;
             avatarUri?: string;
@@ -3723,6 +3846,13 @@ export interface components {
             pendingRequests: number;
             appointmentsToday: number;
         };
+        /**
+         * @description * `home` - home
+         *     * `looks` - looks
+         *     * `related` - related
+         * @enum {string}
+         */
+        SurfaceEnum: "home" | "looks" | "related";
         TaggedProduct: {
             id: string;
             brand: string;
@@ -5473,6 +5603,35 @@ export interface operations {
             };
         };
     };
+    feed_events_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedEventBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No response body */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     hair_log_list: {
         parameters: {
             query?: never;
@@ -5512,6 +5671,26 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HairLog"];
                 };
+            };
+        };
+    };
+    hair_log_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5767,6 +5946,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    looks_related_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LooksPage"];
+                };
             };
         };
     };
@@ -6941,6 +7141,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StylistSummary"];
+                };
+            };
+        };
+    };
+    stylists_suggested_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StylistSearchResult"][];
                 };
             };
         };

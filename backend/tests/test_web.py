@@ -179,16 +179,47 @@ def test_terms_and_privacy_are_published():
 
 def test_the_privacy_policy_names_who_sends_our_emails(api):
     current = api().get("/api/policies/privacy/").json()
-    assert current["version"] == "2026-09-28"
+    assert current["version"] == "2026-10-22"
     assert "IONOS" in current["body"] and "confirm by emailing you a code" in current["body"]
 
 
 def test_stylist_terms_say_what_the_product_does(api):
     terms = api().get("/api/policies/stylist_terms/").json()
-    assert terms["version"] == "2026-09"
+    assert terms["version"] == "2026-10-21"
+    # Only the checks Yasante really makes.
+    assert "your identity or insurance" not in terms["body"]
     # The facts they state are the ones the booking rules enforce.
     from django.conf import settings
 
     assert f"within {settings.BOOKING_REQUEST_LAPSE_HOURS} hours lapses" in terms["body"]
     assert f"within {settings.BOOKING_DEPOSIT_LAPSE_HOURS} hours of your acceptance" in terms["body"]
     assert "Yasante never takes, holds, or refunds money" in terms["body"]
+
+
+def test_the_terms_explain_reporting_and_complaints_with_the_old_ones_kept(api):
+    from apps.profiles.models import PolicyDocument
+
+    current = api().get("/api/policies/terms/").json()
+    assert current["version"] == "2026-10-21"
+    assert "with or without an account" in current["body"] and "within 14 days" in current["body"]
+    assert PolicyDocument.objects.filter(type="terms", version="2026-09").exists()
+    # Signing up today agrees to privacy "2026-10-21": the text in force then.
+    assert api().get("/api/policies/privacy/", version="2026-10-21").json()["version"] == "2026-10-20"
+    assert api().get("/api/policies/terms/", version="2026-09").json()["version"] == "2026-09"
+
+
+def test_the_privacy_policy_says_what_the_feed_uses_and_how_to_turn_it_off(api):
+    body = api().get("/api/policies/privacy/").json()["body"]
+    assert "To choose and order what you see in your feed" in body
+    assert "You can choose Latest" in body and "What you're shown and open in the feed: 90 days." in body
+    # The text agreed to before stays readable by its version.
+    assert api().get("/api/policies/privacy/", version="2026-10-20").json()["version"] == "2026-10-20"
+
+
+def test_the_guidelines_cover_all_hair_and_say_how_to_report(api):
+    guidelines = api().get("/api/policies/guidelines/").json()
+    assert guidelines["version"] == "2026-10-21"
+    body = guidelines["body"]
+    assert body.startswith("Yasante is for finding, sharing and booking hair:")
+    assert "with or without an account" in body and "within 14 days" in body
+    assert "support@yasante.com" in body and "admin@yasante.com" not in body
