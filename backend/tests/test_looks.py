@@ -662,3 +662,13 @@ def test_photo_migration_backfills_and_reverses():
         assert apps.get_model("looks", "Look").objects.count() == 1001
     finally:
         MigrationExecutor(connection).migrate(latest)
+
+
+def test_popular_styles_are_the_ones_with_looks(api, make_user, make_look, styles):
+    for _ in range(2):
+        make_look(make_user(), style="cornrows")
+    make_look(make_user(), style="knotless")
+    make_look(make_user(), style="twists", visibility="private")
+    popular = [s["id"] for s in api().get("/api/styles/", popular="1").json()]
+    assert popular == ["cornrows", "knotless"]
+    assert len(api().get("/api/styles/").json()) == len(styles)

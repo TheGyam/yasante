@@ -1720,7 +1720,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description GET /api/styles/ — the taxonomy looks are tagged from: [{ id, name }]. */
+        /**
+         * @description GET /api/styles/ — the taxonomy looks are tagged from: [{ id, name }].
+         *     ?popular=1: only styles with public looks, the most looked-at first, for browsing.
+         */
         get: operations["styles_list"];
         put?: never;
         post?: never;
@@ -7134,7 +7137,10 @@ export interface operations {
     };
     styles_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Only styles with looks, most first */
+                popular?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;

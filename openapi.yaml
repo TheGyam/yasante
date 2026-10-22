@@ -2682,8 +2682,15 @@ paths:
   /api/styles/:
     get:
       operationId: styles_list
-      description: 'GET /api/styles/ — the taxonomy looks are tagged from: [{ id,
-        name }].'
+      description: |-
+        GET /api/styles/ — the taxonomy looks are tagged from: [{ id, name }].
+        ?popular=1: only styles with public looks, the most looked-at first, for browsing.
+      parameters:
+      - in: query
+        name: popular
+        schema:
+          type: boolean
+        description: Only styles with looks, most first
       tags:
       - styles
       security:

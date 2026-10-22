@@ -27,6 +27,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError, transaction
 from django.db.models import (
     Case,
+    Count,
     DurationField,
     Exists,
     ExpressionWrapper,
@@ -40,7 +41,7 @@ from django.db.models import (
 )
 from django.db.models.functions import Cast, Extract, Greatest, Power
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import serializers, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -820,15 +821,27 @@ class CommentLikeView(APIView):
 
 
 class StyleListView(APIView):
-    """GET /api/styles/ — the taxonomy looks are tagged from: [{ id, name }]."""
+    """
+    GET /api/styles/ — the taxonomy looks are tagged from: [{ id, name }].
+    ?popular=1: only styles with public looks, the most looked-at first, for browsing.
+    """
 
     permission_classes = [permissions.AllowAny]
 
-    @extend_schema(responses=StyleSerializer(many=True))
+    @extend_schema(
+        parameters=[OpenApiParameter("popular", bool, description="Only styles with looks, most first")],
+        responses=StyleSerializer(many=True),
+    )
     def get(self, request):
-        return Response(
-            [{"id": s.slug, "name": s.name} for s in Style.objects.order_by("sort_order", "name")]
-        )
+        styles = Style.objects.order_by("sort_order", "name")
+        if request.query_params.get("popular") in ("1", "true"):
+            live = public_looks().filter(**{"visibility": "public", "status": "live"})
+            styles = (
+                Style.objects.filter(looks__in=live)
+                .annotate(used=Count("looks", distinct=True))
+                .order_by("-used", "sort_order")[:12]
+            )
+        return Response([{"id": s.slug, "name": s.name} for s in styles])
 
 
 class AreaListView(APIView):

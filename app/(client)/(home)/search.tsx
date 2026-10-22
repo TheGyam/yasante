@@ -3,15 +3,15 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { FlashList } from '@shopify/flash-list';
 import { Clock, SearchX, X } from 'lucide-react-native';
-import {
-  ContentRow,
-  TOPIC_LABELS,
-  TOPIC_ORDER,
-  useContent,
-  type Content,
-} from '@/features/education';
+import { ContentRow, useContent, type Content } from '@/features/education';
 import { useQueryClient } from '@tanstack/react-query';
-import { openWithHero, RECENT_SEARCHES, useLooks, type Look } from '@/features/looks';
+import {
+  openWithHero,
+  RECENT_SEARCHES,
+  useLooks,
+  usePopularStyles,
+  type Look,
+} from '@/features/looks';
 import { useStylistSearch, type StylistSearchResult } from '@/features/stylist';
 import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import { GUTTER, makeStyles, radius, space } from '@/shared/theme';
@@ -77,6 +77,7 @@ export default function SearchScreen() {
   const router = useRouter();
   const insets = useContentInsets();
   const [query, setQuery] = useState('');
+  const popular = usePopularStyles();
   const [filter, setFilter] = useState<Filter>('all');
   const [recents, setRecents] = useState<string[]>([]);
   const term = useDebouncedValue(query.trim(), 200);
@@ -283,14 +284,16 @@ export default function SearchScreen() {
               </Section>
             </View>
           )}
-          <View>
-            <SectionHeader title="Browse topics" />
-            <View style={styles.chips}>
-              {TOPIC_ORDER.map(topic => (
-                <Chip key={topic} label={TOPIC_LABELS[topic]} onPress={() => setQuery(topic)} />
-              ))}
+          {!!popular.data?.length && (
+            <View>
+              <SectionHeader title="Browse styles" />
+              <View style={styles.chips}>
+                {(popular.data ?? []).map(style => (
+                  <Chip key={style.id} label={style.name} onPress={() => setQuery(style.name)} />
+                ))}
+              </View>
             </View>
-          </View>
+          )}
         </ScrollView>
       )}
     </Screen>

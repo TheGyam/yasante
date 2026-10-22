@@ -464,3 +464,12 @@ export function useStyleTaxonomy() {
 export function useLookAreas() {
   return useQuery({ queryKey: ['look-areas'], queryFn: looksApi.areas, staleTime: 10 * 60 * 1000 });
 }
+
+/** Styles with looks behind them, most first: every one finds something. */
+export function usePopularStyles() {
+  return useQuery({
+    queryKey: [KEY, 'popular-styles'],
+    queryFn: looksApi.popularStyles,
+    staleTime: 60 * 60 * 1000,
+  });
+}
