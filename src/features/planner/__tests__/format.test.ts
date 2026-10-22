@@ -20,12 +20,12 @@ describe('describing a care plan', () => {
     expect(plain(describePlan({ frequency: 'weekly', timeOfDay: 'evening' }))).toBe(
       'Every week · Evening'
     );
-    // Sunday = 0, and the days read in week order however they were picked.
+    // Sunday = 0, and the days read Monday first however they were picked.
     expect(
       plain(
         describePlan({ frequency: 'specific-days', specificDays: [3, 0], timeOfDay: 'morning' })
       )
-    ).toBe('Sun, Wed · Morning');
+    ).toBe('Wed, Sun · Morning');
   });
 });
 
