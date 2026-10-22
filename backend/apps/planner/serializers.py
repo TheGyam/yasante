@@ -97,6 +97,7 @@ from apps.common.schema import optional  # noqa: E402
 
 
 class SharedAuthorSerializer(serializers.Serializer):
+    id = serializers.CharField(help_text="Her account, so she can be blocked")
     name = serializers.CharField()
     username = optional(serializers.CharField())
     avatar_uri = optional(serializers.CharField())

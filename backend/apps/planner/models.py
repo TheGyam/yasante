@@ -30,6 +30,8 @@ class Shareable(models.Model):
 
     share_code = models.CharField(max_length=32, unique=True, null=True, blank=True)
     shared_at = models.DateTimeField(null=True, blank=True)
+    # Staff stopped it being shared for breaking the guidelines.
+    share_blocked = models.BooleanField(default=False)
     # Tagging along. Goes when the source goes or stops being shared.
     follows = models.ForeignKey(
         "self", null=True, blank=True, on_delete=models.CASCADE, related_name="followers"

@@ -2417,6 +2417,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/CarePlanResponse'
           description: ''
+  /api/shared/care-plans/{code}/report/:
+    post:
+      operationId: shared_care_plans_report_create
+      description: Into moderation, never to the author. Staff can stop it being shared.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - shared
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: No response body
   /api/shared/collections/{code}/:
     get:
       operationId: shared_collections_retrieve
@@ -2495,6 +2518,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/CollectionResponse'
           description: ''
+  /api/shared/collections/{code}/report/:
+    post:
+      operationId: shared_collections_report_create
+      description: Into moderation, never to the author. Staff can stop it being shared.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - shared
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: No response body
   /api/shelf/:
     get:
       operationId: shelf_list
@@ -6935,6 +6981,9 @@ components:
     SharedAuthor:
       type: object
       properties:
+        id:
+          type: string
+          description: Her account, so she can be blocked
         name:
           type: string
         username:
@@ -6942,6 +6991,7 @@ components:
         avatarUri:
           type: string
       required:
+      - id
       - name
     SharedCarePlanResponse:
       type: object

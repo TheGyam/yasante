@@ -191,7 +191,7 @@ function FollowedCollection({ collection }: { collection: Collection }) {
         onClose={() => setSheet(null)}
         name={collection.name}
         authorName={first}
-        what={`the ${collection.itemCount} looks`}
+        what={`the ${collection.itemCount} ${collection.itemCount === 1 ? 'thing' : 'things'} in it`}
         busy={makeMine.isPending}
         onConfirm={() =>
           makeMine.mutate(

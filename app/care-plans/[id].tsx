@@ -631,7 +631,7 @@ export default function CarePlanScreen() {
             onClose={() => setSheet(null)}
             name={plan.name}
             authorName={first}
-            what={`the ${plan.steps.length} steps`}
+            what={plan.steps.length === 1 ? 'its step' : `the ${plan.steps.length} steps`}
             busy={makeMine.isPending}
             onConfirm={() =>
               makeMine.mutate(

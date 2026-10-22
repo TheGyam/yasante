@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { Link2Off, Share as ShareIcon } from 'lucide-react-native';
-import { Share } from 'react-native';
+import { Link2Off } from 'lucide-react-native';
 import { AuthPromptModal, errorMessage, useAuth } from '@/features/auth';
 import {
   FollowingSheet,
   MakeItYoursSheet,
   SharedCollectionView,
+  SharedHeaderActions,
   SharedLoading,
   useFollowCollection,
   useMakeCollectionMine,
@@ -17,7 +17,6 @@ import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { confirm, notify } from '@/shared/ui/dialog';
 import { EmptyState } from '@/shared/ui/EmptyState';
-import { IconButton } from '@/shared/ui/IconButton';
 import { Screen } from '@/shared/ui/Screen';
 
 /**
@@ -84,15 +83,12 @@ export default function SharedCollectionScreen() {
       testID="shared-collection"
       headerRight={
         data && (
-          <IconButton
-            icon={ShareIcon}
-            size={36}
-            accessibilityLabel="Share"
-            onPress={() =>
-              Share.share({
-                message: `${data.name} by ${data.author.name} on Yasante: https://yasante.com/c/${code}`,
-              }).catch(() => {})
-            }
+          <SharedHeaderActions
+            kind="collection"
+            code={code}
+            name={data.name}
+            author={data.author}
+            signedIn={signedIn}
           />
         )
       }
@@ -126,7 +122,7 @@ export default function SharedCollectionScreen() {
             onClose={() => setSheet(null)}
             name={data.name}
             authorName={data.author.name.split(' ')[0]}
-            what={`the ${data.itemCount} looks`}
+            what={`the ${data.itemCount} ${data.itemCount === 1 ? 'thing' : 'things'} in it`}
             busy={makeMine.isPending}
             onConfirm={() =>
               makeMine.mutate(

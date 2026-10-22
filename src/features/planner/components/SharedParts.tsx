@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Share, StyleSheet, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -11,11 +11,13 @@ import Animated, {
   ZoomIn,
 } from 'react-native-reanimated';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { Check, Plus } from 'lucide-react-native';
+import { Check, Flag, Plus, Share as ShareIcon } from 'lucide-react-native';
 import { haptics } from '@/shared/lib/haptics';
+import { useRouter } from '@/shared/lib/navigation';
 import { SEP } from '@/shared/lib/format';
 import { fonts, makeStyles, radius, space, timing, useTheme } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
+import { IconButton } from '@/shared/ui/IconButton';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
@@ -190,6 +192,55 @@ export function FollowButton({
   );
 }
 
+/**
+ * In the header of someone else's shared collection or plan: send the link on, or
+ * report it. Reporting needs an account, so `signedIn` asks for one first.
+ */
+export function SharedHeaderActions({
+  kind,
+  code,
+  name,
+  author,
+  signedIn,
+}: {
+  kind: 'collection' | 'care-plan';
+  code: string;
+  name: string;
+  author: SharedAuthor;
+  signedIn: (then: () => void) => () => void;
+}) {
+  const router = useRouter();
+  const url = `https://yasante.com/${kind === 'collection' ? 'c' : 'p'}/${code}`;
+  const report = () =>
+    router.push(
+      `/looks/options?kind=${kind}&id=${encodeURIComponent(code)}&name=${encodeURIComponent(
+        author.name
+      )}&authorId=${author.id ?? ''}&mine=0&leave=1`
+    );
+  return (
+    <View style={sharedStyles.header}>
+      <IconButton
+        icon={ShareIcon}
+        size={36}
+        accessibilityLabel="Share"
+        onPress={() =>
+          Share.share({ message: `${name} by ${author.name} on Yasante: ${url}`, url }).catch(
+            () => {}
+          )
+        }
+      />
+      <IconButton
+        icon={Flag}
+        size={36}
+        accessibilityLabel="Report"
+        onPress={signedIn(report)}
+        testID="shared-report"
+      />
+    </View>
+  );
+}
+
 export const sharedStyles = StyleSheet.create({
   actions: { flexDirection: 'row', gap: space.sm },
+  header: { flexDirection: 'row', gap: space.xs },
 });

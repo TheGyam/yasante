@@ -41,6 +41,7 @@ const SHARE_BASE = 'https://yasante.com';
 function author(accountId: string) {
   const account = db.accounts.get(accountId);
   return {
+    id: accountId,
     name: account?.name ?? 'Someone',
     username: account?.username,
     avatarUri: account?.avatarUri,
@@ -390,6 +391,19 @@ defineMocks({
     };
     collectionsOf(viewer).unshift(row);
     return summarise(viewer, row);
+  },
+
+  // Reports go to moderation; the sample data just takes them.
+  'POST /api/shared/collections/:code/report/': request => {
+    requireAccount(request);
+    if (!sharedCollection(request.params.code)) throw new MockError(404, NOT_SHARED);
+    return null;
+  },
+
+  'POST /api/shared/care-plans/:code/report/': request => {
+    requireAccount(request);
+    if (!sharedPlan(request.params.code)) throw new MockError(404, NOT_SHARED);
+    return null;
   },
 
   'POST /api/shared/collections/:code/make-mine/': request => {

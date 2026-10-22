@@ -186,6 +186,19 @@ export const looksApi = {
     await apiClient.post(`/api/stylists/${accountId}/report/`, { reason, note });
   },
 
+  /** POST /api/shared/collections/:code/report/ (or care-plans): someone's shared one. */
+  reportShared: async (
+    kind: 'collection' | 'care-plan',
+    code: string,
+    reason: ReportReason,
+    note?: string
+  ) => {
+    await apiClient.post(
+      `/api/shared/${kind === 'collection' ? 'collections' : 'care-plans'}/${code}/report/`,
+      { reason, note }
+    );
+  },
+
   /** POST /api/blocks/ — hides everything by that account, both ways. */
   block: async (accountId: string) => {
     await apiClient.post('/api/blocks/', { accountId });

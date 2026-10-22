@@ -409,7 +409,8 @@ export function useRemoveComment(_lookId: string) {
   });
 }
 
-export type ReportTarget = 'look' | 'comment' | 'profile';
+/** A shared collection or care plan is reported by its link's code. */
+export type ReportTarget = 'look' | 'comment' | 'profile' | 'collection' | 'care-plan';
 
 /** Reports go to moderation. The person reported is never told who. */
 export function useReport() {
@@ -429,7 +430,9 @@ export function useReport() {
         ? looksApi.reportComment(id, reason, note)
         : kind === 'profile'
           ? looksApi.reportProfile(id, reason, note)
-          : looksApi.report(id, reason, note),
+          : kind === 'collection' || kind === 'care-plan'
+            ? looksApi.reportShared(kind, id, reason, note)
+            : looksApi.report(id, reason, note),
   });
 }
 

@@ -12,6 +12,8 @@ export type Sharing = 'private' | 'link';
 
 /** Who made something shared: all anyone else sees of her. */
 export interface SharedAuthor {
+  /** Her account, only so she can be blocked. */
+  id?: string;
   name: string;
   username?: string;
   avatarUri?: string;

@@ -15,6 +15,7 @@ urlpatterns = [
         views.MakeSharedCollectionMineView.as_view(),
         name="shared-collection-make-mine",
     ),
+    path(f"collections/{CODE}/report/", views.SharedCollectionReportView.as_view(), name="shared-collection-report"),
     path(f"care-plans/{CODE}/", views.SharedCarePlanView.as_view(), name="shared-care-plan"),
     path(f"care-plans/{CODE}/follow/", views.TagAlongCarePlanView.as_view(), name="shared-care-plan-follow"),
     path(
@@ -22,4 +23,5 @@ urlpatterns = [
         views.MakeSharedCarePlanMineView.as_view(),
         name="shared-care-plan-make-mine",
     ),
+    path(f"care-plans/{CODE}/report/", views.SharedCarePlanReportView.as_view(), name="shared-care-plan-report"),
 ]

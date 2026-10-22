@@ -51,7 +51,7 @@ def test_sharing_a_collection_makes_a_random_link_and_stopping_kills_it(api, ama
     assert page.status_code == 200
     body = page.json()
     assert body["name"] == "Winter braids" and body["itemCount"] == 1
-    assert body["author"] == {"name": "Ama Owusu", "username": "braidsbyama"}
+    assert body["author"] == {"id": str(ama.pk), "name": "Ama Owusu", "username": "braidsbyama"}
     # Nothing else of hers.
     assert "email" not in str(body) and ama.email not in str(body)
 
@@ -337,3 +337,65 @@ def test_the_policies_say_what_sharing_shows_and_keeps(api):
     assert "If you share a collection or a care plan, you let others with the link view it" in terms
     guidelines = api().get("/api/policies/guidelines/").json()["body"]
     assert "Care plans you share must be safe to follow." in guidelines
+
+
+def test_the_website_shows_a_shared_link_without_the_app(api, ama, make_user, make_look):
+    from django.test import Client
+
+    me = api(ama)
+    col = _collection(me, looks=[make_look(make_user())])
+    code = _share(me, "collections", col["id"])["shareUrl"].rsplit("/", 1)[1]
+    page = Client().get(f"/c/{code}")
+    html = page.content.decode()
+    assert page.status_code == 200 and "Winter braids, by Ama Owusu" in html and "1 look." in html
+    # Never in search, never cached, and the code never leaves in a Referer.
+    assert 'name="robots" content="noindex' in html
+    assert page["Cache-Control"] == "no-store" and page["Referrer-Policy"] == "no-referrer"
+
+    plan = me.post("/api/care-plans/", PLAN).json()
+    plan_code = _share(me, "care-plans", plan["id"])["shareUrl"].rsplit("/", 1)[1]
+    assert "A care plan in 3 steps" in Client().get(f"/p/{plan_code}").content.decode()
+
+    me.delete(f"/api/collections/{col['id']}/share/")
+    assert Client().get(f"/c/{code}").status_code == 404
+
+
+def test_a_shared_collection_can_be_reported_and_staff_can_stop_it(api, ama, make_user, make_look):
+    from apps.looks.models import Report
+    from apps.looks.moderation import moderate
+
+    me = api(ama)
+    col = _collection(me, looks=[make_look(make_user())])
+    code = _share(me, "collections", col["id"])["shareUrl"].rsplit("/", 1)[1]
+    efua = api(make_user())
+    efua.post(f"/api/shared/collections/{code}/follow/")
+
+    assert api().post(f"/api/shared/collections/{code}/report/", {"reason": "hate"}).status_code == 401
+    assert efua.post(f"/api/shared/collections/{code}/report/", {"reason": "nonsense"}).status_code == 400
+    assert efua.post(f"/api/shared/collections/{code}/report/", {"reason": "hate"}).status_code == 201
+    report = Report.objects.get()
+    assert str(report.object_id) == col["id"]
+    # The author's account is shown, so she can be blocked.
+    assert efua.get(f"/api/shared/collections/{code}/").json()["author"]["id"] == str(ama.pk)
+
+    moderate(report.content_object, "remove", moderator=make_user(is_staff=True))
+    report.refresh_from_db()
+    assert report.status == "actioned"
+    assert api().get(f"/api/shared/collections/{code}/").status_code == 404
+    assert efua.get("/api/collections/").json() == []
+    # Hers still, but she can't share it again.
+    assert me.get(f"/api/collections/{col['id']}/").status_code == 200
+    assert me.post(f"/api/collections/{col['id']}/share/").status_code == 403
+
+    moderate(report.content_object, "restore", moderator=make_user(is_staff=True))
+    assert me.post(f"/api/collections/{col['id']}/share/").status_code == 200
+
+
+def test_a_shared_plan_can_be_reported(api, ama, make_user):
+    from apps.looks.models import Report
+
+    me = api(ama)
+    plan = me.post("/api/care-plans/", PLAN).json()
+    code = _share(me, "care-plans", plan["id"])["shareUrl"].rsplit("/", 1)[1]
+    assert api(make_user()).post(f"/api/shared/care-plans/{code}/report/", {"reason": "illegal"}).status_code == 201
+    assert Report.objects.get().content_object.name == "Gentle wash day"

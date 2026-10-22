@@ -6,7 +6,8 @@ import logging
 import uuid
 
 from apps.common.blocks import blocked_account_ids, is_blocked
-from apps.common.throttling import SharedViewThrottle, SharingThrottle
+from apps.common.throttling import ReportThrottle, SharedViewThrottle, SharingThrottle
+from apps.looks.serializers import ReportRequestSerializer
 from apps.common.timeparse import local_parts
 from apps.looks.models import Look
 from apps.looks.views import public_looks
@@ -82,8 +83,13 @@ def shown_items(items, viewer):
 
 
 def present_author(user):
-    """All anyone else ever sees of who made it."""
-    return {"name": user.name, "username": user.username or None, "avatar_uri": user.avatar_uri or None}
+    """All anyone else ever sees of who made it: the id is only so she can be blocked."""
+    return {
+        "id": str(user.pk),
+        "name": user.name,
+        "username": user.username or None,
+        "avatar_uri": user.avatar_uri or None,
+    }
 
 
 def _share_fields(row, kind):
@@ -611,13 +617,7 @@ class CarePlanSessionView(APIView):
 
 def _shared(model, request, code):
     """The shared one a code points at, unless either of them has blocked the other."""
-    row = (
-        model.objects.select_related("user")
-        .filter(share_code=code, follows__isnull=True, user__is_active=True)
-        .first()
-        if code
-        else None
-    )
+    row = find_shared(model, code)
     if row is None or (request.user.is_authenticated and is_blocked(request.user, row.user)):
         return None
     return row
@@ -653,6 +653,11 @@ def _share_view(model, present):
                 return Response({"message": "That’s gone"}, status=404)
             if row.follows_id:
                 return Response({"message": "Only its author can share it"}, status=403)
+            if row.share_blocked:
+                return Response(
+                    {"message": "We stopped this being shared because it broke our community guidelines"},
+                    status=403,
+                )
             needs = _needs_username(request)
             if needs:
                 return needs
@@ -675,6 +680,41 @@ CollectionShareView = _share_view(Collection, present_collection)
 CarePlanShareView = _share_view(CarePlan, present_plan)
 
 
+def find_shared(model, code):
+    """What a link's code points at, while it's shared and its author's account is open."""
+    if not code:
+        return None
+    return model.objects.select_related("user").filter(share_code=code, follows__isnull=True, user__is_active=True).first()
+
+
+def shared_collection_data(source, viewer):
+    """A shared collection as `viewer` (None when signed out) may see it. Also the website's page."""
+    items = shown_items(source.items.order_by("-created_at"), viewer)
+    return {
+        "code": source.share_code,
+        "name": source.name,
+        "author": present_author(source.user),
+        "item_count": len(items),
+        "updated_at": source.changed_at,
+        "preview_uris": [i.thumb_uri or i.photo_uri for i in items if i.photo_uri][:PREVIEWS],
+        "items": [present_item(i) for i in items],
+    }
+
+
+def shared_plan_data(source):
+    """A shared care plan: its steps and the author's rhythm, nothing of her own record."""
+    return {
+        "code": source.share_code,
+        "name": source.name,
+        "author": present_author(source.user),
+        "frequency": source.frequency,
+        "specific_days": source.specific_days if source.frequency == "specific-days" else None,
+        "time_of_day": source.time_of_day,
+        "steps": [{"id": str(s.pk), "text": s.text} for s in source.steps.all()],
+        "updated_at": source.changed_at,
+    }
+
+
 def _theirs(model, request, source):
     """Her own (she sees hers instead), and the one she tags along with, if any."""
     if not request.user.is_authenticated:
@@ -695,22 +735,9 @@ class SharedCollectionView(APIView):
         source = _shared(Collection, request, code)
         if source is None:
             return _not_shared()
-        viewer = request.user if request.user.is_authenticated else None
-        items = shown_items(source.items.order_by("-created_at"), viewer)
         own, following = _theirs(Collection, request, source)
-        return Response(
-            {
-                "code": source.share_code,
-                "name": source.name,
-                "author": present_author(source.user),
-                "item_count": len(items),
-                "updated_at": source.changed_at,
-                "preview_uris": [i.thumb_uri or i.photo_uri for i in items if i.photo_uri][:PREVIEWS],
-                "items": [present_item(i) for i in items],
-                "own_id": own,
-                "following_id": following,
-            }
-        )
+        viewer = request.user if request.user.is_authenticated else None
+        return Response({**shared_collection_data(source, viewer), "own_id": own, "following_id": following})
 
 
 @extend_schema_view(get=extend_schema(responses=SharedCarePlanResponseSerializer))
@@ -725,20 +752,7 @@ class SharedCarePlanView(APIView):
         if source is None:
             return _not_shared()
         own, following = _theirs(CarePlan, request, source)
-        return Response(
-            {
-                "code": source.share_code,
-                "name": source.name,
-                "author": present_author(source.user),
-                "frequency": source.frequency,
-                "specific_days": source.specific_days if source.frequency == "specific-days" else None,
-                "time_of_day": source.time_of_day,
-                "steps": [{"id": str(s.pk), "text": s.text} for s in source.steps.all()],
-                "updated_at": source.changed_at,
-                "own_id": own,
-                "following_id": following,
-            }
-        )
+        return Response({**shared_plan_data(source), "own_id": own, "following_id": following})
 
 
 @extend_schema_view(post=extend_schema(request=None, responses={200: CollectionResponseSerializer, 201: CollectionResponseSerializer}))
@@ -925,3 +939,28 @@ class MakeCarePlanMineView(APIView):
             plan.save()
             _copy_steps(plan, source)
         return Response(present_plan(_plan(request, plan.pk)), status=201)
+
+
+def _report_view(model):
+    @extend_schema_view(post=extend_schema(request=ReportRequestSerializer, responses={201: None}))
+    class ReportView(APIView):
+        """Into moderation, never to the author. Staff can stop it being shared."""
+
+        permission_classes = [permissions.IsAuthenticated]
+        throttle_classes = [ReportThrottle]
+
+        def post(self, request, code):
+            from apps.looks.serializers import LOOK_REPORT_REASONS
+            from apps.looks.views import _report
+
+            source = _shared(model, request, code)
+            if source is None:
+                return _not_shared()
+            return _report(request, model, source.pk, LOOK_REPORT_REASONS)
+
+    ReportView.__name__ = f"Shared{model.__name__}ReportView"
+    return ReportView
+
+
+SharedCollectionReportView = _report_view(Collection)
+SharedCarePlanReportView = _report_view(CarePlan)

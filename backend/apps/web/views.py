@@ -467,3 +467,60 @@ def claim_page(request, code):
 
 
 finish_page = account_page("Finish your page")
+
+
+def _shared_page(request, *, title, description="", image="", seeds=()):
+    # Never indexed, never cached (stopping sharing stops the page at once), and the
+    # link's code never goes to anyone else in a Referer.
+    response = page(request, title=title, description=description, image=image, seeds=seeds, noindex=True)
+    response["Cache-Control"] = "no-store"
+    response["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+def _not_shared(request):
+    response = page(request, title="This isn’t shared any more", status=404)
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+def shared_collection(request, code):
+    """yasante.com/c/<code>: a collection someone shared, for people without the app."""
+    from apps.planner.models import Collection
+    from apps.planner.views import find_shared, shared_collection_data
+
+    source = find_shared(Collection, code)
+    if source is None:
+        return _not_shared(request)
+    data = shared_collection_data(source, None)
+    looks = sum(1 for i in data["items"] if i["kind"] == "look")
+    guides = len(data["items"]) - looks
+    what = " and ".join(p for p in (plural(looks, "look"), plural(guides, "guide")) if p) or "Nothing yet"
+    return _shared_page(
+        request,
+        title=f"{source.name}, by {source.user.name}",
+        description=f"{what}. A collection on Yasante.",
+        image=data["preview_uris"][0] if data["preview_uris"] else "",
+        seeds=[(["shared", "collection", code], data)],
+    )
+
+
+def shared_care_plan(request, code):
+    """yasante.com/p/<code>: a care plan someone shared."""
+    from apps.planner.models import CarePlan
+    from apps.planner.views import find_shared, shared_plan_data
+
+    source = find_shared(CarePlan, code)
+    if source is None:
+        return _not_shared(request)
+    data = shared_plan_data(source)
+    return _shared_page(
+        request,
+        title=f"{source.name}, by {source.user.name}",
+        description=f"A care plan in {plural(len(data['steps']), 'step')}, on Yasante.",
+        seeds=[(["shared", "care-plan", code], data)],
+    )
+
+
+def plural(n, word):
+    return f"{n} {word}{'' if n == 1 else 's'}" if n else ""

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Share, View } from 'react-native';
+import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { CalendarClock, Droplets, Link2Off, Share as ShareIcon } from 'lucide-react-native';
+import { CalendarClock, Droplets, Link2Off } from 'lucide-react-native';
 import { AuthPromptModal, errorMessage, useAuth } from '@/features/auth';
 import {
   AuthorLine,
@@ -11,6 +11,7 @@ import {
   FollowingSheet,
   MakeItYoursSheet,
   ScheduleSheet,
+  SharedHeaderActions,
   sharedStyles,
   updatedLabel,
   useFollowCarePlan,
@@ -25,7 +26,6 @@ import { Button } from '@/shared/ui/Button';
 import { confirm, notify } from '@/shared/ui/dialog';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Glass } from '@/shared/ui/Glass';
-import { IconButton } from '@/shared/ui/IconButton';
 import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
@@ -130,15 +130,12 @@ export default function SharedCarePlanScreen() {
       testID="shared-care-plan"
       headerRight={
         data && (
-          <IconButton
-            icon={ShareIcon}
-            size={36}
-            accessibilityLabel="Share"
-            onPress={() =>
-              Share.share({
-                message: `${data.name} by ${data.author.name} on Yasante: https://yasante.com/p/${code}`,
-              }).catch(() => {})
-            }
+          <SharedHeaderActions
+            kind="care-plan"
+            code={code}
+            name={data.name}
+            author={data.author}
+            signedIn={signedIn}
           />
         )
       }
@@ -250,7 +247,7 @@ export default function SharedCarePlanScreen() {
             onClose={() => setSheet(null)}
             name={data.name}
             authorName={first}
-            what={`the ${data.steps.length} steps`}
+            what={data.steps.length === 1 ? 'its step' : `the ${data.steps.length} steps`}
             busy={makeMine.isPending}
             onConfirm={() =>
               makeMine.mutate(
