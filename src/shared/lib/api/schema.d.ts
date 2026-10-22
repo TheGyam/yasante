@@ -1557,6 +1557,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/shared/care-plans/{code}/report/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Into moderation, never to the author. Staff can stop it being shared. */
+        post: operations["shared_care_plans_report_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/shared/collections/{code}/": {
         parameters: {
             query?: never;
@@ -1602,6 +1619,23 @@ export interface paths {
         put?: never;
         /** @description POST /api/shared/collections/:code/make-mine/ — her own version to change. */
         post: operations["shared_collections_make_mine_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/collections/{code}/report/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Into moderation, never to the author. Staff can stop it being shared. */
+        post: operations["shared_collections_report_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3865,6 +3899,8 @@ export interface components {
             clientSide: number;
         };
         SharedAuthor: {
+            /** @description Her account, so she can be blocked */
+            id: string;
             name: string;
             username?: string;
             avatarUri?: string;
@@ -6798,6 +6834,30 @@ export interface operations {
             };
         };
     };
+    shared_care_plans_report_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     shared_collections_retrieve: {
         parameters: {
             query?: never;
@@ -6870,6 +6930,30 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CollectionResponse"];
                 };
+            };
+        };
+    };
+    shared_collections_report_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
