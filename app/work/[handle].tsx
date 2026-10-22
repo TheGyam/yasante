@@ -13,7 +13,6 @@ import {
   useRemovePhoto,
   useStylistPage,
   useUpdatePhoto,
-  type PortfolioPhoto,
 } from '@/features/stylist';
 import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, radius, space } from '@/shared/theme';

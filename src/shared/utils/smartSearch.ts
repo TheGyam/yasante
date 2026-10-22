@@ -252,7 +252,7 @@ export function smartSearch<T extends Record<string, any>>(
  */
 export function getSearchSuggestions(
   query: string,
-  items: Array<{ title: string; [key: string]: any }>,
+  items: { title: string; [key: string]: any }[],
   limit: number = 5
 ): string[] {
   if (!query.trim() || items.length === 0) {

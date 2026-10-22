@@ -1,5 +1,5 @@
 import { apiClient } from '@/shared/lib/api/client';
-import { ApiResponse, PaginatedResponse } from '@/shared/types/api';
+import { ApiResponse } from '@/shared/types/api';
 import { Favorite } from '@/features/education';
 
 /**

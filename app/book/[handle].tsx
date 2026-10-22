@@ -12,7 +12,7 @@ import {
   MapPin,
   Scissors,
 } from 'lucide-react-native';
-import { errorMessage, useAuth } from '@/features/auth';
+import { errorMessage } from '@/features/auth';
 import { useLook } from '@/features/looks';
 import {
   OCCASIONS,
@@ -123,7 +123,6 @@ export default function RequestBookingScreen() {
   const { data: fromLookData } = useLook(lookId ?? '');
   const fromLook = lookId ? fromLookData : undefined;
   const [sent, setSent] = useState<{ id: string; name: string; until?: string } | null>(null);
-  const { user } = useAuth();
   const { data, isLoading } = useStylistPage(handle);
   const request = useRequestBooking();
   useEffect(() => {

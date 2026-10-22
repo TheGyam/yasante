@@ -181,7 +181,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { asyncStoragePersister } = await import('@/shared/utils/cachePersistence');
         await asyncStoragePersister.removeClient();
-      } catch (persisterError) {
+      } catch {
         // If persister removal fails, try manual removal
         try {
           const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;

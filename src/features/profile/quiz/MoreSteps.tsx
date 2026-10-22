@@ -19,7 +19,6 @@ import {
 import { makeStyles, space, useTheme } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
 import { Input } from '@/shared/ui/Input';
-import { Text } from '@/shared/ui/Text';
 import { deviceRegion } from '@/shared/lib/region';
 import { areasFor, POSTCODE, tidyPostcode } from '@/shared/utils/postcode';
 import type { ChemicalTreatment, ScalpType, StyleBudget } from '../types';

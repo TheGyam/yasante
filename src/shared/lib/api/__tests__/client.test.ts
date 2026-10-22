@@ -49,7 +49,13 @@ it('waits for saved tokens before sending the first request', async () => {
     logout: jest.fn(),
   });
   const request = apiClient.get('/api/me/', {
-    adapter: async config => ({ data: config.headers.Authorization, status: 200, statusText: 'OK', headers: {}, config }),
+    adapter: async config => ({
+      data: config.headers.Authorization,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+    }),
   });
   token = 'saved';
   loaded();

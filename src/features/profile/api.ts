@@ -1,6 +1,6 @@
 import { apiClient } from '@/shared/lib/api/client';
 import { syncConsents } from '@/shared/config/consentSync';
-import { ApiResponse, PaginatedResponse } from '@/shared/types/api';
+import { ApiResponse } from '@/shared/types/api';
 import { User, HairProfile } from '@/features/profile';
 
 /**
