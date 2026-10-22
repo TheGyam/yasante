@@ -6,6 +6,8 @@
 export const appLink = {
   stylist: (handle: string) => `yasante://stylist/${handle}`,
   look: (id: string) => `yasante://looks/${id}`,
+  sharedCollection: (code: string) => `yasante://c/${encodeURIComponent(code)}`,
+  sharedCarePlan: (code: string) => `yasante://p/${encodeURIComponent(code)}`,
 };
 
 /**

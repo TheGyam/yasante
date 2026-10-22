@@ -41,4 +41,6 @@ export interface Favorite {
   userId: string;
   contentId: string;
   createdAt: string;
+  /** The article itself, from servers that send it. */
+  content?: Content;
 }

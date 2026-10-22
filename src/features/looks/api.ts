@@ -186,6 +186,19 @@ export const looksApi = {
     await apiClient.post(`/api/stylists/${accountId}/report/`, { reason, note });
   },
 
+  /** POST /api/shared/collections/:code/report/ (or care-plans): someone's shared one. */
+  reportShared: async (
+    kind: 'collection' | 'care-plan',
+    code: string,
+    reason: ReportReason,
+    note?: string
+  ) => {
+    await apiClient.post(
+      `/api/shared/${kind === 'collection' ? 'collections' : 'care-plans'}/${code}/report/`,
+      { reason, note }
+    );
+  },
+
   /** POST /api/blocks/ — hides everything by that account, both ways. */
   block: async (accountId: string) => {
     await apiClient.post('/api/blocks/', { accountId });
@@ -198,6 +211,10 @@ export const looksApi = {
 
   /** GET /api/styles/ — the taxonomy looks are tagged from. */
   styles: async () => (await apiClient.get<Style[]>('/api/styles/')).data,
+
+  /** GET /api/styles/?popular=1 — styles that have looks, most first: for browsing. */
+  popularStyles: async () =>
+    (await apiClient.get<Style[]>('/api/styles/', { params: { popular: 1 } })).data,
 
   /** GET /api/looks/areas/ — districts that have looks in them. */
   areas: async () => (await apiClient.get<string[]>('/api/looks/areas/')).data,

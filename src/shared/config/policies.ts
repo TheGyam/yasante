@@ -5,7 +5,10 @@
  * every consent record stores the version it was given against, so we can always
  * show what a user actually agreed to.
  */
-export const POLICY_VERSION = '2026-10-22';
+export const POLICY_VERSION = '2026-10-23';
+/** What changed in this version, in a line: the "We've updated" notice says it. */
+export const POLICY_CHANGES =
+  'They now cover sharing collections and care plans: what others see, tagging along and making your own version.';
 
 export const TERMS_URL = 'https://yasante.com/terms';
 export const PRIVACY_URL = 'https://yasante.com/privacy';

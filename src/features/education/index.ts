@@ -3,5 +3,4 @@ export * from './hooks';
 export * from './content';
 export type { Content, ContentTopic, ContentType, ProductRecommendation, Favorite } from './types';
 export * from './components';
-export * from './useNewPosts';
 export * from './useSyncFavoritesCache';

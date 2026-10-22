@@ -31,6 +31,23 @@ def usual_wash(washes):
     return day, (hours.most_common(1)[0][0] if hours else None)
 
 
+REMOVAL_WORDS = ("take down", "takedown", "take-down", "take out", "removal")
+# Appointments that leave no style in: looking after hair rather than styling it.
+NOT_A_STYLE = (*REMOVAL_WORDS, "wash", "treatment", "consultation", "trim", "condition", "steam")
+
+
+def _is_removal(service_name):
+    name = (service_name or "").lower()
+    return any(word in name for word in REMOVAL_WORDS)
+
+
+def _is_style(service_name):
+    """An appointment that puts a style in: anything but a wash, a treatment or taking one out."""
+    # A wash and go is a style, whatever the word "wash" says.
+    name = (service_name or "").lower().replace("wash and go", "").replace("wash n go", "")
+    return not any(word in name for word in NOT_A_STYLE)
+
+
 def style_timing(user, now=None):
     """
     The style in now (or None) and how many days her styles have lasted, appointment
@@ -44,18 +61,27 @@ def style_timing(user, now=None):
         e.booking_id: e for e in user.hair_log.filter(kind="take_down", booking_id__isnull=False)
     }
     lasted = [_days(taken_down[b.pk].at, b.scheduled_for) for b in done.filter(pk__in=list(taken_down))]
-    # The style in now: the latest appointment not yet taken down, unless a
-    # take-down came after it.
-    last = done.order_by("-scheduled_for").first()
+    # The style in now: the latest appointment for a style (not a wash, a treatment or
+    # taking one out) that hasn't been taken down since.
+    recent = list(done.order_by("-scheduled_for")[:20])
+    last = next((b for b in recent if _is_style(b.service_name)), None)
+    removed_since = last is not None and any(
+        b.scheduled_for > last.scheduled_for and _is_removal(b.service_name) for b in recent
+    )
     current = None
-    if last and last.pk not in taken_down and not any(e.at > last.scheduled_for for e in taken_down.values()):
+    if (
+        last
+        and not removed_since
+        and last.pk not in taken_down
+        and not any(e.at > last.scheduled_for for e in taken_down.values())
+    ):
         current = {"name": last.service_name, "since": last.scheduled_for, "days": _days(now, last.scheduled_for), "booking_id": str(last.pk)}
     return current, lasted
 
 
 def insights(user, period="month", now=None):
     from apps.bookings.models import Booking
-    from apps.planner.models import CollectionItem
+    from apps.planner.models import CarePlanSession, CollectionItem
     from apps.shelf.models import ShelfItem
 
     now = now or timezone.now()
@@ -71,6 +97,12 @@ def insights(user, period="month", now=None):
     from apps.common.countries import totals
 
     spending = totals((b.currency, b.actual_price or b.price or 0) for b in done_in_period)
+    visits = Counter((b.stylist_name, b.stylist_handle) for b in done_in_period)
+    favourite = None
+    if visits:
+        (fav_name, fav_handle), fav_times = visits.most_common(1)[0]
+        if fav_times >= 2:
+            favourite = {"name": fav_name, "handle": fav_handle or None, "times": fav_times}
 
     # The hair log, all of it (it's small): trims, washes, take-downs.
     log = list(user.hair_log.all().order_by("at"))
@@ -122,6 +154,17 @@ def insights(user, period="month", now=None):
         "wash_every_days": round(mean(gaps)) if len(gaps) >= 2 else None,
         "days_since_trim": _days(now, trims[-1].at) if trims else None,
         "length": length,
+        # What she had done, most often first: "Knotless braids, 3 times".
+        "style_counts": [
+            {"name": name, "times": times} for name, times in Counter(b.service_name for b in done_in_period).most_common()
+        ],
+        # The stylist she goes back to, once she's been more than once.
+        "favourite_stylist": favourite,
+        "hours_in_chair": round(sum(b.duration_minutes or 0 for b in done_in_period) / 60, 1),
+        "trims": len([e for e in trims if not since or e.at >= since]),
+        "care_plan_days": len(
+            {s.completed_at.date() for s in in_period(CarePlanSession.objects.filter(user=user), "completed_at")}
+        ),
         "looks_saved": in_period(CollectionItem.objects.filter(collection__user=user, kind="look"), "created_at").count(),
         "products_added": in_period(ShelfItem.objects.filter(user=user), "created_at").count(),
     }

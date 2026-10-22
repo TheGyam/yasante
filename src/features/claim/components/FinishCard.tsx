@@ -1,7 +1,7 @@
 import { useRouter } from '@/shared/lib/navigation';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Section } from '@/shared/ui/Section';
-import { Sparkles } from 'lucide-react-native';
+import { ListChecks } from 'lucide-react-native';
 import { finishProgress } from '../format';
 import { useFinishState } from '../hooks';
 
@@ -15,7 +15,7 @@ export function FinishCard() {
       <ListRow
         title="Finish your page"
         subtitle={`${finishProgress(data)} of 3 done`}
-        icon={Sparkles}
+        icon={ListChecks}
         onPress={() => router.push('/finish')}
         testID="finish-card"
       />

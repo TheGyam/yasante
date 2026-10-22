@@ -247,7 +247,7 @@ export default function LookScreen() {
       />
       <Animated.View style={[heroStyles.fill, content]}>
         {look ? (
-          <Screen back title={look.authorName} scroll="list" opaque={false} testID="look-screen">
+          <Screen back scroll="list" opaque={false} testID="look-screen">
             <LookThread
               id={id}
               settled={settled}

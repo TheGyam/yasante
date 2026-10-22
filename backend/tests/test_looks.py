@@ -316,8 +316,8 @@ def test_saving_counts_each_person_once(api, make_user, make_look):
     look = make_look(make_user())
     saver = make_user()
     me = api(saver)
-    a = me.post("/api/collections/", {"name": "Holiday", "isPrivate": True}).json()
-    b = me.post("/api/collections/", {"name": "Wedding", "isPrivate": False}).json()
+    a = me.post("/api/collections/", {"name": "Holiday"}).json()
+    b = me.post("/api/collections/", {"name": "Wedding"}).json()
     me.post(f"/api/collections/{a['id']}/items/", {"kind": "look", "refId": str(look.pk)})
     me.post(f"/api/collections/{b['id']}/items/", {"kind": "look", "refId": str(look.pk)})
     assert api(make_user()).get(f"/api/looks/{look.pk}/").json()["saveCount"] == 1
@@ -662,3 +662,13 @@ def test_photo_migration_backfills_and_reverses():
         assert apps.get_model("looks", "Look").objects.count() == 1001
     finally:
         MigrationExecutor(connection).migrate(latest)
+
+
+def test_popular_styles_are_the_ones_with_looks(api, make_user, make_look, styles):
+    for _ in range(2):
+        make_look(make_user(), style="cornrows")
+    make_look(make_user(), style="knotless")
+    make_look(make_user(), style="twists", visibility="private")
+    popular = [s["id"] for s in api().get("/api/styles/", popular="1").json()]
+    assert popular == ["cornrows", "knotless"]
+    assert len(api().get("/api/styles/").json()) == len(styles)

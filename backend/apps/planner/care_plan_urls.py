@@ -7,6 +7,8 @@ from . import views
 urlpatterns = [
     path("", views.CarePlanListCreateView.as_view(), name="careplan-list-create"),
     path("<uuid:pk>/", views.CarePlanDetailView.as_view(), name="careplan-detail"),
+    path("<uuid:pk>/share/", views.CarePlanShareView.as_view(), name="careplan-share"),
+    path("<uuid:pk>/make-mine/", views.MakeCarePlanMineView.as_view(), name="careplan-make-mine"),
     path(
         "<uuid:pk>/sessions/",
         views.CarePlanSessionView.as_view(),

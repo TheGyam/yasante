@@ -93,7 +93,7 @@ export const validateApiConfig = (): void => {
 
   try {
     new URL(apiConfig.baseURL);
-  } catch (error) {
+  } catch {
     throw new Error(`Invalid API base URL: ${apiConfig.baseURL}`);
   }
 

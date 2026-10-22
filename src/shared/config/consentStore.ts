@@ -43,10 +43,10 @@ interface ConsentState {
   setConsent: (purpose: ConsentPurpose, granted: boolean) => void;
   isGranted: (purpose: ConsentPurpose) => boolean;
   /** Records not yet stored server-side. */
-  pendingSync: () => Array<{ purpose: ConsentPurpose } & ConsentRecord>;
+  pendingSync: () => ({ purpose: ConsentPurpose } & ConsentRecord)[];
   /** Marks records stored — only if they haven't changed again since they were sent. */
   markSynced: (
-    sent: Array<{ purpose: ConsentPurpose; granted: boolean; updatedAt: string }>,
+    sent: { purpose: ConsentPurpose; granted: boolean; updatedAt: string }[],
     at: string
   ) => void;
   /**
@@ -107,7 +107,7 @@ export const useConsentStore = create<ConsentState>()(
       isGranted: purpose => get().consents[purpose]?.granted ?? false,
 
       pendingSync: () =>
-        (Object.entries(get().consents) as Array<[ConsentPurpose, ConsentRecord]>)
+        (Object.entries(get().consents) as [ConsentPurpose, ConsentRecord][])
           .filter(([, value]) => value.syncedAt === null)
           .map(([purpose, value]) => ({ purpose, ...value })),
     }),

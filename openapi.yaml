@@ -808,6 +808,35 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/care-plans/{id}/make-mine/:
+    post:
+      operationId: care_plans_make_mine_create
+      description: |-
+        POST /api/care-plans/:id/make-mine/ — one she tags along with becomes hers, in place:
+        her schedule, reminders and history stay, and the steps become hers to change.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - care-plans
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MakeMineRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarePlanResponse'
+          description: ''
   /api/care-plans/{id}/sessions/:
     get:
       operationId: care_plans_sessions_list
@@ -858,6 +887,47 @@ paths:
               schema:
                 $ref: '#/components/schemas/CarePlanSessionResponse'
           description: ''
+  /api/care-plans/{id}/share/:
+    post:
+      operationId: care_plans_share_create
+      description: POST to share by link; DELETE to stop (the link stops working at
+        once).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - care-plans
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarePlanResponse'
+          description: ''
+    delete:
+      operationId: care_plans_share_destroy
+      description: POST to share by link; DELETE to stop (the link stops working at
+        once).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - care-plans
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/client-errors/:
     get:
       operationId: client_errors_retrieve
@@ -1061,6 +1131,75 @@ paths:
         required: true
       - in: path
         name: item_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - collections
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/collections/{id}/make-mine/:
+    post:
+      operationId: collections_make_mine_create
+      description: POST /api/collections/:id/make-mine/ — one she tags along with
+        becomes hers, in place.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - collections
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MakeMineRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+          description: ''
+  /api/collections/{id}/share/:
+    post:
+      operationId: collections_share_create
+      description: POST to share by link; DELETE to stop (the link stops working at
+        once).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - collections
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+          description: ''
+    delete:
+      operationId: collections_share_destroy
+      description: POST to share by link; DELETE to stop (the link stops working at
+        once).
+      parameters:
+      - in: path
+        name: id
         schema:
           type: string
           format: uuid
@@ -1385,7 +1524,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FavoriteResponse'
+                  $ref: '#/components/schemas/SavedArticle'
           description: ''
   /api/favorites/favorites/check/:
     get:
@@ -2195,6 +2334,213 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/shared/care-plans/{code}/:
+    get:
+      operationId: shared_care_plans_retrieve
+      description: GET /api/shared/care-plans/:code/ — the steps and the author's
+        rhythm.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - shared
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedCarePlanResponse'
+          description: ''
+  /api/shared/care-plans/{code}/follow/:
+    post:
+      operationId: shared_care_plans_follow_create
+      description: POST /api/shared/care-plans/:code/follow/ — the author's steps,
+        on her own schedule.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - shared
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CarePlanScheduleRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarePlanResponse'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarePlanResponse'
+          description: ''
+  /api/shared/care-plans/{code}/make-mine/:
+    post:
+      operationId: shared_care_plans_make_mine_create
+      description: POST /api/shared/care-plans/:code/make-mine/ — the steps become
+        hers to change.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - shared
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MakeMineRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarePlanResponse'
+          description: ''
+  /api/shared/care-plans/{code}/report/:
+    post:
+      operationId: shared_care_plans_report_create
+      description: Into moderation, never to the author. Staff can stop it being shared.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - shared
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: No response body
+  /api/shared/collections/{code}/:
+    get:
+      operationId: shared_collections_retrieve
+      description: GET /api/shared/collections/:code/ — what anyone with the link
+        sees.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - shared
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedCollectionResponse'
+          description: ''
+  /api/shared/collections/{code}/follow/:
+    post:
+      operationId: shared_collections_follow_create
+      description: POST /api/shared/collections/:code/follow/ — it joins her Planner,
+        kept up to date.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - shared
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+          description: ''
+  /api/shared/collections/{code}/make-mine/:
+    post:
+      operationId: shared_collections_make_mine_create
+      description: POST /api/shared/collections/:code/make-mine/ — her own version
+        to change.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - shared
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MakeMineRequestRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+          description: ''
+  /api/shared/collections/{code}/report/:
+    post:
+      operationId: shared_collections_report_create
+      description: Into moderation, never to the author. Staff can stop it being shared.
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - shared
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          description: No response body
   /api/shelf/:
     get:
       operationId: shelf_list
@@ -2336,8 +2682,15 @@ paths:
   /api/styles/:
     get:
       operationId: styles_list
-      description: 'GET /api/styles/ — the taxonomy looks are tagged from: [{ id,
-        name }].'
+      description: |-
+        GET /api/styles/ — the taxonomy looks are tagged from: [{ id, name }].
+        ?popular=1: only styles with public looks, the most looked-at first, for browsing.
+      parameters:
+      - in: query
+        name: popular
+        schema:
+          type: boolean
+        description: Only styles with looks, most first
       tags:
       - styles
       security:
@@ -3354,6 +3707,19 @@ components:
       required:
       - product
       - source
+    BasedOn:
+      type: object
+      properties:
+        name:
+          type: string
+        authorName:
+          type: string
+          description: Gone once the author's account is
+        code:
+          type: string
+          description: The original's link, while it's still shared
+      required:
+      - name
     BlankEnum:
       enum:
       - ''
@@ -3719,6 +4085,23 @@ components:
     CarePlanResponse:
       type: object
       properties:
+        sharing:
+          $ref: '#/components/schemas/SharingEnum'
+        shareUrl:
+          type: string
+          description: Her link, while it's shared
+        followers:
+          type: integer
+          description: 'How many tag along: counts, never who'
+        madeItTheirs:
+          type: integer
+        following:
+          allOf:
+          - $ref: '#/components/schemas/Following'
+          description: Someone else's she tags along with
+        basedOn:
+          allOf:
+          - $ref: '#/components/schemas/BasedOn'
         id:
           type: string
         name:
@@ -3751,8 +4134,24 @@ components:
       - id
       - name
       - remindersOn
+      - sharing
       - steps
       - timeOfDay
+    CarePlanScheduleRequestRequest:
+      type: object
+      properties:
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        specificDays:
+          type: array
+          items:
+            type: integer
+            maximum: 6
+            minimum: 0
+        timeOfDay:
+          $ref: '#/components/schemas/TimeOfDayEnum'
+        remindersOn:
+          type: boolean
     CarePlanSessionRequestRequest:
       type: object
       properties:
@@ -4057,19 +4456,35 @@ components:
           type: string
           minLength: 1
           maxLength: 150
-        isPrivate:
-          type: boolean
       required:
       - name
     CollectionResponse:
       type: object
       properties:
+        sharing:
+          $ref: '#/components/schemas/SharingEnum'
+        shareUrl:
+          type: string
+          description: Her link, while it's shared
+        followers:
+          type: integer
+          description: 'How many tag along: counts, never who'
+        madeItTheirs:
+          type: integer
+        following:
+          allOf:
+          - $ref: '#/components/schemas/Following'
+          description: Someone else's she tags along with
+        basedOn:
+          allOf:
+          - $ref: '#/components/schemas/BasedOn'
         id:
           type: string
         name:
           type: string
         isPrivate:
           type: boolean
+          description: 'For apps from before sharing: not shared'
         createdAt:
           type: string
           format: date-time
@@ -4089,6 +4504,7 @@ components:
       - itemCount
       - name
       - previewUris
+      - sharing
     Comment:
       type: object
       properties:
@@ -4537,6 +4953,18 @@ components:
           minLength: 1
       required:
       - contentId
+    FavouriteStylist:
+      type: object
+      properties:
+        name:
+          type: string
+        handle:
+          type: string
+        times:
+          type: integer
+      required:
+      - name
+      - times
     FeaturesResponse:
       type: object
       properties:
@@ -4654,6 +5082,21 @@ components:
       - photoCount
       - priced
       - slug
+    Following:
+      type: object
+      properties:
+        author:
+          $ref: '#/components/schemas/SharedAuthor'
+        code:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+          description: When its author last changed it
+      required:
+      - author
+      - code
+      - updatedAt
     ForgotPasswordRequest:
       type: object
       description: POST /api/auth/forgot-password/
@@ -5025,18 +5468,39 @@ components:
         length:
           allOf:
           - $ref: '#/components/schemas/LengthInsight'
+        styleCounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/StyleCount'
+          description: What she had done, most often first
+        favouriteStylist:
+          allOf:
+          - $ref: '#/components/schemas/FavouriteStylist'
+          description: Once she's been back to one
+        hoursInChair:
+          type: number
+          format: double
+        trims:
+          type: integer
+        carePlanDays:
+          type: integer
+          description: Days she did one of her care plans
         looksSaved:
           type: integer
         productsAdded:
           type: integer
       required:
       - appointments
+      - carePlanDays
+      - hoursInChair
       - looksSaved
       - period
       - productsAdded
       - spending
+      - styleCounts
       - styles
       - stylists
+      - trims
       - washes
     InviteResponse:
       type: object
@@ -5296,6 +5760,14 @@ components:
           type: string
       required:
       - data
+    MakeMineRequestRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Hers to choose; the original's if left out
+          maxLength: 150
     MenuImportRequestRequest:
       type: object
       properties:
@@ -5743,8 +6215,6 @@ components:
           type: string
           minLength: 1
           maxLength: 150
-        isPrivate:
-          type: boolean
     PatchedHairProfileRequestRequest:
       type: object
       properties:
@@ -6499,6 +6969,26 @@ components:
       description: |-
         * `plenty` - plenty
         * `few` - few
+    SavedArticle:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        contentId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        content:
+          $ref: '#/components/schemas/ContentResponse'
+      required:
+      - content
+      - contentId
+      - createdAt
+      - id
+      - userId
     ServiceModelEnum:
       enum:
       - salon
@@ -6548,6 +7038,103 @@ components:
       - sample
       - serviceId
       - serviceName
+    SharedAuthor:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Her account, so she can be blocked
+        name:
+          type: string
+        username:
+          type: string
+        avatarUri:
+          type: string
+      required:
+      - id
+      - name
+    SharedCarePlanResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        author:
+          $ref: '#/components/schemas/SharedAuthor'
+        frequency:
+          $ref: '#/components/schemas/FrequencyEnum'
+        specificDays:
+          type: array
+          items:
+            type: integer
+            maximum: 6
+            minimum: 0
+        timeOfDay:
+          $ref: '#/components/schemas/TimeOfDayEnum'
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/CarePlanStepResponse'
+        updatedAt:
+          type: string
+          format: date-time
+        ownId:
+          type: string
+        followingId:
+          type: string
+      required:
+      - author
+      - code
+      - frequency
+      - name
+      - steps
+      - timeOfDay
+      - updatedAt
+    SharedCollectionResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        author:
+          $ref: '#/components/schemas/SharedAuthor'
+        itemCount:
+          type: integer
+        updatedAt:
+          type: string
+          format: date-time
+        previewUris:
+          type: array
+          items:
+            type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionItemResponse'
+        ownId:
+          type: string
+          description: 'It''s hers: the id of her own'
+        followingId:
+          type: string
+          description: 'She tags along with it: its id in her Planner'
+      required:
+      - author
+      - code
+      - itemCount
+      - items
+      - name
+      - previewUris
+      - updatedAt
+    SharingEnum:
+      enum:
+      - private
+      - link
+      type: string
+      description: |-
+        * `private` - private
+        * `link` - link
     ShelfAddRequestRequest:
       type: object
       properties:
@@ -6770,6 +7357,16 @@ components:
       required:
       - id
       - name
+    StyleCount:
+      type: object
+      properties:
+        name:
+          type: string
+        times:
+          type: integer
+      required:
+      - name
+      - times
     StylistPageResponse:
       type: object
       properties:

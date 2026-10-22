@@ -77,3 +77,17 @@ class ClientErrorThrottle(UserRateThrottle):
 
     scope = "client_error"
     rate = "30/hour"
+
+
+class SharingThrottle(UserRateThrottle):
+    """Sharing, tagging along and making something yours: plenty for a person, not a bot."""
+
+    scope = "sharing"
+    rate = "60/hour"
+
+
+class SharedViewThrottle(UserRateThrottle):
+    """Opening a shared link, signed in or not (then it counts by address)."""
+
+    scope = "shared_view"
+    rate = "120/min"

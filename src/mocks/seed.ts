@@ -1180,3 +1180,64 @@ for (const s of STYLISTS) {
     db.bookings.filter(b => b.stylistId === s.id && b.status === 'requested').length
   );
 }
+
+// ── Sharing: Ama shares a collection and a care plan; one of Efua's is shared too ──
+// Codes are fixed so the design demo can open them: yasante.com/c/… and /p/….
+db.accounts.get('acc_ama')!.username = 'braidsbyama';
+db.accounts.get('acc_client')!.username = 'efua.m';
+const braids = saveable.filter(look =>
+  (look.styles ?? []).some(style => /knotless|braid|boho/.test(style))
+);
+db.collections.set('acc_ama', [
+  {
+    id: 'col_ama_winter',
+    name: 'Winter braids',
+    isPrivate: false,
+    createdAt: ago(40),
+    updatedAt: ago(2),
+    code: 'Wb7kQ2xN9pLm4RtV8sYc3A',
+    sharedAt: ago(30),
+    seedFollowers: 23,
+    madeItTheirs: 6,
+    items: sample(braids.length >= 14 ? braids : saveable, 14).map((look, i) => ({
+      id: `col_ama_winter_${i}`,
+      kind: 'look',
+      refId: look.id,
+      imageUri: look.photoUri,
+      title: look.caption ?? look.serviceName,
+      addedAt: ago(i + 2),
+    })),
+  },
+  ...(db.collections.get('acc_ama') ?? []),
+]);
+db.carePlans.set('acc_ama', [
+  {
+    id: 'plan_ama_wash',
+    name: 'Gentle wash day',
+    frequency: 'weekly',
+    timeOfDay: 'evening',
+    remindersOn: true,
+    steps: [
+      { id: 'a1', text: 'Detangle dry with oil, in four sections' },
+      { id: 'a2', text: 'Pre-poo for 30 minutes under a cap' },
+      { id: 'a3', text: 'Sulphate-free shampoo on the scalp only' },
+      { id: 'a4', text: 'Deep condition for 20 minutes with gentle heat' },
+      { id: 'a5', text: 'Leave-in and seal the ends with butter' },
+    ],
+    createdAt: ago(60),
+    updatedAt: ago(3),
+    code: 'Pq3mZt8Lw2Hc6Jx9Nv4Bf7',
+    sharedAt: ago(45),
+    seedFollowers: 41,
+    madeItTheirs: 12,
+    sessions: [],
+  },
+  ...(db.carePlans.get('acc_ama') ?? []),
+]);
+// Efua's own, already shared: the owner's view of the share sheet.
+Object.assign(db.collections.get('acc_client')!.find(c => c.id === 'col_knotless')!, {
+  code: 'Kn5tLs8Rq2Wz4Xp7Mc9Vd3',
+  sharedAt: ago(12),
+  seedFollowers: 6,
+  madeItTheirs: 2,
+});

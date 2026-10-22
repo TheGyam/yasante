@@ -13,6 +13,8 @@ export interface AuthBridge {
   getAccessToken: () => string | undefined;
   getRefreshToken: () => string | undefined;
   getUserId: () => string | undefined;
+  /** When the access token runs out, in ms; unknown for sessions saved before it was kept. */
+  getExpiresAt?: () => number | undefined;
   setTokens: (tokens: { accessToken: string; refreshToken?: string; expiresAt: number }) => void;
   refresh: (
     refreshToken: string
@@ -44,6 +46,12 @@ apiClient.interceptors.request.use(
   async config => {
     // Screens fetch on mount, which can beat reading the saved sign-in back.
     await authBridge?.ready();
+    // Back after a while, the access token has run out: renew it once before sending,
+    // rather than let every request on the screen be refused first.
+    const expiresAt = authBridge?.getExpiresAt?.();
+    if (expiresAt && Date.now() > expiresAt - 5000 && authBridge?.getRefreshToken()) {
+      await renew().catch(() => {});
+    }
     // Add auth token if available
     const accessToken = authBridge?.getAccessToken();
     if (accessToken) {
@@ -78,12 +86,24 @@ apiClient.interceptors.request.use(
   }
 );
 
+/** A new access token from the refresh token; concurrent callers share one request. */
+async function renew() {
+  const bridge = authBridge!;
+  const { accessToken, refreshToken, expiresAt } = await bridge.refresh(bridge.getRefreshToken()!);
+  bridge.setTokens({
+    accessToken,
+    refreshToken,
+    expiresAt: typeof expiresAt === 'string' ? new Date(expiresAt).getTime() : expiresAt,
+  });
+  return accessToken;
+}
+
 // Response interceptor
 let isRefreshing = false;
-let failedQueue: Array<{
+let failedQueue: {
   resolve: (value?: any) => void;
   reject: (error?: any) => void;
-}> = [];
+}[] = [];
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach(prom => {
@@ -100,6 +120,21 @@ apiClient.interceptors.response.use(
   response => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as any;
+
+    // Sent with a token that has since been renewed: just send it again.
+    const current = authBridge?.getAccessToken();
+    const sentWith = String(originalRequest?.headers?.Authorization ?? '').replace('Bearer ', '');
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      current &&
+      sentWith &&
+      sentWith !== current
+    ) {
+      originalRequest._retry = true;
+      originalRequest.headers.Authorization = `Bearer ${current}`;
+      return apiClient(originalRequest);
+    }
 
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {

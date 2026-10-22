@@ -7,8 +7,10 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
-import { Images, Lock } from 'lucide-react-native';
+import { Images, Link2 } from 'lucide-react-native';
 import { makeStyles, radius, space, spring, timing, useTheme } from '@/shared/theme';
+import { SEP } from '@/shared/lib/format';
+import { Avatar } from '@/shared/ui/Avatar';
 import { Tilt } from '@/shared/ui/Motion';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
@@ -145,15 +147,24 @@ export function CollectionCard({ collection, onPress }: CollectionCardProps) {
         )}
       </View>
       <View style={styles.meta}>
-        {collection.isPrivate && (
-          <Lock size={12} color={theme.colors.text.tertiary} strokeWidth={2.2} />
-        )}
+        {/* Private is the default and needs no mark; shared, and someone else's, do. */}
+        {collection.following ? (
+          <Avatar
+            uri={collection.following.author.avatarUri}
+            name={collection.following.author.name}
+            size={16}
+          />
+        ) : collection.sharing === 'link' ? (
+          <Link2 size={12} color={theme.colors.accent} strokeWidth={2.4} />
+        ) : null}
         <Text variant="footnote" numberOfLines={1} style={styles.name}>
           {collection.name}
         </Text>
       </View>
-      <Text variant="caption" tone="tertiary">
-        {countLabel(collection.itemCount)}
+      <Text variant="caption" tone="tertiary" numberOfLines={1}>
+        {collection.following
+          ? `By ${collection.following.author.name.split(' ')[0]}${SEP}${countLabel(collection.itemCount)}`
+          : countLabel(collection.itemCount)}
       </Text>
     </Tilt>
   );

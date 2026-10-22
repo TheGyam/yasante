@@ -4,7 +4,6 @@ import {
   pickImagesFromLibrary,
   takePhoto,
   compressImage,
-  ImagePickerResult,
 } from '@/shared/lib/imageService';
 
 /** A photo that couldn't be had, in words: permission, or anything else. */

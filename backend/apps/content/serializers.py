@@ -29,6 +29,10 @@ class FavoriteResponseSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField()
 
 
+class SavedArticleSerializer(FavoriteResponseSerializer):
+    content = ContentResponseSerializer()
+
+
 class FavoriteStateSerializer(serializers.Serializer):
     is_favorite = serializers.BooleanField()
     favorite = optional(FavoriteResponseSerializer())

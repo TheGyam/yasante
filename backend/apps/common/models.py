@@ -109,6 +109,7 @@ NOTIFICATION_CATEGORIES = [
     ("account", "Your account, badges and important updates"),
     ("activity", "Comments, replies and activity on your looks"),
     ("for_you", "Looks picked for you, once a week"),
+    ("tagging_along", "Collections and plans you tag along with"),
     ("news", "News and offers from Yasante"),
 ]
 

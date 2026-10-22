@@ -1,12 +1,19 @@
 import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
-import { Bookmark, CalendarHeart, UserRound, type LucideIcon, UserPlus } from 'lucide-react-native';
+import {
+  Bookmark,
+  CalendarHeart,
+  UserPlus,
+  UserRound,
+  Users,
+  type LucideIcon,
+} from 'lucide-react-native';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { Sheet } from '@/shared/ui/Sheet';
 import { Text } from '@/shared/ui/Text';
 
-export type AuthPromptFeature = 'moodboard' | 'favorites' | 'profile' | 'general';
+export type AuthPromptFeature = 'moodboard' | 'favorites' | 'profile' | 'shared' | 'general';
 
 export interface AuthPromptModalProps {
   visible: boolean;
@@ -29,6 +36,11 @@ const COPY: Record<AuthPromptFeature, { icon: LucideIcon; title: string; body: s
     icon: UserRound,
     title: 'Make it yours',
     body: 'Create a free account to track your progress and tailor what you see.',
+  },
+  shared: {
+    icon: Users,
+    title: 'Tag along, or make it yours',
+    body: 'Create a free account to keep what people share in your Planner, up to date or as your own version.',
   },
   general: {
     icon: UserPlus,

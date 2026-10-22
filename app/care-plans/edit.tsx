@@ -5,7 +5,10 @@ import { Droplets } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
   DAY_LABELS,
+  WEEK,
   FREQUENCY_LABELS,
+  ensureReminderPermission,
+  reminderAt,
   StepList,
   TIME_OF_DAY_LABELS,
   formFromPlan,
@@ -128,20 +131,26 @@ export default function CarePlanFormScreen() {
           <Text variant="footnote" tone="secondary" style={styles.label}>
             How often
           </Text>
-          <SegmentedControl
-            options={FREQUENCIES}
-            value={form.frequency}
-            onChange={value => set('frequency', value)}
-          />
+          {/* Four longer names don't fit four across: chips wrap, so none is cut off. */}
+          <View style={styles.chips} accessibilityRole="radiogroup">
+            {FREQUENCIES.map(option => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                selected={form.frequency === option.value}
+                onPress={() => set('frequency', option.value)}
+              />
+            ))}
+          </View>
         </View>
 
         {form.frequency === 'specific-days' && (
           <View style={styles.group}>
             <View style={styles.chips}>
-              {DAY_LABELS.map((label, day) => (
+              {WEEK.map(day => (
                 <Chip
-                  key={label}
-                  label={label}
+                  key={day}
+                  label={DAY_LABELS[day]}
                   selected={form.specificDays.includes(day)}
                   onPress={() => toggleDay(day)}
                 />
@@ -166,13 +175,17 @@ export default function CarePlanFormScreen() {
           />
         </View>
 
-        <Section footer="Reminders are sent by Yasante when a plan is due.">
+        <Section
+          footer={`On the days it's due, at ${reminderAt(form.timeOfDay)}, from this phone.`}
+        >
           <ListRow
             title="Remind me"
             trailing={
               <Toggle
                 value={form.remindersOn}
-                onValueChange={value => set('remindersOn', value)}
+                onValueChange={async value =>
+                  set('remindersOn', value ? await ensureReminderPermission() : false)
+                }
                 accessibilityLabel="Remind me"
               />
             }

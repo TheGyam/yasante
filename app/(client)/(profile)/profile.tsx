@@ -3,9 +3,9 @@ import { useRouter } from '@/shared/lib/navigation';
 import {
   Bookmark,
   CalendarClock,
-  Sparkles,
+  ChartNoAxesColumn,
   Droplets,
-  Images,
+  GalleryVerticalEnd,
   LayoutGrid,
   Package,
   Settings,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react-native';
 import { useAuth } from '@/features/auth';
 import { isLive, useBookings } from '@/features/booking';
+import { useMyLooks } from '@/features/looks';
 import { useCollections } from '@/features/planner';
 import {
   hairTraits,
@@ -27,7 +28,8 @@ import { shelfSummary, useShelf } from '@/features/shelf';
 import { ModeSwitchRow, useIsStylist } from '@/features/stylist';
 import { AtSign, Scissors } from 'lucide-react-native';
 import { Rise } from '@/shared/ui/Rise';
-import { makeStyles, space } from '@/shared/theme';
+import { makeStyles, radius, space } from '@/shared/theme';
+import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
@@ -40,12 +42,19 @@ import { Section } from '@/shared/ui/Section';
 import { Text } from '@/shared/ui/Text';
 import { SEP } from '@/shared/lib/format';
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles(t => ({
   body: { gap: space.xxl },
   identity: { alignItems: 'center', gap: space.sm },
   names: { alignItems: 'center', gap: 2, marginBottom: space.xs },
   hair: { gap: space.md },
   traits: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  peek: { flexDirection: 'row', gap: 4 },
+  thumb: {
+    width: 30,
+    height: 38,
+    borderRadius: radius.sm,
+    backgroundColor: t.colors.glass.fillStrong,
+  },
 }));
 
 export default function ProfileScreen() {
@@ -94,6 +103,7 @@ function Profile() {
   const shelf = useShelf();
   const live = bookings.filter(isLive);
   const { data: insights } = useInsights('month');
+  const { data: looks = [] } = useMyLooks();
   const name = user?.name ?? authUser?.name;
 
   return (
@@ -124,6 +134,20 @@ function Profile() {
         />
       </View>
 
+      {/* The same place as in stylist mode: right under who she is. */}
+      <Section>
+        {isStylist ? (
+          <ModeSwitchRow />
+        ) : (
+          <ListRow
+            title="Set up your stylist profile"
+            subtitle="A page for your bio, your menu and your bookings"
+            icon={Scissors}
+            onPress={() => router.push('/stylist-setup')}
+          />
+        )}
+      </Section>
+
       {/* Posts show a username (or just her first name until she picks one). */}
       {!!user && !user.username && !isStylist && (
         <Rise>
@@ -139,19 +163,6 @@ function Profile() {
           </Section>
         </Rise>
       )}
-
-      <Section>
-        {isStylist ? (
-          <ModeSwitchRow />
-        ) : (
-          <ListRow
-            title="Set up your stylist profile"
-            subtitle="A page for your bio, free for founding stylists"
-            icon={Scissors}
-            onPress={() => router.push('/stylist-setup')}
-          />
-        )}
-      </Section>
 
       <Card onPress={() => router.push('/hair-profile')} accessibilityLabel="Hair profile">
         <View style={styles.hair}>
@@ -183,7 +194,35 @@ function Profile() {
 
       <Section>
         <ListRow
-          title="Your bookings"
+          title="Your looks"
+          subtitle={
+            looks.length
+              ? `${looks.length} ${looks.length === 1 ? 'look' : 'looks'}, public and just for you`
+              : 'Post your hair, for you or for everyone'
+          }
+          icon={GalleryVerticalEnd}
+          trailing={
+            looks.length ? (
+              <View style={styles.peek} accessibilityElementsHidden>
+                {looks.slice(0, 3).map(look => (
+                  <RemoteImage
+                    key={look.id}
+                    uri={look.thumbUri ?? look.photoUri}
+                    style={styles.thumb}
+                    recyclingKey={`profile-${look.id}`}
+                  />
+                ))}
+              </View>
+            ) : undefined
+          }
+          onPress={() => router.push('/looks/mine')}
+          testID="profile-looks"
+        />
+      </Section>
+
+      <Section title="Your plans">
+        <ListRow
+          title="Bookings"
           subtitle={
             live.length ? `${live.length} coming up` : 'Requests, deposits and confirmed dates'
           }
@@ -193,14 +232,7 @@ function Profile() {
           testID="profile-bookings"
         />
         <ListRow
-          title="Your hair this month"
-          subtitle={insightsHeadline(insights)}
-          icon={Sparkles}
-          onPress={() => router.push('/insights')}
-          testID="profile-insights"
-        />
-        <ListRow
-          title="Your collections"
+          title="Collections"
           subtitle={
             collections.data?.length
               ? `${collections.data.length} ${collections.data.length === 1 ? 'collection' : 'collections'}`
@@ -211,14 +243,7 @@ function Profile() {
           testID="profile-collections"
         />
         <ListRow
-          title="Your looks"
-          subtitle="What you’ve posted, and the ones kept for yourself"
-          icon={Images}
-          onPress={() => router.push('/looks/mine')}
-          testID="profile-looks"
-        />
-        <ListRow
-          title="Your product shelf"
+          title="Product shelf"
           subtitle={
             shelf.data?.length ? shelfSummary(shelf.data) : 'What you use, and how it works'
           }
@@ -226,17 +251,26 @@ function Profile() {
           onPress={() => router.push('/shelf')}
           testID="profile-shelf"
         />
+      </Section>
+
+      <Section title="Your progress">
         <ListRow
-          title="Saved styles and articles"
-          icon={Bookmark}
-          onPress={() => router.push('/saved')}
+          title="Your hair this month"
+          subtitle={insightsHeadline(insights)}
+          icon={ChartNoAxesColumn}
+          onPress={() => router.push('/insights')}
+          testID="profile-insights"
         />
+      </Section>
+
+      <Section title="Learn">
         <ListRow
           title="Hair care library"
           icon={Droplets}
           iconTone="success"
           onPress={() => router.push('/learn')}
         />
+        <ListRow title="Saved articles" icon={Bookmark} onPress={() => router.push('/saved')} />
       </Section>
     </View>
   );

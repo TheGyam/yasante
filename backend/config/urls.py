@@ -69,6 +69,7 @@ urlpatterns = API_DOCS + [
     path("api/not-for-me/", NotForMeView.as_view(), name="not-for-me"),
     path("api/collections/", include("apps.planner.collection_urls")),
     path("api/care-plans/", include("apps.planner.care_plan_urls")),
+    path("api/shared/", include("apps.planner.shared_urls")),
     path("api/shelf/", include("apps.shelf.shelf_urls")),
     path("api/products/", include("apps.shelf.product_urls")),
     path("api/uploads/", UploadView.as_view(), name="uploads"),

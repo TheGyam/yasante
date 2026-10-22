@@ -1,5 +1,5 @@
 import type { MockBooking } from './db';
-import type { Booking, BookingStatus, CheckInWeek, ClientRecord } from '@/features/booking';
+import type { BookingStatus, CheckInWeek, ClientRecord } from '@/features/booking';
 import { TIMING_REASONS } from '@/features/booking/types';
 import type { ChosenOptions, MenuItem } from '@/features/stylist';
 import { estimate, freeStarts, isOpenOn, optionGroups, ymd } from '@/features/stylist/format';

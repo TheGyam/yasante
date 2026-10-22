@@ -1,4 +1,5 @@
-import { defineMocks, matchRoute } from '../mock';
+import axios from 'axios';
+import { defineMocks, installMocks, matchRoute } from '../mock';
 
 describe('mock routes', () => {
   defineMocks({
@@ -16,5 +17,22 @@ describe('mock routes', () => {
     expect(matchRoute('patch', '/api/bookings/42/status?x=1')?.query.get('x')).toBe('1');
     expect(matchRoute('post', '/api/bookings/42/status/')).toBeNull();
     expect(matchRoute('get', '/api/unknown/')).toBeNull();
+  });
+});
+
+describe('a mock session', () => {
+  it('never sends its token to a real server, even one added by an earlier interceptor', async () => {
+    const network = jest.fn();
+    const client = axios.create({ adapter: network });
+    // Added first, so axios runs it after the mocks' own interceptor, as in the app.
+    client.interceptors.request.use(config => {
+      config.headers.Authorization = 'Bearer mock.acc_client';
+      return config;
+    });
+    installMocks(client);
+    await expect(client.get('/api/not-mocked/')).rejects.toMatchObject({
+      response: { status: 404 },
+    });
+    expect(network).not.toHaveBeenCalled();
   });
 });

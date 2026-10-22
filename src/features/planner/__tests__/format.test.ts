@@ -20,20 +20,25 @@ describe('describing a care plan', () => {
     expect(plain(describePlan({ frequency: 'weekly', timeOfDay: 'evening' }))).toBe(
       'Every week · Evening'
     );
-    // Sunday = 0, and the days read in week order however they were picked.
+    // Sunday = 0, and the days read Monday first however they were picked.
     expect(
       plain(
         describePlan({ frequency: 'specific-days', specificDays: [3, 0], timeOfDay: 'morning' })
       )
-    ).toBe('Sun, Wed · Morning');
+    ).toBe('Wed, Sun · Morning');
   });
 });
 
 describe('when a care plan is next due', () => {
   const now = new Date('2026-09-20T09:00:00Z'); // a Sunday
 
-  it('is due today when it has never been done', () => {
+  it('is due today when it has never been done, or on the first of its days', () => {
     expect(dueLabel({ frequency: 'weekly' }, now)).toBe('Due today');
+    // A Sunday, for a plan done on Wednesdays and Fridays.
+    expect(dueLabel({ frequency: 'specific-days', specificDays: [3, 5] }, now)).toBe(
+      'Due Wednesday'
+    );
+    expect(dueLabel({ frequency: 'specific-days', specificDays: [0, 3] }, now)).toBe('Due today');
   });
 
   it('counts from the last time it was done', () => {

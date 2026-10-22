@@ -15,6 +15,7 @@ from apps.stylists.pricing import option_groups, price_choice
 from apps.stylists.slots import bookable_problem
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db.models import Q
 from django.utils import timezone
 from apps.common.throttling import BookingRequestThrottle, ReviewThrottle
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -772,8 +773,14 @@ class SlotInterestListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        interests = SlotInterest.objects.filter(client=request.user).order_by("-created_at")
-        return Response([present_slot_interest(i) for i in interests])
+        from apps.common import zones
+
+        # A wait for days that have gone, or a slot that opened on a day that has, is
+        # no use to anyone: it goes.
+        today = timezone.now().astimezone(zones.of(request.user)).date()
+        mine = SlotInterest.objects.filter(client=request.user)
+        mine.filter(Q(to_date__lt=today) | Q(opened_on__lt=today)).delete()
+        return Response([present_slot_interest(i) for i in mine.order_by("-created_at")])
 
     def post(self, request):
         stylist_id = request.data.get("stylist_id")

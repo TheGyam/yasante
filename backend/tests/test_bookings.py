@@ -629,3 +629,24 @@ def test_a_time_already_gone_cant_be_accepted_or_suggested(api, setup, book):
     stylist = api(profile.account)
     assert stylist.post(f"/api/bookings/{booking['id']}/accept/", {"scheduledFor": past}).status_code == 400
     assert stylist.post(f"/api/bookings/{booking['id']}/propose/", {"scheduledFor": past}).status_code == 400
+
+
+def test_slot_alerts_for_days_that_have_gone_go(api, make_user, make_stylist):
+    from datetime import timedelta
+
+    from apps.bookings.models import SlotInterest
+    from django.utils import timezone
+
+    client = make_user()
+    profile = make_stylist()
+    today = timezone.localdate()
+    past = SlotInterest.objects.create(
+        client=client, stylist=profile.account, stylist_name="Ama", from_date=today - timedelta(days=30),
+        to_date=today - timedelta(days=25), opened_on=today - timedelta(days=26),
+    )
+    current = SlotInterest.objects.create(
+        client=client, stylist=profile.account, stylist_name="Ama", from_date=today, to_date=today + timedelta(days=7),
+    )
+    listed = api(client).get("/api/slot-interests/").json()
+    assert [i["id"] for i in listed] == [str(current.pk)]
+    assert not SlotInterest.objects.filter(pk=past.pk).exists()

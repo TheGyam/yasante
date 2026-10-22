@@ -75,7 +75,7 @@ function Photo({
           accessible={accessible}
           accessibilityRole={accessible ? (detail ? 'image' : 'button') : undefined}
           accessibilityLabel={
-            accessible ? look.caption ?? look.serviceName ?? 'A look' : undefined
+            accessible ? (look.caption ?? look.serviceName ?? 'A look') : undefined
           }
           accessibilityHint={
             accessible ? (detail ? 'Double tap to like' : 'Opens the look') : undefined
@@ -149,7 +149,10 @@ function Swiper({
   const showCounter = useCallback(() => {
     counterOpacity.set(1);
     clearTimeout(fadeTimer.current);
-    fadeTimer.current = setTimeout(() => counterOpacity.set(withTiming(0, timing.state)), COUNTER_FADE_MS);
+    fadeTimer.current = setTimeout(
+      () => counterOpacity.set(withTiming(0, timing.state)),
+      COUNTER_FADE_MS
+    );
   }, [counterOpacity]);
 
   useEffect(() => {
