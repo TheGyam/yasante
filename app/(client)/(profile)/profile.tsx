@@ -3,7 +3,7 @@ import { useRouter } from '@/shared/lib/navigation';
 import {
   Bookmark,
   CalendarClock,
-  Sparkles,
+  ChartNoAxesColumn,
   Droplets,
   Images,
   LayoutGrid,
@@ -195,7 +195,7 @@ function Profile() {
         <ListRow
           title="Your hair this month"
           subtitle={insightsHeadline(insights)}
-          icon={Sparkles}
+          icon={ChartNoAxesColumn}
           onPress={() => router.push('/insights')}
           testID="profile-insights"
         />

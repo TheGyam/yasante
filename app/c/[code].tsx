@@ -150,9 +150,9 @@ export default function SharedCollectionScreen() {
             onUnfollow={async () => {
               setSheet(null);
               const yes = await confirm({
-                title: `Unfollow ${data.name}?`,
-                message: 'It leaves your Planner. You can follow it again from the link.',
-                confirmLabel: 'Unfollow',
+                title: `Stop tagging along with ${data.name}?`,
+                message: 'It leaves your Planner. You can tag along again from the link.',
+                confirmLabel: 'Stop tagging along',
                 destructive: true,
               });
               if (yes && data.followingId) unfollow.mutate(data.followingId, { onError: fail });

@@ -19,11 +19,11 @@ import {
   Check,
   ChevronDown,
   CircleCheck,
+  CircleMinus,
+  Clock,
   Pencil,
   Share as ShareIcon,
-  Sparkles,
   Trash2,
-  UserMinus,
 } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
@@ -330,9 +330,9 @@ export default function CarePlanScreen() {
     const yes = await confirm(
       following
         ? {
-            title: `Unfollow ${plan?.name ?? 'this plan'}?`,
+            title: `Stop tagging along with ${plan?.name ?? 'this plan'}?`,
             message: 'It leaves your Planner, with your record of when you followed it.',
-            confirmLabel: 'Unfollow',
+            confirmLabel: 'Stop tagging along',
             destructive: true,
           }
         : {
@@ -377,7 +377,7 @@ export default function CarePlanScreen() {
         {describePlan(plan)}
       </Text>
       <View style={styles.due}>
-        <Sparkles size={14} color={theme.colors.accent} />
+        <Clock size={14} color={theme.colors.accent} />
         <Text variant="footnote" style={{ color: theme.colors.accent }}>
           {dueLabel(plan)}
         </Text>
@@ -553,8 +553,8 @@ export default function CarePlanScreen() {
 
           <View style={styles.footer}>
             <Button
-              label={following ? 'Unfollow plan' : 'Delete plan'}
-              icon={following ? UserMinus : Trash2}
+              label={following ? 'Stop tagging along' : 'Delete plan'}
+              icon={following ? CircleMinus : Trash2}
               variant="danger"
               onPress={confirmDelete}
               loading={remove.isPending}

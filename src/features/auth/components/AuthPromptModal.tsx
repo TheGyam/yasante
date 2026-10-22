@@ -39,7 +39,7 @@ const COPY: Record<AuthPromptFeature, { icon: LucideIcon; title: string; body: s
   },
   shared: {
     icon: Users,
-    title: 'Follow it, or make it yours',
+    title: 'Tag along, or make it yours',
     body: 'Create a free account to keep what people share in your Planner, up to date or as your own version.',
   },
   general: {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
-import { Sparkles } from 'lucide-react-native';
+import { CopyPlus } from 'lucide-react-native';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { Chip } from '@/shared/ui/Chip';
@@ -69,7 +69,7 @@ export function MakeItYoursSheet({
       <View style={styles.body} testID="make-it-yours-sheet">
         <View style={styles.head}>
           <View style={styles.badge}>
-            <Sparkles size={22} color={theme.colors.accent} />
+            <CopyPlus size={22} color={theme.colors.accent} />
           </View>
           <Text variant="title3">Make {name} yours?</Text>
           <Text variant="subhead" tone="secondary">
@@ -96,7 +96,7 @@ export function MakeItYoursSheet({
 }
 
 /**
- * Her own rhythm for a plan: starting from the author's when she follows it, and
+ * Her own rhythm for a plan: starting from the author's when she tags along, and
  * hers to change at any time after. The steps aren't here: they're the author's.
  */
 export function ScheduleSheet({

@@ -119,7 +119,7 @@ export function Mosaic({ uris, recyclingKey }: { uris: string[]; recyclingKey: s
 }
 
 /**
- * Follow, and once following, "Following" with a tick. The fill eases from the
+ * Tag along, and once tagging along, "Tagging along" with a tick. The fill eases from the
  * accent to glass, the label cross-fades and the tick pops in: a change of state,
  * not a new button.
  */
@@ -163,7 +163,7 @@ export function FollowButton({
       disabled={loading}
       accessibilityRole="button"
       accessibilityState={{ selected: following, busy: loading }}
-      accessibilityLabel={following ? 'Following. Options' : 'Follow'}
+      accessibilityLabel={following ? 'Tagging along. Options' : 'Tag along'}
       containerStyle={{ flex: 1 }}
       testID={testID}
     >
@@ -183,7 +183,7 @@ export function FollowButton({
           exiting={FadeOut.duration(120)}
           style={[styles.followLabel, { color }]}
         >
-          {following ? 'Following' : 'Follow'}
+          {following ? 'Tagging along' : 'Tag along'}
         </Animated.Text>
       </Animated.View>
     </PressableScale>

@@ -176,9 +176,9 @@ function FollowedCollection({ collection }: { collection: Collection }) {
         onUnfollow={async () => {
           setSheet(null);
           const yes = await confirm({
-            title: `Unfollow ${collection.name}?`,
-            message: 'It leaves your Planner. You can follow it again from the link.',
-            confirmLabel: 'Unfollow',
+            title: `Stop tagging along with ${collection.name}?`,
+            message: 'It leaves your Planner. You can tag along again from the link.',
+            confirmLabel: 'Stop tagging along',
             destructive: true,
           });
           if (!yes) return;

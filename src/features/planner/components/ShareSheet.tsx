@@ -111,7 +111,7 @@ export function ShareSheet({
       const yes = await confirm({
         title: `Stop sharing ${name}?`,
         message: followers
-          ? `The ${followers === 1 ? 'person' : `${followers} people`} following it will lose it, and the link stops working. Versions people made theirs stay theirs.`
+          ? `The ${followers === 1 ? 'person' : `${followers} people`} tagging along will lose it, and the link stops working. Versions people made theirs stay theirs.`
           : 'The link stops working straight away. Versions people made theirs stay theirs.',
         confirmLabel: 'Stop sharing',
         destructive: true,
@@ -217,7 +217,7 @@ export function ShareSheet({
             {option(
               'link',
               'Anyone with the link',
-              'They can look, follow it, or make it theirs.',
+              'They can look, tag along, or make it theirs.',
               Link2
             )}
           </View>

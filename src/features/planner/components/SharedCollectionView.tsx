@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { Images, Sparkles, UserMinus } from 'lucide-react-native';
+import { CircleMinus, CopyPlus, Images } from 'lucide-react-native';
 import { SEP } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -49,16 +49,16 @@ export interface SharedCollectionViewProps {
   loading?: boolean;
   following: boolean;
   onFollow: () => void;
-  /** "Following": what she can do with it now. */
+  /** "Tagging along": what she can do with it now. */
   onFollowing: () => void;
   onMakeItYours: () => void;
   busy?: boolean;
 }
 
 /**
- * Someone's shared collection: a cover of its first pictures, who made it, Follow
+ * Someone's shared collection: a cover of its first pictures, who made it, Tag along
  * and Make it yours, then everything in it. The same page whether she opened a link
- * or it's one she follows.
+ * or it's one she tags along with.
  */
 export function SharedCollectionView({
   name,
@@ -163,7 +163,7 @@ export function SharedCollectionView({
   );
 }
 
-/** What she can do with one she follows: make it hers, or stop following. */
+/** What she can do with one she tags along with: make it hers, or stop. */
 export function FollowingSheet({
   visible,
   onClose,
@@ -187,13 +187,13 @@ export function FollowingSheet({
           <ListRow
             title="Make it yours"
             subtitle="Your own version to change. It stops updating."
-            icon={Sparkles}
+            icon={CopyPlus}
             onPress={onMakeItYours}
             testID="following-make-it-yours"
           />
           <ListRow
-            title="Unfollow"
-            icon={UserMinus}
+            title="Stop tagging along"
+            icon={CircleMinus}
             destructive
             onPress={onUnfollow}
             testID="following-unfollow"

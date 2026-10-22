@@ -111,7 +111,7 @@ export default function PlannerScreen() {
               {own.length > 0 && grid(own)}
               {followed.length > 0 && (
                 <View>
-                  <SectionHeader title="Following" />
+                  <SectionHeader title="Tagging along" />
                   {grid(followed)}
                 </View>
               )}

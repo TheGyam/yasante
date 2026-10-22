@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { Sparkles } from 'lucide-react-native';
+import { ChartNoAxesColumn } from 'lucide-react-native';
 import { useInsights, type InsightsPeriod } from '@/features/profile';
 import { formatMoneyList, SEP } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
@@ -56,7 +56,7 @@ export default function InsightsScreen() {
           <Skeleton height={320} />
         ) : empty ? (
           <EmptyState
-            icon={Sparkles}
+            icon={ChartNoAxesColumn}
             title="Nothing to show yet"
             message="Book an appointment, log a wash day or add your length, and your numbers start here."
           />

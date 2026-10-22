@@ -230,7 +230,7 @@ export default function SharedCarePlanScreen() {
               timeOfDay: data.timeOfDay,
               remindersOn: true,
             }}
-            confirmLabel="Follow plan"
+            confirmLabel="Tag along"
             busy={follow.isPending}
             onConfirm={schedule =>
               follow.mutate(
@@ -274,10 +274,10 @@ export default function SharedCarePlanScreen() {
             onUnfollow={async () => {
               setSheet(null);
               const yes = await confirm({
-                title: `Unfollow ${data.name}?`,
+                title: `Stop tagging along with ${data.name}?`,
                 message:
-                  'It leaves your Planner, with your history of it. You can follow it again from the link.',
-                confirmLabel: 'Unfollow',
+                  'It leaves your Planner, with your history of it. You can tag along again from the link.',
+                confirmLabel: 'Stop tagging along',
                 destructive: true,
               });
               if (yes && data.followingId) unfollow.mutate(data.followingId, { onError: fail });

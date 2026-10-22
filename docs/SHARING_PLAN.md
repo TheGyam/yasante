@@ -1,15 +1,16 @@
 # Sharing collections and care plans: design and plan
 
 Yaw asked on 21 October 2026 for people to share their collections and care plans. A
-link opens in the app, where anyone can look and then either **follow** it (it stays
+link opens in the app, where anyone can look and then **tag along** (it stays
 in their Planner and updates as the author changes it, but they can't edit it) or
 **make it theirs** (their own version, cut off from the author, to change as they
-like). Care plans that are followed still let people set their own days, times and
+like). Care plans people tag along with still let people set their own days, times and
 reminders. He asked for the design to be shown on the phone before anything else, and
 for everything (flow, motion, speed, security, privacy) to be top grade.
 
-**Status:** design first. Screens are built against the app's mock data and shown to
-Yaw. The server, the website page and the policy changes follow once he approves.
+**Status:** design approved by Yaw on 22 October 2026, with "Follow" renamed **Tag
+along**. He approved the policy, terms and guidelines wording in Appendices A and B the
+same day. Being built: server, app, reminders, website pages, reports.
 
 ## 1. What's true today
 
@@ -33,7 +34,7 @@ Yaw. The server, the website page and the policy changes follow once he approves
 - **Apple Reminders and Calendar:** a shared list keeps one source; your alerts are
   your own.
 
-**Yasante takes:** "Anyone with the link" sharing, off by default; **Follow** (live,
+**Yasante takes:** "Anyone with the link" sharing, off by default; **Tag along** (live,
 read-only, like Spotify's library); **Make it yours** (a copy, like Duplicate);
 counts the owner can see, never names; and for care plans, the author's steps with
 **your own schedule** (like a shared calendar with your own alerts).
@@ -44,10 +45,11 @@ counts the owner can see, never names; and for care plans, the author's steps wi
 | --- | --- |
 | Who can see it | "Only you" / "Anyone with the link" |
 | Share sheet title | "Share Winter braids" |
-| Main buttons on a shared link | "Follow" (then "Following") and "Make it yours" |
-| On something you follow | "By Ama" on the card; "Following" in the header |
+| Main buttons on a shared link | "Tag along" (then "Tagging along") and "Make it yours" |
+| On something you tag along with | "By Ama" on the card; "Tagging along" on its page; a "Tagging along" section in the Planner |
+| Leaving | "Stop tagging along" |
 | On something you made yours | "Based on Winter braids by Ama" (Ama's name tappable) |
-| Owner's numbers | "6 following · 2 made it theirs" |
+| Owner's numbers | "6 tagging along · 2 made it theirs" |
 | Stopping | "Stop sharing" |
 | Gone | "This isn't shared any more" |
 
@@ -62,44 +64,45 @@ counts the owner can see, never names; and for care plans, the author's steps wi
    or the step count (a plan), then **Who can see it**: "Only you" or "Anyone with the
    link", each with one line saying what it means.
 3. Choosing "Anyone with the link" shows **Share link** (the phone's own share sheet,
-   which has Copy on both iPhone and Android) and the numbers: "6 following · 2 made it
-   theirs".
+   which has Copy on both iPhone and Android) and the numbers: "6 tagging along · 2 made
+   it theirs".
 4. Sharing needs a username, so people see "@ama", not an email. If she has none, she's
    asked first (the same screen comments use), then returned to the sheet.
-5. **Stop sharing**: switching back to "Only you". If people follow it, a confirm says
-   "The 6 people following it will lose it. Versions people made theirs stay theirs."
+5. **Stop sharing**: switching back to "Only you". If people tag along, a confirm says
+   "The 6 people tagging along will lose it. Versions people made theirs stay theirs."
    The link stops working at once. Sharing again makes a new link.
 6. Under the collection's title, a quiet status line: a lock and "Only you", or a link
-   icon and "Shared · 6 following". Tapping it opens the sheet.
+   icon and "Shared · 6 tagging along". Tapping it opens the sheet.
 
 ### Opening a shared link (anyone)
 1. A yasante.com link opens the app straight on the **shared view**. Without the app,
    yasante.com shows the same page with "Open in Yasante" and the store badges.
 2. **Collection:** a large mosaic of the first four photos, the name, the author (photo,
-   name, @username), "14 looks · Updated 2 days ago", then **Follow** (filled) and
+   name, @username), "14 looks · Updated 2 days ago", then **Tag along** (filled) and
    **Make it yours** (outlined), then the grid of looks and articles. Tapping one opens
    it as usual.
 3. **Care plan:** a glass card with the name, the author, the author's rhythm ("Weekly ·
-   Evenings") and the numbered steps, then **Follow** and **Make it yours**.
-4. Signed out: anyone can look. Follow and Make it yours ask her to sign in or join, then
+   Evenings") and the numbered steps, then **Tag along** and **Make it yours**.
+4. Signed out: anyone can look. Tag along and Make it yours ask her to sign in or join, then
    bring her straight back and finish what she tapped.
 5. Her own link opens her own collection or plan, not the shared view.
 6. If it's stopped, deleted, or either has blocked the other: "This isn't shared any
    more", with a way back to Home.
 7. The "…" menu: Share, Report.
 
-### Following
-- **Collection:** one tap. The button turns into "Following ✓" (a spring and a light
-  haptic). It joins her Planner under **Following**, with the author's photo on the card
-  and "By Ama". Opening it shows the shared view with a "Following" header button whose
-  menu has **Make it yours** and **Unfollow**. She can still save any single look into
+### Tagging along
+- **Collection:** one tap. The button turns into "✓ Tagging along" (a spring and a light
+  haptic). It joins her Planner under **Tagging along**, with the author's photo on the card
+  and "By Ama". Opening it shows the shared view with a "Tagging along" button whose
+  sheet has **Make it yours** and **Stop tagging along**. She can still save any single look into
   her own collections.
-- **Care plan:** Follow opens a short sheet, **When will you do it?**, starting from the
-  author's rhythm: how often, which days, morning to night, and Remind me. "Follow plan"
+- **Care plan:** Tag along opens a short sheet, **When will you do it?**, starting from the
+  author's rhythm: how often, which days, morning to night, and Remind me. "Tag along"
   saves it. The plan sits in her care plans with "By Ama", works exactly like her own
   (the ring, the last two weeks, "I did this today", her own history), and its steps
   are the author's, kept up to date. Edit opens only her schedule. A line under the
-  steps says "Steps from Ama, kept up to date" with "Make it yours to change them".
+  steps says "Steps by Ama Owusu · Kept up to date" with "Make it yours to change the
+  steps".
 - When the author changes it, the next time she opens it a small "Updated by Ama" note
   shows for that visit, and a new step glows once.
 - If the author stops sharing or deletes it, it leaves her Planner; the next time she
@@ -112,20 +115,20 @@ counts the owner can see, never names; and for care plans, the author's steps wi
    updates hers."
 2. **Make it yours** creates it and opens it. Under the title: "Based on Winter
    braids by Ama".
-3. From something she follows, it swaps in place: the followed one becomes hers, and she
-   stops following.
+3. From something she tags along with, it swaps in place: it becomes hers, and she
+   stops tagging along.
 4. A care plan keeps her schedule, and its steps become editable.
 
 ### Reminders (needed for care plans to mean anything)
 Remind me schedules phone notifications on her days at her time of day (morning 8:00,
 afternoon 13:00, evening 19:00, night 21:30, her local time), for her own plans and the
-ones she follows. Turning it on asks for notification permission if needed, with a
-clear reason first. Turning it off, deleting or unfollowing cancels them.
+ones she tags along with. Turning it on asks for notification permission if needed, with a
+clear reason first. Turning it off, deleting or stopping tagging along cancels them.
 
-### Notifications from people she follows
+### Notifications about what she tags along with
 At most one a day, only when something changed: "Ama added 3 looks to Winter braids",
 "Ama changed the steps in Wash day". It has its own switch in Settings → Notifications:
-"Collections and plans you follow", on by default.
+"Collections and plans you tag along with", on by default.
 
 ## 5. Motion
 
@@ -135,7 +138,8 @@ movement for a short fade):
 - **Share sheet:** the app's glass sheet (280 ms spring). The two "Who can see it" rows
   are a radio pair; the tick moves with a spring and the Share link button fades and
   rises in under it.
-- **Follow:** press scales to 0.97; on success, the label cross-fades to "Following",
+- **Tag along:** press scales to 0.97; on success, the label cross-fades to "Tagging
+  along",
   a tick pops in, the fill eases from accent to glass over 220 ms, a light haptic.
 - **Shared view:** the mosaic photos fade in as they load, never popping; the grid rises
   in rows, as the Planner does.
@@ -148,7 +152,7 @@ movement for a short fade):
 - The shared view is one request (the header and the first page of items), cached on
   the phone, with photos prefetched as it loads. Opening a link shows the page skeleton
   immediately, never a blank screen.
-- Followed items read the author's current content, cached and refreshed when opened;
+- Items she tags along with read the author's current content, cached and refreshed when opened;
   a pull refreshes.
 - No new app dependencies: the share sheet is the phone's own; reminders use
   `expo-notifications`, already installed.
@@ -164,18 +168,18 @@ movement for a short fade):
   private looks, removed or hidden looks, or anything from someone the viewer has
   blocked or who has blocked them. Each viewer's page is filtered for them.
 - **What others see:** the name, the items, the author's display name, @username and
-  photo. Never her email, hair profile, schedule or history. Followers see the plan's
+  photo. Never her email, hair profile, schedule or history. People tagging along see the plan's
   steps, never the author's history or reminders.
 - **Owners see counts, never who.**
 - **Not searchable:** shared pages carry `noindex` and aren't in the sitemap.
-- **Limits:** follows and copies are rate-limited per account; the shared view
+- **Limits:** tagging along and copies are rate-limited per account; the shared view
   per address.
 - **Reports:** a shared collection or plan can be reported like a look (its name,
   steps or cover). The staff site gets a queue entry with the content and a "Stop
   sharing" action.
-- **Deleting:** deleting an account deletes what it shared (followers lose it) and
+- **Deleting:** deleting an account deletes what it shared (people tagging along lose it) and
   removes its name from "Based on" lines. Versions others made theirs stay theirs. What
-  she follows and what she's shared are in her data download.
+  she tags along with and what she's shared are in her data download.
 
 ## 8. Data (server)
 
@@ -203,14 +207,14 @@ movement for a short fade):
 ## 9. Documents to update (drafted for Yaw's approval; the privacy policy isn't
 published until he approves the wording)
 
-- **Privacy policy:** sharing (what others see), following, notifications about what
-  you follow, the "Based on" credit, and that "More like this" now records what you see
+- **Privacy policy:** sharing (what others see), tagging along, notifications about
+  what you tag along with, the "Based on" credit, and that "More like this" now records what you see
   there too, like the feed.
-- **Terms of use:** sharing your collections and plans, others following or making them
-  theirs, and that shared content follows the guidelines.
+- **Terms of use:** sharing your collections and plans, others tagging along or making
+  them theirs, and that shared content follows the guidelines.
 - **Community guidelines:** care plan steps must be safe (no dangerous chemical or
   medical advice); collection names follow the same rules as captions.
-- **DPIA:** sharing, following, reminders.
+- **DPIA:** sharing, tagging along, reminders.
 - **Online safety assessment:** shared collections and plans are new user content;
   how they're reported and moderated.
 - **Moderation guide:** the new queue item and "Stop sharing".
@@ -223,7 +227,7 @@ published until he approves the wording)
 | 2 | Server: models, sharing, following, making it yours, filtering, limits, tests |
 | 3 | App: share sheet, shared views, following, making it yours, the Planner |
 | 4 | Reminders for care plans |
-| 5 | Notifications about what she follows |
+| 5 | Notifications about what she tags along with |
 | 6 | Website pages and link previews |
 | 7 | Reports and the staff queue |
 | 8 | Documents, approved by Yaw before the privacy policy is published |
@@ -235,24 +239,24 @@ day it's published), shown to everyone with the "We've updated" notice. Each is 
 addition or a replacement of one sentence; nothing else changes.
 
 **Section 1, "What you post and do"**: after "care plans with their steps and the
-sessions you log", add: "collections and care plans you share, and the ones you follow
-or make your own,".
+sessions you log", add: "collections and care plans you share, and the ones you tag
+along with or make your own,".
 
 **Section 6, "Who sees your information"**: add after the first sentence:
 
 > If you share a collection or a care plan, anyone with its link can see its name and
 > what's in it (for a care plan, its steps), with your name, username and photo. They
-> can follow it, which keeps it in their Planner as you change it, or make their own
-> version, which says it's based on yours and names you. You see how many people follow
-> it and made it theirs, never who. Nothing else of yours is shown: not your hair
-> details, your schedule, your reminders or when you followed a plan. You can stop
+> can tag along, which keeps it in their Planner as you change it, or make their own
+> version, which says it's based on yours and names you. You see how many people tag
+> along and made it theirs, never who. Nothing else of yours is shown: not your hair
+> details, your schedule, your reminders or the days you did a plan. You can stop
 > sharing at any time, and the link stops working straight away.
 
 **Section 7, "On your phone"**: add: "Care plan reminders are set on your phone itself,
 for the days and time of day you choose."
 
 **Section 8, "How long we keep it"**: after "care plans and consent records", add:
-"Anything you shared stops being shared, so people following it lose it; versions
+"Anything you shared stops being shared, so people tagging along lose it; versions
 others made their own stay theirs, without your name." And replace "What you're shown
 and open in the feed: 90 days." with "What you're shown and open in the feed and in
 \"More like this\": 90 days."
@@ -260,7 +264,7 @@ and open in the feed: 90 days." with "What you're shown and open in the feed and
 ## Appendix B: proposed terms and guidelines wording (for Yaw's approval)
 
 **Terms of use, "Your content"**: add: "If you share a collection or a care plan, you
-let others with the link view it, follow it and make their own version of it. You can
+let others with the link view it, tag along and make their own version of it. You can
 stop sharing at any time; versions others have made stay theirs."
 
 **Community guidelines**, add under "What you post":
