@@ -14,6 +14,7 @@ from .models import ContentItem, Favorite
 from .serializers import (
     ContentResponseSerializer,
     FavoriteResponseSerializer,
+    SavedArticleSerializer,
     FavoriteStateSerializer,
     FavoriteToggleRequestSerializer,
 )
@@ -136,16 +137,20 @@ def present_favorite(f):
     }
 
 
-@extend_schema_view(get=extend_schema(responses=FavoriteResponseSerializer(many=True)))
+@extend_schema_view(get=extend_schema(responses=SavedArticleSerializer(many=True)))
 class FavoriteListView(APIView):
     """GET /api/favorites/favorites/"""
 
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        return Response(
-            [present_favorite(f) for f in Favorite.objects.filter(user=request.user)]
+        # Newest first, each with its article, so the app needn't look them up.
+        favorites = (
+            Favorite.objects.filter(user=request.user, content__published=True)
+            .select_related("content")
+            .order_by("-created_at")
         )
+        return Response([{**present_favorite(f), "content": present_content(f.content)} for f in favorites])
 
 
 @extend_schema_view(get=extend_schema(responses=FavoriteStateSerializer))

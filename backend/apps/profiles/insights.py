@@ -31,6 +31,23 @@ def usual_wash(washes):
     return day, (hours.most_common(1)[0][0] if hours else None)
 
 
+REMOVAL_WORDS = ("take down", "takedown", "take-down", "take out", "removal")
+# Appointments that leave no style in: looking after hair rather than styling it.
+NOT_A_STYLE = (*REMOVAL_WORDS, "wash", "treatment", "consultation", "trim", "condition", "steam")
+
+
+def _is_removal(service_name):
+    name = (service_name or "").lower()
+    return any(word in name for word in REMOVAL_WORDS)
+
+
+def _is_style(service_name):
+    """An appointment that puts a style in: anything but a wash, a treatment or taking one out."""
+    # A wash and go is a style, whatever the word "wash" says.
+    name = (service_name or "").lower().replace("wash and go", "").replace("wash n go", "")
+    return not any(word in name for word in NOT_A_STYLE)
+
+
 def style_timing(user, now=None):
     """
     The style in now (or None) and how many days her styles have lasted, appointment
@@ -44,11 +61,20 @@ def style_timing(user, now=None):
         e.booking_id: e for e in user.hair_log.filter(kind="take_down", booking_id__isnull=False)
     }
     lasted = [_days(taken_down[b.pk].at, b.scheduled_for) for b in done.filter(pk__in=list(taken_down))]
-    # The style in now: the latest appointment not yet taken down, unless a
-    # take-down came after it.
-    last = done.order_by("-scheduled_for").first()
+    # The style in now: the latest appointment for a style (not a wash, a treatment or
+    # taking one out) that hasn't been taken down since.
+    recent = list(done.order_by("-scheduled_for")[:20])
+    last = next((b for b in recent if _is_style(b.service_name)), None)
+    removed_since = last is not None and any(
+        b.scheduled_for > last.scheduled_for and _is_removal(b.service_name) for b in recent
+    )
     current = None
-    if last and last.pk not in taken_down and not any(e.at > last.scheduled_for for e in taken_down.values()):
+    if (
+        last
+        and not removed_since
+        and last.pk not in taken_down
+        and not any(e.at > last.scheduled_for for e in taken_down.values())
+    ):
         current = {"name": last.service_name, "since": last.scheduled_for, "days": _days(now, last.scheduled_for), "booking_id": str(last.pk)}
     return current, lasted
 

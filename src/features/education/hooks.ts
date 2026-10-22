@@ -8,15 +8,19 @@ import { useAuth } from '@/features/auth';
 const CONTENT_QUERY_KEY = 'content';
 const FAVORITES_QUERY_KEY = 'favorites';
 
-export function useContent(filters?: {
-  hairType?: string;
-  topic?: string;
-  type?: string;
-  /** Always pass one: a screen should read a page, never the whole catalogue. */
-  limit?: number;
-}) {
+export function useContent(
+  filters?: {
+    hairType?: string;
+    topic?: string;
+    type?: string;
+    /** Always pass one: a screen should read a page, never the whole catalogue. */
+    limit?: number;
+  },
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: [CONTENT_QUERY_KEY, filters],
+    enabled: options?.enabled,
     queryFn: async () => {
       const response = await api.content.getAll(filters);
       return response;

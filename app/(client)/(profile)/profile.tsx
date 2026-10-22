@@ -226,11 +226,7 @@ function Profile() {
           onPress={() => router.push('/shelf')}
           testID="profile-shelf"
         />
-        <ListRow
-          title="Saved styles and articles"
-          icon={Bookmark}
-          onPress={() => router.push('/saved')}
-        />
+        <ListRow title="Saved articles" icon={Bookmark} onPress={() => router.push('/saved')} />
         <ListRow
           title="Hair care library"
           icon={Droplets}

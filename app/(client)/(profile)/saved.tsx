@@ -35,7 +35,7 @@ const useStyles = makeStyles(() => ({
 
 export default function SavedScreen() {
   return (
-    <Screen title="Saved" back scroll="list" testID="favorites-screen">
+    <Screen title="Saved articles" back scroll="list" testID="favorites-screen">
       <SavedList />
     </Screen>
   );
@@ -49,23 +49,23 @@ function SavedList() {
   const onScroll = useScreenScrollHandler();
   const { user } = useAuth();
   const favorites = useFavorites(user?.id);
-  // A page of content, not the catalogue: the join below is a stop-gap until the
-  // backend can return saved items with their content attached.
-  const content = useContent({ limit: PAGE_SIZE });
+  // The server sends each saved article with it; older ones are looked up in a page.
+  const needsLookup = !!favorites.data?.some(fav => !fav.content);
+  const content = useContent({ limit: PAGE_SIZE }, { enabled: needsLookup });
   const [filter, setFilter] = useState<Filter>('all');
 
   const byId = new Map((content.data?.data ?? []).map(item => [item.id, item]));
   const saved = (favorites.data ?? [])
-    .map(fav => byId.get(fav.contentId))
+    .map(fav => fav.content ?? byId.get(fav.contentId))
     .filter((item): item is Content => !!item)
     .filter(item => filter === 'all' || INSPO_TOPICS.has(item.topic) === (filter === 'inspo'));
 
-  const loading = favorites.isLoading || content.isLoading;
+  const loading = favorites.isLoading || (needsLookup && content.isLoading);
   const open = (item: Content) => router.push(`/content/${item.id}`);
 
   const header = (
     <View style={styles.header}>
-      <ScreenTitle title="Saved" />
+      <ScreenTitle title="Saved articles" />
       <SegmentedControl options={FILTERS} value={filter} onChange={setFilter} />
       {loading && <Skeleton height={240} />}
     </View>
@@ -81,10 +81,10 @@ function SavedList() {
         loading ? null : (
           <EmptyState
             icon={Bookmark}
-            title="Nothing saved yet"
-            message="Tap the bookmark on any style or article to keep it here."
-            actionLabel="Browse styles"
-            onAction={() => router.navigate('/home')}
+            title="No saved articles yet"
+            message="Tap the bookmark on any article to keep it here. Looks you save go into your collections."
+            actionLabel="Browse articles"
+            onAction={() => router.push('/learn')}
           />
         )
       }

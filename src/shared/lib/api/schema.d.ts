@@ -3873,6 +3873,14 @@ export interface components {
          * @enum {string}
          */
         RoomEnum: "plenty" | "few";
+        SavedArticle: {
+            id: string;
+            userId: string;
+            contentId: string;
+            /** Format: date-time */
+            createdAt: string;
+            content: components["schemas"]["ContentResponse"];
+        };
         /**
          * @description * `salon` - salon
          *     * `home` - home
@@ -5919,7 +5927,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FavoriteResponse"][];
+                    "application/json": components["schemas"]["SavedArticle"][];
                 };
             };
         };

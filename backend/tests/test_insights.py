@@ -61,3 +61,32 @@ def test_spending_in_several_currencies_is_never_added_up(api, make_user, make_s
         {"currency": "EUR", "amount": 45.0},
         {"currency": "GHS", "amount": 300.0},
     ]
+
+
+def test_a_take_down_or_a_wash_isnt_the_style_she_has_in(api, make_user, make_stylist, styles):
+    from datetime import timedelta
+
+    from apps.bookings.models import Booking
+    from django.utils import timezone
+
+    client = make_user()
+    profile = make_stylist()
+    now = timezone.now()
+
+    def done(name, days_ago):
+        return Booking.objects.create(
+            client=client, stylist=profile.account, stylist_profile=profile, stylist_name=profile.display_name,
+            service_id=profile.menu_items.first().pk, service_name=name, price=50, status="completed",
+            scheduled_for=now - timedelta(days=days_ago),
+        )
+
+    done("Knotless braids", 30)
+    done("Wash and blow dry", 10)
+    current = api(client).get("/api/insights/").json()["currentStyle"]
+    assert current["name"] == "Knotless braids"
+
+    done("Wash and go", 5)
+    assert api(client).get("/api/insights/").json()["currentStyle"]["name"] == "Wash and go"
+
+    done("Take down and wash", 2)
+    assert "currentStyle" not in api(client).get("/api/insights/").json()

@@ -1524,7 +1524,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FavoriteResponse'
+                  $ref: '#/components/schemas/SavedArticle'
           description: ''
   /api/favorites/favorites/check/:
     get:
@@ -6929,6 +6929,26 @@ components:
       description: |-
         * `plenty` - plenty
         * `few` - few
+    SavedArticle:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        contentId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        content:
+          $ref: '#/components/schemas/ContentResponse'
+      required:
+      - content
+      - contentId
+      - createdAt
+      - id
+      - userId
     ServiceModelEnum:
       enum:
       - salon
