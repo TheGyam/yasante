@@ -500,9 +500,42 @@ def shared_collection(request, code):
         request,
         title=f"{source.name}, by {source.user.name}",
         description=f"{what}. A collection on Yasante.",
-        image=data["preview_uris"][0] if data["preview_uris"] else "",
+        # Three pictures or more make a collage card; fewer, the first picture.
+        image=(
+            f"https://yasante.com/c/{code}/card.jpg"
+            if len(data["preview_uris"]) >= 3
+            else (data["preview_uris"][0] if data["preview_uris"] else "")
+        ),
         seeds=[(["shared", "collection", code], data)],
     )
+
+
+def shared_collection_card(request, code):
+    """yasante.com/c/<code>/card.jpg: the collage a link preview shows, kept a day."""
+    import hashlib
+
+    from django.core.cache import cache
+
+    from apps.planner.models import Collection
+    from apps.planner.views import find_shared, shared_collection_data
+
+    from .cards import collage
+
+    source = find_shared(Collection, code)
+    if source is None:
+        raise Http404
+    # Full-size pictures, not the thumbnails the page shows.
+    uris = [i["image_uri"] for i in shared_collection_data(source, None)["items"] if i["image_uri"]][:3]
+    key = "card:" + hashlib.sha256("|".join([code, *uris]).encode()).hexdigest()
+    jpeg = cache.get(key)
+    if jpeg is None:
+        jpeg = collage(uris)
+        if jpeg is None:
+            raise Http404
+        cache.set(key, jpeg, 60 * 60 * 24)
+    response = HttpResponse(jpeg, content_type="image/jpeg")
+    response["Cache-Control"] = "public, max-age=600"
+    return response
 
 
 def shared_care_plan(request, code):

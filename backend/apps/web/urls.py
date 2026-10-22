@@ -48,6 +48,7 @@ urlpatterns = [
     re_path(r"^(?P<type>terms|stylist-terms|privacy|guidelines)$", views.policy, name="web-policy"),
     # Shared collections and care plans: a random code, never an id.
     path("c/<str:code>", views.shared_collection, name="web-shared-collection"),
+    path("c/<str:code>/card.jpg", views.shared_collection_card, name="web-shared-collection-card"),
     path("p/<str:code>", views.shared_care_plan, name="web-shared-care-plan"),
     # Last: her bio link, yasante.com/{handle}.
     re_path(r"^(?P<handle>[A-Za-z0-9][A-Za-z0-9._]{1,49})$", views.stylist, name="web-stylist"),

@@ -336,6 +336,8 @@ def test_the_policies_say_what_sharing_shows_and_keeps(api):
     assert privacy["version"] == "2026-10-24"
     assert "anyone with its link can see its name and what's in it" in privacy["body"]
     assert "never who" in privacy["body"] and "Care plan reminders are set on your phone itself" in privacy["body"]
+    assert "CYPA" not in privacy["body"] and "email privacy@yasante.com" in privacy["body"]
+    assert "staff site" not in privacy["body"]
     terms = api().get("/api/policies/terms/").json()["body"]
     assert "If you share a collection or a care plan, you let others with the link view it" in terms
     guidelines = api().get("/api/policies/guidelines/").json()["body"]
@@ -402,3 +404,31 @@ def test_a_shared_plan_can_be_reported(api, ama, make_user):
     code = _share(me, "care-plans", plan["id"])["shareUrl"].rsplit("/", 1)[1]
     assert api(make_user()).post(f"/api/shared/care-plans/{code}/report/", {"reason": "illegal"}).status_code == 201
     assert Report.objects.get().content_object.name == "Gentle wash day"
+
+
+def test_a_shared_collection_of_three_or_more_previews_as_a_collage(api, ama, make_user, make_look, monkeypatch):
+    import io
+
+    from django.test import Client
+    from PIL import Image
+
+    from apps.web import cards
+
+    def picture(uri):
+        return Image.new("RGB", (800, 1000), (200, 100, 150))
+
+    monkeypatch.setattr(cards, "_open", picture)
+    me = api(ama)
+    two = _collection(me, name="Two", looks=[make_look(make_user()), make_look(make_user())])
+    code2 = _share(me, "collections", two["id"])["shareUrl"].rsplit("/", 1)[1]
+    assert f"/c/{code2}/card.jpg" not in Client().get(f"/c/{code2}").content.decode()
+
+    three = _collection(me, looks=[make_look(make_user()) for _ in range(3)])
+    code = _share(me, "collections", three["id"])["shareUrl"].rsplit("/", 1)[1]
+    assert f'content="https://yasante.com/c/{code}/card.jpg"' in Client().get(f"/c/{code}").content.decode()
+    card = Client().get(f"/c/{code}/card.jpg")
+    assert card.status_code == 200 and card["Content-Type"] == "image/jpeg"
+    assert Image.open(io.BytesIO(card.content)).size == (1200, 630)
+
+    me.delete(f"/api/collections/{three['id']}/share/")
+    assert Client().get(f"/c/{code}/card.jpg").status_code == 404

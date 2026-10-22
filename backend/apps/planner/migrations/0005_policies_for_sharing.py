@@ -2,7 +2,8 @@
 The privacy policy, terms of use and community guidelines for sharing collections and
 care plans (docs/SHARING_PLAN.md, appendices A and B): what others see of something
 shared, tagging along, making your own version, reminders set on the phone, and that
-"More like this" records what's shown there. Approved by Yaw on 22 October 2026; merging
+"More like this" records what's shown there. Also fixes a broken sentence in the
+opening and leaves out the staff site's cookies, which only the Yasante team meets. Approved by Yaw on 22 October 2026; merging
 publishes them. Earlier versions stay, so every consent record still points at the text
 agreed to.
 """
@@ -12,7 +13,7 @@ from django.utils import timezone
 
 VERSION = "2026-10-24"
 
-PRIVACY = """This policy explains what personal information Yasante collects, why, who sees it, and your rights. Yasante is responsible for your information as data controller. We follow UK data protection law (the UK GDPR and the Data Protection Act 2018) and, for people in the European Union, the EU GDPR. CYPA (privacy@yasante.com). Our representative in the European Union is Caleb Kyei (representative@yasante.com).
+PRIVACY = """This policy explains what personal information Yasante collects, why, who sees it, and your rights. Yasante is responsible for your information as data controller. We follow UK data protection law (the UK GDPR and the Data Protection Act 2018) and, for people in the European Union, the EU GDPR. If you have a question about your information, email privacy@yasante.com. Our representative in the European Union is Caleb Kyei (representative@yasante.com).
 
 1. What we collect
 
@@ -76,7 +77,7 @@ Where information leaves the UK, it is protected by the safeguards UK law requir
 
 7. Cookies and storage
 
-The website, yasante.com, sets no cookies. It keeps a few things in your browser's own storage, all needed for the site to work: your sign-in, for that tab only; a booking or a stylist page setup you've started, so a reload doesn't lose it; consent choices not yet sent to us; and a marker that stops the page reloading over and over after an update. The staff site, used only by the Yasante team, sets two essential cookies: one keeps staff signed in, and one protects their forms from forgery.
+The website, yasante.com, sets no cookies. It keeps a few things in your browser's own storage, all needed for the site to work: your sign-in, for that tab only; a booking or a stylist page setup you've started, so a reload doesn't lose it; consent choices not yet sent to us; and a marker that stops the page reloading over and over after an update.
 
 On your phone, the app keeps your sign-in in the phone's secure storage. It keeps your settings, drafts, recent searches, consent choices and any hair profile answers not yet sent to us on the phone itself. The app uses your recent searches to show you more looks in the styles you've searched for; it sends us those styles to order your feed, and we don't keep them. To open quickly, it also keeps a copy of screens you've seen recently, such as your profile, bookings and looks, for up to a day. With usage analytics on, it also keeps a random ID that is sent with your usage records. Care plan reminders are set on your phone itself, for the days and time of day you choose.
 

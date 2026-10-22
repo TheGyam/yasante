@@ -243,6 +243,10 @@ movement for a short fade):
 
 ## Appendix A: privacy policy wording (approved; published as version 2026-10-24)
 
+Yaw also asked, on 22 October, for the opening's broken "CYPA (privacy@yasante.com)."
+to read "If you have a question about your information, email privacy@yasante.com.",
+and for the sentence about the staff site's cookies to go.
+
 The live policy is version 2026-10-22. These changes would make it 2026-10-24 (or the
 day it's published), shown to everyone with the "We've updated" notice. Each is an
 addition or a replacement of one sentence; nothing else changes.
