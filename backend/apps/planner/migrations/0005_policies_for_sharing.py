@@ -11,7 +11,7 @@ agreed to.
 from django.db import migrations
 from django.utils import timezone
 
-VERSION = "2026-10-24"
+VERSION = "2026-10-23"
 
 PRIVACY = """This policy explains what personal information Yasante collects, why, who sees it, and your rights. Yasante is responsible for your information as data controller. We follow UK data protection law (the UK GDPR and the Data Protection Act 2018) and, for people in the European Union, the EU GDPR. If you have a question about your information, email privacy@yasante.com. Our representative in the European Union is Caleb Kyei (representative@yasante.com).
 

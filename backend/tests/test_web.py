@@ -179,7 +179,7 @@ def test_terms_and_privacy_are_published():
 
 def test_the_privacy_policy_names_who_sends_our_emails(api):
     current = api().get("/api/policies/privacy/").json()
-    assert current["version"] == "2026-10-24"
+    assert current["version"] == "2026-10-23"
     assert "IONOS" in current["body"] and "confirm by emailing you a code" in current["body"]
 
 
@@ -200,7 +200,7 @@ def test_the_terms_explain_reporting_and_complaints_with_the_old_ones_kept(api):
     from apps.profiles.models import PolicyDocument
 
     current = api().get("/api/policies/terms/").json()
-    assert current["version"] == "2026-10-24"
+    assert current["version"] == "2026-10-23"
     assert "with or without an account" in current["body"] and "within 14 days" in current["body"]
     assert PolicyDocument.objects.filter(type="terms", version="2026-09").exists()
     # Signing up today agrees to privacy "2026-10-21": the text in force then.
@@ -220,7 +220,7 @@ def test_the_privacy_policy_says_what_the_feed_uses_and_how_to_turn_it_off(api):
 
 def test_the_guidelines_cover_all_hair_and_say_how_to_report(api):
     guidelines = api().get("/api/policies/guidelines/").json()
-    assert guidelines["version"] == "2026-10-24"
+    assert guidelines["version"] == "2026-10-23"
     body = guidelines["body"]
     assert body.startswith("Yasante is for finding, sharing and booking hair:")
     assert "with or without an account" in body and "within 14 days" in body

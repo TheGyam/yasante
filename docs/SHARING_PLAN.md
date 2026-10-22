@@ -13,7 +13,7 @@ along**. He approved the policy, terms and guidelines wording in Appendices A an
 same day. Built on the branch for it, not yet merged: the server (sharing, tagging along,
 making it yours, filtering, limits, the daily note to people tagging along), the app
 against it, care plan reminders on the phone, yasante.com/c and /p pages, reporting and
-the staff queue, and the policy versions 2026-10-24.
+the staff queue, and the policy versions 2026-10-23.
 
 When something people tag along with stops being shared, they get a quiet notification
 ("Winter braids isn't shared any more") rather than a note in the Planner.
@@ -241,13 +241,13 @@ movement for a short fade):
 | 7 | Reports and the staff queue |
 | 8 | Documents, approved by Yaw before the privacy policy is published |
 
-## Appendix A: privacy policy wording (approved; published as version 2026-10-24)
+## Appendix A: privacy policy wording (approved; published as version 2026-10-23)
 
 Yaw also asked, on 22 October, for the opening's broken "CYPA (privacy@yasante.com)."
 to read "If you have a question about your information, email privacy@yasante.com.",
 and for the sentence about the staff site's cookies to go.
 
-The live policy is version 2026-10-22. These changes would make it 2026-10-24 (or the
+The live policy is version 2026-10-22. These changes would make it 2026-10-23 (or the
 day it's published), shown to everyone with the "We've updated" notice. Each is an
 addition or a replacement of one sentence; nothing else changes.
 
@@ -274,7 +274,7 @@ others made their own stay theirs, without your name." And replace "What you're 
 and open in the feed: 90 days." with "What you're shown and open in the feed and in
 \"More like this\": 90 days."
 
-## Appendix B: terms and guidelines wording (approved; published as version 2026-10-24)
+## Appendix B: terms and guidelines wording (approved; published as version 2026-10-23)
 
 **Terms of use, "Your content"**: add: "If you share a collection or a care plan, you
 let others with the link view it, tag along and make their own version of it. You can

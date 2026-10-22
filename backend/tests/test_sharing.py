@@ -333,7 +333,7 @@ def test_the_counts_are_hers_alone(api, ama, make_user):
 
 def test_the_policies_say_what_sharing_shows_and_keeps(api):
     privacy = api().get("/api/policies/privacy/").json()
-    assert privacy["version"] == "2026-10-24"
+    assert privacy["version"] == "2026-10-23"
     assert "anyone with its link can see its name and what's in it" in privacy["body"]
     assert "never who" in privacy["body"] and "Care plan reminders are set on your phone itself" in privacy["body"]
     assert "CYPA" not in privacy["body"] and "email privacy@yasante.com" in privacy["body"]
