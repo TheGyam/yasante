@@ -70,6 +70,9 @@ def json_ld(objects):
     return mark_safe(text.replace("<", "\\u003c"))
 
 
+SHARE_CARD = "https://yasante.com/static/site/share.jpg"
+
+
 def page(
     request,
     *,
@@ -98,7 +101,8 @@ def page(
             "og_title": title or "Yasante",
             "og_type": og_type,
             "description": (description or DESCRIPTION).strip(),
-            "image": image,
+            # A page without a picture of its own shares the site's card (web/public/share.jpg).
+            "image": image or SHARE_CARD,
             # One address per page: the path, never the query string or a trailing variant.
             "canonical": f"https://yasante.com{request.path}",
             "assets": assets(),

@@ -94,3 +94,11 @@ def test_indexnow_key_is_served_and_publishing_pings(make_stylist, settings, mon
     with django_capture_on_commit_callbacks(execute=True):
         profile = make_stylist()
     assert [f"/{profile.handle}", "/llms.txt"] in sent
+
+
+def test_every_page_has_a_picture_for_link_previews(db):
+    from django.test import Client
+
+    home = Client().get("/").content.decode()
+    assert '<meta property="og:image" content="https://yasante.com/static/site/share.jpg">' in home
+    assert '<meta name="twitter:card" content="summary_large_image">' in home
