@@ -197,9 +197,7 @@ class LengthInsightSerializer(serializers.Serializer):
     grew_steps = optional(serializers.IntegerField())
 
 
-class MoneySerializer(serializers.Serializer):
-    currency = serializers.CharField(help_text="ISO 4217")
-    amount = serializers.FloatField()
+from apps.stylists.serializers import MoneySerializer  # noqa: E402  one shape for money everywhere
 
 
 class InsightsSerializer(serializers.Serializer):

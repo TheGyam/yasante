@@ -10,7 +10,17 @@ for everything (flow, motion, speed, security, privacy) to be top grade.
 
 **Status:** design approved by Yaw on 22 October 2026, with "Follow" renamed **Tag
 along**. He approved the policy, terms and guidelines wording in Appendices A and B the
-same day. Being built: server, app, reminders, website pages, reports.
+same day. Built on the branch for it, not yet merged: the server (sharing, tagging along,
+making it yours, filtering, limits, the daily note to people tagging along), the app
+against it, care plan reminders on the phone, yasante.com/c and /p pages, reporting and
+the staff queue, and the policy versions 2026-10-24.
+
+When something people tag along with stops being shared, they get a quiet notification
+("Winter braids isn't shared any more") rather than a note in the Planner.
+
+**Not built, on purpose:** the "Updated by Ama" note and the glow on a new step when
+opening something that changed (the daily notification says it changed), and a collage
+share image for /c links (they use the first picture).
 
 ## 1. What's true today
 
@@ -204,8 +214,7 @@ movement for a short fade):
 - yasante.com: `/c/<code>` and `/p/<code>`, with link previews (title, author, a collage
   image) and `noindex`.
 
-## 9. Documents to update (drafted for Yaw's approval; the privacy policy isn't
-published until he approves the wording)
+## 9. Documents (approved by Yaw on 22 October 2026; published by merging)
 
 - **Privacy policy:** sharing (what others see), tagging along, notifications about
   what you tag along with, the "Based on" credit, and that "More like this" now records what you see
@@ -232,7 +241,7 @@ published until he approves the wording)
 | 7 | Reports and the staff queue |
 | 8 | Documents, approved by Yaw before the privacy policy is published |
 
-## Appendix A: proposed privacy policy wording (for Yaw's approval; not published)
+## Appendix A: privacy policy wording (approved; published as version 2026-10-24)
 
 The live policy is version 2026-10-22. These changes would make it 2026-10-24 (or the
 day it's published), shown to everyone with the "We've updated" notice. Each is an
@@ -261,7 +270,7 @@ others made their own stay theirs, without your name." And replace "What you're 
 and open in the feed: 90 days." with "What you're shown and open in the feed and in
 \"More like this\": 90 days."
 
-## Appendix B: proposed terms and guidelines wording (for Yaw's approval)
+## Appendix B: terms and guidelines wording (approved; published as version 2026-10-24)
 
 **Terms of use, "Your content"**: add: "If you share a collection or a care plan, you
 let others with the link view it, tag along and make their own version of it. You can

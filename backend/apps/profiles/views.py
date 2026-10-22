@@ -388,6 +388,7 @@ class HairLogEntryView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses={204: None})
     def delete(self, request, pk):
         from datetime import timedelta
 

@@ -150,9 +150,12 @@ def test_tagging_along_keeps_it_up_to_date_and_not_hers_to_change(api, ama, make
     owner = me.get(f"/api/collections/{col['id']}/").json()
     assert owner["followers"] == 1 and "Efua" not in str(owner)
 
-    # Stopping sharing takes it out of Efua's Planner.
+    # Stopping sharing takes it out of Efua's Planner, and she's told.
     me.delete(f"/api/collections/{col['id']}/share/")
     assert all(c["id"] != row["id"] for c in efua.get("/api/collections/").json())
+    from apps.common.models import NotificationLog
+
+    assert NotificationLog.objects.get(user=efua.user).title == "Winter braids isn’t shared any more"
 
 
 def test_her_own_link_is_hers(api, ama):

@@ -58,8 +58,21 @@ class Shareable(models.Model):
             self.save(update_fields=["share_code", "shared_at", "updated_at"])
 
     def stop_sharing(self):
-        """The link stops working at once, and everyone tagging along loses it."""
-        type(self).objects.filter(follows=self).delete()
+        """The link stops working at once, and everyone tagging along loses it, and is told."""
+        from apps.common.notifications import notify
+
+        followers = type(self).objects.filter(follows=self)
+        for user_id in followers.values_list("user_id", flat=True):
+            notify(
+                user_id,
+                "tagging_along",
+                f"unshared:{self.pk}:{user_id}:{self.shared_at:%Y%m%d%H%M%S}" if self.shared_at else f"unshared:{self.pk}:{user_id}",
+                f"{self.name} isn’t shared any more",
+                "It’s left your Planner.",
+                url="/planner",
+                mode="client",
+            )
+        followers.delete()
         self.share_code = None
         self.shared_at = None
         self.save(update_fields=["share_code", "shared_at", "updated_at"])
