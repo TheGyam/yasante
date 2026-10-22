@@ -140,7 +140,7 @@ const ASK_AGAIN_AFTER = 14 * 24 * 60 * 60 * 1000;
  * own question only follows a yes, so its one chance isn't spent on a stranger.
  * Turning on a care plan reminder asks too.
  */
-export function useAskForNotifications(canAsk: boolean) {
+export function useAskForNotifications(canAsk: boolean, stylist = false) {
   const analyticsUnanswered = useUnanswered('analytics', true);
   const policyChanged = usePolicyChanged();
   const asked = useRef(false);
@@ -156,15 +156,16 @@ export function useAskForNotifications(canAsk: boolean) {
       await AsyncStorage.setItem(NOTIFICATIONS_ASKED, String(Date.now())).catch(() => {});
       const yes = await confirm({
         title: 'Turn on notifications?',
-        message:
-          'So you know when a stylist answers, when your appointment is near, and when it’s time for your care plan.',
+        message: stylist
+          ? 'So you know when a client asks for a date, when an appointment is near, and when someone answers you.'
+          : 'So you know when a stylist answers, when your appointment is near, and when it’s time for your care plan.',
         confirmLabel: 'Turn on',
         cancelLabel: 'Not now',
       });
       if (yes) void registerPush(true);
     }, 1200);
     return () => clearTimeout(timer);
-  }, [canAsk, analyticsUnanswered, policyChanged]);
+  }, [canAsk, analyticsUnanswered, policyChanged, stylist]);
 }
 
 /**

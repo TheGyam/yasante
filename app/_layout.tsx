@@ -240,7 +240,7 @@ function RootNavigator() {
   const inApp = ready && isAuthenticated && !inAuthFlowNow && !startAs;
   useAskForAnalytics(inApp);
   useTellAboutPolicyChange(inApp);
-  useAskForNotifications(inApp);
+  useAskForNotifications(inApp, !!user?.roles?.includes('stylist'));
 
   // Opened the app signed in but with her email still unconfirmed (she left mid
   // sign-up): straight back to the code. Checked once at launch; sign-up and sign-in
