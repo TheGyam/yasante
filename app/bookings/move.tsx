@@ -19,6 +19,7 @@ import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { DateTimeField } from '@/shared/ui/DateTimeField';
+import { EmptyState } from '@/shared/ui/EmptyState';
 import { notify } from '@/shared/ui/dialog';
 import { InlineAlert } from '@/shared/ui/InlineAlert';
 import { Screen } from '@/shared/ui/Screen';
@@ -52,6 +53,26 @@ export default function MoveBookingScreen() {
     return (
       <Screen title="Move it" modal testID="move-booking">
         <Skeleton height={200} />
+      </Screen>
+    );
+  }
+
+  // Opened from an old link or notification: only a confirmed appointment, not yet
+  // moved, can be.
+  if (booking.status !== 'confirmed' || booking.moves || booking.moveRequest) {
+    return (
+      <Screen title="Move it" modal testID="move-booking">
+        <EmptyState
+          icon={CalendarSync}
+          title="This one can’t be moved"
+          message={
+            booking.status !== 'confirmed'
+              ? 'Only a confirmed appointment that hasn’t happened yet can be moved.'
+              : 'It’s already been moved once, or a move is waiting for an answer.'
+          }
+          actionLabel="Back to the booking"
+          onAction={() => router.back()}
+        />
       </Screen>
     );
   }
