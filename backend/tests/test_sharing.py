@@ -432,3 +432,33 @@ def test_a_shared_collection_of_three_or_more_previews_as_a_collage(api, ama, ma
 
     me.delete(f"/api/collections/{three['id']}/share/")
     assert Client().get(f"/c/{code}/card.jpg").status_code == 404
+
+
+def test_passing_on_what_you_tag_along_with_keeps_its_author(api, ama, make_user, make_look):
+    """Efua tags along and sends the link on: Kofi sees Ama's, and nobody's ownership moves."""
+    me = api(ama)
+    col = _collection(me, looks=[make_look(make_user())])
+    code = _share(me, "collections", col["id"])["shareUrl"].rsplit("/", 1)[1]
+    efua = api(make_user(name="Efua Mensah", username="efua.m"))
+    row = efua.post(f"/api/shared/collections/{code}/follow/").json()
+
+    # She can't make a link of her own for it: what she sends on is Ama's.
+    assert efua.post(f"/api/collections/{row['id']}/share/").status_code == 403
+    assert row["following"]["code"] == code
+
+    kofi = api(make_user(name="Kofi"))
+    page = kofi.get(f"/api/shared/collections/{row['following']['code']}/").json()
+    assert page["author"]["name"] == "Ama Owusu" and "Efua" not in str(page)
+    tagged = kofi.post(f"/api/shared/collections/{code}/follow/").json()
+    assert tagged["following"]["author"]["name"] == "Ama Owusu"
+
+    # Ama still owns it and is the only one counted as its author.
+    owner = me.get(f"/api/collections/{col['id']}/").json()
+    assert owner["followers"] == 2 and "following" not in owner
+
+    # The same for a care plan.
+    plan = me.post("/api/care-plans/", PLAN).json()
+    plan_code = _share(me, "care-plans", plan["id"])["shareUrl"].rsplit("/", 1)[1]
+    efua_plan = efua.post(f"/api/shared/care-plans/{plan_code}/follow/", {}).json()
+    assert efua.post(f"/api/care-plans/{efua_plan['id']}/share/").status_code == 403
+    assert kofi.get(f"/api/shared/care-plans/{plan_code}/").json()["author"]["name"] == "Ama Owusu"

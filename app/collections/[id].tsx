@@ -10,6 +10,7 @@ import {
   MakeItYoursSheet,
   ShareSheet,
   SharedCollectionView,
+  SharedHeaderActions,
   shareCounts,
   useCollectionItems,
   useCollections,
@@ -154,7 +155,22 @@ function FollowedCollection({ collection }: { collection: Collection }) {
   const first = following.author.name.split(' ')[0];
 
   return (
-    <Screen title={collection.name} back scroll="list" testID="followed-collection">
+    <Screen
+      title={collection.name}
+      back
+      scroll="list"
+      testID="followed-collection"
+      // Passing it on sends the author's own link: it still shows her as its author.
+      headerRight={
+        <SharedHeaderActions
+          kind="collection"
+          code={following.code}
+          name={collection.name}
+          author={following.author}
+          signedIn={then => then}
+        />
+      }
+    >
       <SharedCollectionView
         name={collection.name}
         author={following.author}

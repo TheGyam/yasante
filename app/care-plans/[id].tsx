@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Share, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { format, isToday } from 'date-fns';
 import Animated, {
@@ -418,16 +418,23 @@ export default function CarePlanScreen() {
       headerRight={
         plan && (
           <View style={styles.headerActions}>
-            {!following && (
-              <IconButton
-                icon={ShareIcon}
-                size={36}
-                accessibilityLabel="Share this plan"
-                // Shared things show who made them: by username, never an email.
-                onPress={() => (needsUsername ? router.push('/username') : setSheet('share'))}
-                testID="care-plan-share"
-              />
-            )}
+            <IconButton
+              icon={ShareIcon}
+              size={36}
+              accessibilityLabel="Share this plan"
+              onPress={() =>
+                following
+                  ? // Passing on someone else's sends her link: it still shows her as its author.
+                    Share.share({
+                      message: `${plan.name} by ${following.author.name} on Yasante: https://yasante.com/p/${following.code}`,
+                    }).catch(() => {})
+                  : // Shared things show who made them: by username, never an email.
+                    needsUsername
+                    ? router.push('/username')
+                    : setSheet('share')
+              }
+              testID="care-plan-share"
+            />
             <IconButton
               icon={following ? CalendarClock : Pencil}
               size={36}
