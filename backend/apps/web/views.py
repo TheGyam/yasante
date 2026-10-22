@@ -169,7 +169,7 @@ def signup(request):
     return page(
         request,
         title="Set up your stylist account",
-        description="Your page, menu and bookings in one place. Free for founding stylists.",
+        description="Your page, menu and bookings in one place.",
     )
 
 
