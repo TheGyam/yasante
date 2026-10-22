@@ -50,6 +50,11 @@ app.conf.beat_schedule = {
         "task": "apps.bookings.tasks.open_check_ins",
         "schedule": crontab(hour=10, minute=0),
     },
+    # What she tags along with changed: one note a day at most, in the early evening.
+    "tagging-along": {
+        "task": "apps.planner.tasks.tell_people_tagging_along",
+        "schedule": crontab(hour=17, minute=30),
+    },
     "weekly-digest": {
         "task": "apps.bookings.tasks.weekly_digest",
         "schedule": crontab(hour=8, minute=0, day_of_week="mon"),

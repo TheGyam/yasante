@@ -96,10 +96,37 @@ class CarePlanSessionDraftSerializer(serializers.Serializer):
 from apps.common.schema import optional  # noqa: E402
 
 
-class CollectionResponseSerializer(serializers.Serializer):
+class SharedAuthorSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    username = optional(serializers.CharField())
+    avatar_uri = optional(serializers.CharField())
+
+
+class FollowingSerializer(serializers.Serializer):
+    author = SharedAuthorSerializer()
+    code = serializers.CharField()
+    updated_at = serializers.DateTimeField(help_text="When its author last changed it")
+
+
+class BasedOnSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    author_name = optional(serializers.CharField(help_text="Gone once the author's account is"))
+    code = optional(serializers.CharField(help_text="The original's link, while it's still shared"))
+
+
+class ShareStateSerializer(serializers.Serializer):
+    sharing = serializers.ChoiceField(choices=["private", "link"])
+    share_url = optional(serializers.CharField(help_text="Her link, while it's shared"))
+    followers = optional(serializers.IntegerField(help_text="How many tag along: counts, never who"))
+    made_it_theirs = optional(serializers.IntegerField())
+    following = optional(FollowingSerializer(help_text="Someone else's she tags along with"))
+    based_on = optional(BasedOnSerializer())
+
+
+class CollectionResponseSerializer(ShareStateSerializer):
     id = serializers.CharField()
     name = serializers.CharField()
-    is_private = serializers.BooleanField()
+    is_private = serializers.BooleanField(help_text="For apps from before sharing: not shared")
     created_at = serializers.DateTimeField()
     item_count = serializers.IntegerField()
     cover_uri = optional(serializers.CharField())
@@ -122,7 +149,7 @@ class CarePlanStepResponseSerializer(serializers.Serializer):
     text = serializers.CharField()
 
 
-class CarePlanResponseSerializer(serializers.Serializer):
+class CarePlanResponseSerializer(ShareStateSerializer):
     id = serializers.CharField()
     name = serializers.CharField()
     frequency = serializers.ChoiceField(choices=["daily", "every-2-days", "weekly", "specific-days"])
@@ -142,7 +169,6 @@ class CarePlanSessionResponseSerializer(serializers.Serializer):
 
 class CollectionRequestSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=150)
-    is_private = serializers.BooleanField(required=False)
 
 
 class CollectionItemRequestSerializer(serializers.Serializer):
@@ -164,3 +190,39 @@ class CarePlanRequestSerializer(serializers.Serializer):
 class CarePlanSessionRequestSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False)
     local_at = serializers.CharField(required=False, help_text="The phone's own clock")
+
+
+class SharedCollectionResponseSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name = serializers.CharField()
+    author = SharedAuthorSerializer()
+    item_count = serializers.IntegerField()
+    updated_at = serializers.DateTimeField()
+    preview_uris = serializers.ListField(child=serializers.CharField())
+    items = CollectionItemResponseSerializer(many=True)
+    own_id = optional(serializers.CharField(help_text="It's hers: the id of her own"))
+    following_id = optional(serializers.CharField(help_text="She tags along with it: its id in her Planner"))
+
+
+class SharedCarePlanResponseSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    name = serializers.CharField()
+    author = SharedAuthorSerializer()
+    frequency = serializers.ChoiceField(choices=["daily", "every-2-days", "weekly", "specific-days"])
+    specific_days = optional(serializers.ListField(child=serializers.IntegerField(min_value=0, max_value=6)))
+    time_of_day = serializers.ChoiceField(choices=["morning", "afternoon", "evening", "night"])
+    steps = CarePlanStepResponseSerializer(many=True)
+    updated_at = serializers.DateTimeField()
+    own_id = optional(serializers.CharField())
+    following_id = optional(serializers.CharField())
+
+
+class CarePlanScheduleRequestSerializer(serializers.Serializer):
+    frequency = serializers.ChoiceField(choices=["daily", "every-2-days", "weekly", "specific-days"], required=False)
+    specific_days = serializers.ListField(child=serializers.IntegerField(min_value=0, max_value=6), required=False)
+    time_of_day = serializers.ChoiceField(choices=["morning", "afternoon", "evening", "night"], required=False)
+    reminders_on = serializers.BooleanField(required=False)
+
+
+class MakeMineRequestSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=150, required=False, help_text="Hers to choose; the original's if left out")

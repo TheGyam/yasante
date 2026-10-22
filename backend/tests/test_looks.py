@@ -316,8 +316,8 @@ def test_saving_counts_each_person_once(api, make_user, make_look):
     look = make_look(make_user())
     saver = make_user()
     me = api(saver)
-    a = me.post("/api/collections/", {"name": "Holiday", "isPrivate": True}).json()
-    b = me.post("/api/collections/", {"name": "Wedding", "isPrivate": False}).json()
+    a = me.post("/api/collections/", {"name": "Holiday"}).json()
+    b = me.post("/api/collections/", {"name": "Wedding"}).json()
     me.post(f"/api/collections/{a['id']}/items/", {"kind": "look", "refId": str(look.pk)})
     me.post(f"/api/collections/{b['id']}/items/", {"kind": "look", "refId": str(look.pk)})
     assert api(make_user()).get(f"/api/looks/{look.pk}/").json()["saveCount"] == 1
