@@ -4946,6 +4946,18 @@ components:
           minLength: 1
       required:
       - contentId
+    FavouriteStylist:
+      type: object
+      properties:
+        name:
+          type: string
+        handle:
+          type: string
+        times:
+          type: integer
+      required:
+      - name
+      - times
     FeaturesResponse:
       type: object
       properties:
@@ -5449,18 +5461,39 @@ components:
         length:
           allOf:
           - $ref: '#/components/schemas/LengthInsight'
+        styleCounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/StyleCount'
+          description: What she had done, most often first
+        favouriteStylist:
+          allOf:
+          - $ref: '#/components/schemas/FavouriteStylist'
+          description: Once she's been back to one
+        hoursInChair:
+          type: number
+          format: double
+        trims:
+          type: integer
+        carePlanDays:
+          type: integer
+          description: Days she did one of her care plans
         looksSaved:
           type: integer
         productsAdded:
           type: integer
       required:
       - appointments
+      - carePlanDays
+      - hoursInChair
       - looksSaved
       - period
       - productsAdded
       - spending
+      - styleCounts
       - styles
       - stylists
+      - trims
       - washes
     InviteResponse:
       type: object
@@ -7317,6 +7350,16 @@ components:
       required:
       - id
       - name
+    StyleCount:
+      type: object
+      properties:
+        name:
+          type: string
+        times:
+          type: integer
+      required:
+      - name
+      - times
     StylistPageResponse:
       type: object
       properties:

@@ -200,6 +200,17 @@ class LengthInsightSerializer(serializers.Serializer):
 from apps.stylists.serializers import MoneySerializer  # noqa: E402  one shape for money everywhere
 
 
+class StyleCountSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    times = serializers.IntegerField()
+
+
+class FavouriteStylistSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    handle = optional(serializers.CharField())
+    times = serializers.IntegerField()
+
+
 class InsightsSerializer(serializers.Serializer):
     """GET /api/insights/ — a client's hair in numbers."""
 
@@ -216,5 +227,10 @@ class InsightsSerializer(serializers.Serializer):
     wash_every_days = optional(serializers.IntegerField())
     days_since_trim = optional(serializers.IntegerField())
     length = optional(LengthInsightSerializer())
+    style_counts = StyleCountSerializer(many=True, help_text="What she had done, most often first")
+    favourite_stylist = optional(FavouriteStylistSerializer(help_text="Once she's been back to one"))
+    hours_in_chair = serializers.FloatField()
+    trims = serializers.IntegerField()
+    care_plan_days = serializers.IntegerField(help_text="Days she did one of her care plans")
     looks_saved = serializers.IntegerField()
     products_added = serializers.IntegerField()

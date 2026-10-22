@@ -81,7 +81,7 @@ def style_timing(user, now=None):
 
 def insights(user, period="month", now=None):
     from apps.bookings.models import Booking
-    from apps.planner.models import CollectionItem
+    from apps.planner.models import CarePlanSession, CollectionItem
     from apps.shelf.models import ShelfItem
 
     now = now or timezone.now()
@@ -97,6 +97,12 @@ def insights(user, period="month", now=None):
     from apps.common.countries import totals
 
     spending = totals((b.currency, b.actual_price or b.price or 0) for b in done_in_period)
+    visits = Counter((b.stylist_name, b.stylist_handle) for b in done_in_period)
+    favourite = None
+    if visits:
+        (fav_name, fav_handle), fav_times = visits.most_common(1)[0]
+        if fav_times >= 2:
+            favourite = {"name": fav_name, "handle": fav_handle or None, "times": fav_times}
 
     # The hair log, all of it (it's small): trims, washes, take-downs.
     log = list(user.hair_log.all().order_by("at"))
@@ -148,6 +154,17 @@ def insights(user, period="month", now=None):
         "wash_every_days": round(mean(gaps)) if len(gaps) >= 2 else None,
         "days_since_trim": _days(now, trims[-1].at) if trims else None,
         "length": length,
+        # What she had done, most often first: "Knotless braids, 3 times".
+        "style_counts": [
+            {"name": name, "times": times} for name, times in Counter(b.service_name for b in done_in_period).most_common()
+        ],
+        # The stylist she goes back to, once she's been more than once.
+        "favourite_stylist": favourite,
+        "hours_in_chair": round(sum(b.duration_minutes or 0 for b in done_in_period) / 60, 1),
+        "trims": len([e for e in trims if not since or e.at >= since]),
+        "care_plan_days": len(
+            {s.completed_at.date() for s in in_period(CarePlanSession.objects.filter(user=user), "completed_at")}
+        ),
         "looks_saved": in_period(CollectionItem.objects.filter(collection__user=user, kind="look"), "created_at").count(),
         "products_added": in_period(ShelfItem.objects.filter(user=user), "created_at").count(),
     }

@@ -90,3 +90,30 @@ def test_a_take_down_or_a_wash_isnt_the_style_she_has_in(api, make_user, make_st
 
     done("Take down and wash", 2)
     assert "currentStyle" not in api(client).get("/api/insights/").json()
+
+
+def test_what_she_had_done_who_she_goes_back_to_and_her_care(api, make_user, make_stylist):
+    from datetime import timedelta
+
+    from apps.bookings.models import Booking
+    from apps.planner.models import CarePlan, CarePlanSession
+    from django.utils import timezone
+
+    client, profile = make_user(), make_stylist()
+    now = timezone.now()
+    for name, days, minutes in (("Knotless braids", 40, 300), ("Knotless braids", 10, 300), ("Cornrows", 5, 120)):
+        Booking.objects.create(
+            client=client, stylist=profile.account, stylist_profile=profile, stylist_name=profile.display_name,
+            stylist_handle=profile.handle, service_id=profile.menu_items.first().pk, service_name=name, price=50,
+            status="completed", scheduled_for=now - timedelta(days=days), duration_minutes=minutes,
+        )
+    plan = CarePlan.objects.create(user=client, name="Wash day", frequency="weekly", time_of_day="evening")
+    for days in (1, 1, 3):
+        CarePlanSession.objects.create(plan=plan, user=client, completed_at=now - timedelta(days=days))
+
+    ever = api(client).get("/api/insights/?period=all").json()
+    assert ever["styleCounts"] == [{"name": "Knotless braids", "times": 2}, {"name": "Cornrows", "times": 1}]
+    assert ever["favouriteStylist"] == {"name": profile.display_name, "handle": profile.handle, "times": 3}
+    assert ever["hoursInChair"] == 12.0
+    # Two different days, though she did it twice on one of them.
+    assert ever["carePlanDays"] == 2

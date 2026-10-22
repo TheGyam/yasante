@@ -2976,6 +2976,11 @@ export interface components {
         FavoriteToggleRequestRequest: {
             contentId: string;
         };
+        FavouriteStylist: {
+            name: string;
+            handle?: string;
+            times: number;
+        };
         FeaturesResponse: {
             features: {
                 [key: string]: boolean;
@@ -3220,6 +3225,15 @@ export interface components {
             washEveryDays?: number;
             daysSinceTrim?: number;
             length?: components["schemas"]["LengthInsight"];
+            /** @description What she had done, most often first */
+            styleCounts: components["schemas"]["StyleCount"][];
+            /** @description Once she's been back to one */
+            favouriteStylist?: components["schemas"]["FavouriteStylist"];
+            /** Format: double */
+            hoursInChair: number;
+            trims: number;
+            /** @description Days she did one of her care plans */
+            carePlanDays: number;
             looksSaved: number;
             productsAdded: number;
         };
@@ -4050,6 +4064,10 @@ export interface components {
         Style: {
             id: string;
             name: string;
+        };
+        StyleCount: {
+            name: string;
+            times: number;
         };
         StylistPageResponse: {
             waitlistJoined?: boolean;
