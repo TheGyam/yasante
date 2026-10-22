@@ -200,16 +200,23 @@ function StepList({
   steps,
   resetKey,
   onAllDone,
+  onChange,
 }: {
   steps: { id: string; text: string }[];
   resetKey: string;
   onAllDone: () => void;
+  /** Whether every step is ticked. */
+  onChange: (all: boolean) => void;
 }) {
   const styles = useStyles();
   const theme = useTheme();
   const [ticked, setTicked] = useState<Set<string>>(new Set());
   // A new day, or a new set of steps, starts clean.
-  useEffect(() => setTicked(new Set()), [resetKey]);
+  useEffect(() => {
+    setTicked(new Set());
+    onChange(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetKey]);
 
   const progress = useSharedValue(0);
   const width = useSharedValue(0);
@@ -225,6 +232,7 @@ function StepList({
     if (next.has(id)) next.delete(id);
     else next.add(id);
     setTicked(next);
+    onChange(steps.length > 0 && next.size === steps.length);
     haptics.selection();
     if (next.size === steps.length && ticked.size !== steps.length) onAllDone();
   };
@@ -304,6 +312,8 @@ export default function CarePlanScreen() {
   const [shown, setShown] = useState(PAGE);
   const [celebrate, setCelebrate] = useState(0);
   const [ready, setReady] = useState(0);
+  // "I did this today" waits until every step is ticked: it's what she's saying.
+  const [allTicked, setAllTicked] = useState(false);
 
   const stats = useMemo(
     () => (plan ? consistency(plan, sessions) : { done: 0, share: 0 }),
@@ -478,6 +488,7 @@ export default function CarePlanScreen() {
               steps={plan.steps}
               resetKey={`${plan.steps.map(s => s.id).join()}-${format(new Date(), 'yyyy-MM-dd')}`}
               onAllDone={() => setReady(r => r + 1)}
+              onChange={setAllTicked}
             />
             {following && (
               <Animated.View entering={FadeIn.delay(200)} style={styles.source}>
@@ -532,12 +543,17 @@ export default function CarePlanScreen() {
               onPress={markDone}
               // Pressing again would log the same day twice and tell her the plan is
               // due a week from the second tap.
-              disabled={doneToday}
+              disabled={doneToday || !allTicked}
               loading={log.isPending}
               fullWidth
               testID="care-plan-done"
             />
           </Pop>
+          {!doneToday && !allTicked && (
+            <Text variant="footnote" tone="tertiary" align="center">
+              Tick each step as you do it, then mark the day done.
+            </Text>
+          )}
 
           {sessions.length > 0 && (
             <Section title="When you followed it" footer="Kept as a record, never edited.">
