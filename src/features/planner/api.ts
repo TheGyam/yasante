@@ -17,12 +17,12 @@ export const plannerApi = {
   /** GET /api/collections/ */
   getCollections: async () => (await apiClient.get<Collection[]>('/api/collections/')).data,
 
-  /** POST /api/collections/ */
-  createCollection: async (name: string, isPrivate: boolean) =>
-    (await apiClient.post<Collection>('/api/collections/', { name, isPrivate })).data,
+  /** POST /api/collections/ — only hers until she shares it. */
+  createCollection: async (name: string) =>
+    (await apiClient.post<Collection>('/api/collections/', { name })).data,
 
   /** PATCH /api/collections/:id/ */
-  updateCollection: async (id: string, changes: { name?: string; isPrivate?: boolean }) =>
+  updateCollection: async (id: string, changes: { name?: string }) =>
     (await apiClient.patch<Collection>(`/api/collections/${id}/`, changes)).data,
 
   /** DELETE /api/collections/:id/ — the saved things stay, the set goes. */

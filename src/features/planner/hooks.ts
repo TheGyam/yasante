@@ -1,6 +1,9 @@
+import { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { plannerApi } from './api';
+import { syncReminders } from './reminders';
 import type { CarePlanDraft, CarePlanSchedule, CollectionItemKind, Sharing } from './types';
 
 const KEY = 'planner';
@@ -79,8 +82,7 @@ function useRefreshCollections() {
 export function useCreateCollection() {
   const refresh = useRefreshCollections();
   return useMutation({
-    mutationFn: ({ name, isPrivate }: { name: string; isPrivate: boolean }) =>
-      plannerApi.createCollection(name, isPrivate),
+    mutationFn: (name: string) => plannerApi.createCollection(name),
     onSuccess: () => refresh(),
   });
 }
@@ -88,7 +90,7 @@ export function useCreateCollection() {
 export function useUpdateCollection() {
   const refresh = useRefreshCollections();
   return useMutation({
-    mutationFn: ({ id, ...changes }: { id: string; name?: string; isPrivate?: boolean }) =>
+    mutationFn: ({ id, ...changes }: { id: string; name?: string }) =>
       plannerApi.updateCollection(id, changes),
     onSuccess: collection => refresh(collection.id),
   });
@@ -291,4 +293,41 @@ export function useMakeCarePlanMine() {
       plannerApi.makeCarePlanMine(from, name),
     onSuccess: () => refresh(),
   });
+}
+
+/**
+ * Keeps this phone's care plan reminders in step with her plans: whenever they change,
+ * whenever the app comes back to the front, and cleared when she signs out.
+ */
+export function useCarePlanReminders() {
+  const { user } = useAuth();
+  const { data } = useCarePlans();
+  const plans = user?.id ? data : undefined;
+  // Only what the reminders depend on, so a refetch with nothing new does nothing.
+  const wanted = JSON.stringify(
+    (plans ?? []).map(p => [
+      p.id,
+      p.name,
+      p.frequency,
+      p.specificDays,
+      p.timeOfDay,
+      p.remindersOn,
+      p.lastDoneAt,
+    ])
+  );
+  const latest = useRef(plans);
+  latest.current = plans;
+  useEffect(() => {
+    if (!user?.id) syncReminders([]);
+    else if (plans) syncReminders(plans);
+    // `wanted` stands for the plans.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, wanted]);
+  useEffect(() => {
+    const listener = AppState.addEventListener('change', state => {
+      // A new day: the next two weeks start from today.
+      if (state === 'active' && latest.current) syncReminders(latest.current);
+    });
+    return () => listener.remove();
+  }, []);
 }

@@ -17,6 +17,7 @@ import {
 } from '@expo-google-fonts/instrument-sans';
 import { AuthProvider, useAuth } from '@/features/auth';
 import { ATTENDANCE_CATEGORY, bookingApi } from '@/features/booking';
+import { useCarePlanReminders } from '@/features/planner';
 import { useHairProfileSync, useUserStore } from '@/features/profile';
 import { ModeSwitchOverlay, useActiveMode, useModeStore } from '@/features/stylist';
 import { useNotifications } from '@/shared/hooks/useNotifications';
@@ -156,6 +157,8 @@ function RootNavigator() {
   // Answers given before signing up reach the account once there is one; so do
   // consent choices, which are recorded on the device first.
   useHairProfileSync();
+  // Care plan reminders are set on the phone itself, from her plans.
+  useCarePlanReminders();
   useConsentSync(isAuthenticated);
 
   // Fetched once up front, so a screen that gates on a switch never waits for it.

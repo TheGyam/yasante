@@ -39,7 +39,8 @@ export interface Following {
 /** Hers, started from someone else's ("Based on Winter braids by Ama"). */
 export interface BasedOn {
   name: string;
-  authorName: string;
+  /** Gone once the author's account is. */
+  authorName?: string;
   /** The original's link, while it's still shared. */
   code?: string;
 }

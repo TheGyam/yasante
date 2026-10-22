@@ -306,12 +306,18 @@ function CollectionItems({ onShare }: { onShare: () => void }) {
               ? () => router.push(`/c/${collection.basedOn!.code}`)
               : undefined
           }
+          accessibilityRole={collection.basedOn.code ? 'link' : undefined}
           suppressHighlighting
         >
-          Based on {collection.basedOn.name} by{' '}
-          <Text variant="footnote" tone={collection.basedOn.code ? 'accent' : 'secondary'}>
-            {collection.basedOn.authorName}
-          </Text>
+          Based on {collection.basedOn.name}
+          {!!collection.basedOn.authorName && (
+            <>
+              {' by '}
+              <Text variant="footnote" tone={collection.basedOn.code ? 'accent' : 'secondary'}>
+                {collection.basedOn.authorName}
+              </Text>
+            </>
+          )}
         </Text>
       )}
       <Section>

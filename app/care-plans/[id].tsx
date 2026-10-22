@@ -500,8 +500,25 @@ export default function CarePlanScreen() {
               </Animated.View>
             )}
             {!!plan.basedOn && (
-              <Text variant="footnote" tone="secondary" style={styles.sourceLink}>
-                Based on {plan.basedOn.name} by {plan.basedOn.authorName}
+              <Text
+                variant="footnote"
+                tone="secondary"
+                style={styles.sourceLink}
+                onPress={
+                  plan.basedOn.code ? () => router.push(`/p/${plan.basedOn!.code}`) : undefined
+                }
+                accessibilityRole={plan.basedOn.code ? 'link' : undefined}
+                suppressHighlighting
+              >
+                Based on {plan.basedOn.name}
+                {!!plan.basedOn.authorName && (
+                  <>
+                    {' by '}
+                    <Text variant="footnote" tone={plan.basedOn.code ? 'accent' : 'secondary'}>
+                      {plan.basedOn.authorName}
+                    </Text>
+                  </>
+                )}
               </Text>
             )}
           </Block>
@@ -572,7 +589,17 @@ export default function CarePlanScreen() {
           detail={`${plan.steps.length} ${plan.steps.length === 1 ? 'step' : 'steps'}${SEP}${describePlan(plan)}`}
           state={plan}
           busy={share.isPending}
-          onChange={sharing => share.mutateAsync(sharing).catch(() => haptics.error())}
+          onChange={async sharing => {
+            try {
+              await share.mutateAsync(sharing);
+            } catch (error) {
+              haptics.error();
+              await notify({
+                title: 'Couldn’t change that',
+                message: errorMessage(error, 'Check your connection and try again.'),
+              });
+            }
+          }}
         />
       )}
       {plan && following && (

@@ -11,6 +11,7 @@ import { Sheet } from '@/shared/ui/Sheet';
 import { Text } from '@/shared/ui/Text';
 import { Toggle } from '@/shared/ui/Toggle';
 import { DAY_LABELS, FREQUENCY_LABELS, TIME_OF_DAY_LABELS } from '../format';
+import { ensureReminderPermission, reminderAt } from '../reminders';
 import type { CarePlanFrequency, CarePlanSchedule, TimeOfDay } from '../types';
 
 const FREQUENCIES = (Object.keys(FREQUENCY_LABELS) as CarePlanFrequency[]).map(value => ({
@@ -188,11 +189,13 @@ export function ScheduleSheet({
         <Section>
           <ListRow
             title="Remind me"
-            subtitle="A notification when it’s due, at your time of day."
+            subtitle={`On the days it’s due, at ${reminderAt(schedule.timeOfDay)}.`}
             trailing={
               <Toggle
                 value={schedule.remindersOn}
-                onValueChange={value => set('remindersOn', value)}
+                onValueChange={async value =>
+                  set('remindersOn', value ? await ensureReminderPermission() : false)
+                }
                 accessibilityLabel="Remind me"
               />
             }

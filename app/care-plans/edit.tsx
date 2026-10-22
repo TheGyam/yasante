@@ -6,6 +6,8 @@ import { errorMessage } from '@/features/auth';
 import {
   DAY_LABELS,
   FREQUENCY_LABELS,
+  ensureReminderPermission,
+  reminderAt,
   StepList,
   TIME_OF_DAY_LABELS,
   formFromPlan,
@@ -172,13 +174,17 @@ export default function CarePlanFormScreen() {
           />
         </View>
 
-        <Section footer="Reminders are sent by Yasante when a plan is due.">
+        <Section
+          footer={`On the days it's due, at ${reminderAt(form.timeOfDay)}, from this phone.`}
+        >
           <ListRow
             title="Remind me"
             trailing={
               <Toggle
                 value={form.remindersOn}
-                onValueChange={value => set('remindersOn', value)}
+                onValueChange={async value =>
+                  set('remindersOn', value ? await ensureReminderPermission() : false)
+                }
                 accessibilityLabel="Remind me"
               />
             }
