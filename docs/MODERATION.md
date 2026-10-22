@@ -41,6 +41,7 @@ appeal.
 
 | Report | Usually | Also |
 | --- | --- | --- |
+| A shared collection or care plan | Read its name and steps. Unsafe steps (chemicals left on too long, medical advice) or names that break the guidelines: **Stop sharing** it, which ends the link for everyone, and tell the author why | Stop sharing; remove the author's account for repeated or harmful sharing |
 | Not their work | Hide, then check the near-copy flags under **Flagged photos** | Remove if it's clearly someone else's photo |
 | Not about hair | Hide or remove | — |
 | Nudity or sexual content | Remove | If it could involve anyone under 18, follow "Child safety" below |

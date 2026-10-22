@@ -128,11 +128,17 @@ export default function CarePlanFormScreen() {
           <Text variant="footnote" tone="secondary" style={styles.label}>
             How often
           </Text>
-          <SegmentedControl
-            options={FREQUENCIES}
-            value={form.frequency}
-            onChange={value => set('frequency', value)}
-          />
+          {/* Four longer names don't fit four across: chips wrap, so none is cut off. */}
+          <View style={styles.chips} accessibilityRole="radiogroup">
+            {FREQUENCIES.map(option => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                selected={form.frequency === option.value}
+                onPress={() => set('frequency', option.value)}
+              />
+            ))}
+          </View>
         </View>
 
         {form.frequency === 'specific-days' && (

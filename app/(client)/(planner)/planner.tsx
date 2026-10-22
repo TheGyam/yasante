@@ -10,12 +10,14 @@ import {
   useCarePlans,
   useCollections,
 } from '@/features/planner';
+import { SEP } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
+import { SectionHeader } from '@/shared/ui/SectionHeader';
 import { Section } from '@/shared/ui/Section';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -64,6 +66,21 @@ export default function PlannerScreen() {
   }
 
   const active = view === 'collections' ? collections : plans;
+  // Hers first; then ones she follows, which update as their authors change them.
+  const own = (collections.data ?? []).filter(collection => !collection.following);
+  const followed = (collections.data ?? []).filter(collection => collection.following);
+  const grid = (list: typeof own) => (
+    <View style={styles.grid}>
+      {list.map(collection => (
+        <View key={collection.id} style={styles.cell}>
+          <CollectionCard
+            collection={collection}
+            onPress={() => router.push(`/collections/${collection.id}`)}
+          />
+        </View>
+      ))}
+    </View>
+  );
   const create = () =>
     router.push(view === 'collections' ? '/collections/new' : '/care-plans/edit');
 
@@ -90,15 +107,14 @@ export default function PlannerScreen() {
           <Skeleton height={200} />
         ) : view === 'collections' ? (
           collections.data?.length ? (
-            <View style={styles.grid}>
-              {collections.data.map(collection => (
-                <View key={collection.id} style={styles.cell}>
-                  <CollectionCard
-                    collection={collection}
-                    onPress={() => router.push(`/collections/${collection.id}`)}
-                  />
+            <View style={styles.body}>
+              {own.length > 0 && grid(own)}
+              {followed.length > 0 && (
+                <View>
+                  <SectionHeader title="Following" />
+                  {grid(followed)}
                 </View>
-              ))}
+              )}
             </View>
           ) : (
             <EmptyState
@@ -115,7 +131,11 @@ export default function PlannerScreen() {
               <ListRow
                 key={plan.id}
                 title={plan.name}
-                subtitle={describePlan(plan)}
+                subtitle={
+                  plan.following
+                    ? `By ${plan.following.author.name.split(' ')[0]}${SEP}${describePlan(plan)}`
+                    : describePlan(plan)
+                }
                 value={dueLabel(plan)}
                 icon={Droplets}
                 onPress={() => router.push(`/care-plans/${plan.id}`)}

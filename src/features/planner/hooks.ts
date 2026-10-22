@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/features/auth';
 import { plannerApi } from './api';
-import type { CarePlanDraft, CollectionItemKind } from './types';
+import type { CarePlanDraft, CarePlanSchedule, CollectionItemKind, Sharing } from './types';
 
 const KEY = 'planner';
 
@@ -14,6 +14,14 @@ function useKeys() {
     items: (id: string) => [KEY, 'collection-items', user?.id, id],
     plans: [KEY, 'care-plans', user?.id],
     sessions: (id: string) => [KEY, 'care-plan-sessions', user?.id, id],
+    // Keyed by account too: what she sees of it (hers, following) depends on who she is.
+    shared: (kind: 'collection' | 'care-plan', code: string) => [
+      KEY,
+      'shared',
+      kind,
+      user?.id,
+      code,
+    ],
   };
 }
 
@@ -180,5 +188,107 @@ export function useLogCarePlanSession(id: string) {
   return useMutation({
     mutationFn: (notes?: string) => plannerApi.logSession(id, notes),
     onSuccess: () => refresh(id),
+  });
+}
+
+// ── Sharing ─────────────────────────────────────────────────────────────────────
+
+/** Share by link, or stop sharing. */
+export function useShareCollection(id: string) {
+  const refresh = useRefreshCollections();
+  return useMutation({
+    mutationFn: (sharing: Sharing) => plannerApi.shareCollection(id, sharing),
+    onSuccess: () => refresh(id),
+  });
+}
+
+export function useShareCarePlan(id: string) {
+  const refresh = useRefreshPlans();
+  return useMutation({
+    mutationFn: (sharing: Sharing) => plannerApi.shareCarePlan(id, sharing),
+    onSuccess: () => refresh(id),
+  });
+}
+
+/** Someone's shared collection, as its link shows it. Anyone can look; signed out too. */
+export function useSharedCollection(code: string) {
+  const keys = useKeys();
+  return useQuery({
+    queryKey: keys.shared('collection', code),
+    queryFn: () => plannerApi.getSharedCollection(code),
+    enabled: !!code,
+    staleTime: 60 * 1000,
+    // Gone (stopped, deleted, blocked) is an answer: asking again won't change it.
+    retry: (count, error) =>
+      (error as { response?: { status?: number } })?.response?.status !== 404 && count < 2,
+  });
+}
+
+export function useSharedCarePlan(code: string) {
+  const keys = useKeys();
+  return useQuery({
+    queryKey: keys.shared('care-plan', code),
+    queryFn: () => plannerApi.getSharedCarePlan(code),
+    enabled: !!code,
+    staleTime: 60 * 1000,
+    retry: (count, error) =>
+      (error as { response?: { status?: number } })?.response?.status !== 404 && count < 2,
+  });
+}
+
+/** Following and making it hers change her Planner and what the link shows her. */
+function useRefreshShared() {
+  const queryClient = useQueryClient();
+  const collections = useRefreshCollections();
+  const plans = useRefreshPlans();
+  return () => {
+    collections();
+    plans();
+    queryClient.invalidateQueries({ queryKey: [KEY, 'shared'] });
+  };
+}
+
+export function useFollowCollection() {
+  const refresh = useRefreshShared();
+  return useMutation({
+    mutationFn: (code: string) => plannerApi.followCollection(code),
+    onSuccess: () => refresh(),
+  });
+}
+
+export function useFollowCarePlan() {
+  const refresh = useRefreshShared();
+  return useMutation({
+    mutationFn: ({ code, schedule }: { code: string; schedule: CarePlanSchedule }) =>
+      plannerApi.followCarePlan(code, schedule),
+    onSuccess: () => refresh(),
+  });
+}
+
+/** Unfollowing removes it from her Planner; the author's own is untouched. */
+export function useUnfollow(kind: 'collection' | 'care-plan') {
+  const refresh = useRefreshShared();
+  return useMutation({
+    mutationFn: (id: string) =>
+      kind === 'collection' ? plannerApi.deleteCollection(id) : plannerApi.deleteCarePlan(id),
+    onSuccess: () => refresh(),
+  });
+}
+
+export function useMakeCollectionMine() {
+  const refresh = useRefreshShared();
+  return useMutation({
+    mutationFn: ({ from, name }: { from: { code?: string; id?: string }; name: string }) =>
+      plannerApi.makeCollectionMine(from, name),
+    onSuccess: () => refresh(),
+  });
+}
+
+export function useMakeCarePlanMine() {
+  const refresh = useRefreshShared();
+  return useMutation({
+    mutationFn: ({ from, name }: { from: { code?: string; id?: string }; name: string }) =>
+      plannerApi.makeCarePlanMine(from, name),
+    onSuccess: () => refresh(),
   });
 }

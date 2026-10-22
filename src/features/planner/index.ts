@@ -1,4 +1,11 @@
 export type {
+  BasedOn,
+  CarePlanSchedule,
+  Following,
+  SharedAuthor,
+  SharedCarePlan,
+  SharedCollection,
+  Sharing,
   CarePlan,
   CarePlanDraft,
   CarePlanFrequency,

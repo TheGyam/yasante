@@ -263,6 +263,17 @@ export const db = {
       name: string;
       isPrivate: boolean;
       createdAt: string;
+      /** Shared by link: the link's random code, while it's shared. */
+      code?: string;
+      sharedAt?: string;
+      updatedAt?: string;
+      /** Numbers the seed gives a shared one, on top of the real ones. */
+      seedFollowers?: number;
+      madeItTheirs?: number;
+      /** Someone else's she follows: whose, and which. Reads theirs, holds nothing of its own. */
+      follows?: { accountId: string; id: string };
+      /** Hers, started from someone else's. */
+      basedOn?: { name: string; authorName: string; code?: string };
       items: {
         id: string;
         kind: string;
@@ -287,6 +298,17 @@ export const db = {
       steps: { id: string; text: string }[];
       lastDoneAt?: string;
       createdAt: string;
+      /** Shared by link: the link's random code, while it's shared. */
+      code?: string;
+      sharedAt?: string;
+      updatedAt?: string;
+      /** Numbers the seed gives a shared one, on top of the real ones. */
+      seedFollowers?: number;
+      madeItTheirs?: number;
+      /** Someone else's she follows: whose, and which. Reads theirs, holds nothing of its own. */
+      follows?: { accountId: string; id: string };
+      /** Hers, started from someone else's. */
+      basedOn?: { name: string; authorName: string; code?: string };
       sessions: { id: string; completedAt: string; notes?: string }[];
     }[]
   >(),

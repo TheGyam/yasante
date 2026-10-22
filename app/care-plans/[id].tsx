@@ -14,18 +14,37 @@ import Animated, {
   ZoomIn,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
-import { Check, ChevronDown, CircleCheck, Pencil, Sparkles, Trash2 } from 'lucide-react-native';
+import {
+  CalendarClock,
+  Check,
+  ChevronDown,
+  CircleCheck,
+  Pencil,
+  Share as ShareIcon,
+  Sparkles,
+  Trash2,
+  UserMinus,
+} from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
+  AuthorLine,
   consistency,
   describePlan,
   dueLabel,
+  MakeItYoursSheet,
   recentDays,
+  ScheduleSheet,
+  ShareSheet,
+  updatedLabel,
   useCarePlanSessions,
   useCarePlans,
   useDeleteCarePlan,
   useLogCarePlanSession,
+  useMakeCarePlanMine,
+  useShareCarePlan,
+  useUpdateCarePlan,
 } from '@/features/planner';
+import { useNeedsUsername } from '@/features/profile';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
 import { EASE_OUT, makeStyles, radius, space, spring, timing, useTheme } from '@/shared/theme';
@@ -51,6 +70,17 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const useStyles = makeStyles(t => ({
   body: { gap: space.xl },
+  headerActions: { flexDirection: 'row', gap: space.sm },
+  source: {
+    gap: space.sm,
+    marginTop: space.md,
+    padding: space.md,
+    borderRadius: radius.lg,
+    backgroundColor: t.colors.glass.fill,
+    borderWidth: 1,
+    borderColor: t.colors.glass.border,
+  },
+  sourceLink: { marginTop: space.xs },
   hero: { borderRadius: radius.xl },
   face: { padding: space.xl, borderRadius: radius.xl, alignItems: 'center', gap: space.md },
   ringWrap: { width: RING, height: RING, alignItems: 'center', justifyContent: 'center' },
@@ -260,6 +290,13 @@ export default function CarePlanScreen() {
   const { data: plans, isLoading } = useCarePlans();
   const plan = plans?.find(item => item.id === id);
   const { data: sessions = [] } = useCarePlanSessions(id);
+  const needsUsername = useNeedsUsername();
+  const share = useShareCarePlan(id);
+  const reschedule = useUpdateCarePlan(id);
+  const makeMine = useMakeCarePlanMine();
+  const [sheet, setSheet] = useState<'share' | 'schedule' | 'make' | null>(null);
+  const following = plan?.following;
+  const first = following?.author.name.split(' ')[0] ?? '';
 
   const log = useLogCarePlanSession(id);
   const doneToday = !!plan?.lastDoneAt && isToday(new Date(plan.lastDoneAt));
@@ -290,12 +327,21 @@ export default function CarePlanScreen() {
   };
 
   const confirmDelete = async () => {
-    const yes = await confirm({
-      title: `Delete ${plan?.name ?? 'this plan'}?`,
-      message: 'Its steps and the record of when you followed it go with it.',
-      confirmLabel: 'Delete',
-      destructive: true,
-    });
+    const yes = await confirm(
+      following
+        ? {
+            title: `Unfollow ${plan?.name ?? 'this plan'}?`,
+            message: 'It leaves your Planner, with your record of when you followed it.',
+            confirmLabel: 'Unfollow',
+            destructive: true,
+          }
+        : {
+            title: `Delete ${plan?.name ?? 'this plan'}?`,
+            message: 'Its steps and the record of when you followed it go with it.',
+            confirmLabel: 'Delete',
+            destructive: true,
+          }
+    );
     if (!yes) return;
     try {
       await remove.mutateAsync(id);
@@ -361,12 +407,26 @@ export default function CarePlanScreen() {
       testID="care-plan-screen"
       headerRight={
         plan && (
-          <IconButton
-            icon={Pencil}
-            size={36}
-            accessibilityLabel="Edit this plan"
-            onPress={() => router.push(`/care-plans/edit?id=${plan.id}`)}
-          />
+          <View style={styles.headerActions}>
+            {!following && (
+              <IconButton
+                icon={ShareIcon}
+                size={36}
+                accessibilityLabel="Share this plan"
+                // Shared things show who made them: by username, never an email.
+                onPress={() => (needsUsername ? router.push('/username') : setSheet('share'))}
+                testID="care-plan-share"
+              />
+            )}
+            <IconButton
+              icon={following ? CalendarClock : Pencil}
+              size={36}
+              accessibilityLabel={following ? 'Change your schedule' : 'Edit this plan'}
+              onPress={() =>
+                following ? setSheet('schedule') : router.push(`/care-plans/edit?id=${plan.id}`)
+              }
+            />
+          </View>
         )
       }
     >
@@ -419,6 +479,31 @@ export default function CarePlanScreen() {
               resetKey={`${plan.steps.map(s => s.id).join()}-${format(new Date(), 'yyyy-MM-dd')}`}
               onAllDone={() => setReady(r => r + 1)}
             />
+            {following && (
+              <Animated.View entering={FadeIn.delay(200)} style={styles.source}>
+                <AuthorLine
+                  author={following.author}
+                  title={`Steps by ${following.author.name}`}
+                  detail={`Kept up to date${SEP}${updatedLabel(following.updatedAt).replace('Updated ', '')}`}
+                  size={32}
+                />
+                <Text
+                  variant="footnote"
+                  tone="accent"
+                  onPress={() => setSheet('make')}
+                  accessibilityRole="button"
+                  suppressHighlighting
+                  style={styles.sourceLink}
+                >
+                  Make it yours to change the steps
+                </Text>
+              </Animated.View>
+            )}
+            {!!plan.basedOn && (
+              <Text variant="footnote" tone="secondary" style={styles.sourceLink}>
+                Based on {plan.basedOn.name} by {plan.basedOn.authorName}
+              </Text>
+            )}
           </Block>
 
           {/* Ticking the last step nudges the button: that's the next thing to do. */}
@@ -468,8 +553,8 @@ export default function CarePlanScreen() {
 
           <View style={styles.footer}>
             <Button
-              label="Delete plan"
-              icon={Trash2}
+              label={following ? 'Unfollow plan' : 'Delete plan'}
+              icon={following ? UserMinus : Trash2}
               variant="danger"
               onPress={confirmDelete}
               loading={remove.isPending}
@@ -477,6 +562,64 @@ export default function CarePlanScreen() {
             />
           </View>
         </View>
+      )}
+      {plan && !following && (
+        <ShareSheet
+          visible={sheet === 'share'}
+          onClose={() => setSheet(null)}
+          kind="care-plan"
+          name={plan.name}
+          detail={`${plan.steps.length} ${plan.steps.length === 1 ? 'step' : 'steps'}${SEP}${describePlan(plan)}`}
+          state={plan}
+          busy={share.isPending}
+          onChange={sharing => share.mutateAsync(sharing).catch(() => haptics.error())}
+        />
+      )}
+      {plan && following && (
+        <>
+          <ScheduleSheet
+            visible={sheet === 'schedule'}
+            onClose={() => setSheet(null)}
+            title="Your schedule"
+            intro={`The steps are ${first}’s. When you do them is up to you.`}
+            initial={{
+              frequency: plan.frequency,
+              specificDays: plan.specificDays,
+              timeOfDay: plan.timeOfDay,
+              remindersOn: plan.remindersOn,
+            }}
+            confirmLabel="Save schedule"
+            busy={reschedule.isPending}
+            onConfirm={schedule =>
+              reschedule.mutate(schedule, {
+                onSuccess: () => {
+                  setSheet(null);
+                  haptics.success();
+                },
+              })
+            }
+          />
+          <MakeItYoursSheet
+            visible={sheet === 'make'}
+            onClose={() => setSheet(null)}
+            name={plan.name}
+            authorName={first}
+            what={`the ${plan.steps.length} steps`}
+            busy={makeMine.isPending}
+            onConfirm={() =>
+              makeMine.mutate(
+                { from: { id: plan.id }, name: plan.name },
+                {
+                  onSuccess: mine => {
+                    setSheet(null);
+                    haptics.success();
+                    router.replace(`/care-plans/${mine.id}`);
+                  },
+                }
+              )
+            }
+          />
+        </>
       )}
     </Screen>
   );

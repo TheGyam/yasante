@@ -18,6 +18,19 @@ export const TIME_OF_DAY_LABELS: Record<TimeOfDay, string> = {
 
 export const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+/**
+ * "6 following · 2 made it theirs", leaving out what's still nought; nothing at all
+ * for a link nobody has used yet.
+ */
+export function shareCounts(followers = 0, madeItTheirs = 0) {
+  return [
+    followers > 0 && `${followers} following`,
+    madeItTheirs > 0 && `${madeItTheirs} made it theirs`,
+  ]
+    .filter(Boolean)
+    .join(SEP);
+}
+
 /** "Every week · Evening" */
 export function describePlan(plan: Pick<CarePlan, 'frequency' | 'specificDays' | 'timeOfDay'>) {
   const often =

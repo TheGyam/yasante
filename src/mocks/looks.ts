@@ -256,6 +256,19 @@ defineMocks({
     return present(visibleLook(request.params.id, accountId), accountId);
   },
 
+  // More like this: the same styles, newest first, one page. The real ranking is the server's.
+  'GET /api/looks/:id/related/': request => {
+    const accountId = request.accountId ?? '';
+    const look = visibleLook(request.params.id, accountId);
+    const related = db.looks.filter(
+      other =>
+        other.id !== look.id &&
+        other.visibility !== 'private' &&
+        other.styles.some(style => look.styles.includes(style))
+    );
+    return { data: related.slice(0, 20).map(other => present(other, accountId)) };
+  },
+
   'POST /api/looks/': request => {
     const accountId = requireAccount(request);
     const body = request.body ?? {};

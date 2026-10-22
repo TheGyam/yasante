@@ -44,6 +44,7 @@ handled and the records are kept. How reports are handled is in
 | Profiles: name, username and photo | Everyone | Can be reported |
 | Booking requests, with a short note | Only the client and the stylist | Not public; tied to a real appointment |
 | Private messages | **None.** Yasante has no direct messages or chat | |
+| Shared collections and care plans (planned, docs/SHARING_PLAN.md): a name, looks or steps, and the author's name, by link | Anyone with the link; never searchable | Can be reported; staff can stop the sharing |
 | Live video, groups, file sharing | **None** | |
 
 Things already in place:
