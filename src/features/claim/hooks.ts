@@ -35,10 +35,19 @@ export function useFinishState() {
   const stylist = !!user?.roles?.includes('stylist');
   return useQuery({
     queryKey: [...FINISH, user?.id],
-    queryFn: claimApi.finish,
+    // Most stylists set up their own page: nothing to finish is an answer, not an error,
+    // and it's kept rather than asked for again on every screen.
+    queryFn: async () => {
+      try {
+        return await claimApi.finish();
+      } catch (error) {
+        if ((error as { response?: { status?: number } })?.response?.status === 404) return null;
+        throw error;
+      }
+    },
     enabled: stylist,
     retry: false,
-    staleTime: 60 * 1000,
+    staleTime: 10 * 60 * 1000,
   });
 }
 

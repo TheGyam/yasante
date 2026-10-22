@@ -27,6 +27,7 @@ setAuthBridge({
   getAccessToken: () => useAuthStore.getState().tokens?.accessToken,
   getRefreshToken: () => useAuthStore.getState().tokens?.refreshToken,
   getUserId: () => useAuthStore.getState().user?.id,
+  getExpiresAt: () => useAuthStore.getState().tokens?.expiresAt,
   setTokens: ({ accessToken, refreshToken, expiresAt }) => {
     const current = useAuthStore.getState().tokens;
     if (!current) return;
@@ -85,7 +86,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Refresh token
   const refreshToken = useCallback(async (): Promise<boolean> => {
-    if (!tokens?.refreshToken) {
+    // Read now, not from this render: a 401 retry may have rotated it a moment ago, and
+    // the server refuses a refresh token it has already replaced.
+    const saved = useAuthStore.getState().tokens;
+    if (!saved?.refreshToken) {
       if (__DEV__) {
         console.log('❌ No refresh token available');
       }
@@ -94,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Check if token is still valid (not expired)
-      if (!isTokenExpired()) {
+      if (Date.now() < saved.expiresAt) {
         if (__DEV__) {
           console.log('✅ Access token still valid, no refresh needed');
         }
@@ -106,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Call the API to refresh the token
-      const response = await api.auth.refreshToken(tokens.refreshToken);
+      const response = await api.auth.refreshToken(saved.refreshToken);
       const { accessToken, refreshToken: rotated, expiresAt } = response.data;
 
       // Convert expiresAt to timestamp if needed
@@ -117,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       useAuthStore.getState().setTokens({
         accessToken,
         // The server revokes the old refresh token when it sends a new one.
-        refreshToken: rotated ?? tokens.refreshToken,
+        refreshToken: rotated ?? saved.refreshToken,
         expiresAt: expiresAtTimestamp,
       });
 
@@ -132,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error.response) logoutStore();
       return false;
     }
-  }, [tokens, isTokenExpired, logoutStore]);
+  }, [logoutStore]);
 
   // Auto-refresh token on mount and periodically
   useEffect(() => {
