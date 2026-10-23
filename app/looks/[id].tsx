@@ -521,7 +521,7 @@ function LookThread({
             {loadingMore && <LooksSkeleton />}
           </View>
         }
-        ListFooterComponent={<LooksFooter more={!!related.hasNextPage} />}
+        ListFooterComponent={<LooksFooter loading={related.isFetchingNextPage} />}
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
           if (settled && focused && related.hasNextPage && !related.isFetchingNextPage) {

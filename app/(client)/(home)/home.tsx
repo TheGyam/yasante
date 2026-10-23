@@ -232,7 +232,7 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
             />
           )
         }
-        ListFooterComponent={<LooksFooter more={!!feed.hasNextPage} />}
+        ListFooterComponent={<LooksFooter loading={feed.isFetchingNextPage} />}
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
           if (focused && feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
