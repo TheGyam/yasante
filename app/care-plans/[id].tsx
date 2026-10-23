@@ -379,7 +379,7 @@ export default function CarePlanScreen() {
             {stats.done}
           </Text>
           <Text variant="caption" tone="secondary">
-            in 30 days
+            done in 30 days
           </Text>
         </View>
       </View>
@@ -404,7 +404,7 @@ export default function CarePlanScreen() {
         Done for today
       </Text>
       <Text variant="subhead" tone="secondary" align="center">
-        {stats.done} {stats.done === 1 ? 'time' : 'times'} in 30 days{SEP}
+        Done {stats.done} {stats.done === 1 ? 'time' : 'times'} in 30 days{SEP}
         {dueLabel(plan).replace('Due', 'next')}
       </Text>
     </Glass>

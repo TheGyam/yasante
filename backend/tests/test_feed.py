@@ -454,13 +454,35 @@ def test_more_like_this_leans_on_what_the_same_people_saved(api, make_user, make
     me = make_user()
     api(me).post("/api/not-for-me/", {"lookId": str(same_style.pk)})
 
-    found = {item["id"]: item for item in api(me).get(f"/api/looks/{look.pk}/related/").json()["data"]}
-    assert set(found) == {str(often_saved_with.pk), str(more_from_her.pk)}
+    data = api(me).get(f"/api/looks/{look.pk}/related/").json()["data"]
+    found = {item["id"]: item for item in data}
+    # The close ones lead; past them it widens, so the unrelated one comes, but last.
+    assert [item["id"] for item in data][:2] in (
+        [str(often_saved_with.pk), str(more_from_her.pk)],
+        [str(more_from_her.pk), str(often_saved_with.pk)],
+    )
+    assert data[-1]["id"] == str(unrelated.pk) and str(same_style.pk) not in found
     assert found[str(often_saved_with.pk)]["reason"] == "Saved by people who saved this look"
     assert found[str(more_from_her.pk)]["reason"].startswith("More from")
-    signed_out = {item["id"] for item in api().get(f"/api/looks/{look.pk}/related/").json()["data"]}
-    assert str(same_style.pk) in signed_out and str(unrelated.pk) not in signed_out
+    signed_out = [item["id"] for item in api().get(f"/api/looks/{look.pk}/related/").json()["data"]]
+    assert signed_out.index(str(same_style.pk)) < signed_out.index(str(unrelated.pk))
     assert api().get("/api/looks/00000000-0000-0000-0000-000000000000/related/").status_code == 404
+
+
+def test_more_like_this_widens_instead_of_running_out(api, make_user, make_look, styles):
+    """Like Pinterest's: kindred styles, then the same hair texture, then the rest."""
+    from apps.looks.models import Style
+
+    styles["locs"] = Style.objects.create(slug="locs", name="Locs", sort_order=len(styles))
+    look = make_look(make_user(), style="box-braids", hair_texture="kinky")
+    close = make_look(make_user(), style="box-braids")
+    kin = make_look(make_user(), style="knotless")
+    texture = make_look(make_user(), style="locs", hair_texture="kinky")
+    rest = make_look(make_user(), style="silk-press", hair_texture="wavy")
+
+    data = api().get(f"/api/looks/{look.pk}/related/").json()["data"]
+    assert [item["id"] for item in data] == [str(close.pk), str(kin.pk), str(texture.pk), str(rest.pk)]
+    assert [item["reason"] for item in data[2:]] == ["On the same hair texture", "Loved on Yasante"]
 
 
 def test_more_like_this_pages_without_repeats_and_moves_past_what_she_has_seen(api, make_user, make_look):

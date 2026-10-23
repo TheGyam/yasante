@@ -297,7 +297,7 @@ function Stylist({ page }: { page: StylistPage }) {
                 icon={Clock}
                 iconTone="neutral"
                 title={`${profile.policies.noticeHours} hours’ notice to cancel`}
-                subtitle="Cancel inside that window and it counts against you"
+                subtitle={`Cancel later than that and ${profile.policies.depositType === 'none' ? '' : 'the deposit stays with them, and '}it shows on your record`}
               />
               <ListRow
                 icon={Store}

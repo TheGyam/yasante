@@ -23,8 +23,7 @@ export function insightsHeadline(i?: Insights) {
   if (!i) return undefined;
   if (i.currentStyle) return `${i.currentStyle.name}, day ${i.currentStyle.days + 1}`;
   if (i.length?.grewCm && i.length.grewCm > 0) return `Up ${i.length.grewCm} cm`;
-  if (i.appointments)
-    return `${i.appointments} appointment${i.appointments > 1 ? 's' : ''} this month`;
-  if (i.washes) return `${i.washes} wash day${i.washes > 1 ? 's' : ''} this month`;
+  if (i.appointments) return `${i.appointments} appointment${i.appointments > 1 ? 's' : ''}`;
+  if (i.washes) return `${i.washes} wash day${i.washes > 1 ? 's' : ''}`;
   return 'Your appointments, length and care, in one place';
 }

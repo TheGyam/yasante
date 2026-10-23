@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { useIsFocused } from '@react-navigation/native';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
+import { useIsFocused, useNavigationState, useRoute } from '@react-navigation/native';
 import {
   StyleSheet,
   useWindowDimensions,
@@ -39,6 +47,8 @@ import {
   useFeedTracking,
   useLook,
   useLookActions,
+  LooksFooter,
+  LooksSkeleton,
   useRelatedLooks,
   type Look,
   type LookComment,
@@ -51,7 +61,7 @@ import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { useContentInsets } from '@/shared/ui/layout';
-import { FEED_LIST, ListFooter } from '@/shared/ui/ListFooter';
+import { FEED_LIST } from '@/shared/ui/ListFooter';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -239,14 +249,33 @@ export default function LookScreen() {
   });
   const photoStyle = useAnimatedStyle(() => ({ opacity: 1 - cover.get() }));
 
+  // Each look opens over the last one, which stays alive underneath so the photo can
+  // grow out of its tile. Under another look that has finished opening (it's no longer
+  // on top), this page can't be seen at all, so it lets go of everything but its place:
+  // kept whole, every look deeper in More like this held its photos in memory and made
+  // each frame slower (250ms frames and ~60MB more a look, five deep on a Note10+).
+  // Once the look above it is closed it's one below the top again, and rebuilds there,
+  // out of sight, scrolled back to where she left it.
+  const scrolledTo = useRef(0);
+  const { key } = useRoute();
+  const buried = useNavigationState(s => {
+    const at = s.routes.findIndex(r => r.key === key);
+    return at >= 0 && s.routes.length - at > 2 && s.routes[at + 1].name === 'looks/[id]';
+  });
+
   return (
-    <View ref={page} collapsable={false} style={heroStyles.fill}>
+    <View
+      ref={page}
+      collapsable={false}
+      style={[heroStyles.fill, buried && heroStyles.buried]}
+      pointerEvents={buried ? 'none' : 'auto'}
+    >
       <Animated.View
         pointerEvents="none"
         style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.bg }, backdrop]}
       />
       <Animated.View style={[heroStyles.fill, content]}>
-        {look ? (
+        {buried ? null : look ? (
           <Screen back scroll="list" opaque={false} testID="look-screen">
             <LookThread
               id={id}
@@ -256,6 +285,7 @@ export default function LookScreen() {
               // Hidden under the moving copy, so there's only ever one photo on screen.
               photoStyle={photoStyle}
               initialPhotoIndex={hero?.photoIndex}
+              scrolledTo={scrolledTo}
             />
           </Screen>
         ) : (
@@ -291,6 +321,7 @@ export default function LookScreen() {
 
 const heroStyles = StyleSheet.create({
   fill: { flex: 1 },
+  buried: { opacity: 0 },
   flight: { position: 'absolute', overflow: 'hidden', borderRadius: radius.lg },
 });
 
@@ -309,6 +340,7 @@ function LookThread({
   onPhotoLayout,
   photoStyle,
   initialPhotoIndex,
+  scrolledTo,
 }: {
   id: string;
   /** False while the page is still arriving: comments and More like this wait until it has. */
@@ -317,6 +349,8 @@ function LookThread({
   onPhotoLayout: () => void;
   photoStyle: StyleProp<ViewStyle>;
   initialPhotoIndex?: number;
+  /** Where she had scrolled to, kept by the page while this is let go (see LookScreen). */
+  scrolledTo: RefObject<number>;
 }) {
   const styles = useStyles();
   const theme = useTheme();
@@ -359,6 +393,7 @@ function LookThread({
     () => (stage < 3 ? [] : (related.data?.pages.flatMap(page => page.data) ?? [])),
     [related.data, stage]
   );
+  const loadingMore = stage >= 3 && !related.data && related.isFetching;
   // What she sees and opens here is recorded like the feed, so it sinks next time.
   const tracking = useFeedTracking(
     related.data?.pages[0]?.session,
@@ -367,6 +402,24 @@ function LookThread({
     actions.onOpen
   );
   const handlers = useCommentHandlers(id, setReplyingTo);
+
+  // Remember her place when this is let go, and go back to it once it's built again.
+  // A layout effect, so the list is still there to ask.
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    return () => {
+      scrolledTo.current = list?.getAbsoluteLastScrollOffset() ?? 0;
+    };
+  }, [scrolledTo]);
+  const { height: screenHeight } = useWindowDimensions();
+  // Taken back as the grid fills in: until it's tall enough, the list can't go there yet.
+  const [returnTo] = useState(() => scrolledTo.current);
+  const restoring = useRef(returnTo > 0);
+  const restore = (_w: number, height: number) => {
+    if (!restoring.current) return;
+    listRef.current?.scrollToOffset({ offset: returnTo, animated: false });
+    if (height >= returnTo + screenHeight) restoring.current = false;
+  };
 
   const renderItem = useCallback(
     ({ item }: { item: Look }) => (
@@ -459,20 +512,25 @@ function LookThread({
                 )}
               </Animated.View>
             )}
-            {looks.length > 0 && (
+            {(looks.length > 0 || loadingMore) && (
               <Text variant="title3" accessibilityRole="header" style={styles.moreHead}>
                 More like this
               </Text>
             )}
+            {/* Still on its way: the grid's shape, as on home, rather than nothing. */}
+            {loadingMore && <LooksSkeleton />}
           </View>
         }
-        ListFooterComponent={<ListFooter more={!!related.hasNextPage} />}
+        ListFooterComponent={<LooksFooter more={!!related.hasNextPage} />}
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
           if (settled && focused && related.hasNextPage && !related.isFetchingNextPage) {
             related.fetchNextPage();
           }
         }}
+        onContentSizeChange={restore}
+        // Once she scrolls herself, she's the one deciding where to be.
+        onScrollBeginDrag={() => (restoring.current = false)}
         onEndReachedThreshold={FEED_LIST.onEndReachedThreshold}
         drawDistance={FEED_LIST.drawDistance}
         keyboardShouldPersistTaps="handled"
