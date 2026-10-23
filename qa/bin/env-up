@@ -45,7 +45,10 @@ fi
 
 cd "$REPO/backend"
 if (( RESEED )); then
-  "$PY" manage.py flush --no-input
+  # Drop and recreate, not `flush`: flush also empties the rows data migrations put in
+  # (feature switches, policies, tips), and migrate never runs them again.
+  podman exec yasante-qa-db psql -q -U postgres -d postgres \
+    -c 'DROP DATABASE IF EXISTS yasante WITH (FORCE)' -c 'CREATE DATABASE yasante'
 fi
 "$PY" manage.py migrate --no-input > "$OUT/migrate.log" 2>&1
 if (( RESEED )) || [[ "$("$PY" manage.py shell -c 'from apps.accounts.models import User;print(User.objects.count())' 2>/dev/null | tail -1)" == "0" ]]; then

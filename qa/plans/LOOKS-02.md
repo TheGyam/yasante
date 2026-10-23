@@ -9,7 +9,7 @@ photos in order; the app and the website let someone post several only where the
 photos swipe in order in the app and on the web; a marker on every grid says a look has
 more than one.
 **Time:** about 60 minutes.
-**Status:** written 19-10-2026. Parts S, K and A were dry-run by Claude
+**Status:** written 19-10-2026; refresh prompts and the S4 stop added 23-10-2026. Parts S, K and A were dry-run by Claude
 (`SETUP-dry-1018`); parts W and G are written from the code and the task files, so expect
 plan errors there and say exactly what you saw.
 
@@ -38,8 +38,10 @@ show **7, 6, 5, 4, 3** then **2, 1** (newest first), so with
 **The switch.** `multi_photo_looks` starts in mode `Staff only` (from the seed). The app
 reads switches at most once a minute and again when it comes back to the front; where a
 step says **refresh the app**, do: wait 65 s, `X: stop`, `X: launch`, wait 12 s, dismiss
-whatever comes up as in BOOK-01 S2 (`tapon "Don’t allow" --exact` for the app's own
-notification question), then carry on.
+what comes up, then carry on. After a relaunch the app asks two things of its own, one
+after the other: `Your privacy choices` (`tapon "Not now" --exact`) and `Turn on
+notifications?` (`tapon "Not now" --exact`). They're part of the refresh: no step, no
+verdict. Android's own question, if it comes, gets `Don’t allow`.
 
 **Server check, every step that saves something:** after it, run
 `grep -E '" (4|5)[0-9]{2} ' qa/runs/<RUN>/server.log | tail -3` and paste it. Any new
@@ -69,6 +71,8 @@ gives **2**, or stop. If the password doesn't land (`no text field has the keybo
 **S4: Esi.** Sign Esi in as FEATURED-01 S2 (`W:`), copy the recovery codes, `I saved my
 codes`. `W: open /records/features/switch`, wait 2 s, `W: step S4`. Expect `Feature
 switches`, `multi_photo_looks` · `Staff only`, `video_posts` · `Off`.
+**If `multi_photo_looks` isn't listed, stop the run here** (FAIL, then Z): nothing after
+this can test the switch.
 
 ---
 
