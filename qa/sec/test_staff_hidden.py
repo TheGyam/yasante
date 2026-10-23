@@ -68,3 +68,49 @@ def test_a_phone_number_cant_be_found_by_searching(make_user):
     person = make_user(name="Ama")
     leaks, hit, miss = _answers(client, "/data/records/accounts/user/", "q", person.phone[-6:], "000000")
     assert not leaks, f"q=<last six digits>: right {hit}, wrong {miss}"
+
+
+def _editor(make_user, *codenames):
+    """May view and change these records, but not reveal what's hidden in them."""
+    return _viewer(make_user, *codenames)
+
+
+@pytest.mark.xfail(strict=True, reason="F46: a form sent back with an error shows the hidden values it kept")
+def test_a_form_with_an_error_does_not_show_the_hidden_phone(make_user):
+    from tests.test_staff_privacy import form_as_shown
+
+    client, staff = _editor(make_user, "view_user", "change_user")
+    person = make_user(name="Ama")
+    body = form_as_shown(client, person)
+    body["email"] = "not an email"
+    r = client.post(f"/data/forms/accounts/user/{person.pk}/", body)
+    assert r.status_code == 422, r.content
+    assert person.phone not in r.content.decode()
+
+
+@pytest.mark.xfail(strict=True, reason="F46: a form sent back with an error shows the hidden values it kept")
+def test_a_form_with_an_error_does_not_show_hidden_hair_details(make_user):
+    from apps.profiles.models import HairProfile
+    from tests.test_staff_privacy import form_as_shown
+
+    client, staff = _editor(make_user, "view_hairprofile", "change_hairprofile")
+    profile = HairProfile.objects.create(user=make_user(), texture="coily", scalp=["flaky"], postcode="SE15 4QJ")
+    url = f"/data/forms/profiles/hairprofile/{profile.pk}/"
+    body = form_as_shown(client, None, url)
+    body["user"] = "00000000-0000-0000-0000-000000000000"
+    r = client.post(url, body)
+    assert r.status_code == 422, r.content
+    page = r.content.decode()
+    assert not [word for word in ("coily", "flaky", "SE15 4QJ") if word in page]
+
+
+def test_the_control_a_typed_value_is_echoed(make_user):
+    """Guards the two above: what she typed herself still comes back on an error."""
+    from tests.test_staff_privacy import form_as_shown
+
+    client, staff = _editor(make_user, "view_user", "change_user")
+    person = make_user(name="Ama")
+    body = form_as_shown(client, person)
+    body.update(email="not an email", phone="+447700900999")
+    r = client.post(f"/data/forms/accounts/user/{person.pk}/", body)
+    assert r.status_code == 422 and "+447700900999" in r.content.decode()

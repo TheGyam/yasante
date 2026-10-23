@@ -30,6 +30,9 @@ Raw output goes to `qa/runs/<RUN>/sec/` (gitignored); `SUMMARY.txt` has one line
 | `test_own_record.py` | her own profile update and sign-up can't set staff, roles, verified flags, phone or id; a new email must be proved again |
 | `test_limits.py` | unauthenticated doors are rate limited: sign-in (control), forgot and reset password (F34) |
 | `test_uploads.py` | HTML, SVG, empty and truncated "photos" get a 400 and store nothing; a decompression bomb (F35); only JPEG, PNG and WebP are decoded (F41) |
+| `test_staff_hidden.py` | staff without the reveal permission can't learn a hidden phone or hair detail by a list filter or search (F42), or from a form sent back with an error (F46) |
+| `test_research.py` | the hair trends report keeps the research rules: groups of 20 people, not bookings; whole months (F45) |
+| `test_suggestions.py` | "More like this" doesn't show what one person saved, opened or booked in private (F47) |
 | `test_shared.py` | a shared collection or care plan link gives a stranger only the listed fields (no email, phone, notes or history), and dies with a closed account; the rest of sharing is in upstream's `tests/test_sharing.py` |
 | `test_devices.py` | push tokens can't be deleted or (F36, candidate) taken over by another account |
 | `test_staff_csrf.py` | every write under the staff workspace's `/data/`, and staff sign-in, needs the CSRF token |
@@ -93,3 +96,7 @@ Trail of Bits plugins `static-analysis`, `insecure-defaults`, `supply-chain-risk
   §9 intends (only while the ranked feed is on, 90 days); withdrawing analytics consent
   deletes nothing already stored, though `AnalyticsEvent`'s docstring says it is dropped;
   `SearchLog.query` still keeps the typed words (no longer who typed them) for 12 months.
+- The staff *Ranked feed* insight has no minimum group: with one person on the ranked
+  feed, its per-100 figures are her own saves, booking requests and Not for me per day
+  (checked 23-10: 3 saves show as 300.0). Superusers only, who can read feed events anyway,
+  and it isn't research output, so a design note; becomes a finding if anyone else gets it.
