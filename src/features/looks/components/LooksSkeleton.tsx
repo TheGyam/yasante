@@ -27,11 +27,13 @@ export function LooksSkeleton() {
 }
 
 /**
- * The bottom of an endless grid of looks. While more are coming it shows their shape,
- * as Pinterest does, so scrolling faster than they arrive never runs into blank space.
+ * The bottom of an endless grid of looks. While the next ones are being fetched it
+ * shows their shape, as Pinterest does, so scrolling faster than they arrive never
+ * runs into blank space. Only then: the tiles pulse, and kept mounted under the
+ * grid they redrew the screen ~45 times a second, unseen, for as long as she stayed.
  */
-export function LooksFooter({ more }: { more: boolean }) {
-  if (!more) return <View style={styles.end} />;
+export function LooksFooter({ loading }: { loading: boolean }) {
+  if (!loading) return <View style={styles.end} />;
   return (
     <View style={styles.footer} accessibilityLabel="Loading more looks">
       <LooksSkeleton />
