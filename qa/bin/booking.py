@@ -18,6 +18,7 @@ from pathlib import Path
 QA = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(QA.parent / "backend"))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
+os.environ.pop("DEBUG", None)  # a stray shell DEBUG would override backend/.env
 os.chdir(QA.parent / "backend")
 
 import django  # noqa: E402

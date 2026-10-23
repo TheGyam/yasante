@@ -3,6 +3,8 @@
 # and resets the test staff accounts. The staff workspace is http://admin.localhost:5173,
 # the public site http://localhost:5173. Usage: qa/bin/web-up <run-id>   (after env-up)
 set -euo pipefail
+# A DEBUG in the caller's shell (Antigravity's had DEBUG=release) would override backend/.env.
+unset DEBUG
 QA="$(cd "$(dirname "$0")/.." && pwd)"
 REPO="$(dirname "$QA")"
 RUN="${1:?usage: web-up <run-id>   (run env-up first)}"

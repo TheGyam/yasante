@@ -2,6 +2,7 @@
 # Read-only look at an account in the LOCAL test database.
 # Usage: qa/bin/dbcheck <email>
 set -euo pipefail
+unset DEBUG  # a stray shell DEBUG would override backend/.env
 QA="$(cd "$(dirname "$0")/.." && pwd)"
 EMAIL="${1:?usage: dbcheck <email>}"
 cd "$(dirname "$QA")/backend"

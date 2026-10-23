@@ -4,6 +4,8 @@
 #        qa/bin/env-up --reseed <run-id>   also wipes the database and reloads seed data
 # Logs land in qa/runs/<run-id>/ — server.log is evidence, never edit it.
 set -euo pipefail
+# A DEBUG in the caller's shell (Antigravity's had DEBUG=release) would override backend/.env.
+unset DEBUG
 
 QA="$(cd "$(dirname "$0")/.." && pwd)"
 REPO="$(dirname "$QA")"

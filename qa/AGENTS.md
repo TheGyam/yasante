@@ -140,6 +140,10 @@ see.** Look at `screen.png`, say what it shows in your own words, and lean on th
 server and db checks. Taps there need the testIDs from an earlier capture or, as a
 last resort, `qadb tap X Y` (say so).
 
+**The terms notice.** After a fresh sign-in the app may show `We’ve updated our terms and
+privacy policy` with `Read them` and `OK`. Unless the plan says otherwise, `qadb tapon OK --exact`,
+wait 3 s and carry on; it isn't a failure. On the website the same notice may appear too.
+
 **The developer menu** (`Connected to:`, `Performance monitor`, `Reload`) can pop up
 over the app, for example when the phone is moved. `qadb tapon Close --exact`, then
 repeat the last action, and note it under Other observations. Anything typed while it
