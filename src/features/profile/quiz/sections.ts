@@ -195,9 +195,8 @@ export function sectionSummary(
   p: HairProfile,
   labels: (p: HairProfile) => string[]
 ) {
-  const [texture, length, density, porosity] = [
+  const [texture, density, porosity] = [
     p.texture && labels({ texture: p.texture })[0],
-    p.length && labels({ length: p.length })[0],
     p.density && labels({ density: p.density })[0],
     p.porosity && labels({ porosity: p.porosity })[0],
   ];

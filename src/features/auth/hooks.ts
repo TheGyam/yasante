@@ -24,7 +24,6 @@ export function useLogin() {
       }
 
       if (!data?.user || !data?.accessToken || !data?.refreshToken) {
-        console.error('❌ Invalid login response:', data);
         throw new Error('Invalid login response: missing user or tokens');
       }
 
@@ -61,7 +60,6 @@ export function useSignup() {
       }
 
       if (!data?.user || !data?.accessToken || !data?.refreshToken) {
-        console.error('❌ Invalid signup response:', data);
         throw new Error('Invalid signup response: missing user or tokens');
       }
 
