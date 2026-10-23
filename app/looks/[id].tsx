@@ -434,9 +434,109 @@ function LookThread({
     [actions, tracking.onOpen]
   );
 
+  const openComments = useCallback(() => router.push(`/looks/comments?id=${id}`), [router, id]);
+  const showMore = looks.length > 0 || loadingMore;
+  // Built once and kept while nothing in it changes, as home's header is: the page
+  // updates as More like this loads, and rebuilding the look, its photos and its
+  // comments then, mid-scroll, cost frames.
+  const header = useMemo(() => {
+    if (!look) return null;
+    const count = look.commentCount;
+    return (
+      <View style={styles.header}>
+        <LookCard
+          look={look}
+          detail
+          {...actions}
+          onOpen={undefined}
+          onSave={look.mine ? undefined : actions.onSave}
+          photoRef={photoRef}
+          onPhotoLayout={onPhotoLayout}
+          photoStyle={photoStyle}
+          details={stage >= 1}
+          initialPhotoIndex={initialPhotoIndex}
+        />
+        {stage >= 2 && !!look.styles[0] && (
+          <WhoDoesThis
+            style={look.styles[0]}
+            name={actions.styleNames[look.styles[0]]}
+            lookId={look.id}
+          />
+        )}
+        {stage >= 1 && (
+          <Animated.View
+            entering={FadeIn.duration(180)}
+            onLayout={e => (commentsAt.current = e.nativeEvent.layout.y)}
+          >
+            <PressableScale
+              onPress={openComments}
+              scaleTo={1}
+              accessibilityRole="button"
+              accessibilityLabel={count ? `All ${count} comments` : 'Comments'}
+              style={styles.commentsHead}
+              testID="look-comments-open"
+            >
+              <Text variant="overline" tone="tertiary">
+                {count ? `${count} ${count === 1 ? 'comment' : 'comments'}` : 'Comments'}
+              </Text>
+              {count > 0 && <ChevronRight size={16} color={theme.colors.text.tertiary} />}
+            </PressableScale>
+            {/* Only for a real wait: a shimmer running under the flight costs frames. */}
+            {thread.isLoading && <Skeleton height={60} />}
+            {preview.map(comment => (
+              <Thread key={comment.id} lookId={id} comment={comment} {...handlers} />
+            ))}
+            {stage >= 3 && !thread.isLoading && !preview.length && (
+              <Text variant="subhead" tone="secondary">
+                No comments yet. Say what you love about it.
+              </Text>
+            )}
+            {count > preview.length && preview.length > 0 && (
+              <Text
+                variant="subhead"
+                tone="secondary"
+                onPress={openComments}
+                accessibilityRole="button"
+                style={styles.viewAll}
+                suppressHighlighting
+              >
+                View all {count} comments
+              </Text>
+            )}
+          </Animated.View>
+        )}
+        {showMore && (
+          <Text variant="title3" accessibilityRole="header" style={styles.moreHead}>
+            More like this
+          </Text>
+        )}
+        {/* Still on its way: the grid's shape, as on home, rather than nothing. */}
+        {loadingMore && <LooksSkeleton />}
+      </View>
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    look,
+    styles,
+    theme,
+    actions,
+    photoRef,
+    onPhotoLayout,
+    photoStyle,
+    stage,
+    initialPhotoIndex,
+    thread.isLoading,
+    preview,
+    handlers.onReply,
+    handlers.onOptions,
+    handlers.onLike,
+    id,
+    openComments,
+    showMore,
+    loadingMore,
+  ]);
+
   if (!look) return null;
-  const count = look.commentCount;
-  const openComments = () => router.push(`/looks/comments?id=${id}`);
 
   return (
     <View style={styles.fill}>
@@ -449,78 +549,7 @@ function LookThread({
         renderItem={renderItem}
         onViewableItemsChanged={tracking.onViewableItemsChanged}
         viewabilityConfig={tracking.viewabilityConfig}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <LookCard
-              look={look}
-              detail
-              {...actions}
-              onOpen={undefined}
-              onSave={look.mine ? undefined : actions.onSave}
-              photoRef={photoRef}
-              onPhotoLayout={onPhotoLayout}
-              photoStyle={photoStyle}
-              details={stage >= 1}
-              initialPhotoIndex={initialPhotoIndex}
-            />
-            {stage >= 2 && !!look.styles[0] && (
-              <WhoDoesThis
-                style={look.styles[0]}
-                name={actions.styleNames[look.styles[0]]}
-                lookId={look.id}
-              />
-            )}
-            {stage >= 1 && (
-              <Animated.View
-                entering={FadeIn.duration(180)}
-                onLayout={e => (commentsAt.current = e.nativeEvent.layout.y)}
-              >
-                <PressableScale
-                  onPress={openComments}
-                  scaleTo={1}
-                  accessibilityRole="button"
-                  accessibilityLabel={count ? `All ${count} comments` : 'Comments'}
-                  style={styles.commentsHead}
-                  testID="look-comments-open"
-                >
-                  <Text variant="overline" tone="tertiary">
-                    {count ? `${count} ${count === 1 ? 'comment' : 'comments'}` : 'Comments'}
-                  </Text>
-                  {count > 0 && <ChevronRight size={16} color={theme.colors.text.tertiary} />}
-                </PressableScale>
-                {/* Only for a real wait: a shimmer running under the flight costs frames. */}
-                {thread.isLoading && <Skeleton height={60} />}
-                {preview.map(comment => (
-                  <Thread key={comment.id} lookId={id} comment={comment} {...handlers} />
-                ))}
-                {stage >= 3 && !thread.isLoading && !preview.length && (
-                  <Text variant="subhead" tone="secondary">
-                    No comments yet. Say what you love about it.
-                  </Text>
-                )}
-                {count > preview.length && preview.length > 0 && (
-                  <Text
-                    variant="subhead"
-                    tone="secondary"
-                    onPress={openComments}
-                    accessibilityRole="button"
-                    style={styles.viewAll}
-                    suppressHighlighting
-                  >
-                    View all {count} comments
-                  </Text>
-                )}
-              </Animated.View>
-            )}
-            {(looks.length > 0 || loadingMore) && (
-              <Text variant="title3" accessibilityRole="header" style={styles.moreHead}>
-                More like this
-              </Text>
-            )}
-            {/* Still on its way: the grid's shape, as on home, rather than nothing. */}
-            {loadingMore && <LooksSkeleton />}
-          </View>
-        }
+        ListHeaderComponent={header}
         ListFooterComponent={<LooksFooter loading={related.isFetchingNextPage} />}
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
