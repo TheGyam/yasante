@@ -3,6 +3,7 @@ import { RefreshControl, StyleSheet, View, type StyleProp, type ViewStyle } from
 import Animated, {
   Extrapolation,
   interpolate,
+  makeMutable,
   useAnimatedRef,
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -56,6 +57,15 @@ export interface ScreenProps {
 }
 
 const ScrollContext = createContext<SharedValue<number> | null>(null);
+
+/**
+ * True while the screen on top is one that covers the whole window but is opened as
+ * an overlay (a look grows out of its tile, so the screen below stays alive). Set by
+ * that screen once it has finished arriving, cleared the moment it starts to leave.
+ * Meanwhile every screen out of focus stops drawing: unseen under the look, the feed
+ * underneath was still drawn on every frame, a whole grid of photos twice over.
+ */
+export const overlayCovers = makeMutable(false);
 
 /** Drive the screen's header from a list the screen renders itself. */
 export function useScreenScrollHandler() {
@@ -150,6 +160,10 @@ export function Screen({
   const barBackground = useAnimatedStyle(() => ({
     opacity: fades ? interpolate(scrollY.get(), [0, 12], [0, 1], Extrapolation.CLAMP) : 1,
   }));
+  const covered = useAnimatedStyle(
+    () => ({ opacity: !focused && overlayCovers.get() ? 0 : 1 }),
+    [focused]
+  );
   const barTitle = useAnimatedStyle(() => ({
     opacity: largeTitle ? interpolate(scrollY.get(), [26, 46], [0, 1], Extrapolation.CLAMP) : 1,
   }));
@@ -222,8 +236,8 @@ export function Screen({
     <ScrollContext.Provider value={scrollY}>
       {/* A flat ground colour: cheap to paint, unlike a full-screen SVG gradient,
           which Android draws on the CPU for every screen in a transition. */}
-      <View
-        style={[styles.fill, opaque && { backgroundColor: theme.colors.bg }]}
+      <Animated.View
+        style={[styles.fill, opaque && { backgroundColor: theme.colors.bg }, covered]}
         testID={testID}
         // A screen covered by another (a look opening over the feed keeps the feed
         // alive underneath) is hidden from screen readers, so they can't wander into it.
@@ -269,7 +283,7 @@ export function Screen({
             </View>
           </View>
         )}
-      </View>
+      </Animated.View>
     </ScrollContext.Provider>
   );
 }

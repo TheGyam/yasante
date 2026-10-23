@@ -7,7 +7,12 @@ import {
   useState,
   type RefObject,
 } from 'react';
-import { useIsFocused, useNavigationState, useRoute } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useIsFocused,
+  useNavigationState,
+  useRoute,
+} from '@react-navigation/native';
 import {
   StyleSheet,
   useWindowDimensions,
@@ -63,7 +68,7 @@ import { EmptyState } from '@/shared/ui/EmptyState';
 import { useContentInsets } from '@/shared/ui/layout';
 import { FEED_LIST } from '@/shared/ui/ListFooter';
 import { PressableScale } from '@/shared/ui/PressableScale';
-import { Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
+import { overlayCovers, Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { track } from '@/shared/lib/analytics';
@@ -151,7 +156,16 @@ export default function LookScreen() {
   const finish = useCallback(() => {
     cover.set(0);
     setSettled(true);
+    overlayCovers.set(true);
   }, [cover]);
+  // Whatever's below stops drawing while this covers it (see overlayCovers): again
+  // whenever this is back on top, and not while anything else is.
+  useFocusEffect(
+    useCallback(() => {
+      if (settled) overlayCovers.set(true);
+      return () => overlayCovers.set(false);
+    }, [settled])
+  );
 
   const fadeIn = useCallback(() => {
     if (started.current) return;
@@ -206,6 +220,8 @@ export default function LookScreen() {
         if (closing.current) return;
         e.preventDefault();
         closing.current = true;
+        // The screen below shows again before this starts shrinking into it.
+        overlayCovers.set(false);
         const leave = () => navigation.dispatch(e.data.action);
         const back = (duration: number) =>
           progress.set(
