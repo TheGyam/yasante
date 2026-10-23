@@ -70,10 +70,10 @@ By default the app talks to the live API at api.yasante.com (the website stays a
 yasante.com). You can change that in
 `.env.development`:
 
-| Setting                    | What it does                                                                                                                                    |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `EXPO_PUBLIC_API_BASE_URL` | Which backend the app talks to. Use your computer's LAN IP to reach a local backend from a phone.                                               |
-| `EXPO_PUBLIC_API_MOCKS`    | Set to `true` to answer every request from the built-in mock data in `src/mocks`, so no backend is needed at all. Great for working on screens. |
+| Setting                    | What it does                                                                                                                                                                                                                                    |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EXPO_PUBLIC_API_BASE_URL` | Which backend the app talks to. Use your computer's LAN IP to reach a local backend from a phone.                                                                                                                                               |
+| `EXPO_PUBLIC_API_MOCKS`    | Set to `true` to answer every request from the built-in mock data in `src/mocks`, so no backend is needed at all. Great for working on screens. Sign in as client@yasante.dev, ama@yasante.dev or zainab@yasante.dev; any email code is 123456. |
 
 `npm run web` opens the app in a browser, which is handy for quick layout work.
 
