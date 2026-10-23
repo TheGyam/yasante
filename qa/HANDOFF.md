@@ -5,8 +5,10 @@ Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.
 - **Next:** start the unattended queue with `qa/bin/agy-run DIARY-01` (plan checked against
   upstream 24-10), then audit it. LOOKS-02 is done and audited (`LOOKS-02-20261024-0005`,
   valid; F48 new). Dev client `qa/apk/dev-client.apk`, sha256 `c04a06c5…`, is still current.
-  Waiting on the owner: go-ahead to report F48 upstream; Yaw's answer on whether app-posted
-  stylist work should also go on her page.
+  F48 is issue #130. Waiting on Yaw: whether app-posted stylist work should also go on her page.
+- **Reporting upstream:** the owner said (24-10) to report findings as needed. File each
+  confirmed finding as an issue on `TheGyam/yasante` (label `bug`), in the style of #127/#130:
+  plain English, file and line, what the test showed, the fix. Never an AI-authorship line.
 - **Backend pytest:** use `--create-db` (as CI does). `pytest.ini` has `--reuse-db`, and a
   reused test database can have lost the data-migration rows: three false failures on 24-10.
 - **Queue after it**, one at a time with an audit each: WEBBOOK-01, FIXES-01, NEW-01,
