@@ -88,3 +88,8 @@ Trail of Bits plugins `static-analysis`, `insecure-defaults`, `supply-chain-risk
   http(s). Since F33's fix those are Yasante's own uploads; looks posted before it may
   still hold outside addresses, which the server would then fetch (5 s, image bytes only).
   Low; recheck if a picture address can again come from outside.
+- Design questions for the owner, not findings (code review, 23-10): feed events
+  (`/api/feed/events/`) are stored without the analytics consent, as `docs/FEED_PLAN.md`
+  §9 intends (only while the ranked feed is on, 90 days); withdrawing analytics consent
+  deletes nothing already stored, though `AnalyticsEvent`'s docstring says it is dropped;
+  `SearchLog.query` still keeps the typed words (no longer who typed them) for 12 months.
