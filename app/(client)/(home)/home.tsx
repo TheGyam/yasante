@@ -12,6 +12,8 @@ import { TipOfTheDay } from '@/features/education';
 import {
   FeedOrderSwitch,
   LookTile,
+  LooksFooter,
+  LooksSkeleton,
   useFeedQuery,
   useFeedTracking,
   useLookActions,
@@ -22,15 +24,14 @@ import {
   type Look,
 } from '@/features/looks';
 import { NudgeHost, useUser } from '@/features/profile';
-import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
+import { GUTTER, makeStyles, space, useTheme } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { IconButton } from '@/shared/ui/IconButton';
 import { useContentInsets } from '@/shared/ui/layout';
-import { FEED_LIST, ListFooter } from '@/shared/ui/ListFooter';
+import { FEED_LIST } from '@/shared/ui/ListFooter';
 import { Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { SearchField } from '@/shared/ui/SearchField';
 import { SectionHeader } from '@/shared/ui/SectionHeader';
-import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 
 // FlashList driven by a UI-thread scroll handler, so the header fades without renders.
@@ -47,8 +48,6 @@ const useStyles = makeStyles(() => ({
   looksRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   looksTitle: { flex: 1 },
   order: { width: 184 },
-  skeletons: { flexDirection: 'row', gap: space.sm + 2 },
-  skeletonColumn: { flex: 1, gap: space.sm + 2 },
   footer: { paddingVertical: space.xxl },
   fallback: { gap: space.lg, marginHorizontal: CARD_INSET },
   fallbackGrid: { flexDirection: 'row', flexWrap: 'wrap' },
@@ -93,22 +92,6 @@ export default function HomeScreen() {
       {/* The occasional question about their hair, asked once the feed has settled. */}
       {isAuthenticated && <NudgeHost />}
     </Screen>
-  );
-}
-
-function FeedSkeleton() {
-  const styles = useStyles();
-  return (
-    <View style={styles.skeletons}>
-      <View style={styles.skeletonColumn}>
-        <Skeleton height={230} radius={radius.lg} />
-        <Skeleton height={180} radius={radius.lg} />
-      </View>
-      <View style={styles.skeletonColumn}>
-        <Skeleton height={180} radius={radius.lg} />
-        <Skeleton height={240} radius={radius.lg} />
-      </View>
-    </View>
   );
 }
 
@@ -192,7 +175,7 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
             </View>
           </View>
         </View>
-        {loading && <FeedSkeleton />}
+        {loading && <LooksSkeleton />}
       </View>
     ),
     [styles, firstName, isAuthenticated, router, loading]
@@ -249,7 +232,7 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
             />
           )
         }
-        ListFooterComponent={<ListFooter more={!!feed.hasNextPage} />}
+        ListFooterComponent={<LooksFooter more={!!feed.hasNextPage} />}
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
           if (focused && feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();

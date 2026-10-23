@@ -47,7 +47,8 @@ import {
   useFeedTracking,
   useLook,
   useLookActions,
-  useLooks,
+  LooksFooter,
+  LooksSkeleton,
   useRelatedLooks,
   type Look,
   type LookComment,
@@ -60,7 +61,7 @@ import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { useContentInsets } from '@/shared/ui/layout';
-import { FEED_LIST, ListFooter } from '@/shared/ui/ListFooter';
+import { FEED_LIST } from '@/shared/ui/ListFooter';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -368,10 +369,6 @@ function LookThread({
   usePrefetchStylistPage(settled ? look?.stylist?.handle : undefined);
   const thread = useComments(id);
   const related = useRelatedLooks(id, { enabled: settled });
-  // When More like this runs out (a few dozen), the grid carries on with the feed, as
-  // home does, so it never ends in a ragged edge and blank space.
-  const ranOut = !!related.data && !related.hasNextPage;
-  const feed = useLooks({}, { enabled: ranOut });
   const focused = useIsFocused();
   // What's built, one step a frame once the photo has landed, so no single frame
   // carries the whole page: 1 the look's details, 2 the comment bar, 3 the comments
@@ -392,20 +389,11 @@ function LookThread({
     () => (stage < 3 ? [] : (thread.data?.pages[0]?.data ?? []).slice(0, PREVIEW_COMMENTS)),
     [thread.data, stage]
   );
-  const { looks, fromFeed } = useMemo(() => {
-    if (stage < 3) return { looks: [], fromFeed: 0 };
-    const more = related.data?.pages.flatMap(page => page.data) ?? [];
-    const seen = new Set([id, ...more.map(l => l.id)]);
-    const after = (feed.data?.pages.flatMap(page => page.data) ?? []).filter(
-      l => !seen.has(l.id) && seen.add(l.id)
-    );
-    return { looks: [...more, ...after], fromFeed: after.length };
-  }, [id, related.data, feed.data, stage]);
-  // The feed's first pages are mostly what More like this already showed. Until there's
-  // a screenful that isn't, ask for more: nothing new appended, the list wouldn't ask.
-  useEffect(() => {
-    if (focused && fromFeed < 12 && feed.hasNextPage && !feed.isFetching) feed.fetchNextPage();
-  }, [focused, fromFeed, feed]);
+  const looks = useMemo(
+    () => (stage < 3 ? [] : (related.data?.pages.flatMap(page => page.data) ?? [])),
+    [related.data, stage]
+  );
+  const loadingMore = stage >= 3 && !related.data && related.isFetching;
   // What she sees and opens here is recorded like the feed, so it sinks next time.
   const tracking = useFeedTracking(
     related.data?.pages[0]?.session,
@@ -524,21 +512,20 @@ function LookThread({
                 )}
               </Animated.View>
             )}
-            {looks.length > 0 && (
+            {(looks.length > 0 || loadingMore) && (
               <Text variant="title3" accessibilityRole="header" style={styles.moreHead}>
                 More like this
               </Text>
             )}
+            {/* Still on its way: the grid's shape, as on home, rather than nothing. */}
+            {loadingMore && <LooksSkeleton />}
           </View>
         }
-        ListFooterComponent={<ListFooter more={!!related.hasNextPage || !!feed.hasNextPage} />}
+        ListFooterComponent={<LooksFooter more={!!related.hasNextPage} />}
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
-          if (!settled || !focused) return;
-          if (related.hasNextPage) {
-            if (!related.isFetchingNextPage) related.fetchNextPage();
-          } else if (feed.hasNextPage && !feed.isFetchingNextPage) {
-            feed.fetchNextPage();
+          if (settled && focused && related.hasNextPage && !related.isFetchingNextPage) {
+            related.fetchNextPage();
           }
         }}
         onContentSizeChange={restore}
