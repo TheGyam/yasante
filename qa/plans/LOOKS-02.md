@@ -124,8 +124,9 @@ qa/runs/<RUN>/server.log | tail -5`: four uploads `201`, one look `201`.
 
 ## G: What others see
 
-**G1: Efua's feed.** `C: link "yasante:///looks"`, wait 4 s, `C: step G1`. Ama's new look
-should be at or near the top. **Record** from `screen.png` the marker on its card (the
+**G1: Efua's feed.** `C: link "yasante:///looks"`, wait 4 s, `C: tapon "Latest" --exact`
+(the feed is ranked For you by default since PR #108; Latest puts it in time order), wait 3 s,
+`C: step G1`. Ama's new look should be at or near the top. **Record** from `screen.png` the marker on its card (the
 task: a card sliding in, with the number of photos) and its `content-desc`
 (`grep -oE 'content-desc="A look[^"]*"' qa/runs/<RUN>/steps/*-G1/ui.xml | head -3`).
 
