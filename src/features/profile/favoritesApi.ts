@@ -1,5 +1,5 @@
 import { apiClient } from '@/shared/lib/api/client';
-import { ApiResponse, PaginatedResponse } from '@/shared/types/api';
+import { ApiResponse } from '@/shared/types/api';
 import { Favorite } from '@/features/education';
 
 /**
@@ -21,20 +21,12 @@ export const favoritesApi = {
    * Get all favorites
    * GET /api/favorites/favorites/
    */
-  getAll: async (userId?: string): Promise<ApiResponse<Favorite[]>> => {
+  getAll: async (_userId?: string): Promise<ApiResponse<Favorite[]>> => {
     const url = '/api/favorites/favorites/';
-
-    if (__DEV__) {
-      console.log('📡 API Request:', { method: 'GET', url, userId });
-    }
 
     try {
       // API docs show { data: [...] } format
       const response = await apiClient.get<ApiResponse<Favorite[]>>(url);
-
-      if (__DEV__) {
-        console.log('✅ API Response:', { url, status: response.status });
-      }
 
       // Handle wrapped response format
       let data: Favorite[] = [];
@@ -68,17 +60,9 @@ export const favoritesApi = {
 
     const url = `/api/favorites/favorites/check/?${params.toString()}`;
 
-    if (__DEV__) {
-      console.log('📡 API Request:', { method: 'GET', url, userId, contentId });
-    }
-
     try {
       // API docs show { data: { isFavorite: boolean, favoriteId?: string } }
       const response = await apiClient.get<any>(url);
-
-      if (__DEV__) {
-        console.log('✅ API Response:', { url, status: response.status });
-      }
 
       // Handle wrapped response format
       let result: { isFavorite: boolean; favoriteId?: string };
@@ -111,19 +95,11 @@ export const favoritesApi = {
   ): Promise<ApiResponse<{ isFavorite: boolean; favorite?: Favorite }>> => {
     const url = '/api/favorites/favorites/toggle/';
 
-    if (__DEV__) {
-      console.log('📡 API Request:', { method: 'POST', url, userId, contentId });
-    }
-
     try {
       // API docs show { data: { isFavorite: boolean, favorite?: Favorite } }
       const response = await apiClient.post<any>(url, {
         contentId, // camelCase as per API docs
       });
-
-      if (__DEV__) {
-        console.log('✅ API Response:', { url, status: response.status });
-      }
 
       // Handle wrapped response format
       let data: { isFavorite: boolean; favorite?: Favorite };

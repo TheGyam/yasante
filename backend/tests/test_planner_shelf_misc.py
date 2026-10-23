@@ -11,27 +11,36 @@ pytestmark = pytest.mark.django_db
 def test_collections_crud_with_counts_and_covers(api, make_user, make_look):
     look = make_look(make_user(), caption="Two weeks in")
     me = api(make_user())
-    created = me.post("/api/collections/", {"name": "Holiday hair", "isPrivate": True})
+    created = me.post("/api/collections/", {"name": "Holiday hair"})
     assert created.status_code == 201
     col = created.json()
-    assert col["isPrivate"] is True and col["itemCount"] == 0
+    # Only hers until she shares it.
+    assert col["isPrivate"] is True and col["sharing"] == "private" and col["itemCount"] == 0
     assert me.post("/api/collections/", {"name": ""}).status_code == 400
     item = me.post(f"/api/collections/{col['id']}/items/", {"kind": "look", "refId": str(look.pk)})
     assert item.status_code == 201
     assert item.json()["title"] == "Two weeks in" and item.json()["imageUri"]
     # Saving again returns what's there rather than doubling it.
     assert me.post(f"/api/collections/{col['id']}/items/", {"kind": "look", "refId": str(look.pk)}).status_code == 200
+    from apps.content.models import ContentItem
+
+    wash = ContentItem.objects.create(
+        title="Wash day", slug="wash-day", kind="article", cover_uri="https://yasante.com/c.jpg", published=True
+    )
+    # The title and picture are read off the article, never taken from the phone.
     article = me.post(
         f"/api/collections/{col['id']}/items/",
-        {"kind": "content", "refId": "article-7", "title": "Wash day", "imageUri": "https://x.com/c.jpg"},
+        {"kind": "content", "refId": str(wash.pk), "title": "Something else", "imageUri": "https://x.com/c.jpg"},
     )
     assert article.status_code == 201
+    assert article.json()["title"] == "Wash day" and article.json()["imageUri"] == "https://yasante.com/c.jpg"
+    assert me.post(f"/api/collections/{col['id']}/items/", {"kind": "content", "refId": "article-7"}).status_code == 404
     listed = me.get("/api/collections/").json()[0]
     assert listed["itemCount"] == 2 and listed["coverUri"]
     items = me.get(f"/api/collections/{col['id']}/items/").json()
     assert {i["kind"] for i in items} == {"look", "content"}
-    renamed = me.patch(f"/api/collections/{col['id']}/", {"name": "Summer", "isPrivate": False}).json()
-    assert renamed["name"] == "Summer" and renamed["isPrivate"] is False
+    renamed = me.patch(f"/api/collections/{col['id']}/", {"name": "Summer"}).json()
+    assert renamed["name"] == "Summer" and renamed["isPrivate"] is True
     look_item = next(i for i in items if i["kind"] == "look")
     assert me.delete(f"/api/collections/{col['id']}/items/{look_item['id']}/").status_code == 204
     assert api(make_user()).get(f"/api/looks/{look.pk}/").json()["saveCount"] == 0

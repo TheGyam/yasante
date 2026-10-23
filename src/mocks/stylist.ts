@@ -384,7 +384,9 @@ defineMocks({
 
   'DELETE /api/stylists/me/blocks/:id/': request => {
     const accountId = requireAccount(request);
-    db.timeBlocks = db.timeBlocks.filter(b => !(b.id === request.params.id && b.stylistId === accountId));
+    db.timeBlocks = db.timeBlocks.filter(
+      b => !(b.id === request.params.id && b.stylistId === accountId)
+    );
     return undefined;
   },
 

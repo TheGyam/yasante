@@ -68,6 +68,17 @@ def preview(request, queue, obj):
             data["images"] = [image(request, photo) for photo in target.photos.all()] or [image(request, target)]
         times = type(obj).objects.filter(content_type=obj.content_type, object_id=obj.object_id).count()
         data["facts"] = [f"Reported by {obj.reporter.name}", "First report" if times == 1 else f"Reported {times} times"]
+        if target is not None and target._meta.label_lower in ("planner.collection", "planner.careplan") and "url" in data["content"]:
+            # Someone's shared collection or care plan: what people with the link see.
+            if target._meta.label_lower == "planner.collection":
+                data["images"] = [image(request, item) for item in target.items.exclude(photo_uri="")[:6]]
+            else:
+                steps = (f"{i}. {step.text}" for i, step in enumerate(target.steps.all(), 1))
+                data["content"]["text"] = "\n".join(steps)
+            data["facts"] += [
+                f"Shared, {target.followers.count()} tagging along" if target.share_code else "No longer shared",
+                "Hide or Remove stops it being shared",
+            ]
     elif queue == "review-reports":
         data.update(title=obj.get_reason_display(), text=obj.note, content=content(request, obj.review))
         data["facts"] = [f"{obj.review.rating}/5", obj.review.author_name, obj.review.booking.stylist_name]

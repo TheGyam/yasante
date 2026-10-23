@@ -22,6 +22,7 @@ import {
 import { makeStyles, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
@@ -40,26 +41,46 @@ export default function StylistAccountScreen() {
   const { data: profile, isLoading, isError, error, refetch } = useMyStylistProfile();
 
   return (
-    <Screen testID="stylist-account">
+    <Screen
+      headerRight={
+        <IconButton
+          icon={Settings}
+          size={36}
+          accessibilityLabel="Settings"
+          onPress={() => router.push('/settings')}
+        />
+      }
+      testID="stylist-account"
+    >
       <View style={styles.body}>
         {isLoading ? (
           <Skeleton height={160} />
         ) : isNotFound(error) ? (
-          <EmptyState
-            icon={Store}
-            title="Your page isn’t set up yet"
-            message="Add your styles, prices and policies, and you’ll get a link for your bio."
-            actionLabel="Set up my page"
-            onAction={() => router.push('/stylist-setup')}
-          />
+          <>
+            <Section>
+              <ModeSwitchRow />
+            </Section>
+            <EmptyState
+              icon={Store}
+              title="Your page isn’t set up yet"
+              message="Add your styles, prices and policies, and you’ll get a link for your bio."
+              actionLabel="Set up my page"
+              onAction={() => router.push('/stylist-setup')}
+            />
+          </>
         ) : isError || !profile ? (
-          <EmptyState
-            icon={WifiOff}
-            title="Couldn’t load your page"
-            message="Check your connection and try again."
-            actionLabel="Try again"
-            onAction={() => refetch()}
-          />
+          <>
+            <Section>
+              <ModeSwitchRow />
+            </Section>
+            <EmptyState
+              icon={WifiOff}
+              title="Couldn’t load your page"
+              message="Check your connection and try again."
+              actionLabel="Try again"
+              onAction={() => refetch()}
+            />
+          </>
         ) : (
           <>
             <View style={styles.identity}>
@@ -73,6 +94,10 @@ export default function StylistAccountScreen() {
                 </Text>
               </View>
             </View>
+            {/* The same place as in client mode: right under who she is. */}
+            <Section>
+              <ModeSwitchRow />
+            </Section>
             <Section>
               <ListRow
                 title={profile.baseArea}
@@ -140,16 +165,6 @@ export default function StylistAccountScreen() {
             )}
           </>
         )}
-
-        <Section>
-          <ModeSwitchRow />
-          <ListRow
-            title="Settings"
-            icon={Settings}
-            iconTone="neutral"
-            onPress={() => router.push('/settings')}
-          />
-        </Section>
       </View>
     </Screen>
   );

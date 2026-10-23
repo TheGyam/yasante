@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { endSession } from '@/features/auth';
+import { endSession, POLICY_VERSION } from '@/features/auth';
 import { mockApi, renderSite } from '../render';
 
 const user = {
@@ -74,7 +74,7 @@ describe('a stylist setting up on the web', () => {
       email: 'ama@example.com',
       role: 'stylist',
       ageConfirmed: true,
-      policyVersion: '2026-10-22',
+      policyVersion: POLICY_VERSION,
     });
     await waitFor(() => expect(calls.some(c => c.url === '/api/auth/email/start/')).toBe(true));
     // What she agreed to is on the record, stylist terms included.
@@ -85,8 +85,8 @@ describe('a stylist setting up on the web', () => {
         c => [c.purpose, c.policyVersion]
       )
     ).toEqual([
-      ['terms', '2026-10-22'],
-      ['privacy', '2026-10-22'],
+      ['terms', POLICY_VERSION],
+      ['privacy', POLICY_VERSION],
       ['stylist_terms', '2026-09'],
     ]);
     await typist.type(screen.getByLabelText('The code from the email'), '123456');

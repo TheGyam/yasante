@@ -84,7 +84,7 @@ export function SignupScreen() {
       subtitle={
         client
           ? 'To send your request, and keep your bookings in one place. Free.'
-          : 'Your page, menu and bookings in one place. Free for founding stylists.'
+          : 'Your page, menu and bookings in one place.'
       }
       footer={
         <Text variant="subhead" tone="secondary">

@@ -27,6 +27,7 @@ setAuthBridge({
   getAccessToken: () => useAuthStore.getState().tokens?.accessToken,
   getRefreshToken: () => useAuthStore.getState().tokens?.refreshToken,
   getUserId: () => useAuthStore.getState().user?.id,
+  getExpiresAt: () => useAuthStore.getState().tokens?.expiresAt,
   setTokens: ({ accessToken, refreshToken, expiresAt }) => {
     const current = useAuthStore.getState().tokens;
     if (!current) return;
@@ -85,28 +86,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Refresh token
   const refreshToken = useCallback(async (): Promise<boolean> => {
-    if (!tokens?.refreshToken) {
-      if (__DEV__) {
-        console.log('❌ No refresh token available');
-      }
+    // Read now, not from this render: a 401 retry may have rotated it a moment ago, and
+    // the server refuses a refresh token it has already replaced.
+    const saved = useAuthStore.getState().tokens;
+    if (!saved?.refreshToken) {
       return false;
     }
 
     try {
       // Check if token is still valid (not expired)
-      if (!isTokenExpired()) {
-        if (__DEV__) {
-          console.log('✅ Access token still valid, no refresh needed');
-        }
+      if (Date.now() < saved.expiresAt) {
         return true;
       }
 
-      if (__DEV__) {
-        console.log('🔄 Access token expired, refreshing...');
-      }
-
       // Call the API to refresh the token
-      const response = await api.auth.refreshToken(tokens.refreshToken);
+      const response = await api.auth.refreshToken(saved.refreshToken);
       const { accessToken, refreshToken: rotated, expiresAt } = response.data;
 
       // Convert expiresAt to timestamp if needed
@@ -117,13 +111,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       useAuthStore.getState().setTokens({
         accessToken,
         // The server revokes the old refresh token when it sends a new one.
-        refreshToken: rotated ?? tokens.refreshToken,
+        refreshToken: rotated ?? saved.refreshToken,
         expiresAt: expiresAtTimestamp,
       });
-
-      if (__DEV__) {
-        console.log('✅ Token refreshed successfully');
-      }
 
       return true;
     } catch (error: any) {
@@ -132,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error.response) logoutStore();
       return false;
     }
-  }, [tokens, isTokenExpired, logoutStore]);
+  }, [logoutStore]);
 
   // Auto-refresh token on mount and periodically
   useEffect(() => {
@@ -181,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { asyncStoragePersister } = await import('@/shared/utils/cachePersistence');
         await asyncStoragePersister.removeClient();
-      } catch (persisterError) {
+      } catch {
         // If persister removal fails, try manual removal
         try {
           const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
@@ -193,10 +183,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Logout from auth store (clears tokens and user)
       logoutStore();
-
-      if (__DEV__) {
-        console.log('✅ Logout successful - cache cleared');
-      }
     } catch (error) {
       // Even if cache clearing fails, proceed with logout
       console.error('Error during logout cleanup:', error);

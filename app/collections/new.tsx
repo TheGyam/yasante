@@ -9,10 +9,8 @@ import { makeStyles, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { notify } from '@/shared/ui/dialog';
 import { Input } from '@/shared/ui/Input';
-import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
-import { Section } from '@/shared/ui/Section';
-import { Toggle } from '@/shared/ui/Toggle';
+import { Text } from '@/shared/ui/Text';
 
 const useStyles = makeStyles(() => ({
   body: { gap: space.lg },
@@ -23,12 +21,11 @@ export default function NewCollectionScreen() {
   const styles = useStyles();
   const router = useRouter();
   const [name, setName] = useState('');
-  const [isPrivate, setIsPrivate] = useState(true);
   const create = useCreateCollection();
 
   const save = async () => {
     try {
-      await create.mutateAsync({ name: name.trim(), isPrivate });
+      await create.mutateAsync(name.trim());
       haptics.success();
       router.back();
     } catch (error) {
@@ -51,18 +48,9 @@ export default function NewCollectionScreen() {
           placeholder="Protective styles for winter"
           autoCapitalize="sentences"
         />
-        <Section footer="Private collections are yours alone. A public one can be shared as a page.">
-          <ListRow
-            title="Keep it private"
-            trailing={
-              <Toggle
-                value={isPrivate}
-                onValueChange={setIsPrivate}
-                accessibilityLabel="Keep it private"
-              />
-            }
-          />
-        </Section>
+        <Text variant="footnote" tone="secondary">
+          Only you can see it. You can share it with a link later.
+        </Text>
         <View style={styles.footer}>
           <Button
             label="Start collection"

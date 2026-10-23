@@ -538,6 +538,26 @@ export interface paths {
         patch: operations["care_plans_partial_update"];
         trace?: never;
     };
+    "/api/care-plans/{id}/make-mine/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /api/care-plans/:id/make-mine/ — one she tags along with becomes hers, in place:
+         *     her schedule, reminders and history stay, and the steps become hers to change.
+         */
+        post: operations["care_plans_make_mine_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/care-plans/{id}/sessions/": {
         parameters: {
             query?: never;
@@ -551,6 +571,24 @@ export interface paths {
         /** @description GET / POST /api/care-plans/:id/sessions/ — appended, never edited. */
         post: operations["care_plans_sessions_create"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/care-plans/{id}/share/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST to share by link; DELETE to stop (the link stops working at once). */
+        post: operations["care_plans_share_create"];
+        /** @description POST to share by link; DELETE to stop (the link stops working at once). */
+        delete: operations["care_plans_share_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -644,6 +682,41 @@ export interface paths {
         post?: never;
         /** @description DELETE /api/collections/:id/items/:item_id/ */
         delete: operations["collections_items_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collections/{id}/make-mine/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/collections/:id/make-mine/ — one she tags along with becomes hers, in place. */
+        post: operations["collections_make_mine_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collections/{id}/share/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST to share by link; DELETE to stop (the link stops working at once). */
+        post: operations["collections_share_create"];
+        /** @description POST to share by link; DELETE to stop (the link stops working at once). */
+        delete: operations["collections_share_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1433,6 +1506,142 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/shared/care-plans/{code}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/shared/care-plans/:code/ — the steps and the author's rhythm. */
+        get: operations["shared_care_plans_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/care-plans/{code}/follow/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/shared/care-plans/:code/follow/ — the author's steps, on her own schedule. */
+        post: operations["shared_care_plans_follow_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/care-plans/{code}/make-mine/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/shared/care-plans/:code/make-mine/ — the steps become hers to change. */
+        post: operations["shared_care_plans_make_mine_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/care-plans/{code}/report/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Into moderation, never to the author. Staff can stop it being shared. */
+        post: operations["shared_care_plans_report_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/collections/{code}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /api/shared/collections/:code/ — what anyone with the link sees. */
+        get: operations["shared_collections_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/collections/{code}/follow/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/shared/collections/:code/follow/ — it joins her Planner, kept up to date. */
+        post: operations["shared_collections_follow_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/collections/{code}/make-mine/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST /api/shared/collections/:code/make-mine/ — her own version to change. */
+        post: operations["shared_collections_make_mine_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/collections/{code}/report/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Into moderation, never to the author. Staff can stop it being shared. */
+        post: operations["shared_collections_report_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/shelf/": {
         parameters: {
             query?: never;
@@ -1511,7 +1720,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description GET /api/styles/ — the taxonomy looks are tagged from: [{ id, name }]. */
+        /**
+         * @description GET /api/styles/ — the taxonomy looks are tagged from: [{ id, name }].
+         *     ?popular=1: only styles with public looks, the most looked-at first, for browsing.
+         */
         get: operations["styles_list"];
         put?: never;
         post?: never;
@@ -2182,6 +2394,13 @@ export interface components {
             product: components["schemas"]["ProductResponse"];
             source: components["schemas"]["SourceEnum"];
         };
+        BasedOn: {
+            name: string;
+            /** @description Gone once the author's account is */
+            authorName?: string;
+            /** @description The original's link, while it's still shared */
+            code?: string;
+        };
         /** @enum {unknown} */
         BlankEnum: "";
         Block: {
@@ -2353,6 +2572,15 @@ export interface components {
             steps?: string[];
         };
         CarePlanResponse: {
+            sharing: components["schemas"]["SharingEnum"];
+            /** @description Her link, while it's shared */
+            shareUrl?: string;
+            /** @description How many tag along: counts, never who */
+            followers?: number;
+            madeItTheirs?: number;
+            /** @description Someone else's she tags along with */
+            following?: components["schemas"]["Following"];
+            basedOn?: components["schemas"]["BasedOn"];
             id: string;
             name: string;
             frequency: components["schemas"]["FrequencyEnum"];
@@ -2364,6 +2592,12 @@ export interface components {
             lastDoneAt?: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        CarePlanScheduleRequestRequest: {
+            frequency?: components["schemas"]["FrequencyEnum"];
+            specificDays?: number[];
+            timeOfDay?: components["schemas"]["TimeOfDayEnum"];
+            remindersOn?: boolean;
         };
         CarePlanSessionRequestRequest: {
             notes?: string;
@@ -2522,11 +2756,20 @@ export interface components {
         CollectionKindEnum: "look" | "content";
         CollectionRequestRequest: {
             name: string;
-            isPrivate?: boolean;
         };
         CollectionResponse: {
+            sharing: components["schemas"]["SharingEnum"];
+            /** @description Her link, while it's shared */
+            shareUrl?: string;
+            /** @description How many tag along: counts, never who */
+            followers?: number;
+            madeItTheirs?: number;
+            /** @description Someone else's she tags along with */
+            following?: components["schemas"]["Following"];
+            basedOn?: components["schemas"]["BasedOn"];
             id: string;
             name: string;
+            /** @description For apps from before sharing: not shared */
             isPrivate: boolean;
             /** Format: date-time */
             createdAt: string;
@@ -2736,6 +2979,11 @@ export interface components {
         FavoriteToggleRequestRequest: {
             contentId: string;
         };
+        FavouriteStylist: {
+            name: string;
+            handle?: string;
+            times: number;
+        };
         FeaturesResponse: {
             features: {
                 [key: string]: boolean;
@@ -2782,6 +3030,15 @@ export interface components {
             name: string;
             photoCount: number;
             priced: boolean;
+        };
+        Following: {
+            author: components["schemas"]["SharedAuthor"];
+            code: string;
+            /**
+             * Format: date-time
+             * @description When its author last changed it
+             */
+            updatedAt: string;
         };
         /** @description POST /api/auth/forgot-password/ */
         ForgotPasswordRequest: {
@@ -2971,6 +3228,15 @@ export interface components {
             washEveryDays?: number;
             daysSinceTrim?: number;
             length?: components["schemas"]["LengthInsight"];
+            /** @description What she had done, most often first */
+            styleCounts: components["schemas"]["StyleCount"][];
+            /** @description Once she's been back to one */
+            favouriteStylist?: components["schemas"]["FavouriteStylist"];
+            /** Format: double */
+            hoursInChair: number;
+            trims: number;
+            /** @description Days she did one of her care plans */
+            carePlanDays: number;
             looksSaved: number;
             productsAdded: number;
         };
@@ -3084,6 +3350,10 @@ export interface components {
             data: components["schemas"]["Look"][];
             nextCursor?: string;
             session?: string;
+        };
+        MakeMineRequestRequest: {
+            /** @description Hers to choose; the original's if left out */
+            name?: string;
         };
         MenuImportRequestRequest: {
             items: components["schemas"]["MenuItemDraftRequest"][];
@@ -3289,7 +3559,6 @@ export interface components {
         };
         PatchedCollectionRequestRequest: {
             name?: string;
-            isPrivate?: boolean;
         };
         PatchedHairProfileRequestRequest: {
             texture?: string;
@@ -3621,6 +3890,14 @@ export interface components {
          * @enum {string}
          */
         RoomEnum: "plenty" | "few";
+        SavedArticle: {
+            id: string;
+            userId: string;
+            contentId: string;
+            /** Format: date-time */
+            createdAt: string;
+            content: components["schemas"]["ContentResponse"];
+        };
         /**
          * @description * `salon` - salon
          *     * `home` - home
@@ -3646,6 +3923,46 @@ export interface components {
             over: number;
             clientSide: number;
         };
+        SharedAuthor: {
+            /** @description Her account, so she can be blocked */
+            id: string;
+            name: string;
+            username?: string;
+            avatarUri?: string;
+        };
+        SharedCarePlanResponse: {
+            code: string;
+            name: string;
+            author: components["schemas"]["SharedAuthor"];
+            frequency: components["schemas"]["FrequencyEnum"];
+            specificDays?: number[];
+            timeOfDay: components["schemas"]["TimeOfDayEnum"];
+            steps: components["schemas"]["CarePlanStepResponse"][];
+            /** Format: date-time */
+            updatedAt: string;
+            ownId?: string;
+            followingId?: string;
+        };
+        SharedCollectionResponse: {
+            code: string;
+            name: string;
+            author: components["schemas"]["SharedAuthor"];
+            itemCount: number;
+            /** Format: date-time */
+            updatedAt: string;
+            previewUris: string[];
+            items: components["schemas"]["CollectionItemResponse"][];
+            /** @description It's hers: the id of her own */
+            ownId?: string;
+            /** @description She tags along with it: its id in her Planner */
+            followingId?: string;
+        };
+        /**
+         * @description * `private` - private
+         *     * `link` - link
+         * @enum {string}
+         */
+        SharingEnum: "private" | "link";
         ShelfAddRequestRequest: {
             productId: string;
         };
@@ -3750,6 +4067,10 @@ export interface components {
         Style: {
             id: string;
             name: string;
+        };
+        StyleCount: {
+            name: string;
+            times: number;
         };
         StylistPageResponse: {
             waitlistJoined?: boolean;
@@ -4893,6 +5214,31 @@ export interface operations {
             };
         };
     };
+    care_plans_make_mine_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MakeMineRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CarePlanResponse"];
+                };
+            };
+        };
+    };
     care_plans_sessions_list: {
         parameters: {
             query?: never;
@@ -4936,6 +5282,47 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CarePlanSessionResponse"];
                 };
+            };
+        };
+    };
+    care_plans_share_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CarePlanResponse"];
+                };
+            };
+        };
+    };
+    care_plans_share_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5148,6 +5535,72 @@ export interface operations {
             path: {
                 id: string;
                 item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    collections_make_mine_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MakeMineRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionResponse"];
+                };
+            };
+        };
+    };
+    collections_share_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionResponse"];
+                };
+            };
+        };
+    };
+    collections_share_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
             };
             cookie?: never;
         };
@@ -5495,7 +5948,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FavoriteResponse"][];
+                    "application/json": components["schemas"]["SavedArticle"][];
                 };
             };
         };
@@ -6331,6 +6784,208 @@ export interface operations {
             };
         };
     };
+    shared_care_plans_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedCarePlanResponse"];
+                };
+            };
+        };
+    };
+    shared_care_plans_follow_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CarePlanScheduleRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CarePlanResponse"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CarePlanResponse"];
+                };
+            };
+        };
+    };
+    shared_care_plans_make_mine_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MakeMineRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CarePlanResponse"];
+                };
+            };
+        };
+    };
+    shared_care_plans_report_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    shared_collections_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedCollectionResponse"];
+                };
+            };
+        };
+    };
+    shared_collections_follow_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionResponse"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionResponse"];
+                };
+            };
+        };
+    };
+    shared_collections_make_mine_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MakeMineRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionResponse"];
+                };
+            };
+        };
+    };
+    shared_collections_report_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportRequestRequest"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     shelf_list: {
         parameters: {
             query?: never;
@@ -6482,7 +7137,10 @@ export interface operations {
     };
     styles_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Only styles with looks, most first */
+                popular?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;

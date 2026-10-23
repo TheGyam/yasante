@@ -21,8 +21,11 @@ RESOLUTIONS = {
 
 def _author_of(target):
     from apps.bookings.models import Review
+    from apps.planner.models import CarePlan, Collection
     from apps.stylists.models import StylistProfile
 
+    if isinstance(target, (Collection, CarePlan)):
+        return target.user_id
     if isinstance(target, (Look, LookComment)):
         return target.author_id
     if isinstance(target, Review):
@@ -34,9 +37,18 @@ def _author_of(target):
 
 def _set_status(target, action):
     from apps.bookings.models import Review
+    from apps.planner.models import CarePlan, Collection
     from apps.stylists.models import StylistProfile
 
-    if isinstance(target, (Look, LookComment)):
+    if isinstance(target, (Collection, CarePlan)):
+        # A shared collection or plan stays its author's: only the sharing stops, and
+        # everyone tagging along loses it. She can't share it again unless it's restored.
+        if action in ("hide", "remove"):
+            target.stop_sharing()
+            type(target).objects.filter(pk=target.pk).update(share_blocked=True)
+        elif action == "restore":
+            type(target).objects.filter(pk=target.pk).update(share_blocked=False)
+    elif isinstance(target, (Look, LookComment)):
         status = {"hide": "hidden", "remove": "removed", "restore": "live"}.get(action)
         if status:
             before = target.status

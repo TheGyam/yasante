@@ -21,14 +21,22 @@ export const askPermission = () => (asked ??= requestPermissions().catch(() => f
 // The server's id for this phone's token, so signing out can remove it.
 const DEVICE_KEY = 'yasante.push.device';
 
+/** Whether notifications are allowed now, and whether the phone would still ask. */
+export async function pushPermission() {
+  if (!Notifications || Platform.OS === 'web') return { granted: false, canAsk: false };
+  const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+  return { granted: status === 'granted', canAsk: status !== 'granted' && canAskAgain };
+}
+
 /**
  * Tell the server where to send this account's notifications. Quietly does nothing
- * without permission, in Expo Go, or when push isn't set up for the build.
+ * without permission, in Expo Go, or when push isn't set up for the build. Only asks
+ * when `ask` is set: the phone's question comes after ours, which says why.
  */
-export async function registerPush(): Promise<void> {
+export async function registerPush(ask = false): Promise<void> {
   if (!Notifications || Platform.OS === 'web') return;
   try {
-    if (!(await askPermission())) return;
+    if (!(ask ? await askPermission() : (await pushPermission()).granted)) return;
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
     const { data } = await apiClient.post<{ id: string }>('/api/devices/', {

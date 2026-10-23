@@ -10,6 +10,21 @@ Yaw's yes (section 17).
 Prices were checked on 21 October 2026 (sources at the end). They change: check them
 again before signing up to anything.
 
+## Status
+
+**On hold. Don't start any of this until Yaw says so** (Yaw, 21 October 2026). That
+includes the infrastructure fixes in section 13, which are urgent but wait for him too.
+When he does, start with phase 0 (section 16), then section 17's decisions.
+
+| Part | Status |
+| --- | --- |
+| Plan (this file) | Written, 21 October 2026 |
+| Infrastructure items 1 to 5: backups off the server, photos to S3, a CDN, crash reporting, uptime alerts | Not started: Yaw said wait |
+| Decisions in section 17 | Waiting for Yaw |
+| Phases 1 to 10 | Not started |
+
+Update this table as each part moves, with the date.
+
 ## 1. Where things stand today
 
 - The `video_posts` feature switch exists, but **nothing reads it**. Turning it on does

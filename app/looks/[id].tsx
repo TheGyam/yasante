@@ -1,5 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { useIsFocused } from '@react-navigation/native';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
+import {
+  useFocusEffect,
+  useIsFocused,
+  useNavigationState,
+  useRoute,
+} from '@react-navigation/native';
 import {
   StyleSheet,
   useWindowDimensions,
@@ -39,6 +52,8 @@ import {
   useFeedTracking,
   useLook,
   useLookActions,
+  LooksFooter,
+  LooksSkeleton,
   useRelatedLooks,
   type Look,
   type LookComment,
@@ -51,9 +66,9 @@ import { Avatar } from '@/shared/ui/Avatar';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { useContentInsets } from '@/shared/ui/layout';
-import { FEED_LIST, ListFooter } from '@/shared/ui/ListFooter';
+import { FEED_LIST } from '@/shared/ui/ListFooter';
 import { PressableScale } from '@/shared/ui/PressableScale';
-import { Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
+import { overlayCovers, Screen, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { track } from '@/shared/lib/analytics';
@@ -141,7 +156,16 @@ export default function LookScreen() {
   const finish = useCallback(() => {
     cover.set(0);
     setSettled(true);
+    overlayCovers.set(true);
   }, [cover]);
+  // Whatever's below stops drawing while this covers it (see overlayCovers): again
+  // whenever this is back on top, and not while anything else is.
+  useFocusEffect(
+    useCallback(() => {
+      if (settled) overlayCovers.set(true);
+      return () => overlayCovers.set(false);
+    }, [settled])
+  );
 
   const fadeIn = useCallback(() => {
     if (started.current) return;
@@ -196,6 +220,8 @@ export default function LookScreen() {
         if (closing.current) return;
         e.preventDefault();
         closing.current = true;
+        // The screen below shows again before this starts shrinking into it.
+        overlayCovers.set(false);
         const leave = () => navigation.dispatch(e.data.action);
         const back = (duration: number) =>
           progress.set(
@@ -239,15 +265,34 @@ export default function LookScreen() {
   });
   const photoStyle = useAnimatedStyle(() => ({ opacity: 1 - cover.get() }));
 
+  // Each look opens over the last one, which stays alive underneath so the photo can
+  // grow out of its tile. Under another look that has finished opening (it's no longer
+  // on top), this page can't be seen at all, so it lets go of everything but its place:
+  // kept whole, every look deeper in More like this held its photos in memory and made
+  // each frame slower (250ms frames and ~60MB more a look, five deep on a Note10+).
+  // Once the look above it is closed it's one below the top again, and rebuilds there,
+  // out of sight, scrolled back to where she left it.
+  const scrolledTo = useRef(0);
+  const { key } = useRoute();
+  const buried = useNavigationState(s => {
+    const at = s.routes.findIndex(r => r.key === key);
+    return at >= 0 && s.routes.length - at > 2 && s.routes[at + 1].name === 'looks/[id]';
+  });
+
   return (
-    <View ref={page} collapsable={false} style={heroStyles.fill}>
+    <View
+      ref={page}
+      collapsable={false}
+      style={[heroStyles.fill, buried && heroStyles.buried]}
+      pointerEvents={buried ? 'none' : 'auto'}
+    >
       <Animated.View
         pointerEvents="none"
         style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.bg }, backdrop]}
       />
       <Animated.View style={[heroStyles.fill, content]}>
-        {look ? (
-          <Screen back title={look.authorName} scroll="list" opaque={false} testID="look-screen">
+        {buried ? null : look ? (
+          <Screen back scroll="list" opaque={false} testID="look-screen">
             <LookThread
               id={id}
               settled={settled}
@@ -256,6 +301,7 @@ export default function LookScreen() {
               // Hidden under the moving copy, so there's only ever one photo on screen.
               photoStyle={photoStyle}
               initialPhotoIndex={hero?.photoIndex}
+              scrolledTo={scrolledTo}
             />
           </Screen>
         ) : (
@@ -291,6 +337,7 @@ export default function LookScreen() {
 
 const heroStyles = StyleSheet.create({
   fill: { flex: 1 },
+  buried: { opacity: 0 },
   flight: { position: 'absolute', overflow: 'hidden', borderRadius: radius.lg },
 });
 
@@ -309,6 +356,7 @@ function LookThread({
   onPhotoLayout,
   photoStyle,
   initialPhotoIndex,
+  scrolledTo,
 }: {
   id: string;
   /** False while the page is still arriving: comments and More like this wait until it has. */
@@ -317,6 +365,8 @@ function LookThread({
   onPhotoLayout: () => void;
   photoStyle: StyleProp<ViewStyle>;
   initialPhotoIndex?: number;
+  /** Where she had scrolled to, kept by the page while this is let go (see LookScreen). */
+  scrolledTo: RefObject<number>;
 }) {
   const styles = useStyles();
   const theme = useTheme();
@@ -359,6 +409,7 @@ function LookThread({
     () => (stage < 3 ? [] : (related.data?.pages.flatMap(page => page.data) ?? [])),
     [related.data, stage]
   );
+  const loadingMore = stage >= 3 && !related.data && related.isFetching;
   // What she sees and opens here is recorded like the feed, so it sinks next time.
   const tracking = useFeedTracking(
     related.data?.pages[0]?.session,
@@ -367,6 +418,24 @@ function LookThread({
     actions.onOpen
   );
   const handlers = useCommentHandlers(id, setReplyingTo);
+
+  // Remember her place when this is let go, and go back to it once it's built again.
+  // A layout effect, so the list is still there to ask.
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    return () => {
+      scrolledTo.current = list?.getAbsoluteLastScrollOffset() ?? 0;
+    };
+  }, [scrolledTo]);
+  const { height: screenHeight } = useWindowDimensions();
+  // Taken back as the grid fills in: until it's tall enough, the list can't go there yet.
+  const [returnTo] = useState(() => scrolledTo.current);
+  const restoring = useRef(returnTo > 0);
+  const restore = (_w: number, height: number) => {
+    if (!restoring.current) return;
+    listRef.current?.scrollToOffset({ offset: returnTo, animated: false });
+    if (height >= returnTo + screenHeight) restoring.current = false;
+  };
 
   const renderItem = useCallback(
     ({ item }: { item: Look }) => (
@@ -381,9 +450,109 @@ function LookThread({
     [actions, tracking.onOpen]
   );
 
+  const openComments = useCallback(() => router.push(`/looks/comments?id=${id}`), [router, id]);
+  const showMore = looks.length > 0 || loadingMore;
+  // Built once and kept while nothing in it changes, as home's header is: the page
+  // updates as More like this loads, and rebuilding the look, its photos and its
+  // comments then, mid-scroll, cost frames.
+  const header = useMemo(() => {
+    if (!look) return null;
+    const count = look.commentCount;
+    return (
+      <View style={styles.header}>
+        <LookCard
+          look={look}
+          detail
+          {...actions}
+          onOpen={undefined}
+          onSave={look.mine ? undefined : actions.onSave}
+          photoRef={photoRef}
+          onPhotoLayout={onPhotoLayout}
+          photoStyle={photoStyle}
+          details={stage >= 1}
+          initialPhotoIndex={initialPhotoIndex}
+        />
+        {stage >= 2 && !!look.styles[0] && (
+          <WhoDoesThis
+            style={look.styles[0]}
+            name={actions.styleNames[look.styles[0]]}
+            lookId={look.id}
+          />
+        )}
+        {stage >= 1 && (
+          <Animated.View
+            entering={FadeIn.duration(180)}
+            onLayout={e => (commentsAt.current = e.nativeEvent.layout.y)}
+          >
+            <PressableScale
+              onPress={openComments}
+              scaleTo={1}
+              accessibilityRole="button"
+              accessibilityLabel={count ? `All ${count} comments` : 'Comments'}
+              style={styles.commentsHead}
+              testID="look-comments-open"
+            >
+              <Text variant="overline" tone="tertiary">
+                {count ? `${count} ${count === 1 ? 'comment' : 'comments'}` : 'Comments'}
+              </Text>
+              {count > 0 && <ChevronRight size={16} color={theme.colors.text.tertiary} />}
+            </PressableScale>
+            {/* Only for a real wait: a shimmer running under the flight costs frames. */}
+            {thread.isLoading && <Skeleton height={60} />}
+            {preview.map(comment => (
+              <Thread key={comment.id} lookId={id} comment={comment} {...handlers} />
+            ))}
+            {stage >= 3 && !thread.isLoading && !preview.length && (
+              <Text variant="subhead" tone="secondary">
+                No comments yet. Say what you love about it.
+              </Text>
+            )}
+            {count > preview.length && preview.length > 0 && (
+              <Text
+                variant="subhead"
+                tone="secondary"
+                onPress={openComments}
+                accessibilityRole="button"
+                style={styles.viewAll}
+                suppressHighlighting
+              >
+                View all {count} comments
+              </Text>
+            )}
+          </Animated.View>
+        )}
+        {showMore && (
+          <Text variant="title3" accessibilityRole="header" style={styles.moreHead}>
+            More like this
+          </Text>
+        )}
+        {/* Still on its way: the grid's shape, as on home, rather than nothing. */}
+        {loadingMore && <LooksSkeleton />}
+      </View>
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    look,
+    styles,
+    theme,
+    actions,
+    photoRef,
+    onPhotoLayout,
+    photoStyle,
+    stage,
+    initialPhotoIndex,
+    thread.isLoading,
+    preview,
+    handlers.onReply,
+    handlers.onOptions,
+    handlers.onLike,
+    id,
+    openComments,
+    showMore,
+    loadingMore,
+  ]);
+
   if (!look) return null;
-  const count = look.commentCount;
-  const openComments = () => router.push(`/looks/comments?id=${id}`);
 
   return (
     <View style={styles.fill}>
@@ -396,83 +565,17 @@ function LookThread({
         renderItem={renderItem}
         onViewableItemsChanged={tracking.onViewableItemsChanged}
         viewabilityConfig={tracking.viewabilityConfig}
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <LookCard
-              look={look}
-              detail
-              {...actions}
-              onOpen={undefined}
-              onSave={look.mine ? undefined : actions.onSave}
-              photoRef={photoRef}
-              onPhotoLayout={onPhotoLayout}
-              photoStyle={photoStyle}
-              details={stage >= 1}
-              initialPhotoIndex={initialPhotoIndex}
-            />
-            {stage >= 2 && !!look.styles[0] && (
-              <WhoDoesThis
-                style={look.styles[0]}
-                name={actions.styleNames[look.styles[0]]}
-                lookId={look.id}
-              />
-            )}
-            {stage >= 1 && (
-              <Animated.View
-                entering={FadeIn.duration(180)}
-                onLayout={e => (commentsAt.current = e.nativeEvent.layout.y)}
-              >
-                <PressableScale
-                  onPress={openComments}
-                  scaleTo={1}
-                  accessibilityRole="button"
-                  accessibilityLabel={count ? `All ${count} comments` : 'Comments'}
-                  style={styles.commentsHead}
-                  testID="look-comments-open"
-                >
-                  <Text variant="overline" tone="tertiary">
-                    {count ? `${count} ${count === 1 ? 'comment' : 'comments'}` : 'Comments'}
-                  </Text>
-                  {count > 0 && <ChevronRight size={16} color={theme.colors.text.tertiary} />}
-                </PressableScale>
-                {/* Only for a real wait: a shimmer running under the flight costs frames. */}
-                {thread.isLoading && <Skeleton height={60} />}
-                {preview.map(comment => (
-                  <Thread key={comment.id} lookId={id} comment={comment} {...handlers} />
-                ))}
-                {stage >= 3 && !thread.isLoading && !preview.length && (
-                  <Text variant="subhead" tone="secondary">
-                    No comments yet. Say what you love about it.
-                  </Text>
-                )}
-                {count > preview.length && preview.length > 0 && (
-                  <Text
-                    variant="subhead"
-                    tone="secondary"
-                    onPress={openComments}
-                    accessibilityRole="button"
-                    style={styles.viewAll}
-                    suppressHighlighting
-                  >
-                    View all {count} comments
-                  </Text>
-                )}
-              </Animated.View>
-            )}
-            {looks.length > 0 && (
-              <Text variant="title3" accessibilityRole="header" style={styles.moreHead}>
-                More like this
-              </Text>
-            )}
-          </View>
-        }
-        ListFooterComponent={<ListFooter more={!!related.hasNextPage} />}
+        ListHeaderComponent={header}
+        ListFooterComponent={<LooksFooter loading={related.isFetchingNextPage} />}
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
           if (settled && focused && related.hasNextPage && !related.isFetchingNextPage) {
             related.fetchNextPage();
           }
         }}
+        onContentSizeChange={restore}
+        // Once she scrolls herself, she's the one deciding where to be.
+        onScrollBeginDrag={() => (restoring.current = false)}
         onEndReachedThreshold={FEED_LIST.onEndReachedThreshold}
         drawDistance={FEED_LIST.drawDistance}
         keyboardShouldPersistTaps="handled"

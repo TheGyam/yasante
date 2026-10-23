@@ -79,7 +79,7 @@ export default function SaveToCollectionScreen() {
 
   const startAndSave = async () => {
     try {
-      const collection = await create.mutateAsync({ name: newName.trim(), isPrivate: true });
+      const collection = await create.mutateAsync(newName.trim());
       await saveTo(collection.id);
     } catch (error) {
       await fail(error);

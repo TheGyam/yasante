@@ -41,14 +41,6 @@ export function useNetworkStatus() {
             isInternetReachable: state.isInternetReachable ?? null,
             type: state.type,
           });
-
-          if (__DEV__) {
-            console.log('Network status changed:', {
-              isConnected: state.isConnected,
-              isInternetReachable: state.isInternetReachable,
-              type: state.type,
-            });
-          }
         });
       } catch (error) {
         // NetInfo not available, assume online

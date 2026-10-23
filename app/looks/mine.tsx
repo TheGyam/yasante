@@ -4,7 +4,7 @@ import Animated from 'react-native-reanimated';
 import { Camera, Images, Lock } from 'lucide-react-native';
 import { useMyLooks } from '@/features/looks';
 import { useRouter } from '@/shared/lib/navigation';
-import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
+import { GUTTER, makeStyles, radius, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { useContentInsets } from '@/shared/ui/layout';

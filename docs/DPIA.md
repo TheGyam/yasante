@@ -18,7 +18,9 @@ expects an assessment before the processing starts.
 | Data | From whom | Why | Lawful basis |
 | --- | --- | --- | --- |
 | Name, email, phone, password (scrambled), Apple or Google sign-in ID | Everyone | Running the account | Contract |
-| Looks shown and opened in the feed, and time on them; likes, saves, comments, bookings and Not for me as feed signals | People while the ranked feed is on for them | Choosing and ordering their feed, More like this, Stylists for you and some notifications | Legitimate interest (privacy policy 2026-10-22) |
+| Looks shown and opened in the feed and in More like this, and time on them; likes, saves, comments, bookings and Not for me as feed signals | People while the ranked feed is on for them | Choosing and ordering their feed, More like this, Stylists for you and some notifications | Legitimate interest (privacy policy 2026-10-22; More like this added in the next version) |
+| Shared collections and care plans: that it's shared, its link code, how many tag along and made it theirs; who tags along with what; the "Based on" credit | People who share, tag along or make something theirs | Sharing, tagging along and making their own version; telling people tagging along when it changes | Contract: it's what they asked the service to do (docs/SHARING_PLAN.md) |
+| Care plan reminders | People who turn them on | Reminding them on their days at their time of day | Contract; scheduled on the phone, nothing extra sent to us |
 | Hair profile: texture, length, density, porosity, goals, scalp, chemical treatments, photos, history of changes | Clients who choose to fill it in | Matching looks, stylists and products; insights for the person | Explicit consent (`personalisation`), because texture and scalp are special category |
 | Check-ins after a style: how it's holding, scalp comfort, would book again, whether it's still in | Clients after an appointment | Insights for the person; how long styles last | Explicit consent for the scalp question (once 6.5 is built); contract for the rest |
 | Hair diary: wash days, trims, take-downs, with weekday and hour | Clients who log them | Insights and reminders for the person | Contract: it's the person's own record. Using it to personalise (6.7) needs `personalisation` consent |
@@ -41,7 +43,9 @@ apps, advertising IDs. No ad networks and no third-party tracking.
   texture, length and porosity (only with `personalisation` consent, once 6.5 is
   built). Never the scalp, diary or check-in answers.
 - **Other people on Yasante:** only what the person posts publicly and their public
-  profile.
+  profile. If she shares a collection or care plan, anyone with its link sees its name,
+  what's in it (or its steps), and her name, username and photo; never her hair
+  details, schedule, reminders or history. She sees how many tag along, never who.
 - **Yasante staff:** the staff site, behind staff sign-in. Money and analytics insights
   are superusers only. Hair breakdowns in staff reports will come only from people who
   agreed to research, in groups of at least 20.
@@ -67,6 +71,8 @@ apps, advertising IDs. No ad networks and no third-party tracking.
 | The feed feels intrusive, or narrows what people see | Possible, moderate | "Why you're seeing this" on every ranked look; Latest, with nothing personal; Not for me; every 8th look is something new; the feed never learns a hair type, ethnicity, health or income from behaviour; hair and area only with the hair consent | Built behind the `ranked_feed` switch (docs/FEED_PLAN.md) |
 | A breach exposes hair or health details | Unlikely, serious | Encrypted in transit; tokens in secure storage; private photos never public; staff access restricted; backups overwritten within 7 days | Built |
 | Under-18s sign up | Possible, moderate | Terms say 18+; age confirmed at sign-up | Built |
+| Something shared reveals more than meant, or reaches people it wasn't meant for | Possible, moderate | Off by default (existing collections all start as Only you); a random 128-bit link code, not an id; stopping kills the link at once; only name, items or steps, and name, username and photo are shown; her private looks, blocked people and removed looks are filtered out for each viewer; pages are noindex and not in the sitemap | Designed (docs/SHARING_PLAN.md) |
+| Who tags along with whom becomes visible | Unlikely, moderate | Owners see counts only, never names; people tagging along aren't listed anywhere | Designed |
 | A partner misuses research results | Possible, moderate | No partner until Yaw agrees one; results are anonymous totals only; CSV export only for an agreed partner | Planned (6.9) |
 
 ## 5. Research, in detail
@@ -88,7 +94,8 @@ and would need a new assessment.
 | Account, hair profile, posts, shelf, consent records | Until the account is deleted |
 | Appointment records held by a stylist | Kept after deletion without the client's name, hair details, notes or address; reviews keep only their star rating |
 | Usage events | 12 months |
-| Feed activity (looks shown, opened, time on them) | 90 days |
+| Feed activity (looks shown, opened, time on them, in the feed and in More like this) | 90 days |
+| Shared collections and care plans, and tagging along | Until stopped, left or the account is deleted; others' own versions stay theirs, without the author's name |
 | Searches | Never linked to anyone; deleted after 12 months |
 | Stylist page views | Viewer removed after 90 days; counts kept |
 | Security logs and error reports | Up to 90 days |

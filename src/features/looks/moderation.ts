@@ -42,9 +42,11 @@ const TARGETS: Record<string, string> = {
   lookcomment: 'comment',
   review: 'review',
   stylistprofile: 'page',
+  collection: 'collection',
+  careplan: 'care plan',
 };
 
-/** "look", "comment", "review", "page". */
+/** "look", "comment", "review", "page", "collection", "care plan". */
 export const targetNoun = (target: string) => TARGETS[target] ?? 'post';
 
 export const ACTION_LABELS: Record<MyModerationAction['action'], string> = {
@@ -52,6 +54,10 @@ export const ACTION_LABELS: Record<MyModerationAction['action'], string> = {
   remove: 'Removed',
   unpublish: 'Taken down',
 };
+
+/** What was done, in words that fit what it was done to: a shared collection or plan stays hers, unshared. */
+export const actionLabel = (action: MyModerationAction['action'], target: string) =>
+  target === 'collection' || target === 'careplan' ? 'No longer shared' : ACTION_LABELS[action];
 
 export const REPORT_STATUS_LABELS: Record<MyReport['status'], string> = {
   open: 'Being looked at',

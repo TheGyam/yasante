@@ -1,4 +1,8 @@
-import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import axios, {
+  type AxiosInstance,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from 'axios';
 
 /**
  * Schema-first mocks: the app talks to the same URLs the backend will serve, and a
@@ -84,7 +88,27 @@ export function installMocks(client: AxiosInstance) {
     const url = config.url ?? '';
     const match = matchRoute(config.method ?? 'get', url);
     if (!match) {
-      if (__DEV__) console.log('[mocks] no handler for', config.method, url);
+      // A mock session's token never goes to a real server: it would refuse it (even on
+      // public endpoints), and the refresh that follows would sign her out. Checked as
+      // the request is sent, after every other interceptor has added its headers
+      // (axios runs request interceptors last-added first, so this one runs early).
+      const network = axios.getAdapter(config.adapter ?? axios.defaults.adapter);
+      config.adapter = async cfg => {
+        if (!String(cfg.headers?.Authorization ?? '').startsWith('Bearer mock.')) {
+          return network(cfg);
+        }
+        throw Object.assign(new Error('Not in the mock backend'), {
+          isAxiosError: true,
+          config: cfg,
+          response: {
+            data: { message: 'Not in the mock backend' },
+            status: 404,
+            statusText: 'Not Found',
+            headers: {},
+            config: cfg,
+          },
+        });
+      };
       return config;
     }
 

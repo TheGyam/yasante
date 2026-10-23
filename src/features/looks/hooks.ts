@@ -409,7 +409,8 @@ export function useRemoveComment(_lookId: string) {
   });
 }
 
-export type ReportTarget = 'look' | 'comment' | 'profile';
+/** A shared collection or care plan is reported by its link's code. */
+export type ReportTarget = 'look' | 'comment' | 'profile' | 'collection' | 'care-plan';
 
 /** Reports go to moderation. The person reported is never told who. */
 export function useReport() {
@@ -429,7 +430,9 @@ export function useReport() {
         ? looksApi.reportComment(id, reason, note)
         : kind === 'profile'
           ? looksApi.reportProfile(id, reason, note)
-          : looksApi.report(id, reason, note),
+          : kind === 'collection' || kind === 'care-plan'
+            ? looksApi.reportShared(kind, id, reason, note)
+            : looksApi.report(id, reason, note),
   });
 }
 
@@ -460,4 +463,13 @@ export function useStyleTaxonomy() {
 
 export function useLookAreas() {
   return useQuery({ queryKey: ['look-areas'], queryFn: looksApi.areas, staleTime: 10 * 60 * 1000 });
+}
+
+/** Styles with looks behind them, most first: every one finds something. */
+export function usePopularStyles() {
+  return useQuery({
+    queryKey: [KEY, 'popular-styles'],
+    queryFn: looksApi.popularStyles,
+    staleTime: 60 * 60 * 1000,
+  });
 }

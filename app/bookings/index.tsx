@@ -36,7 +36,12 @@ export default function BookingsScreen() {
   const { data: waiting = [] } = useSlotInterests();
   const unwatch = useUnwatchSlots();
   const live = bookings.filter(isLive);
-  const past = bookings.filter(booking => !isLive(booking));
+  // Newest first. Includes requests for days still to come that were declined or went
+  // unanswered, so it's "earlier requests", not "past".
+  const when = (b: Booking) => b.scheduledFor ?? b.requestedTimes[0] ?? '';
+  const past = bookings
+    .filter(booking => !isLive(booking))
+    .sort((a, b) => when(b).localeCompare(when(a)));
 
   const row = (booking: Booking) => (
     <ListRow
@@ -116,7 +121,7 @@ export default function BookingsScreen() {
                 {waiting.map(slot)}
               </Section>
             )}
-            {past.length > 0 && <Section title="Before">{past.map(row)}</Section>}
+            {past.length > 0 && <Section title="Earlier requests">{past.map(row)}</Section>}
           </>
         ) : (
           <EmptyState

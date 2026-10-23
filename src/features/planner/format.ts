@@ -17,39 +17,57 @@ export const TIME_OF_DAY_LABELS: Record<TimeOfDay, string> = {
 };
 
 export const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+/** The days as a week is read in the UK and Ghana: Monday first. Values stay 0 = Sunday. */
+export const WEEK = [1, 2, 3, 4, 5, 6, 0];
+const weekOrder = (a: number, b: number) => WEEK.indexOf(a) - WEEK.indexOf(b);
+
+/**
+ * "6 tagging along · 2 made it theirs", leaving out what's still nought; nothing at all
+ * for a link nobody has used yet.
+ */
+export function shareCounts(followers = 0, madeItTheirs = 0) {
+  return [
+    followers > 0 && `${followers} tagging along`,
+    madeItTheirs > 0 && `${madeItTheirs} made it theirs`,
+  ]
+    .filter(Boolean)
+    .join(SEP);
+}
 
 /** "Every week · Evening" */
 export function describePlan(plan: Pick<CarePlan, 'frequency' | 'specificDays' | 'timeOfDay'>) {
   const often =
     plan.frequency === 'specific-days' && plan.specificDays?.length
       ? [...plan.specificDays]
-          .sort()
+          .sort(weekOrder)
           .map(day => DAY_LABELS[day])
           .join(', ')
       : FREQUENCY_LABELS[plan.frequency];
   return `${often}${SEP}${TIME_OF_DAY_LABELS[plan.timeOfDay]}`;
 }
 
-/** The day it's next due. A plan never done is due today. */
+/** The day it's next due. A plan never done is due today, or on the first of her days. */
 export function nextDue(
   plan: Pick<CarePlan, 'frequency' | 'specificDays' | 'lastDoneAt'>,
   now = new Date()
 ): Date {
   const today = startOfDay(now);
-  if (!plan.lastDoneAt) return today;
-
-  const last = startOfDay(new Date(plan.lastDoneAt));
-  if (Number.isNaN(last.getTime())) return today;
-
-  if (plan.frequency === 'specific-days') {
-    const days = plan.specificDays ?? [];
-    if (!days.length) return today;
-    // The next chosen weekday after the last time it was done.
-    for (let step = 1; step <= 7; step++) {
-      const day = addDays(last, step);
+  const days = plan.frequency === 'specific-days' ? (plan.specificDays ?? []) : [];
+  // The first chosen weekday from `from` on.
+  const nextChosen = (from: Date) => {
+    for (let step = 0; step < 7; step++) {
+      const day = addDays(from, step);
       if (days.includes(day.getDay())) return day;
     }
     return today;
+  };
+  const last = plan.lastDoneAt ? startOfDay(new Date(plan.lastDoneAt)) : undefined;
+  // Never done: today, or the first of her days from today.
+  if (!last || Number.isNaN(last.getTime())) return days.length ? nextChosen(today) : today;
+
+  if (plan.frequency === 'specific-days') {
+    // The next chosen weekday after the last time it was done.
+    return days.length ? nextChosen(addDays(last, 1)) : today;
   }
 
   const gap = plan.frequency === 'daily' ? 1 : plan.frequency === 'every-2-days' ? 2 : 7;

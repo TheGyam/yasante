@@ -122,7 +122,7 @@ export default function SignupScreen() {
       title={stylist ? 'Set up your stylist account' : 'Create your account'}
       subtitle={
         stylist
-          ? 'Your page, menu and bookings in one place. Free for founding stylists.'
+          ? 'Your page, menu and bookings in one place.'
           : 'Plan your styles, track your growth and find stylists who know your hair.'
       }
       back={pushed || undefined}

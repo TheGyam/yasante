@@ -32,7 +32,14 @@ const useStyles = makeStyles(() => ({
   footer: { gap: space.xs, paddingTop: space.lg },
 }));
 
-const NOUN: Record<ReportTarget, string> = { look: 'look', comment: 'comment', profile: 'page' };
+const NOUN: Record<ReportTarget, string> = {
+  look: 'look',
+  comment: 'comment',
+  profile: 'page',
+  collection: 'collection',
+  'care-plan': 'care plan',
+};
+const SHARED: ReportTarget[] = ['collection', 'care-plan'];
 
 /**
  * What you can do about someone else's look, comment or page: say what's wrong
@@ -62,12 +69,13 @@ export default function ReportOptionsScreen() {
   const close = (emptied: boolean) =>
     emptied && params.leave === '1' ? router.dismiss(2) : router.back();
   const noun = NOUN[kind];
-  // "It isn't their work" is about pictures, so a comment can't be stolen work;
-  // "not about hair" is for looks only.
+  // "It isn't their work" is about pictures, so a comment can't be stolen work, and a
+  // collection is other people's work by design; "not about hair" is for looks and
+  // what's shared.
   const reasons = REPORT_REASONS.filter(
     r =>
-      !(kind === 'comment' && r.value === 'not-their-work') &&
-      !(kind !== 'look' && r.value === 'not-hair')
+      !((kind === 'comment' || SHARED.includes(kind)) && r.value === 'not-their-work') &&
+      !(kind !== 'look' && !SHARED.includes(kind) && r.value === 'not-hair')
   );
 
   const [reason, setReason] = useState<ReportReason>();
@@ -210,7 +218,7 @@ export default function ReportOptionsScreen() {
             <ListRow title="Why you’re seeing this" subtitle={params.why} icon={Info} />
           </Section>
         )}
-        {kind !== 'comment' && (
+        {kind !== 'comment' && !SHARED.includes(kind) && (
           <Section footer="Nobody is told.">
             <ListRow
               title="Not for me"
@@ -262,16 +270,18 @@ export default function ReportOptionsScreen() {
           />
         )}
 
-        <Section footer="Blocking is separate from reporting, and takes effect straight away.">
-          <ListRow
-            title={`Block ${name}`}
-            subtitle="You stop seeing each other"
-            icon={UserX}
-            destructive
-            onPress={confirmBlock}
-            testID="look-block"
-          />
-        </Section>
+        {!!authorId && (
+          <Section footer="Blocking is separate from reporting, and takes effect straight away.">
+            <ListRow
+              title={`Block ${name}`}
+              subtitle="You stop seeing each other"
+              icon={UserX}
+              destructive
+              onPress={confirmBlock}
+              testID="look-block"
+            />
+          </Section>
+        )}
 
         <View style={styles.footer}>
           <Button

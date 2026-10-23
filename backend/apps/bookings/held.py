@@ -164,6 +164,8 @@ def open_day(profile, start, except_client_id=None):
     from .models import SlotInterest
 
     day = start.astimezone(zones.of(profile)).date()
+    if day < timezone.now().astimezone(zones.of(profile)).date():
+        return  # A day that's gone can't be booked.
     for interest in SlotInterest.objects.filter(
         stylist_id=profile.account_id,
         from_date__lte=day,

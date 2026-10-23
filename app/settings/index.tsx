@@ -115,6 +115,12 @@ export default function SettingsScreen() {
             iconTone="neutral"
             onPress={() => router.push(PRIVACY_ROUTE)}
           />
+          <ListRow
+            title="Community guidelines"
+            icon={FileText}
+            iconTone="neutral"
+            onPress={() => router.push('/policy/guidelines')}
+          />
         </Section>
 
         {isAuthenticated && (

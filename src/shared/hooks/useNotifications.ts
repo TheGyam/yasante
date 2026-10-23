@@ -1,5 +1,4 @@
 import { useEffect, useRef } from 'react';
-import { askPermission } from '@/shared/lib/push';
 
 // expo-notifications needs a development build; in Expo Go it's absent.
 let Notifications: typeof import('expo-notifications') | null = null;
@@ -28,7 +27,7 @@ export interface NotificationCategory {
 }
 
 /**
- * Asks for permission, registers the answer buttons notifications can carry, and
+ * Registers the answer buttons notifications can carry, and
  * hands every tapped notification's target to `onOpen` — including the one that
  * launched the app, and which button was pressed.
  */
@@ -47,7 +46,6 @@ export function useNotifications(
   useEffect(() => {
     if (!Notifications) return;
     const api = Notifications;
-    askPermission();
 
     for (const category of registered.current) {
       api

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
+import Animated from 'react-native-reanimated';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MessageCircle } from 'lucide-react-native';
@@ -22,6 +23,12 @@ import { useContentInsets } from '@/shared/ui/layout';
 import { FEED_LIST, ListFooter } from '@/shared/ui/ListFooter';
 import { Screen, ScreenTitle, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
+
+// The header's title fades with the scroll on the UI thread, so the list must be an
+// animated one: a plain FlashList calls the handler as a function and crashes.
+const AnimatedFlashList = Animated.createAnimatedComponent(
+  FlashList
+) as unknown as typeof FlashList;
 
 /**
  * A look's whole conversation, in a sheet over the look, as Instagram, TikTok and
@@ -60,7 +67,7 @@ function Conversation({ lookId, title }: { lookId: string; title: string }) {
 
   return (
     <View style={{ flex: 1 }}>
-      <FlashList
+      <AnimatedFlashList
         ref={listRef}
         data={comments}
         keyExtractor={comment => comment.id}

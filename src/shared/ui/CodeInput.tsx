@@ -1,5 +1,5 @@
 import { useEffect, useRef, type Ref } from 'react';
-import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, TextInput } from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedStyle,

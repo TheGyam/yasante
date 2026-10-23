@@ -15,16 +15,7 @@ export function useLogin() {
       return response.data;
     },
     onSuccess: data => {
-      if (__DEV__) {
-        console.log('✅ Login successful, setting auth state:', {
-          hasUser: !!data?.user,
-          hasTokens: !!(data?.accessToken && data?.refreshToken),
-          userId: data?.user?.id,
-        });
-      }
-
       if (!data?.user || !data?.accessToken || !data?.refreshToken) {
-        console.error('❌ Invalid login response:', data);
         throw new Error('Invalid login response: missing user or tokens');
       }
 
@@ -52,16 +43,7 @@ export function useSignup() {
   return useMutation({
     mutationFn: async (request: SignupRequest) => (await api.auth.signup(request)).data,
     onSuccess: data => {
-      if (__DEV__) {
-        console.log('✅ Signup successful, setting auth state:', {
-          hasUser: !!data?.user,
-          hasTokens: !!(data?.accessToken && data?.refreshToken),
-          userId: data?.user?.id,
-        });
-      }
-
       if (!data?.user || !data?.accessToken || !data?.refreshToken) {
-        console.error('❌ Invalid signup response:', data);
         throw new Error('Invalid signup response: missing user or tokens');
       }
 

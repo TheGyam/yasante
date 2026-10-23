@@ -13,7 +13,10 @@ module.exports = {
     'prettier/prettier': 'warn',
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-unused-vars': [
+      'warn',
+      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+    ],
     'no-console': ['warn', { allow: ['warn', 'error'] }],
   },
   // React Native globals come from eslint-config-expo; the react-native/react-native

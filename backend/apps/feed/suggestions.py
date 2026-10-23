@@ -6,6 +6,7 @@ in her feed, for "Why am I seeing this".
 
 import math
 import random
+import re
 from collections import Counter, defaultdict
 
 from django.db.models import Q
@@ -24,8 +25,13 @@ CLOSENESS = {"similar": 1.0, "styles": 0.8, "people": 0.3}
 # How far closeness outweighs her taste and how well a look is doing.
 CLOSENESS_PULL = 2.0
 RELATED_QUOTAS = {"similar": 100, "style": 200, "people": 30}
+# Past the close ones it widens, so it never just stops: up to this many from each of
+# the wider bands (kindred styles, the same hair texture, the best of the rest).
+WIDER_QUOTA = 150
+# Words two style names can share without being kin ("Wash and go", "Feed-in braids").
+NOT_KIN = {"and", "in", "go", "on", "with", "the"}
 # One visit's worth, paged through like the feed.
-RELATED_SIZE = 150
+RELATED_SIZE = 400
 SUGGESTED_STYLISTS = 10
 # "Stylists for you" is for finding someone new: at most this many she already knows.
 KNOWN_SLOTS = 2
@@ -46,8 +52,13 @@ def related_looks(look, user, limit=RELATED_SIZE, now=None, rng=None):
     """
     Looks like this one, closest and best for her first, with variety. What she's seen
     or opened this week sinks (as in her feed), so it isn't the same looks every visit.
+
+    Like Pinterest's, it doesn't stop when the close ones run out: it widens, in bands,
+    to kindred styles (box and knotless braids share "braids"), then looks on the same
+    hair texture, then the best of the rest. Each band is ranked on its own and follows
+    the one before, so it's one list and the closest always lead.
     """
-    from apps.looks.models import Look
+    from apps.looks.models import Look, Style
 
     now = now or timezone.now()
     allowed = _allowed(user).exclude(pk=look.pk)
@@ -71,6 +82,22 @@ def related_looks(look, user, limit=RELATED_SIZE, now=None, rng=None):
     person = Q(author_id=look.author_id) | (Q(stylist_id=look.stylist_id) if look.stylist_id else Q(pk__in=[]))
     for pk in allowed.filter(person).order_by("-created_at").values_list("pk", flat=True)[: RELATED_QUOTAS["people"]]:
         found[pk].add("people")
+
+    band = {}
+    rest = allowed.exclude(pk__in=list(found))
+    # Kin by name: "Knotless braids" and "Boho braids" share "braids", "Faux locs" "locs".
+    named = {slug: set(re.split(r"[\s-]+", name.lower())) - NOT_KIN for slug, name in Style.objects.values_list("slug", "name")}
+    words = set().union(*(named.get(slug, set()) for slug in slugs))
+    kin = [slug for slug, its in named.items() if slug not in slugs and words & its]
+    wider = [
+        ("style", rest.filter(styles__slug__in=kin).distinct() if kin else rest.none()),
+        ("hair", rest.filter(hair_texture=look.hair_texture) if look.hair_texture else rest.none()),
+        ("evergreen", rest),
+    ]
+    for n, (source, looks) in enumerate(wider, start=1):
+        for pk in looks.exclude(pk__in=list(band)).order_by("-created_at").values_list("pk", flat=True)[:WIDER_QUOTA]:
+            found[pk].add(source)
+            band[pk] = n
     if not found:
         return []
 
@@ -87,7 +114,13 @@ def related_looks(look, user, limit=RELATED_SIZE, now=None, rng=None):
         )
         # Her own pull, without counting "similar" twice: here it means like this look.
         c.score = score(c, viewer, {}, rates, now) * (1 + CLOSENESS_PULL * closeness)
-    return mix(candidates, rates, rng or random.Random(), limit)
+    rng = rng or random.Random()
+    out = mix([c for c in candidates if c.pk not in band], rates, rng, limit)
+    for n in range(1, len(wider) + 1):
+        if len(out) >= limit:
+            break
+        out += mix([c for c in candidates if band.get(c.pk) == n], rates, rng, limit - len(out), served=out, slots_served=len(out))
+    return out
 
 
 def suggested_stylists(user, limit=SUGGESTED_STYLISTS, today=None):
@@ -212,6 +245,8 @@ def reasons(items, user, surface="feed"):
                 "similar": "Saved by people who saved this look",
                 "style": f"More {style_name}" if style_name else "In the same style",
                 "people": f"More from {person}" if person else "More from the same person",
+                "hair": "On the same hair texture",
+                "evergreen": "Loved on Yasante",
             }.get(source, "Like this look")
         else:
             text = {

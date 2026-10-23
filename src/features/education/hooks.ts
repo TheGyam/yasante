@@ -8,15 +8,19 @@ import { useAuth } from '@/features/auth';
 const CONTENT_QUERY_KEY = 'content';
 const FAVORITES_QUERY_KEY = 'favorites';
 
-export function useContent(filters?: {
-  hairType?: string;
-  topic?: string;
-  type?: string;
-  /** Always pass one: a screen should read a page, never the whole catalogue. */
-  limit?: number;
-}) {
+export function useContent(
+  filters?: {
+    hairType?: string;
+    topic?: string;
+    type?: string;
+    /** Always pass one: a screen should read a page, never the whole catalogue. */
+    limit?: number;
+  },
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: [CONTENT_QUERY_KEY, filters],
+    enabled: options?.enabled,
     queryFn: async () => {
       const response = await api.content.getAll(filters);
       return response;
@@ -107,7 +111,7 @@ export function useInfiniteContent(filters?: { hairType?: string; topic?: string
         } as CursorPaginatedResponse<Content>;
       }
     },
-    getNextPageParam: (lastPage, allPages) => {
+    getNextPageParam: lastPage => {
       try {
         // CRITICAL: Guard against undefined or null lastPage
         if (!lastPage || typeof lastPage !== 'object') {
@@ -394,7 +398,7 @@ export async function prefetchRelatedContent(
       pages: [page],
       pageParams: [undefined],
     });
-  } catch (err) {
+  } catch {
     // If prefetch fails, ensure we don't leave malformed data
     queryClient.setQueryData(queryKey, {
       pages: [],
@@ -472,7 +476,10 @@ export function useRelatedContent(
   const validTopic = topic && topic.trim() ? topic : '';
   const isEnabled = options?.enabled !== false && !!contentId && !!validTopic;
   const queryClient = useQueryClient();
-  const queryKey = [CONTENT_QUERY_KEY, 'related', contentId, validTopic];
+  const queryKey = useMemo(
+    () => [CONTENT_QUERY_KEY, 'related', contentId, validTopic],
+    [contentId, validTopic]
+  );
 
   // Clean up any invalid cached data on mount and when query key changes
   useEffect(() => {

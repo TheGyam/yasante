@@ -3,7 +3,6 @@ import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { Bookmark, BookmarkPlus } from 'lucide-react-native';
 import { PhotoCount } from '@/shared/ui/PhotoCount';
-import { DEFAULT_CURRENCY, formatMoney } from '@/shared/lib/format';
 import { makeStyles, radius, space } from '@/shared/theme';
 import { Avatar } from '@/shared/ui/Avatar';
 import { IconButton } from '@/shared/ui/IconButton';
@@ -92,12 +91,9 @@ export const LookTile = memo(function LookTile({
     64,
     look.styles.length ? onFindStylists : undefined
   );
-  // A featured stylist isn't taking bookings yet: "Featured" stands where a price would.
-  const price = look.stylistFeatured
-    ? 'Featured'
-    : look.price
-      ? `${look.fromPrice ? 'from ' : ''}${formatMoney(look.price, look.currency ?? DEFAULT_CURRENCY)}`
-      : undefined;
+  // No price over the photo: the feed is for looking. A featured stylist, who isn't
+  // taking bookings yet, is marked as one; the price is on the look itself.
+  const price = look.stylistFeatured ? 'Featured' : undefined;
 
   return (
     <View style={[styles.tile, dimmed && styles.dimmed]}>

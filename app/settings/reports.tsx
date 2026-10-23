@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import { useRouter } from '@/shared/lib/navigation';
 import { Flag, ShieldAlert } from 'lucide-react-native';
 import {
-  ACTION_LABELS,
+  actionLabel,
   APPEAL_STATUS_LABELS,
   REPORT_STATUS_LABELS,
   reportReasonLabel,
@@ -52,7 +52,7 @@ export default function ReportsScreen() {
               return (
                 <ListRow
                   key={action.id}
-                  title={`${ACTION_LABELS[action.action]}: your ${targetNoun(action.target)}`}
+                  title={`${actionLabel(action.action, action.target)}: your ${targetNoun(action.target)}`}
                   subtitle={`${day(action.createdAt)}${SEP}${
                     appeal ? APPEAL_STATUS_LABELS[appeal.status] : action.reason
                   }`}
@@ -66,7 +66,7 @@ export default function ReportsScreen() {
                             pathname: '/settings/appeal',
                             params: {
                               id: action.id,
-                              what: `${ACTION_LABELS[action.action]}: your ${targetNoun(action.target)}`,
+                              what: `${actionLabel(action.action, action.target)}: your ${targetNoun(action.target)}`,
                               reason: action.reason,
                             },
                           } as never)

@@ -3,15 +3,26 @@ import { RefreshControl, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { FlashList } from '@shopify/flash-list';
 import Animated from 'react-native-reanimated';
-import { Images, Pencil, Trash2, X } from 'lucide-react-native';
+import { Images, Link2, Lock, Pencil, Share as ShareIcon, Trash2, X } from 'lucide-react-native';
 import { errorMessage } from '@/features/auth';
 import {
+  FollowingSheet,
+  MakeItYoursSheet,
+  ShareSheet,
+  SharedCollectionView,
+  SharedHeaderActions,
+  shareCounts,
   useCollectionItems,
   useCollections,
   useDeleteCollection,
+  useMakeCollectionMine,
   useRemoveFromCollection,
+  useShareCollection,
+  useUnfollow,
   useUpdateCollection,
+  type Collection,
 } from '@/features/planner';
+import { useNeedsUsername } from '@/features/profile';
 import { useTransitionDone } from '@/shared/hooks/useTransitionDone';
 import { haptics } from '@/shared/lib/haptics';
 import { useRouter } from '@/shared/lib/navigation';
@@ -29,7 +40,6 @@ import { Screen, ScreenTitle, useScreenScrollHandler } from '@/shared/ui/Screen'
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
-import { Toggle } from '@/shared/ui/Toggle';
 
 const COLUMNS = 3;
 
@@ -52,18 +62,171 @@ const useStyles = makeStyles(t => ({
   },
   drop: { position: 'absolute', top: space.xs, right: space.xs },
   footer: { paddingTop: space.xl },
+  basedOn: { marginTop: -space.md },
 }));
 
 /** One collection: what's in it, what it's called, and who can see it. */
 export default function CollectionScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const needsUsername = useNeedsUsername();
+  const { data: collections } = useCollections();
+  const collection = collections?.find(item => item.id === id);
+  const [sharing, setSharing] = useState(false);
+  // Shared things show who made them: by username, never an email.
+  const openShare = () => (needsUsername ? router.push('/username') : setSharing(true));
+
+  // Someone else's she follows: their page, kept up to date, not hers to edit.
+  if (collection?.following) return <FollowedCollection collection={collection} />;
+
   return (
-    <Screen title="Collection" back scroll="list" testID="collection-screen">
-      <CollectionItems />
+    <Screen
+      title={collection?.name ?? 'Collection'}
+      back
+      scroll="list"
+      testID="collection-screen"
+      headerRight={
+        collection && (
+          <IconButton
+            icon={ShareIcon}
+            size={36}
+            accessibilityLabel="Share this collection"
+            onPress={openShare}
+            testID="collection-share"
+          />
+        )
+      }
+    >
+      <CollectionItems onShare={openShare} />
+      {collection && (
+        <CollectionShareSheet
+          collection={collection}
+          visible={sharing}
+          onClose={() => setSharing(false)}
+        />
+      )}
     </Screen>
   );
 }
 
-function CollectionItems() {
+function CollectionShareSheet({
+  collection,
+  visible,
+  onClose,
+}: {
+  collection: Collection;
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const share = useShareCollection(collection.id);
+  return (
+    <ShareSheet
+      visible={visible}
+      onClose={onClose}
+      kind="collection"
+      name={collection.name}
+      detail={`${collection.itemCount} ${collection.itemCount === 1 ? 'item' : 'items'}`}
+      previewUris={collection.previewUris}
+      state={collection}
+      busy={share.isPending}
+      onChange={async sharing => {
+        try {
+          await share.mutateAsync(sharing);
+        } catch (error) {
+          haptics.error();
+          await notify({
+            title: 'Couldn’t change that',
+            message: errorMessage(error, 'Check your connection and try again.'),
+          });
+        }
+      }}
+    />
+  );
+}
+
+/** One she follows: the shared page, with what she can do with it now. */
+function FollowedCollection({ collection }: { collection: Collection }) {
+  const router = useRouter();
+  const { data: items = [], isLoading } = useCollectionItems(collection.id);
+  const unfollow = useUnfollow('collection');
+  const makeMine = useMakeCollectionMine();
+  const [sheet, setSheet] = useState<'following' | 'make' | null>(null);
+  const following = collection.following!;
+  const first = following.author.name.split(' ')[0];
+
+  return (
+    <Screen
+      title={collection.name}
+      back
+      scroll="list"
+      testID="followed-collection"
+      // Passing it on sends the author's own link: it still shows her as its author.
+      headerRight={
+        <SharedHeaderActions
+          kind="collection"
+          code={following.code}
+          name={collection.name}
+          author={following.author}
+          signedIn={then => then}
+        />
+      }
+    >
+      <SharedCollectionView
+        name={collection.name}
+        author={following.author}
+        itemCount={collection.itemCount}
+        updatedAt={following.updatedAt}
+        previewUris={collection.previewUris ?? []}
+        items={items}
+        loading={isLoading}
+        following
+        onFollow={() => {}}
+        onFollowing={() => setSheet('following')}
+        onMakeItYours={() => setSheet('make')}
+      />
+      <FollowingSheet
+        visible={sheet === 'following'}
+        onClose={() => setSheet(null)}
+        authorName={first}
+        onMakeItYours={() => setSheet('make')}
+        onUnfollow={async () => {
+          setSheet(null);
+          const yes = await confirm({
+            title: `Stop tagging along with ${collection.name}?`,
+            message: 'It leaves your Planner. You can tag along again from the link.',
+            confirmLabel: 'Stop tagging along',
+            destructive: true,
+          });
+          if (!yes) return;
+          await unfollow.mutateAsync(collection.id);
+          router.back();
+        }}
+      />
+      <MakeItYoursSheet
+        visible={sheet === 'make'}
+        onClose={() => setSheet(null)}
+        name={collection.name}
+        authorName={first}
+        what={`the ${collection.itemCount} ${collection.itemCount === 1 ? 'thing' : 'things'} in it`}
+        busy={makeMine.isPending}
+        onConfirm={() =>
+          makeMine.mutate(
+            { from: { id: collection.id }, name: collection.name },
+            {
+              onSuccess: mine => {
+                setSheet(null);
+                haptics.success();
+                router.replace(`/collections/${mine.id}`);
+              },
+            }
+          )
+        }
+      />
+    </Screen>
+  );
+}
+
+function CollectionItems({ onShare }: { onShare: () => void }) {
   const styles = useStyles();
   const theme = useTheme();
   const router = useRouter();
@@ -149,16 +312,43 @@ function CollectionItems() {
           autoFocus
         />
       )}
-      <Section footer="Private collections are yours alone.">
-        <ListRow
-          title="Keep it private"
-          trailing={
-            <Toggle
-              value={collection?.isPrivate ?? true}
-              onValueChange={isPrivate => update.mutate({ id, isPrivate })}
-              accessibilityLabel="Keep it private"
-            />
+      {!!collection?.basedOn && (
+        <Text
+          variant="footnote"
+          tone="secondary"
+          style={styles.basedOn}
+          onPress={
+            collection.basedOn.code
+              ? () => router.push(`/c/${collection.basedOn!.code}`)
+              : undefined
           }
+          accessibilityRole={collection.basedOn.code ? 'link' : undefined}
+          suppressHighlighting
+        >
+          Based on {collection.basedOn.name}
+          {!!collection.basedOn.authorName && (
+            <>
+              {' by '}
+              <Text variant="footnote" tone={collection.basedOn.code ? 'accent' : 'secondary'}>
+                {collection.basedOn.authorName}
+              </Text>
+            </>
+          )}
+        </Text>
+      )}
+      <Section>
+        <ListRow
+          title={collection?.sharing === 'link' ? 'Anyone with the link' : 'Only you'}
+          subtitle={
+            collection?.sharing === 'link'
+              ? shareCounts(collection.followers, collection.madeItTheirs) ||
+                'Anyone you send the link to can see it.'
+              : 'Share it so others can follow it or make it theirs.'
+          }
+          icon={collection?.sharing === 'link' ? Link2 : Lock}
+          iconTone={collection?.sharing === 'link' ? 'accent' : 'neutral'}
+          onPress={onShare}
+          testID="collection-sharing"
         />
       </Section>
       {!showGrid && <Skeleton height={160} />}

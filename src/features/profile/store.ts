@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User, HairProfile } from '@/features/profile';
+import { HairProfile } from '@/features/profile';
 
 interface UserState {
   currentUserId: string;

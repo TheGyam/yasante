@@ -142,6 +142,9 @@ describe('the analytics question', () => {
   const wait = () => act(() => new Promise(resolve => setTimeout(resolve, 700)));
 
   it('opens once, after sign-up, while it has no answer', async () => {
+    // Terms and privacy already agreed to, as at sign-up.
+    useConsentStore.getState().setConsent('terms', true);
+    useConsentStore.getState().setConsent('privacy', true);
     const { rerender } = renderHook(({ canAsk }) => useAskForAnalytics(canAsk), {
       initialProps: { canAsk: false },
     });
@@ -157,6 +160,13 @@ describe('the analytics question', () => {
     rerender({ canAsk: true });
     await wait();
     expect(mockPush).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits while there’s a policy change to tell her about', async () => {
+    await act(async () => useConsentStore.getState().setLoaded(true));
+    renderHook(() => useAskForAnalytics(true));
+    await wait();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('isn’t asked of someone who already answered, on any device', async () => {

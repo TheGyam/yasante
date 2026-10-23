@@ -304,7 +304,6 @@ class Command(BaseCommand):
                         id=uid(col["id"]),
                         user=owner,
                         name=col["name"],
-                        is_private=col.get("isPrivate", True),
                     )
                     for item in col.get("items", []):
                         look = looks.get(item["refId"]) if item["kind"] == "look" else None
