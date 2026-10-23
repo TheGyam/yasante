@@ -8,7 +8,8 @@ between clients, nothing that clashes, two waiting requests at most, one chair p
 client), `55090d3` (blocked-out time), `b64e63c` (repeating blocks), `c0a7dbe` (skipping
 one day of a repeat). What Ama sets in the studio, Efua must see in the app's picker.
 **Time:** about 75 minutes.
-**Status:** written 19-10-2026. Claude dry-ran the studio's hours page and the app picker up
+**Status:** written 19-10-2026; checked against upstream 24-10-2026 (the plait mark, 30-minute
+starts, the day rule, R4's note). Claude dry-ran the studio's hours page and the app picker up
 to choosing a time (`SETUP-dry-1018`); the steps that change Ama's diary and the clash
 rules are written from the code and the commit notes, so expect plan errors there and
 say exactly what you saw.
@@ -36,7 +37,8 @@ Her menu: `Knotless braids` (5 hrs), `Cornrows` (2 hrs, sizes Big / Medium / Sma
 
 **Days used below.** Write each one down in the report in `YYYY-MM-DD` form at S5, from a
 calendar, and use those exact dates throughout:
-- **DAY_W**: the Wednesday of **next** week (at least 7 days away).
+- **DAY_W**: the first Wednesday at least 7 days after today (run on a Sunday 25th, that is
+  Wednesday 4th, not the 28th).
 - **DAY_T**: the Thursday right after DAY_W.
 - **DAY_F**: the Friday right after DAY_W.
 
@@ -45,7 +47,18 @@ calendar, and use those exact dates throughout:
 labelled `<Weekday> <d> <Month>, <how much room>` (`no times`, `a few times`, `plenty of
 times`, …). Tap a day by its label (`C: tapon "Wednesday 28 October"`); its times appear
 as `<Weekday> <d> <Month>, <HH:MM>, until <HH:MM>`. `swipe up` until what you need shows.
-Tapping an idea picks its time at once.
+Tapping an idea picks its time at once. Starts come every **30 minutes** (09:00, 09:30, …),
+each as long as the service.
+
+**The mark between parts of a line.** The app and the studio no longer use ` · `: they put
+their own mark there (a no-break space, then the private character U+E000, then a space),
+which shows in `visible.txt` as a blank or a box. Where this plan writes ` · ` between parts
+of a chip or line, expect that mark; quote what you see. Click a block chip by its **note**
+(`A: click "QA school run"`), never by typing ` · `.
+
+**Prompts the app may raise.** If `Your privacy choices` or `Turn on notifications?` comes up
+at any point, `tapon "Not now" --exact`, write one line about it, and carry on: no step, no
+verdict. Android's own notification question gets `Don’t allow`.
 
 **Server check, every step that saves something:** after it, run
 `grep -E '" (4|5)[0-9]{2} ' qa/runs/<RUN>/server.log | tail -3` and paste it. Any new
@@ -141,7 +154,8 @@ see` sentence should match S4's again; **Record** it.
 
 **B2: Efua can't land on it.** Efua: picker as P1, tap DAY_W as P2, `C: swipe up`,
 `C: step B2`. **Expect** no time starting at 08:30–11:30 that would overlap 10:00–12:00
-(with a 2-hour service: no 09:00, 10:00 or 11:00 start; 08:00 isn't in her hours), the
+(with a 2-hour service: no 09:00, 09:30, 10:00, 10:30, 11:00 or 11:30 start; 08:00 and 08:30
+aren't in her hours), the
 timeline showing 10:00–12:00 as `Booked`, and **no** `QA school run` anywhere (only Ama
 sees the note). **Record** the times offered. `C: key BACK`.
 
@@ -155,7 +169,7 @@ back` with day chips (`Days it lands on`). **Record** the day chips.
 use `A: find` and pick it), wait 3 s, `A: step B4`. Expect that chip to read
 `… · skipped`. **Server check:** `POST /api/stylists/me/blocks/<id>/skip/` `200` (paste the
 line). Efua: picker, DAY_T, `C: step B4b`: **expect** a 13:00 start offered on DAY_T, and
-on DAY_W (`C: step B4c`) **no** start that overlaps 13:00–14:00.
+on DAY_W (`C: step B4c`) **no** start that overlaps 13:00–14:00 (none from 11:30 to 13:30).
 
 **B5: Put DAY_T back.** Click the skipped chip again, wait 3 s, `A: step B5`. Expect it no
 longer says `skipped`. Efua: picker, DAY_T, `C: step B5b`: no 13:00 start any more.
@@ -171,7 +185,7 @@ why, and a `400` for `/api/stylists/me/blocks/`. **Record** the message. A block
 Efua's waiting request is a **FAIL**.
 
 **B7: Removing a block.** **Record** first, from B1's `screen.png`, how the chips look (each
-has an ×). `A: click "<the B1 chip's words>"`, wait 3 s, `A: step B7`. **Record** whether
+has an ×). `A: click "QA school run"`, wait 3 s, `A: step B7`. **Record** whether
 anything asked before it went (in the code, one click removes it). Expect the chip gone
 and `DELETE /api/stylists/me/blocks/<id>/` `204`. Efua: picker, DAY_W, `C: step B7b`:
 10:00 and 11:00 starts are back (13:00 still not: the lunch repeats).
@@ -181,8 +195,8 @@ and `DELETE /api/stylists/me/blocks/<id>/` `204`. Efua: picker, DAY_W, `C: step 
 ## R: Nothing clashes
 
 **R1: The same time, from another client.** Kojo: `K: link "yasante:///book/braidsbyama"`,
-Cornrows, Big, tap DAY_F, `K: swipe up`, `K: step R1`. **Expect** no 14:00, 15:00 or 16:00
-start (Efua's request at 15:00–17:00 is held). **Record** the times offered.
+Cornrows, Big, tap DAY_F, `K: swipe up`, `K: step R1`. **Expect** no start from 13:30 to 16:30
+(Efua's request at 15:00–17:00 is held). **Record** the times offered.
 
 **R2: Two waiting requests at most.** Efua sends two more requests to Ama: DAY_W at the
 first time offered, then DAY_T at the first time offered, each as B6 (terms, send),
@@ -192,18 +206,19 @@ word and both server lines. If both go through, **FAIL**.
 
 **R3: One chair per client.** Efua: `C: link "yasante:///book/braidedbybisi"`, pick `Take
 down and wash` (`C: tapon "Take down and wash" --exact`), tap DAY_F, `C: swipe up`,
-`C: step R3`. **Expect** no start inside 15:00–17:00 (her own request with Ama) although
-Bisi is free then. **Record** the times offered. `C: key BACK`.
+`C: step R3`. **Expect** no start from 14:30 to 16:30 (a 1-hour service there would overlap her
+own request with Ama, 15:00–17:00) although Bisi is free then. **Record** the times offered. `C: key BACK`.
 
 **R4: A full day, and the waitlist.** Ama blocks all of DAY_T: `A: fill "Day" "<DAY_T>"`,
-`From` `09:00`, `Until` `18:00`, `Just once`, `Block it out`, wait 3 s, `A: step R4`.
+`From` `09:00`, `Until` `18:00`, `Just once`, `A: fill "Note for you (optional)" "QA full
+day"`, `Block it out`, wait 3 s, `A: step R4`.
 **Record** whether it's accepted (a waiting request of Efua's on DAY_T from R2 would make
 it a refusal: if so, write that and skip to R5). Kojo: picker, DAY_T, `K: step R4b`.
 **Expect** the day `no times` and `Tell me if a time opens`. `K: tapon "Tell me if a time
 opens"`, wait 3 s, `K: step R4c`. **Record** the message; **server check:**
 `grep 'slot-interests' qa/runs/<RUN>/server.log | tail -2`.
 
-**R5: The time opens.** Ama removes R4's block (click its chip), wait 3 s, `A: step R5`.
+**R5: The time opens.** Ama removes R4's block (`A: click "QA full day"`), wait 3 s, `A: step R5`.
 `qa/bin/pushlog new@yasante.dev 3`: paste it. **Expect** a notification to Kojo about
 DAY_T (the commit: removing a block tells the waitlist). **Record** it word for word.
 
