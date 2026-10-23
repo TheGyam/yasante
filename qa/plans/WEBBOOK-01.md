@@ -7,7 +7,7 @@ them), `f4f21c9` (booking updates are emailed to anyone with no phone signed in)
 `0e8821a` (sign out from the site's header, and at the foot of Your bookings on a phone),
 plus address privacy for "Come to me" on the web. None of this has been run before.
 **Time:** about 60 minutes.
-**Status:** written 19-10-2026 from the code. Claude dry-ran only the website's sign-in and
+**Status:** written 19-10-2026 from the code; checked against upstream 24-10-2026 (the plait mark in A1; `Your postcode` stays, Ama is in the UK; the optional `Is it for something?` chips need no step; no terms sheet on the website). Claude dry-ran only the website's sign-in and
 sign-out (`SETUP-dry-1018`); expect plan errors in parts B–M and say exactly what you saw.
 
 Read `qa/AGENTS.md` first (again: §8 now says **`qaweb --nth` counts from 1**). Its rules
@@ -99,7 +99,7 @@ its own`), and the buttons (expect `Withdraw the request`).
 ## A: Ama answers in the app, Kojo hears by email
 
 **A1: She reads it.** `S: link "yasante:///requests/<B1>"`, wait 4 s, `S: step A1`. **Expect**
-`At their place · <area>` and no street. **Record** the area.
+`At their place` then the plait mark then `<area>` (the line reads like `At their placePeckham`; no ` · ` since #60) and no street. **Record** the area.
 
 **A2: Accept, with the deposit.** `S: swipe up`, `S: tapon request-accept`, wait 4 s,
 `S: step A2`. Server: `…/accept/` `200`. `qa/bin/bookings new@yasante.dev <B1>`: paste.
