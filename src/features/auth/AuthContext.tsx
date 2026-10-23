@@ -90,23 +90,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // the server refuses a refresh token it has already replaced.
     const saved = useAuthStore.getState().tokens;
     if (!saved?.refreshToken) {
-      if (__DEV__) {
-        console.log('❌ No refresh token available');
-      }
       return false;
     }
 
     try {
       // Check if token is still valid (not expired)
       if (Date.now() < saved.expiresAt) {
-        if (__DEV__) {
-          console.log('✅ Access token still valid, no refresh needed');
-        }
         return true;
-      }
-
-      if (__DEV__) {
-        console.log('🔄 Access token expired, refreshing...');
       }
 
       // Call the API to refresh the token
@@ -124,10 +114,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshToken: rotated ?? saved.refreshToken,
         expiresAt: expiresAtTimestamp,
       });
-
-      if (__DEV__) {
-        console.log('✅ Token refreshed successfully');
-      }
 
       return true;
     } catch (error: any) {
@@ -197,10 +183,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Logout from auth store (clears tokens and user)
       logoutStore();
-
-      if (__DEV__) {
-        console.log('✅ Logout successful - cache cleared');
-      }
     } catch (error) {
       // Even if cache clearing fails, proceed with logout
       console.error('Error during logout cleanup:', error);

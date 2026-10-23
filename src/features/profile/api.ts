@@ -29,17 +29,9 @@ export const userApi = {
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
     const url = '/api/users/';
 
-    if (__DEV__) {
-      console.log('📡 API Request:', { method: 'GET', url });
-    }
-
     try {
       // API docs show array response: { data: [User] }
       const response = await apiClient.get<ApiResponse<User[]>>(url);
-
-      if (__DEV__) {
-        console.log('✅ API Response:', { url, status: response.status });
-      }
 
       // Handle wrapped response format - get first user from array
       let users: User[] = [];
@@ -74,16 +66,8 @@ export const userApi = {
   getProfile: async (userId: string): Promise<ApiResponse<User>> => {
     const url = `/api/users/${userId}/`;
 
-    if (__DEV__) {
-      console.log('📡 API Request:', { method: 'GET', url, userId });
-    }
-
     try {
       const response = await apiClient.get<User>(url);
-
-      if (__DEV__) {
-        console.log('✅ API Response:', { url, status: response.status });
-      }
 
       return { data: response.data };
     } catch (error: any) {
@@ -106,16 +90,8 @@ export const userApi = {
   updateProfile: async (userId: string, updates: UserUpdate): Promise<ApiResponse<User>> => {
     const url = `/api/users/${userId}/`;
 
-    if (__DEV__) {
-      console.log('📡 API Request:', { method: 'PATCH', url, userId });
-    }
-
     try {
       const response = await apiClient.patch<User>(url, updates);
-
-      if (__DEV__) {
-        console.log('✅ API Response:', { url, status: response.status });
-      }
 
       return { data: response.data };
     } catch (error: any) {
@@ -192,17 +168,9 @@ export const userApi = {
     // The server keeps hair details only with her yes, so a yes just given goes first.
     await syncConsents();
 
-    if (__DEV__) {
-      console.log('📡 API Request:', { method: 'PATCH', url, userId });
-    }
-
     try {
       // API docs show HairProfile response: { data: HairProfile }
       const response = await apiClient.patch<any>(url, hairProfile);
-
-      if (__DEV__) {
-        console.log('✅ API Response:', { url, status: response.status });
-      }
 
       // Handle wrapped response format
       let data: HairProfile;

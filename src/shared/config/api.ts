@@ -31,7 +31,6 @@ import Constants from 'expo-constants';
 export interface ApiConfig {
   baseURL: string;
   timeout: number;
-  enableLogging: boolean;
   retryAttempts: number;
   retryDelay: number;
 }
@@ -75,9 +74,6 @@ const getApiBaseUrl = (): string => {
 export const apiConfig: ApiConfig = {
   baseURL: getApiBaseUrl(),
   timeout: 10000, // 10 seconds
-  // Off unless asked for: logging every request and its body to the console costs
-  // more than the request itself on a phone, and makes a dev build feel slow.
-  enableLogging: __DEV__ && process.env.EXPO_PUBLIC_API_LOGGING === 'true',
   retryAttempts: 3,
   retryDelay: 1000, // 1 second
 };
@@ -123,11 +119,6 @@ export const getApiUrl = (endpoint: string): string => {
 if (__DEV__) {
   try {
     validateApiConfig();
-    console.log('✅ API Configuration loaded:', {
-      baseURL: apiConfig.baseURL,
-      timeout: apiConfig.timeout,
-      environment: __DEV__ ? 'development' : 'production',
-    });
   } catch (error) {
     console.error('❌ API Configuration error:', error);
   }

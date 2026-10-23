@@ -48,29 +48,9 @@ export const contentApi = {
     // Note: Swagger shows endpoint as /content/content/ with basePath /api
     const url = `/api/content/content/${params.toString() ? `?${params.toString()}` : ''}`;
 
-    if (__DEV__) {
-      console.log('📡 API Request:', {
-        method: 'GET',
-        url,
-        fullUrl: `${apiClient.defaults.baseURL}${url}`,
-        filters,
-      });
-    }
-
     try {
       // Swagger shows response as array, but we'll handle both formats
       const response = await apiClient.get<Content[] | CursorPaginatedResponse<Content>>(url);
-
-      if (__DEV__) {
-        console.log('✅ API Response:', {
-          url,
-          status: response.status,
-          isArray: Array.isArray(response.data),
-          dataLength: Array.isArray(response.data)
-            ? response.data.length
-            : response.data?.data?.length,
-        });
-      }
 
       // Handle direct array response (as per Swagger spec)
       if (Array.isArray(response.data)) {
@@ -137,26 +117,9 @@ export const contentApi = {
   getById: async (contentId: string): Promise<ApiResponse<Content>> => {
     const url = `/api/content/content/${contentId}/`;
 
-    if (__DEV__) {
-      console.log('📡 API Request:', {
-        method: 'GET',
-        url,
-        fullUrl: `${apiClient.defaults.baseURL}${url}`,
-        contentId,
-      });
-    }
-
     try {
       // Swagger shows direct Content object response
       const response = await apiClient.get<Content>(url);
-
-      if (__DEV__) {
-        console.log('✅ API Response:', {
-          url,
-          status: response.status,
-          hasData: !!response.data,
-        });
-      }
 
       // Wrap in ApiResponse format for consistency
       return { data: response.data };
@@ -191,26 +154,9 @@ export const contentApi = {
 
     const url = `/api/content/content/search/?${params.toString()}`;
 
-    if (__DEV__) {
-      console.log('📡 API Request:', {
-        method: 'GET',
-        url,
-        fullUrl: `${apiClient.defaults.baseURL}${url}`,
-        query,
-      });
-    }
-
     try {
       // API docs show paginated response format
       const response = await apiClient.get<CursorPaginatedResponse<Content>>(url);
-
-      if (__DEV__) {
-        console.log('✅ API Response:', {
-          url,
-          status: response.status,
-          resultsCount: response.data?.data?.length || 0,
-        });
-      }
 
       // Return paginated response
       return response.data;
@@ -234,25 +180,8 @@ export const contentApi = {
   getProducts: async (contentId: string): Promise<ApiResponse<any[]>> => {
     const url = `/api/content/content/${contentId}/products/`;
 
-    if (__DEV__) {
-      console.log('📡 API Request:', {
-        method: 'GET',
-        url,
-        fullUrl: `${apiClient.defaults.baseURL}${url}`,
-        contentId,
-      });
-    }
-
     try {
       const response = await apiClient.get<any[]>(url);
-
-      if (__DEV__) {
-        console.log('✅ API Response:', {
-          url,
-          status: response.status,
-          productsCount: response.data?.length || 0,
-        });
-      }
 
       // Handle wrapped response format
       const data = Array.isArray(response.data) ? response.data : (response.data as any).data || [];

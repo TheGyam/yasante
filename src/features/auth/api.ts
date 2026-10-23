@@ -64,7 +64,6 @@ let inFlightRefresh: { token: string; promise: Promise<ApiResponse<RefreshedToke
 
 async function sendRefresh(refreshToken: string): Promise<ApiResponse<RefreshedTokens>> {
   const url = '/api/auth/refresh-token/';
-  if (__DEV__) console.log('📡 Refresh Token Request:', { method: 'POST', url });
 
   try {
     // Its own client: the refresh call must not pass through the 401 interceptor.
@@ -77,15 +76,12 @@ async function sendRefresh(refreshToken: string): Promise<ApiResponse<RefreshedT
     // A server that rotates refresh tokens sends the new one back; the old is revoked.
     const data: RefreshedTokens = response.data?.data ?? response.data;
     if (!data?.accessToken) throw new Error('Refresh token response missing accessToken');
-    if (__DEV__) console.log('✅ Refresh Token Success');
     return { data };
   } catch (error: any) {
     if (__DEV__) {
       // Refused means the session is over (expired, revoked, or from another server):
       // she signs in again. That's routine, not an error worth a red screen.
-      if (error.response?.status === 401) {
-        console.log('🔒 Session ended, sign in again:', error.response?.data?.message);
-      } else {
+      if (error.response?.status !== 401) {
         console.error('❌ Refresh Token Error:', {
           url,
           error: error.message,
@@ -106,26 +102,9 @@ export const authApi = {
   login: async (credentials: LoginRequest): Promise<ApiResponse<AuthResponse>> => {
     const url = '/api/auth/login/';
 
-    if (__DEV__) {
-      console.log('📡 API Request:', { method: 'POST', url, email: credentials.email });
-    }
-
     try {
       // Backend returns AuthResponse format: { user, accessToken, refreshToken, expiresAt }
       const response = await apiClient.post<any>(url, credentials);
-
-      if (__DEV__) {
-        console.log('✅ API Response (raw):', {
-          url,
-          status: response.status,
-          responseData: response.data,
-          responseDataType: typeof response.data,
-          hasUser: !!response.data?.user,
-          hasAccessToken: !!response.data?.accessToken,
-          hasRefreshToken: !!response.data?.refreshToken,
-          keys: response.data ? Object.keys(response.data) : [],
-        });
-      }
 
       // Handle different response formats
       let authData: AuthResponse;
@@ -173,26 +152,9 @@ export const authApi = {
   signup: async (userData: SignupRequest): Promise<ApiResponse<AuthResponse>> => {
     const url = '/api/auth/signup/';
 
-    if (__DEV__) {
-      console.log('📡 API Request:', { method: 'POST', url, role: userData.role });
-    }
-
     try {
       // Backend returns AuthResponse format: { user, accessToken, refreshToken, expiresAt }
       const response = await apiClient.post<any>(url, userData);
-
-      if (__DEV__) {
-        console.log('✅ API Response (raw):', {
-          url,
-          status: response.status,
-          responseData: response.data,
-          responseDataType: typeof response.data,
-          hasUser: !!response.data?.user,
-          hasAccessToken: !!response.data?.accessToken,
-          hasRefreshToken: !!response.data?.refreshToken,
-          keys: response.data ? Object.keys(response.data) : [],
-        });
-      }
 
       // Handle different response formats
       let authData: AuthResponse;
@@ -258,16 +220,8 @@ export const authApi = {
   forgotPassword: async (email: string): Promise<ApiResponse<{ message: string }>> => {
     const url = '/api/auth/forgot-password/';
 
-    if (__DEV__) {
-      console.log('📡 API Request:', { method: 'POST', url, email });
-    }
-
     try {
       const response = await apiClient.post<{ message: string }>(url, { email });
-
-      if (__DEV__) {
-        console.log('✅ API Response:', { url, status: response.status });
-      }
 
       return { data: response.data };
     } catch (error: any) {
@@ -290,16 +244,8 @@ export const authApi = {
   resetPassword: async (data: ResetPasswordRequest): Promise<ApiResponse<{ message: string }>> => {
     const url = '/api/auth/reset-password/';
 
-    if (__DEV__) {
-      console.log('📡 API Request:', { method: 'POST', url });
-    }
-
     try {
       const response = await apiClient.post<{ message: string }>(url, data);
-
-      if (__DEV__) {
-        console.log('✅ API Response:', { url, status: response.status });
-      }
 
       return { data: response.data };
     } catch (error: any) {

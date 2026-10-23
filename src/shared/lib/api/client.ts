@@ -65,20 +65,6 @@ apiClient.interceptors.request.use(
       }
     }
 
-    // Log request in development
-    if (__DEV__ && apiConfig.enableLogging) {
-      const fullUrl = `${config.baseURL}${config.url}`;
-      console.log('📤 API Request:', {
-        method: config.method?.toUpperCase(),
-        url: fullUrl,
-        data: config.data,
-        headers: {
-          ...config.headers,
-          Authorization: config.headers.Authorization ? 'Bearer ***' : undefined,
-        },
-      });
-    }
-
     return config;
   },
   error => {
