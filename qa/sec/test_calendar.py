@@ -13,7 +13,6 @@ from rest_framework.test import APIClient
 INJECTED = "URL:https://evil.example/pay-deposit"
 
 
-@pytest.mark.xfail(strict=True, reason='F26: ics._text() replaces "\\n" with "\\n" (no-op) and ignores "\\r"')
 @pytest.mark.parametrize("brk", ["\n", "\r\n"])
 def test_a_line_break_in_a_name_stays_inside_its_field(make_user, make_stylist, book, brk):
     from apps.bookings.ics import calendar_url

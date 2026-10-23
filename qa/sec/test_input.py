@@ -11,7 +11,6 @@ from rest_framework.test import APIClient
 ROUTES = ["/api/collections/", "/api/care-plans/", "/api/shelf/", "/api/blocks/", "/api/slot-interests/"]
 
 
-@pytest.mark.xfail(strict=True, reason="F24: views call request.data.get(...) on a list and crash")
 @pytest.mark.parametrize("route", ROUTES)
 @pytest.mark.parametrize("body", [[], 7])
 def test_a_body_that_is_not_an_object_is_refused(make_user, route, body):

@@ -22,7 +22,6 @@ def test_sign_in_is_limited(make_user):
     assert 429 in codes, codes
 
 
-@pytest.mark.xfail(strict=True, reason="F34: forgot-password has no rate limit")
 def test_password_reset_emails_are_limited(make_user):
     """Each request emails a reset link: unlimited, anyone can flood an inbox and spend
     the sending budget."""
@@ -31,7 +30,6 @@ def test_password_reset_emails_are_limited(make_user):
     assert 429 in codes, f"20 reset emails in a row, none refused: {sorted(set(codes))}"
 
 
-@pytest.mark.xfail(strict=True, reason="F34: reset-password has no rate limit")
 def test_reset_link_guesses_are_limited(make_user):
     user = make_user()
     body = {"uid": str(user.pk), "token": "wrong-token", "password": "a-Long-pass-123", "password_confirm": "a-Long-pass-123"}

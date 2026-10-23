@@ -60,10 +60,20 @@ OWNED = [
     ("api/collections/<uuid:pk>/items/", "get", None),
     ("api/collections/<uuid:pk>/items/", "post", {"kind": "look", "refId": None}),
     ("api/collections/<uuid:pk>/items/<uuid:item_id>/", "delete", None),
+    ("api/collections/<uuid:pk>/share/", "post", None),
+    ("api/collections/<uuid:pk>/share/", "delete", None),
+    ("api/collections/<uuid:pk>/make-mine/", "post", {}),
     ("api/care-plans/<uuid:pk>/", "get", None),
     ("api/care-plans/<uuid:pk>/", "patch", {"name": "Owned"}),
     ("api/care-plans/<uuid:pk>/", "delete", None),
     ("api/care-plans/<uuid:pk>/sessions/", "post", {}),
+    ("api/care-plans/<uuid:pk>/share/", "post", None),
+    ("api/care-plans/<uuid:pk>/share/", "delete", None),
+    ("api/care-plans/<uuid:pk>/make-mine/", "post", {}),
+    ("api/hair-log/<uuid:pk>/", "delete", None),
+    ("api/stylists/me/blocks/<uuid:pk>/", "delete", None),
+    ("api/stylists/me/blocks/<uuid:pk>/skip/", "post", {"date": "2030-01-07", "skip": True}),
+    ("api/looks/<uuid:pk>/related/", "get", None),  # More like this, from Efua's private look
     ("api/shelf/<uuid:pk>/", "patch", {"rating": 1}),
     ("api/shelf/<uuid:pk>/", "delete", None),
     ("api/moderation/<uuid:pk>/appeal/", "post", {"body": "Owned"}),
@@ -95,6 +105,17 @@ PUBLIC = {
     "api/policies/<str:type>/",
     "api/content/content/<uuid:pk>/",
     "api/content/content/<uuid:pk>/products/",
+    "api/featured/claim/<str:code>/",
+    "api/stylists/by-handle/<str:handle>/waitlist/",
+    # A shared collection or care plan, by its link's random code: test_shared.py.
+    "api/shared/collections/<str:code>/",
+    "api/shared/collections/<str:code>/follow/",
+    "api/shared/collections/<str:code>/make-mine/",
+    "api/shared/collections/<str:code>/report/",
+    "api/shared/care-plans/<str:code>/",
+    "api/shared/care-plans/<str:code>/follow/",
+    "api/shared/care-plans/<str:code>/make-mine/",
+    "api/shared/care-plans/<str:code>/report/",
 }
 
 
@@ -120,11 +141,11 @@ def world(make_user, make_stylist, make_look, book, settings):
     from django.contrib.contenttypes.models import ContentType
 
     from apps.accounts.models import DeviceToken
-    from apps.bookings.models import Booking, SlotInterest
+    from apps.bookings.models import Booking, SlotInterest, TimeBlock
     from apps.common.models import Media
     from apps.looks.models import Block, LookComment, ModerationAction
     from apps.planner.models import CarePlan, Collection, CollectionItem
-    from apps.profiles.models import HairProfile
+    from apps.profiles.models import HairLog, HairProfile
     from apps.shelf.models import Product, ShelfItem
     from apps.stylists.models import PortfolioPhoto
 
@@ -142,7 +163,7 @@ def world(make_user, make_stylist, make_look, book, settings):
     private_look = make_look(efua, visibility="private")
     comment = LookComment.objects.create(look=public_look, author=efua, body="Mine")
     type(public_look).objects.filter(pk=public_look.pk).update(comment_count=1)  # as the API would
-    collection = Collection.objects.create(user=efua, name="Mine", is_private=True)
+    collection = Collection.objects.create(user=efua, name="Mine")  # private: no share code
     item = CollectionItem.objects.create(collection=collection, kind="look", ref_id=str(public_look.pk))
     product = Product.objects.create(brand="B", name="P", category="oil")
     action = ModerationAction.objects.create(
@@ -163,6 +184,7 @@ def world(make_user, make_stylist, make_look, book, settings):
                 to_date=timezone.now().date() + timedelta(days=7),
             ).pk,
             "api/looks/<uuid:pk>/:get": private_look.pk,
+            "api/looks/<uuid:pk>/related/:get": private_look.pk,
             "api/looks/<uuid:pk>/": public_look.pk,
             "api/looks/<uuid:look_id>/": private_look.pk,
             "api/comments/": comment.pk,
@@ -171,6 +193,11 @@ def world(make_user, make_stylist, make_look, book, settings):
             "item_id": item.pk,
             "api/care-plans/": CarePlan.objects.create(user=efua, name="Wash day").pk,
             "api/shelf/": ShelfItem.objects.create(user=efua, product=product).pk,
+            "api/hair-log/": HairLog.objects.create(user=efua, kind="wash", at=timezone.now()).pk,
+            "api/stylists/me/blocks/": TimeBlock.objects.create(
+                stylist_profile=ama, start=timezone.now() + timedelta(days=1),
+                end=timezone.now() + timedelta(days=1, hours=2), repeats=[0],
+            ).pk,
             "api/moderation/": action.pk,
             "api/media/": Media.objects.create(owner=efua, visibility="private", full_path="private/x.jpg").pk,
             "api/devices/": DeviceToken.objects.create(user=efua, token="ExponentPushToken[sec]", platform="android").pk,

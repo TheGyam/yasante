@@ -29,7 +29,8 @@ Raw output goes to `qa/runs/<RUN>/sec/` (gitignored); `SUMMARY.txt` has one line
 | `test_media_origin.py` | a look's photo and an avatar must be the person's own upload, not any address (F33) |
 | `test_own_record.py` | her own profile update and sign-up can't set staff, roles, verified flags, phone or id; a new email must be proved again |
 | `test_limits.py` | unauthenticated doors are rate limited: sign-in (control), forgot and reset password (F34) |
-| `test_uploads.py` | HTML, SVG, empty and truncated "photos" get a 400 and store nothing; a decompression bomb (F35) |
+| `test_uploads.py` | HTML, SVG, empty and truncated "photos" get a 400 and store nothing; a decompression bomb (F35); only JPEG, PNG and WebP are decoded (F41) |
+| `test_shared.py` | a shared collection or care plan link gives a stranger only the listed fields (no email, phone, notes or history), and dies with a closed account; the rest of sharing is in upstream's `tests/test_sharing.py` |
 | `test_devices.py` | push tokens can't be deleted or (F36, candidate) taken over by another account |
 | `test_staff_csrf.py` | every write under the staff workspace's `/data/`, and staff sign-in, needs the CSRF token |
 | `pip-audit`, `osv-scanner` | published advisories for the backend, app and website dependencies |
@@ -74,3 +75,16 @@ These are not findings. Re-check them only if the code around them changes.
 ZAP as `ghcr.io/zaproxy/zaproxy:stable` (podman). For Claude in this repo only: the
 Trail of Bits plugins `static-analysis`, `insecure-defaults`, `supply-chain-risk-auditor`,
 `variant-analysis`, `differential-review` (`.claude/settings.local.json`).
+
+## Triaged scanner output (23-10-2026)
+
+- gitleaks: three "new" hits were baseline ones under new commit IDs after upstream's
+  18-10 history rewrite (same file and line); added to the baseline, checked by file and line.
+- osv (app, 71 high+; web, 3): build and dev tooling (Expo CLI, Metro, prebuild's xmldom,
+  minimatch, shell-quote, node-forge), not shipped in the bundle or run on the server;
+  `zod` on the website only validates what the visitor types in their own browser. A
+  dependency refresh, not a finding.
+- bandit B310 in `web/cards.py`: the share-card collage fetches its preview pictures over
+  http(s). Since F33's fix those are Yasante's own uploads; looks posted before it may
+  still hold outside addresses, which the server would then fetch (5 s, image bytes only).
+  Low; recheck if a picture address can again come from outside.

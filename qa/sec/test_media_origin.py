@@ -44,13 +44,11 @@ def test_a_look_from_her_own_upload_is_accepted(api, make_user, styles):
     assert _post_look(api, user, _upload(api, user)).status_code == 201
 
 
-@pytest.mark.xfail(strict=True, reason="F33: a look may point at any http(s) address")
 def test_a_look_photo_cannot_live_on_someone_elses_server(api, make_user, styles):
     r = _post_look(api, make_user(), OUTSIDE)
     assert r.status_code == 400, f"look with an outside photo -> {r.status_code}"
 
 
-@pytest.mark.xfail(strict=True, reason="F33: a look may reuse anyone's upload, skipping the duplicate check")
 def test_a_look_photo_must_be_the_posters_own_upload(api, make_user, styles):
     """Reusing another person's upload address is the stolen-portfolio check's blind
     spot: the fingerprint is only compared at upload time."""
@@ -59,7 +57,6 @@ def test_a_look_photo_must_be_the_posters_own_upload(api, make_user, styles):
     assert r.status_code == 400, f"look with someone else's upload -> {r.status_code}"
 
 
-@pytest.mark.xfail(strict=True, reason="F33: an avatar may point at any http(s) address")
 def test_an_avatar_cannot_live_on_someone_elses_server(api, make_user):
     """An avatar is drawn next to every comment, review and look she makes, so an
     outside one is a tracking pixel on most pages."""
