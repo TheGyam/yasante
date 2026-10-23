@@ -57,7 +57,7 @@ autofill off. TheGyam's dev-client APK (`qa/apk/dev-client.apk`, gitignored) inc
 | Text entry itself | The emulator's typing sometimes scrambles text (`ama` → `maa`, an extra `.dev`), so a typing bug seen only on the emulator isn't a bug |
 | `https://yasante.com/…` links opening the app | Needs the signed release build and Android's link verification, not the dev client (on the emulator the dev client didn't take them at all) |
 | Camera capture (taking a photo inside the app) | The emulator's camera is fake |
-| Push notifications and the "Yes, I'm coming" / "I can't make it" buttons | Needs working Firebase credentials in the build (the dev build logs that they're missing) and a real Google Play device. **Blocked on both until TheGyam adds FCM credentials** |
+| Push notifications and the "Yes, I'm coming" / "I can't make it" buttons | Needs working Firebase credentials in the build (the dev build logs that they're missing) and a real Google Play device. **Blocked on both until TheGyam adds FCM credentials** (24-10-2026: the release build on the S23 now has the Firebase config; untested end to end) |
 | App killed in the background, battery saver, reminders arriving on time | Samsung's aggressive background limits |
 | Android 16 behaviour (edge-to-edge, back gesture) and a large screen (see the tablet note above) | The emulator is Android 14 on a phone screen; an Android 16 image could narrow the gap |
 
