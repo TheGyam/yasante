@@ -14,5 +14,5 @@ Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.
   Remaining review claims to test are listed in `qa/task.md`.
 - **Phone (S23 Ultra):** the owner installed Yaw's Expo build; release-build checks
   (manifest, F37 from outside, logcat) need it plugged in with USB debugging.
-- Never run pytest or `secscan` while an Antigravity run is up only if it would collide:
-  the static `secscan` uses its own test database and is safe; `--dynamic` is not.
+- While an Antigravity run is up: static `secscan` and pytest are safe (own test
+  database); `secscan --dynamic`, `env-up`/`env-down` and the emulators are not.
