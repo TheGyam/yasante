@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Runs one plan with Antigravity, headless, so a queue can go on with nobody at the laptop.
+# Each run is a fresh Gemini conversation (nothing carried over from the last plan), in a
+# systemd user service so it outlives whoever started it. Claude starts it, waits, audits.
+# It runs with --dangerously-skip-permissions (the owner allowed this for QA runs, 24-10-2026):
+# nobody is there to approve a command, so qa/AGENTS.md §3 is the only limit, and
+# `agy-run commands` lists every command it ran, for the audit to check against §3.
+#
+# Usage: qa/bin/agy-run <PLAN> ["parts …"]   e.g. qa/bin/agy-run DIARY-01
+#        qa/bin/agy-run status               is a run going; its newest transcript
+#        qa/bin/agy-run commands [<log>]     the commands a run ran (default: the newest)
+set -euo pipefail
+
+QA="$(cd "$(dirname "$0")/.." && pwd)"
+REPO="$(dirname "$QA")"
+LOGS="$QA/runs/agy"
+UNIT=yasante-qa-agy
+AGY="$HOME/.gemini/bin/agy"
+MODEL="${AGY_MODEL:-gemini-3.8-flash-high}"
+newest() { ls -t "$LOGS"/*.jsonl 2>/dev/null | head -1; }
+
+case "${1:?usage: agy-run <PLAN> [\"parts …\"] | status | commands [<log>]}" in
+  status)
+    echo "$UNIT: $(systemctl --user is-active "$UNIT" 2>/dev/null || true)"
+    echo "transcript: $(newest)"
+    exit ;;
+  commands)
+    log="${2:-$(newest)}"
+    jq -r 'select(.step_update.state == "DONE" and .step_update.tool_name == "run_command")
+           | .step_update.tool_info.parameters.CommandLine' "$log"
+    exit ;;
+esac
+
+PLAN="$1"
+PARTS="${2:-all parts}"
+[[ -f "$QA/plans/$PLAN.md" ]] || { echo "no plan qa/plans/$PLAN.md"; exit 1; }
+if systemctl --user is-active -q "$UNIT"; then
+  echo "a run is already going ($UNIT); see: qa/bin/agy-run status"; exit 1
+fi
+# A backend that's up means a run (ours or someone's in the Antigravity window) is going.
+if systemctl --user is-active -q yasante-qa-django; then
+  echo "the backend is up: is a run going? If not, qa/bin/env-down first"; exit 1
+fi
+
+mkdir -p "$LOGS"
+LOG="$LOGS/$PLAN-$(date +%Y%m%d-%H%M).jsonl"
+PROMPT="Read qa/AGENTS.md, then execute qa/plans/$PLAN.md ($PARTS), start to finish, \
+writing the report exactly as qa/AGENTS.md says. Nobody is watching this run: never wait for \
+an answer from a person. Use only the tools in qa/AGENTS.md section 3; where a step needs \
+anything else, or a person, write NEEDS: in the report and carry on, or stop where the plan \
+says to stop. Whatever happens, finish with the plan's part Z (it ends with qa/bin/env-down)."
+
+systemctl --user reset-failed "$UNIT" 2>/dev/null || true
+systemd-run --user --quiet --unit="$UNIT" --collect \
+  --working-directory="$REPO" --setenv=PATH="$PATH" --setenv=HOME="$HOME" \
+  -p StandardOutput="append:$LOG" -p StandardError="append:$LOG.err" \
+  "$AGY" --print "$PROMPT" --model "$MODEL" --output-format stream-json \
+  --print-timeout 0 --dangerously-skip-permissions
+
+echo "started $PLAN ($MODEL) as $UNIT"
+echo "transcript: $LOG"

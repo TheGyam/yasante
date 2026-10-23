@@ -15,5 +15,12 @@ Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.
   All the code review's claims are now tested.
 - **Phone (S23 Ultra):** the owner installed Yaw's Expo build; release-build checks
   (manifest, F37 from outside, logcat) need it plugged in with USB debugging.
+- **Unattended queue (from 24-10-2026):** `qa/bin/agy-run <PLAN>` starts a plan headless
+  (fresh Gemini 3.8 Flash conversation, `--dangerously-skip-permissions`, allowed by the
+  owner for QA runs only). Claude's loop: start one plan; wait for `agy-run status` to go
+  inactive (30-min wake-ups as a backstop); audit, and also check `agy-run commands`
+  against `qa/AGENTS.md` §3; commit, push; next plan only if the run was valid. A void run
+  with a small harness cause: fix, rerun. Anything bigger: stop the queue and write it at
+  the top of this file. Phone-only steps wait for the owner.
 - While an Antigravity run is up: static `secscan` and pytest are safe (own test
   database); `secscan --dynamic`, `env-up`/`env-down` and the emulators are not.
