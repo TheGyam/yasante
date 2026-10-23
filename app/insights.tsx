@@ -54,7 +54,7 @@ export default function InsightsScreen() {
           // Each currency on its own: "$60 · €45 · GH₵300", never converted or added.
           value: i.spending.length ? formatMoneyList(i.spending) : 'None yet',
         },
-        { label: 'In the chair', value: hours(i.hoursInChair) },
+        { label: 'Time with stylists', value: hours(i.hoursInChair) },
         { label: 'Wash days', value: String(i.washes) },
         { label: 'Care plan days', value: String(i.carePlanDays) },
         { label: 'Looks saved', value: String(i.looksSaved) },
@@ -111,102 +111,101 @@ export default function InsightsScreen() {
                       </Text>
                       <Text variant="numeric">{tile.value}</Text>
                     </View>
-                    {i.styleCounts.length > 0 && (
-                      <Card>
-                        <View style={styles.card}>
-                          <Text variant="overline" tone="tertiary">
-                            What you had done
-                          </Text>
-                          {i.styleCounts.map(style => (
-                            <View
-                              key={style.name}
-                              style={styles.style}
-                              accessible
-                              accessibilityLabel={`${style.name}, ${times(style.times)}`}
-                            >
-                              <View style={styles.styleRow}>
-                                <Text variant="body" numberOfLines={1} style={{ flex: 1 }}>
-                                  {style.name}
-                                </Text>
-                                <Text variant="subhead" tone="secondary">
-                                  {times(style.times)}
-                                </Text>
-                              </View>
-                              <View style={styles.track}>
-                                <View
-                                  style={[
-                                    styles.bar,
-                                    { width: `${Math.max(8, (style.times / most) * 100)}%` },
-                                  ]}
-                                />
-                              </View>
-                            </View>
-                          ))}
-                          {i.stylists > 1 && (
-                            <Text variant="footnote" tone="tertiary">
-                              With {i.stylists} stylists
-                            </Text>
-                          )}
-                        </View>
-                      </Card>
-                    )}
-                    {i.favouriteStylist && (
-                      <Card>
-                        <View style={styles.card}>
-                          <Text variant="overline" tone="tertiary">
-                            Your stylist
-                          </Text>
-                          <Text variant="title3">{i.favouriteStylist.name}</Text>
-                          <Text variant="subhead" tone="secondary">
-                            You’ve been {times(i.favouriteStylist.times)}{' '}
-                            {period === 'month' ? 'this month' : 'since you started'}.
-                          </Text>
-                          {!!i.favouriteStylist.handle && (
-                            <Button
-                              label="Book again"
-                              variant="secondary"
-                              size="sm"
-                              onPress={() => router.push(`/book/${i.favouriteStylist!.handle}`)}
-                            />
-                          )}
-                        </View>
-                      </Card>
-                    )}
-                    {i.length && (
-                      <Card>
-                        <View style={styles.card}>
-                          <Text variant="overline" tone="tertiary">
-                            Length
-                          </Text>
-                          <Text variant="title3">
-                            {i.length.now}
-                            {i.length.nowCm ? `${SEP}${i.length.nowCm} cm` : ''}
-                          </Text>
-                          {!!i.length.grewCm && i.length.grewCm > 0 && (
-                            <Text variant="subhead" tone="success">
-                              Up {i.length.grewCm} cm{' '}
-                              {period === 'month' ? 'this month' : 'since you started'}
-                            </Text>
-                          )}
-                          {!!i.length.measuredAt && (
-                            <Text variant="footnote" tone="tertiary">
-                              Measured {formatDistanceToNowStrict(new Date(i.length.measuredAt))}{' '}
-                              ago
-                            </Text>
-                          )}
-                          <Button
-                            label="Update my length"
-                            variant="secondary"
-                            size="sm"
-                            onPress={() => router.push('/hair-profile/length')}
-                          />
-                        </View>
-                      </Card>
-                    )}
                   </Card>
                 </View>
               ))}
             </View>
+            {i.styleCounts.length > 0 && (
+              <Card>
+                <View style={styles.card}>
+                  <Text variant="overline" tone="tertiary">
+                    What you had done
+                  </Text>
+                  {i.styleCounts.map(style => (
+                    <View
+                      key={style.name}
+                      style={styles.style}
+                      accessible
+                      accessibilityLabel={`${style.name}, ${times(style.times)}`}
+                    >
+                      <View style={styles.styleRow}>
+                        <Text variant="body" numberOfLines={1} style={{ flex: 1 }}>
+                          {style.name}
+                        </Text>
+                        <Text variant="subhead" tone="secondary">
+                          {times(style.times)}
+                        </Text>
+                      </View>
+                      <View style={styles.track}>
+                        <View
+                          style={[
+                            styles.bar,
+                            { width: `${Math.max(8, (style.times / most) * 100)}%` },
+                          ]}
+                        />
+                      </View>
+                    </View>
+                  ))}
+                  {i.stylists > 1 && (
+                    <Text variant="footnote" tone="tertiary">
+                      With {i.stylists} stylists
+                    </Text>
+                  )}
+                </View>
+              </Card>
+            )}
+            {i.favouriteStylist && (
+              <Card>
+                <View style={styles.card}>
+                  <Text variant="overline" tone="tertiary">
+                    Your stylist
+                  </Text>
+                  <Text variant="title3">{i.favouriteStylist.name}</Text>
+                  <Text variant="subhead" tone="secondary">
+                    You’ve been {times(i.favouriteStylist.times)}{' '}
+                    {period === 'month' ? 'this month' : 'since you started'}.
+                  </Text>
+                  {!!i.favouriteStylist.handle && (
+                    <Button
+                      label="Book again"
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => router.push(`/book/${i.favouriteStylist!.handle}`)}
+                    />
+                  )}
+                </View>
+              </Card>
+            )}
+            {i.length && (
+              <Card>
+                <View style={styles.card}>
+                  <Text variant="overline" tone="tertiary">
+                    Length
+                  </Text>
+                  <Text variant="title3">
+                    {i.length.now}
+                    {i.length.nowCm ? `${SEP}${i.length.nowCm} cm` : ''}
+                  </Text>
+                  {!!i.length.grewCm && i.length.grewCm > 0 && (
+                    <Text variant="subhead" tone="success">
+                      Up {i.length.grewCm} cm{' '}
+                      {period === 'month' ? 'this month' : 'since you started'}
+                    </Text>
+                  )}
+                  {!!i.length.measuredAt && (
+                    <Text variant="footnote" tone="tertiary">
+                      Measured {formatDistanceToNowStrict(new Date(i.length.measuredAt))} ago
+                    </Text>
+                  )}
+                  <Button
+                    label="Update my length"
+                    variant="secondary"
+                    size="sm"
+                    onPress={() => router.push('/hair-profile/length')}
+                  />
+                </View>
+              </Card>
+            )}
             {(i.usualWashDay || i.washEveryDays || i.daysSinceTrim != null || i.trims > 0) && (
               <Card>
                 <View style={styles.card}>

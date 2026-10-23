@@ -226,6 +226,17 @@ export default function BookingScreen() {
 
         {booking.fromLook && <FromLookCard look={booking.fromLook} title="The look you booked" />}
 
+        {(booking.status === 'expired' || booking.status === 'declined') && (
+          <InlineAlert
+            tone="info"
+            message={
+              booking.status === 'expired'
+                ? `${booking.stylistName} didn’t answer in time, so this request closed. You can ask them again, or try another stylist.`
+                : `${booking.stylistName} couldn’t take this one. You can ask them for another day, or try another stylist.`
+            }
+          />
+        )}
+
         {booking.status === 'awaiting_deposit' && !!booking.deposit && (
           <InlineAlert
             tone="info"
@@ -372,7 +383,9 @@ export default function BookingScreen() {
                 ? `${booking.stylistName} is coming to you`
                 : booking.address
                   ? 'The full address'
-                  : 'The address arrives once they confirm'
+                  : booking.status === 'expired' || booking.status === 'declined'
+                    ? undefined
+                    : 'The address arrives once they confirm'
             }
             icon={MapPin}
             iconTone={booking.address ? 'success' : 'neutral'}
@@ -590,6 +603,19 @@ export default function BookingScreen() {
             />
           </Section>
         )}
+
+        {(booking.status === 'expired' || booking.status === 'declined') &&
+          !!booking.stylistHandle && (
+            <Section>
+              <ListRow
+                title={`Ask ${booking.stylistName} again`}
+                subtitle="The same style, on another day"
+                icon={Repeat}
+                onPress={() => router.push(`/book/${booking.stylistHandle}?again=${booking.id}`)}
+                testID="booking-ask-again"
+              />
+            </Section>
+          )}
 
         {booking.status === 'completed' && !!booking.stylistHandle && (
           <Section title={`Book ${booking.stylistName} again`}>
