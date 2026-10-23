@@ -74,7 +74,6 @@ yasante.com). You can change that in
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `EXPO_PUBLIC_API_BASE_URL` | Which backend the app talks to. Use your computer's LAN IP to reach a local backend from a phone.                                               |
 | `EXPO_PUBLIC_API_MOCKS`    | Set to `true` to answer every request from the built-in mock data in `src/mocks`, so no backend is needed at all. Great for working on screens. |
-| `EXPO_PUBLIC_API_LOGGING`  | Set to `true` to log each request and response while developing.                                                                                |
 
 `npm run web` opens the app in a browser, which is handy for quick layout work.
 

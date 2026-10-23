@@ -27,7 +27,6 @@ defineMocks({
       );
     }
     emailSentAt.set(accountId, Date.now());
-    if (__DEV__) console.log(`[mocks] Email code for ${account.email}: ${DEV_CODE}`);
     return { resendInSeconds: RESEND_AFTER, expiresInSeconds: 600 };
   },
 

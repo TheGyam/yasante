@@ -29,10 +29,6 @@ export function useSyncFavoritesCache() {
           queryClient.setQueryData([FAVORITES_QUERY_KEY, userId, favorite.contentId], true);
         }
       });
-
-      if (__DEV__) {
-        console.log(`✅ Synced ${favoritesList.length} favorites to per-item cache entries`);
-      }
     }
   }, [isRestoring, userId, queryClient]);
 }

@@ -22,11 +22,6 @@ import './seed';
 
 installMocks(apiClient);
 
-if (__DEV__)
-  console.log(
-    '[mocks] API mocks on. Sign in as client@yasante.dev, ama@yasante.dev or zainab@yasante.dev'
-  );
-
 // Console helpers: mockSignIn('ama@yasante.dev') to switch accounts, mockDb to see
 // what the mock backend is actually holding when a screen disagrees with it.
 declare global {

@@ -88,7 +88,6 @@ export function installMocks(client: AxiosInstance) {
     const url = config.url ?? '';
     const match = matchRoute(config.method ?? 'get', url);
     if (!match) {
-      if (__DEV__) console.log('[mocks] no handler for', config.method, url);
       // A mock session's token never goes to a real server: it would refuse it (even on
       // public endpoints), and the refresh that follows would sign her out. Checked as
       // the request is sent, after every other interceptor has added its headers

@@ -109,9 +109,6 @@ class OfflineQueue {
    */
   async processQueue(apiCall: (type: string, params: any) => Promise<any>): Promise<void> {
     if (this.processing) {
-      if (__DEV__) {
-        console.log('Queue processing already in progress');
-      }
       return;
     }
     this.processing = true;
@@ -119,11 +116,7 @@ class OfflineQueue {
     try {
       // Remove expired mutations
       const now = Date.now();
-      const expiredCount = this.queue.length;
       this.queue = this.queue.filter(m => m.ttl > now);
-      if (__DEV__ && this.queue.length < expiredCount) {
-        console.log(`Removed ${expiredCount - this.queue.length} expired mutations`);
-      }
 
       // Process mutations in order (FIFO)
       while (this.queue.length > 0) {
@@ -143,9 +136,6 @@ class OfflineQueue {
           // Success - remove from queue
           this.queue.shift();
           await this.persist();
-          if (__DEV__) {
-            console.log(`✅ Processed queued mutation: ${mutation.type}`);
-          }
         } catch (error) {
           // Increment retry count
           mutation.retryCount += 1;
@@ -195,9 +185,6 @@ class OfflineQueue {
         this.queue = this.queue.filter(m => m.ttl > now);
         if (this.queue.length < beforeCount) {
           await this.persist();
-        }
-        if (__DEV__) {
-          console.log(`Restored ${this.queue.length} queued mutations`);
         }
       }
     } catch (error) {
