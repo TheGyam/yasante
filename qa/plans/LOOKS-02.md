@@ -183,6 +183,42 @@ switch is off for you). A `201` for a several-photo look with the switch off is 
 
 ---
 
+## H: What others see of a several-photo work (the G rerun, after W3)
+
+*Added 24-10-2026.* Part G ran before any several-photo work was on Ama's page: the app's
+`Post a look` puts a stylist's photos in the feed only, and the website's `Post your work`
+also puts them on her page (`Also show them on my page`, on by default). So this part
+looks at the W3 work. **For the rerun run S, K3, W1–W3, then H, then Z** (skip K1, K2, A,
+G, W4, W5). The look in W3 has three photos: **5, 6, 7** in that order.
+
+**H1: Ama's page in the app.** `C: link "yasante:///braidsbyama"`, wait 4 s,
+`C: swipe up`, `C: step H1`. `C: find "3 photos"`. **Expect** one tile whose words end
+`, 3 photos`, and on it (in `screen.png`) a small marker with the number `3`. **Record**
+the tile's full words and where it sits in the grid.
+
+**H2: The app's viewer.** `C: tapon "3 photos"` (the tile from H1), wait 3 s,
+`C: step H2`. **Expect** `photo 1 of 3 in this look` and photo **5** in `screen.png`.
+`C: swipe left`, wait 2 s, `C: step H2b`. **Expect** `photo 2 of 3 in this look`, photo
+**6**. **Record** the numbers shown. A swipe that doesn't move (the viewer stays where it
+was) is a **FAIL**: say so, and try `C: swipe left` once more, `C: step H2c`.
+`C: tapon Close --exact`.
+
+**H3: Ama's page on the website.** `V: open /braidsbyama --site`, wait 3 s,
+`V: find "3 photos"`, `V: step H3`. **Expect** a tile with the marker `3` (its label is
+`3 photos`). **Record** where it sits.
+
+**H4: The website's viewer.** `V: click "3 photos"` (if that picks the label, not the
+tile, `V: find "Their work"` and click the tile with the same position as H3; say so),
+wait 3 s, `V: url`, `V: step H4`. **Expect** an address `/looks/<id>`, `Previous photo`,
+`Next photo`, dots `Photo 1` … `Photo 3`, and `1 / 3`. **Record** the address and the
+photo number in `screen.png` (expect **5**).
+`V: click "Next photo" --role=button`, wait 2 s, `V: step H4b`: **expect** `2 / 3`, photo
+**6**. `V: click "Photo 3" --role=button`, wait 2 s, `V: step H4c`: **expect** `3 / 3`,
+photo **7**. `V: click "Next photo" --role=button`, wait 2 s, `V: step H4d`: **Record**
+what shows (expect it stays on `3 / 3`).
+
+---
+
 ## Z: End
 
 1. `qa/bin/qadb -d client clear`, `qa/bin/qadb -d stylist clear`.
