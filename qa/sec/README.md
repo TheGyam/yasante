@@ -23,7 +23,7 @@ Raw output goes to `qa/runs/<RUN>/sec/` (gitignored); `SUMMARY.txt` has one line
 | `test_access.py` | every `/api/` route with an ID, tried by another client, another stylist and a signed-out visitor: refused, and nothing anyone owns changes. A new upstream route fails `test_every_route_is_classified` until it is placed here. |
 | `test_tokens.py` | tokens as the app sends them (sign-in, Bearer header, refresh) |
 | `test_headers.py` | the headers Django sends on site and API responses |
-| `test_input.py` | bodies of the wrong shape get a 4xx, not a crash |
+| `test_input.py` | bodies of the wrong shape get a 4xx, not a crash; feed events, notification preferences and care-plan text (F64) |
 | `test_calendar.py` | line breaks in names can't add lines to someone's `.ics` |
 | `test_rendering.py` | the server-written HTML of yasante.com (title, meta, JSON-LD, page data) keeps user text as text; `qaweb` can't see this layer locally, since Vite serves the pages there |
 | `test_media_origin.py` | a look's photo and an avatar must be the person's own upload, not any address (F33) |
@@ -100,3 +100,8 @@ Trail of Bits plugins `static-analysis`, `insecure-defaults`, `supply-chain-risk
   feed, its per-100 figures are her own saves, booking requests and Not for me per day
   (checked 23-10: 3 saves show as 300.0). Superusers only, who can read feed events anyway,
   and it isn't research output, so a design note; becomes a finding if anyone else gets it.
+
+## Triaged scanner output (24-10-2026)
+
+- First dynamic scan since #82–#123 (`SEC-claude-20261024c`): schemathesis 3 server errors, all F64. ZAP adds nothing: API `Server` header (runserver), missing `nosniff` (runserver's static files and `debug_toolbar`), CSP report-only (`development.py` for the toolbar), `csrftoken` readable by scripts (Django's design) are all the local set-up; `test_headers.py` checks production's.
+- Retention: every period in the privacy policy (analytics and searches 12 months, page viewers and feed events 90 days, error reports 90 days) has its delete in `enforce_retention`/`prune_client_errors`, both on the daily beat schedule. The staff trail (`admin.LogEntry`) has none; its personal part is F44.

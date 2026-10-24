@@ -8,8 +8,8 @@ Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.
   and **STAFF-02 T** (`STAFF-02-20261024-0851`, holds). Static secscan green (no XPASS).
   F62 #144 (wording). **Still to do:** LOOKS-02 part H (`agy-run LOOKS-02 "parts S, K3, W1, W2,
   W3, H and Z only…"`): the 08:20 attempt was void, **Gemini quota out until ~11:44 CEST**;
-  then `secscan --dynamic` (needs env-up, not during a run). DIARY-01 B4–B5 waits on #131;
-  NEW-02 V1c waits on the owner's hand swipe. Waiting on Yaw: app-posted stylist work on her
+  Dynamic secscan done (F64 #146); security layer 1 for #82–#123 closed. NEW-02 V1c withdrawn
+  (owner's swipe pages). DIARY-01 B4–B5 waits on #131. Waiting on Yaw: app-posted stylist work on her
   page; F60 legally.
 - **Reporting upstream:** the owner said (24-10) to report findings as needed. File each
   confirmed finding as an issue on `TheGyam/yasante` (label `bug`), in the style of #127/#130:
