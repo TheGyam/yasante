@@ -2,11 +2,17 @@
 
 import json
 
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
 from django.contrib.auth.models import Permission
 
 from apps.accounts.models import DeviceToken
 from apps.common.models import NotificationLog, NotificationPreference
+
+# A phone whose sign-in is still live.
+LIVE = timezone.now() + timedelta(days=7)
 from apps.staff.models import Broadcast
 from tests.test_staff import staff_client
 
@@ -20,7 +26,7 @@ def payload(**changes):
 
 
 def phone(user, platform="ios"):
-    DeviceToken.objects.create(user=user, token=f"ExponentPushToken[{user.pk}]", platform=platform)
+    DeviceToken.objects.create(user=user, token=f"ExponentPushToken[{user.pk}]", platform=platform, expires_at=LIVE)
     return user
 
 

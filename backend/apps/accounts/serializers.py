@@ -216,10 +216,12 @@ class DeviceTokenSerializer(serializers.ModelSerializer):
 
 def build_auth_response(user: User) -> dict:
     """Build the auth response with JWT tokens."""
-    refresh = RefreshToken.for_user(user)
+    from .sessions import issue
+
+    refresh, access = issue(user)
     return {
         "user": UserSerializer(user).data,
-        "access_token": str(refresh.access_token),
+        "access_token": str(access),
         "refresh_token": str(refresh),
         "expires_at": int(
             (timezone.now() + settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"]).timestamp()

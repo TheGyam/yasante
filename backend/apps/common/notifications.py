@@ -66,13 +66,15 @@ def notify(user_id, category, event_key, title, body, url=None, mode=None, actio
     return log
 
 
+def _expo_headers():
+    """With Expo's push security on, only a request carrying our access token can send."""
+    token = getattr(settings, "EXPO_ACCESS_TOKEN", "")
+    return {"Content-Type": "application/json", "Accept": "application/json", **({"Authorization": f"Bearer {token}"} if token else {})}
+
+
 def _post_to_expo(messages):
     body = json.dumps(messages).encode()
-    req = urllib.request.Request(
-        EXPO_PUSH_URL,
-        data=body,
-        headers={"Content-Type": "application/json", "Accept": "application/json"},
-    )
+    req = urllib.request.Request(EXPO_PUSH_URL, data=body, headers=_expo_headers())
     with urllib.request.urlopen(req, timeout=15) as response:
         return json.loads(response.read().decode()).get("data", [])
 
@@ -86,7 +88,11 @@ def send_push(self, log_id: str):
     log = NotificationLog.objects.filter(pk=log_id, status="queued").first()
     if log is None:
         return
-    tokens = list(DeviceToken.objects.filter(user_id=log.user_id).values_list("token", flat=True))
+    # Only phones whose sign-in is still live, on an account that's switched on.
+    tokens = list(
+        DeviceToken.objects.filter(user_id=log.user_id, user__is_active=True, expires_at__gt=timezone.now())
+        .values_list("token", flat=True)
+    )
     if not tokens:
         if not _email_instead(log):
             NotificationLog.objects.filter(pk=log.pk).update(status="no_device")
@@ -201,7 +207,7 @@ def check_push_receipts(min_age_minutes=5):
     receipts = {}
     for start in range(0, len(ids), RECEIPT_BATCH):
         body = json.dumps({"ids": ids[start : start + RECEIPT_BATCH]}).encode()
-        req = urllib.request.Request(EXPO_RECEIPTS_URL, data=body, headers={"Content-Type": "application/json", "Accept": "application/json"})
+        req = urllib.request.Request(EXPO_RECEIPTS_URL, data=body, headers=_expo_headers())
         try:
             with urllib.request.urlopen(req, timeout=15) as response:
                 receipts.update(json.loads(response.read().decode()).get("data", {}))

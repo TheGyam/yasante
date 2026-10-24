@@ -343,6 +343,9 @@ MEDIA_ROOT = BASE_DIR / "mediafiles"
 PRIVATE_MEDIA_ACCEL = config("PRIVATE_MEDIA_ACCEL", default=False, cast=bool)
 # "expo" sends through Expo's push service; anything else only logs (dev, tests).
 PUSH_DELIVERY = config("PUSH_DELIVERY", default="log")
+# Sent with every push and receipt request, so that with "Enhanced security for push
+# notifications" on in Expo, a leaked push token can't be used to send as Yasante.
+EXPO_ACCESS_TOKEN = config("EXPO_ACCESS_TOKEN", default="")
 
 _media_backend = config("MEDIA_STORAGE_BACKEND", default="local")
 if _media_backend == "s3":
