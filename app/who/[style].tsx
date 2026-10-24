@@ -6,6 +6,7 @@ import { useAuth } from '@/features/auth';
 import { useLook, useStyleTaxonomy } from '@/features/looks';
 import { useUpdateHairProfile, useUser } from '@/features/profile';
 import { useStylistsForStyle, type StylistSearchResult, type Within } from '@/features/stylist';
+import { errorMessage } from '@/shared/lib/errors';
 import { DEFAULT_CURRENCY, formatDistance, formatMoney, SEP } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, radius, space, useTheme } from '@/shared/theme';
@@ -226,11 +227,24 @@ function WhereAreYou() {
   const { user } = useAuth();
   const save = useUpdateHairProfile(user?.id);
   const [postcode, setPostcode] = useState('');
+  const [problem, setProblem] = useState<string>();
   const valid = POSTCODE.test(postcode.trim());
 
   const go = async () => {
-    const named = await areasFor(postcode).catch(() => []);
-    save.mutate({ postcode: tidyPostcode(postcode), ...(named[0] && { area: named[0] }) });
+    setProblem(undefined);
+    // Can't reach the lookup: the postcode alone still finds who's near.
+    const named = await areasFor(postcode).catch(() => undefined);
+    if (named?.length === 0) {
+      setProblem('We couldn’t find that postcode. Check it and try again.');
+      return;
+    }
+    save.mutate(
+      { postcode: tidyPostcode(postcode), ...(named?.[0] && { area: named[0] }) },
+      {
+        onError: error =>
+          setProblem(errorMessage(error, 'That didn’t save. Try again in a moment.')),
+      }
+    );
   };
 
   return (
@@ -240,13 +254,17 @@ function WhereAreYou() {
         label="Your postcode"
         icon={MapPin}
         value={postcode}
-        onChangeText={setPostcode}
+        onChangeText={text => {
+          setPostcode(text);
+          setProblem(undefined);
+        }}
         placeholder="SE15 4QJ"
         autoCapitalize="characters"
         autoCorrect={false}
         autoComplete="postal-code"
         textContentType="postalCode"
         maxLength={8}
+        error={problem}
         hint="Kept in your hair profile. It’s never shown to anyone."
       />
       <Button

@@ -149,7 +149,7 @@ export function PostWorkScreen({ accountId }: { accountId: string }) {
         onPage
       );
       if (!error) {
-        navigate('/portfolio', { state: { posted: 1 } });
+        navigate('/portfolio', { state: { posted: 1, photos: picks.length } });
         return;
       }
       setTogetherError(
@@ -161,7 +161,7 @@ export function PostWorkScreen({ accountId }: { accountId: string }) {
     }
     const failed = await post(picks, onPage);
     if (!failed.length) {
-      navigate('/portfolio', { state: { posted: picks.length } });
+      navigate('/portfolio', { state: { posted: picks.length, photos: picks.length } });
       return;
     }
     // Keep only what didn't post, so trying again doesn't post the rest twice.

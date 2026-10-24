@@ -8,7 +8,7 @@ from django.contrib import admin, messages
 from django.utils import timezone
 
 from .models import Appeal, Block, Look, LookComment, LookLike, LookPhoto, ModerationAction, Report, Style
-from .moderation import moderate
+from .moderation import moderate, tell_author
 
 
 def _moderate_selected(modeladmin, request, queryset, action):
@@ -137,6 +137,8 @@ class AppealAdmin(admin.ModelAdmin):
             appeal.decided_by = request.user
             appeal.decided_at = timezone.now()
             appeal.save(update_fields=["status", "decided_by", "decided_at"])
+            if status == "upheld":  # overturned, the restore tells her itself
+                tell_author(appeal.author_id, "We looked at your appeal", f"The decision stands: {appeal.action.reason.rstrip('.')}.", f"appeal:{appeal.pk}")
 
     @admin.action(description="Keep the action (appeal refused)")
     def uphold(self, request, queryset):

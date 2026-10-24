@@ -35,6 +35,8 @@ def keep_hidden_values(request, ma, object_id):
         return
     stored = ma.get_queryset(request).filter(pk=object_id).values(*missing).first()
     if stored:
+        # Remembered, so a form sent back with an error hides them again.
+        request.kept_hidden = set(missing)
         request.POST = request.POST.copy()
         for name in missing:
             request.POST[name] = as_form_value(stored[name])
@@ -138,7 +140,9 @@ def choices(request, app_label, model_name):
     term = request.GET.get("q", "")[:200]
     related_admin = admin.site.get_model_admin(queryset.model) if admin.site.is_registered(queryset.model) else None
     if term and related_admin and related_admin.get_search_fields(request):
-        queryset, duplicates = related_admin.get_search_results(request, queryset, term)
+        from ..privacy import search_without_hidden
+
+        queryset, duplicates = search_without_hidden(request, related_admin, queryset, term)
         if duplicates:
             queryset = queryset.distinct()
     elif term:

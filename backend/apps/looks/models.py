@@ -212,6 +212,9 @@ class Report(TimeStampedModel):
         db_table = "looks_report"
         ordering = ["-created_at"]
 
+    def __str__(self):
+        return f"Report of a {self.content_type.name}: {self.get_reason_display()}"
+
 
 class NotForMe(models.Model):
     """

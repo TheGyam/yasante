@@ -54,6 +54,14 @@ def validate_parameters(request):
                 raise BadRequest
 
 
+def refuse_hidden_lookups(request, model):
+    """A filter on a hidden field would answer yes or no about its value: none allowed."""
+    from .privacy import names_hidden
+
+    if any(names_hidden(model, key) for key in request.GET):
+        raise BadRequest("Hidden details can't be filtered on.")
+
+
 def available_admins(request):
     for group in admin.site.get_app_list(request):
         for entry in group["models"]:

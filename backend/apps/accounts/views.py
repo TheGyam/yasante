@@ -595,6 +595,8 @@ class NotificationPreferencesView(APIView):
         known = {key for key, _ in NOTIFICATION_CATEGORIES}
         # { categories: [{id, on}] } or { muted: [ids] }; "account" can't be muted.
         if "categories" in request.data:
+            if not isinstance(request.data["categories"], list) or not all(isinstance(c, dict) for c in request.data["categories"]):
+                return Response({"message": "Send each category as {id, on}."}, status=400)
             off = {c.get("id") for c in request.data["categories"] if not c.get("on", True)}
             on = {c.get("id") for c in request.data["categories"] if c.get("on", True)}
         else:

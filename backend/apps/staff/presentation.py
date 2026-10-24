@@ -145,7 +145,8 @@ def mask_personal_fields(request, model, obj, payload):
     for section in payload.get("sections", []):
         for field in section["fields"]:
             # A value just typed and sent back (a form with errors) stays as typed.
-            if field["name"] in hidden and not (request.method == "POST" and field["name"] in request.POST):
+            typed = request.method == "POST" and field["name"] in request.POST and field["name"] not in getattr(request, "kept_hidden", ())
+            if field["name"] in hidden and not typed:
                 field.update(
                     masked=True,
                     hasValue=bool(field.get("value")),
@@ -156,6 +157,11 @@ def mask_personal_fields(request, model, obj, payload):
 
 
 class WorkspacePresentation:
+    def get_search_fields(self, request):
+        from .privacy import searchable
+
+        return searchable(request, self.model, super().get_search_fields(request))
+
     def get_formset_kwargs(self, request, obj, inline, prefix):
         kwargs = super().get_formset_kwargs(request, obj, inline, prefix)
         FormSet = inline.get_formset(request, obj)

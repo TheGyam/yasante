@@ -39,6 +39,8 @@ MAX_EDGE = 2048
 # doesn't. Decoding one holds about 3 bytes a pixel in memory.
 MAX_PIXELS = 60_000_000
 Image.MAX_IMAGE_PIXELS = MAX_PIXELS
+# Phones only send these; every other decoder stays out of reach.
+PHOTO_FORMATS = ("JPEG", "PNG", "WEBP")
 FEED_WIDTH = 1080
 THUMB_WIDTH = 400
 # Hashes this close (of 64 bits) are the same photo, recompressed or lightly cropped.
@@ -148,7 +150,7 @@ def store_image(upload, *, owner, kind, source, private):
     if upload.size > MAX_BYTES:
         return None, "That photo is too large"
     try:
-        image = Image.open(upload)
+        image = Image.open(upload, formats=PHOTO_FORMATS)
         # Read from the header, before anything is decoded.
         if image.width * image.height > MAX_PIXELS:
             return None, "That photo is too large"

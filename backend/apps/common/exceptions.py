@@ -68,7 +68,8 @@ def _flatten(data, field=None):
     if isinstance(data, dict):
         out = []
         for key, value in data.items():
-            inner = None if key in ("message", "non_field_errors", "detail") else key
+            # A list's errors are keyed by position (events.1): they belong to the list's field.
+            inner = None if key in ("message", "non_field_errors", "detail") or not isinstance(key, str) else key
             out += _flatten(value, inner or field)
         return out
     if isinstance(data, list):

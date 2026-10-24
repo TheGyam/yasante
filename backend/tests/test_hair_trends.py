@@ -25,10 +25,12 @@ def test_trends_show_only_groups_of_twenty_and_hair_only_from_research_volunteer
                 area="SE15", policy={}, policy_version="2026-10-20", styles=[style],
             )
 
-    volunteer, declined = make_user(texture="coily"), make_user(texture="coily")
-    consent(volunteer, "research")
+    # Twenty different people: the minimum group counts people, not bookings.
+    volunteers, declined = [make_user(texture="coily") for _ in range(20)], make_user(texture="coily")
+    for volunteer in volunteers:
+        consent(volunteer, "research")
+        booked(volunteer, "knotless", 1)
     consent(declined, "research", granted=False)
-    booked(volunteer, "knotless", 20)
     booked(declined, "knotless", 25)
     booked(declined, "twists", 5)
 

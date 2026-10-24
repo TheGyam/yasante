@@ -1379,6 +1379,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/places/postcode/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The area names for a UK postcode, asked from here so the phone never tells
+         *     postcodes.io who it is (the privacy policy says so). Signed in only, like suggestions.
+         */
+        get: operations["places_postcode_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/places/suggest/": {
         parameters: {
             query?: never;
@@ -6610,6 +6630,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationPreferences"];
+                };
+            };
+        };
+    };
+    places_postcode_list: {
+        parameters: {
+            query?: {
+                /** @description A full UK postcode, spaced or not */
+                postcode?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
                 };
             };
         };

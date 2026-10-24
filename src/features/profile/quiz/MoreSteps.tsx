@@ -218,17 +218,22 @@ function UkAreaStep({
   const [typed, setTyped] = useState(postcode ?? '');
   const valid = POSTCODE.test(typed.trim());
   // The names that postcode goes by, so their area is one tap.
-  const { data: named = [] } = useQuery({
+  const lookup = useQuery({
     queryKey: ['postcode', tidyPostcode(typed)],
     queryFn: () => areasFor(typed),
     enabled: valid,
     staleTime: Infinity,
+    retry: 1,
   });
+  const named = lookup.data ?? [];
+  // Well-formed but not a real postcode: said so, and not kept.
+  const notFound = valid && lookup.isSuccess && named.length === 0;
   useEffect(() => {
+    if (notFound) onPostcode('');
     if (named.length && !(value && named.includes(value))) onChange(named[0]);
     // When a postcode's names arrive.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [named]);
+  }, [lookup.data]);
   const choices = named.length ? named : AREAS;
 
   return (
@@ -246,6 +251,11 @@ function UkAreaStep({
         autoComplete="postal-code"
         textContentType="postalCode"
         maxLength={8}
+        error={
+          notFound
+            ? 'We couldn’t find that postcode. Check it, or type your area below.'
+            : undefined
+        }
         hint="So we can show stylists near you. It’s never shown to anyone."
       />
       <View style={styles.chips}>

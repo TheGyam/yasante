@@ -17,7 +17,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from django.utils import timezone
-from apps.common.throttling import BookingRequestThrottle, ReviewThrottle
+from apps.common.throttling import BookingRequestThrottle, ReportThrottle, ReviewThrottle
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -749,6 +749,7 @@ class ReviewReportView(APIView):
     """POST /api/reviews/:id/report/ — to moderation."""
 
     permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ReportThrottle]
 
     def post(self, request, pk):
         review = Review.objects.filter(pk=pk).first()
@@ -757,11 +758,12 @@ class ReviewReportView(APIView):
         reason = request.data.get("reason")
         if reason not in REVIEW_REPORT_REASONS:
             return _err("Say what’s wrong with it", 400)
-        ReviewReport.objects.create(
+        # One open report per person per review, as for looks.
+        ReviewReport.objects.update_or_create(
             review=review,
             reporter=request.user,
-            reason=reason,
-            note=str(request.data.get("note") or "")[:500],
+            status="open",
+            defaults={"reason": reason, "note": str(request.data.get("note") or "")[:500]},
         )
         return Response(status=status.HTTP_204_NO_CONTENT)
 

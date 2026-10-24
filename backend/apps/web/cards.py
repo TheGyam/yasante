@@ -12,6 +12,8 @@ from urllib.parse import urlparse
 from django.core.files.storage import default_storage
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
+from apps.common.uploads import PHOTO_FORMATS
+
 W, H, GAP = 1200, 630, 6
 PLUM = (24, 10, 18)
 MAX_BYTES = 8 * 1024 * 1024
@@ -34,7 +36,7 @@ def _open(uri):
             return None
         if len(data) > MAX_BYTES:
             return None
-        image = Image.open(io.BytesIO(data))
+        image = Image.open(io.BytesIO(data), formats=PHOTO_FORMATS)
         image.draft("RGB", (W, H))  # JPEGs decode small, which is all a tile needs
         return image.convert("RGB")
     except Exception:  # a missing or broken picture leaves a plain tile
