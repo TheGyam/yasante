@@ -5,7 +5,8 @@ One agent drives both **in turn**.
 **Covers:** upstream's `0fc5a2d` (book again, add to calendar, balance due) and `99e383d`
 (a stylist who travels gets the client's address: street held back until confirmed).
 **Time:** about 60 minutes.
-**Revised 19-10-2026** for the picker that came with the 18-10 merge (A2 now chooses the
+**Checked against upstream 24-10-2026** (the plait mark in A1 and A4; every testID and line
+still there). **Revised 19-10-2026** for the picker that came with the 18-10 merge (A2 now chooses the
 `Soonest` idea; no other step picks a time).
 
 Read `qa/AGENTS.md` first (again, since it changed). Its rules override anything here.
@@ -84,7 +85,8 @@ Expect the same booking screen with **nothing chosen**. `C: key BACK`.
 
 **A1: Where?** `C: link "yasante:///book/braidsbyama"`, wait 4 s,
 `C: tapon "Take down and wash" --exact`, wait 3 s, `C: swipe up`, `C: step A1`. Expect a
-`Where?` line with two choices, `At theirs · Peckham` and `Come to me`. **Record** which
+`Where?` line with two choices, `At theirs` + the plait mark + `Peckham` (no ` · ` since #60)
+and `Come to me`. **Record** which
 one is selected.
 **A2: Come to me, no address yet.** `C: tapon "Come to me"`, wait 2 s, `C: step A2`.
 Expect `Your house number and street` and `Your postcode`, and under them
@@ -104,7 +106,7 @@ the line under the button now. `C: tapon booking-send`, wait 4 s, `C: step A3b`.
 is sent. Ama's side **must not** contain `4 Choumert Grove` yet: if it does, **FAIL**.
 
 **A4: Ama reads it.** `S: link "yasante:///requests/<B1>"`, wait 4 s, `S: step A4`.
-Expect a row `At their place · <area>` with `You go to them. Their street arrives once
+Expect a row `At their place` + the plait mark + `<area>` with `You go to them. Their street arrives once
 you confirm`. **Record** the area exactly. The street on screen is a **FAIL**.
 `S: swipe up` until `What they said` shows, `S: step A4b`. **Expect** the whole note,
 over several lines, ending `…park on the left side of the road.` Cut off with `…` after

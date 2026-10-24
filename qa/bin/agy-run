@@ -46,7 +46,8 @@ mkdir -p "$LOGS"
 LOG="$LOGS/$PLAN-$(date +%Y%m%d-%H%M).jsonl"
 PROMPT="Read qa/AGENTS.md, then execute qa/plans/$PLAN.md ($PARTS), start to finish, \
 writing the report exactly as qa/AGENTS.md says. Nobody is watching this run: never wait for \
-an answer from a person. Use only the tools in qa/AGENTS.md section 3; where a step needs \
+an answer from a person. Use only the tools in qa/AGENTS.md section 3, and never read app/, src/ \
+or backend/ (not even with grep), nor open a link the plan does not give; where a step needs \
 anything else, or a person, write NEEDS: in the report and carry on, or stop where the plan \
 says to stop. Whatever happens, finish with the plan's part Z (it ends with qa/bin/env-down)."
 
