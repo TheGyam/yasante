@@ -2,12 +2,19 @@
 
 Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.md`.
 
-- **Next (24-10, 13:00):** upstream `master` still unchanged since #123 (fetched 13:00);
-  #124–#147 open (#148 closed as a duplicate of #147), no PRs. **The ungated queue is empty:**
-  the "NEW-02 P rerun" listed at 12:25 was already done in `NEW-02-20261024-0749` (P1–P4,
-  valid, F61 #143). Everything left waits on Yaw: DIARY-01 B4–B5 after #131, POLICY-01 N/X
-  after #145, F65 recheck on the site after #147, and XPASS checks as #124–#129 land. On
-  any upstream move: merge, run the suites, recheck first. Emulators down.
+- **Next (24-10, 14:50):** Yaw merged **#149** (14:26), closing #124–#147; merged here,
+  suites green, static secscan green (F41–F47, F64 XPASS, marks off; only F36 xfail, kept by
+  design). Rechecked already: F25, F41–F47, F64 (secscan), F52, F59, F60
+  (`qa/sec/test_rechecks_149.py`), F50, F56 (code read). **Running:** `DIARY-01` full rerun
+  (`agy-run`, started 14:44, transcript `qa/runs/agy/DIARY-01-20261024-1444.jsonl`): audit it
+  for F49 (B4–B5), F51 (B7 confirm, R5 `--accept-dialog`) and F65 (plait mark in the
+  studio's chips, look at the screenshots). **Then, one at a time:** POLICY-01 N plus the
+  hand-run X steps (F63 #145: Efua `Allow` with the backend frozen, sign out, Abena signs in,
+  no consent row for Abena); NEW-02 P and W2 (F57, F58: `GET /api/places/postcode/` in the
+  server log, F61); website post wording (F62, LOOKS-02 H or SITE-01 B7); app photo ✕ (F48);
+  website booking page (F53); `<name> asked for` (F54) and `UK time` marks (F55) in FIXES-01 F.
+- **Earlier (24-10, 13:00):** the ungated queue was empty: the "NEW-02 P rerun" was already
+  done in `NEW-02-20261024-0749` (P1–P4, valid, F61 #143).
 - **Earlier (24-10, 12:25):** **LOOKS-02 part H done** (`LOOKS-02-20261024-1148`, unattended,
   valid: the 3-photo work shows and pages right in app and site); qadb's re-tap works. New
   **F65 #147** (website plait mark is an empty box: `@font-face` weight).
