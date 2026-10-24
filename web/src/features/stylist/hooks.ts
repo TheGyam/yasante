@@ -53,10 +53,12 @@ export const stylistKeys = {
   summary: (accountId: string) => ['stylist', 'summary', accountId] as const,
 };
 
+/** An empty handle means "not now": nothing is asked for. */
 export function useStylistPage(handle: string) {
   return useQuery({
     queryKey: stylistKeys.page(handle),
     queryFn: () => getStylistPage(handle),
+    enabled: !!handle,
   });
 }
 

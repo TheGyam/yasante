@@ -6,9 +6,9 @@ from django.core.exceptions import BadRequest, PermissionDenied
 from django.http import Http404, HttpResponse, JsonResponse
 from django.views.decorators.http import require_GET
 
-from ..access import staff_data, visible_admins, model_admin, workspace_url, validate_parameters
+from ..access import refuse_hidden_lookups, staff_data, visible_admins, model_admin, workspace_url, validate_parameters
 from ..names import field_label, model_name as friendly
-from ..privacy import log_access, masked_fields
+from ..privacy import log_access, masked_fields, search_without_hidden
 
 SEARCH_MODELS = ("accounts.user", "stylists.stylistprofile", "bookings.booking", "looks.look", "accounts.invite", "shelf.product")
 
@@ -24,7 +24,7 @@ def search(request):
 
     def find(key):
         ma = admins[key]
-        rows, duplicates = ma.get_search_results(request, ma.get_queryset(request), term)
+        rows, duplicates = search_without_hidden(request, ma, ma.get_queryset(request), term)
         if duplicates:
             rows = rows.distinct()
         names = friendly(ma.model)
@@ -72,6 +72,7 @@ def export_csv(request, app_label, model_name):
     ma = model_admin(request, app_label, model_name)
     if not ma.has_view_or_change_permission(request):
         raise PermissionDenied
+    refuse_hidden_lookups(request, ma.model)
     cl = ma.get_changelist_instance(request)
     if cl.queryset.count() > 5000:
         return JsonResponse({"message": "Exports are limited to 5,000 rows. Narrow your filters first."}, status=400)

@@ -229,6 +229,9 @@ class ReviewReport(models.Model):
     class Meta:
         db_table = "bookings_review_report"
 
+    def __str__(self):
+        return f"Report of a review: {self.get_reason_display()}"
+
 
 class BookingEvent(models.Model):
     """

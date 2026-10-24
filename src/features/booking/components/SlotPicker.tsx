@@ -300,7 +300,7 @@ export function SlotPicker({
               onPress={() => idea.at && choose(idea.at)}
               accessibilityRole="button"
               accessibilityState={{ selected: on, disabled: !idea.at }}
-              accessibilityLabel={`${idea.title}: ${idea.at ? `${dayLabel(idea.at, zone)}, ${format(salonTime(idea.at, zone), 'HH:mm')}` : 'nothing free'}`}
+              accessibilityLabel={`${idea.title}: ${idea.at ? `${dayLabel(idea.at, zone)}, ${format(salonTime(idea.at, zone), 'HH:mm')}${zoneMark(zone)}` : 'nothing free'}`}
             >
               <idea.icon size={18} color={theme.colors.accent} strokeWidth={2.2} />
               <Text variant="overline" tone="tertiary" style={{ marginTop: space.xs }}>
@@ -310,6 +310,7 @@ export function SlotPicker({
               {!!idea.at && (
                 <Text variant="footnote" tone="secondary">
                   {format(salonTime(idea.at, zone), 'HH:mm')}
+                  {zoneMark(zone)}
                 </Text>
               )}
             </PressableScale>
@@ -671,7 +672,7 @@ function Day({
         <Text variant="footnote" tone="secondary">
           {hours ? `${hours.start}–${hours.end}` : 'Her hours'}
           {chosen !== undefined
-            ? `${SEP}You’d be there ${clock(chosen)} to ${clock(chosen + minutes)}`
+            ? `${SEP}You’d be there ${clock(chosen)} to ${clock(chosen + minutes)}${zoneMark(zone)}`
             : `${SEP}Tap a time, or a free part of the day`}
         </Text>
       </View>

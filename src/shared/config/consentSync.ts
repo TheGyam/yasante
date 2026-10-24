@@ -21,6 +21,8 @@ function withTimeout<T>(request: Promise<T>): Promise<T> {
 }
 
 let inFlight: Promise<void> | null = null;
+// A choice made while a send was on its way goes in the next one, straight after.
+let sendAgain = false;
 
 /**
  * Sends consent records that only exist on this device. Each is a record — who,
@@ -28,7 +30,10 @@ let inFlight: Promise<void> | null = null;
  * the server keeps a history rather than one switch.
  */
 export function syncConsents(): Promise<void> {
-  if (inFlight) return inFlight;
+  if (inFlight) {
+    sendAgain = true;
+    return inFlight;
+  }
   const pending = useConsentStore.getState().pendingSync();
   if (!pending.length) return Promise.resolve();
 
@@ -51,6 +56,10 @@ export function syncConsents(): Promise<void> {
     })
     .finally(() => {
       inFlight = null;
+      if (sendAgain) {
+        sendAgain = false;
+        void syncConsents();
+      }
     });
   return inFlight;
 }

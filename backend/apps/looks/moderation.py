@@ -94,6 +94,29 @@ def _answer_reports(target, moderator, action):
         ).update(**fields)
 
 
+WHAT = {"look": "look", "lookcomment": "comment", "review": "review", "stylistprofile": "page",
+        "collection": "shared collection", "careplan": "shared care plan"}
+DONE = {"hide": "hidden", "remove": "removed", "unpublish": "taken down", "restore": "restored"}
+
+
+def tell_author(author_id, title, body, key):
+    """The author always hears what was done and why (a statement of reasons), and how to appeal."""
+    from apps.common.notifications import notify
+
+    notify(author_id, "account", key, title, body, url="/settings/reports", email="/")
+
+
+def _tell_author(target, action, reason, row):
+    if action not in DONE or not row.author_id or row.author_id == getattr(row.moderator, "pk", None):
+        return
+    what = WHAT.get(type(target)._meta.model_name, "post")
+    if action == "restore":
+        body = f"We looked again and your {what} is back up."
+    else:
+        body = f"{reason.rstrip('.')}. If you think we got it wrong, appeal in Settings, Reports and appeals."
+    tell_author(row.author_id, f"Your {what} was {DONE[action]}", body, f"moderation:{row.pk}")
+
+
 @transaction.atomic
 def moderate(target, action, moderator=None, reason=""):
     """Apply one action to a look, comment, review or stylist page. Returns the audit row."""
@@ -102,7 +125,7 @@ def moderate(target, action, moderator=None, reason=""):
     if action != "dismiss":
         _set_status(target, action)
     _answer_reports(target, moderator, action)
-    return ModerationAction.objects.create(
+    row = ModerationAction.objects.create(
         moderator=moderator,
         action=action,
         reason=reason or RESOLUTIONS[action],
@@ -110,3 +133,5 @@ def moderate(target, action, moderator=None, reason=""):
         object_id=target.pk,
         author_id=_author_of(target),
     )
+    _tell_author(target, action, row.reason, row)
+    return row

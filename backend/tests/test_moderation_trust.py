@@ -30,6 +30,29 @@ def test_hiding_a_look_answers_its_reports_and_keeps_it_hers(api, make_user, mak
     assert api(author).get(f"/api/looks/{look.pk}/").status_code == 404
 
 
+def test_the_author_is_told_what_was_done_why_and_how_the_appeal_went(api, make_user, make_look, rf):
+    from apps.common.models import NotificationLog
+    from apps.looks.admin import AppealAdmin
+    from apps.looks.models import Appeal
+    from apps.looks.moderation import moderate
+    from django.contrib import admin
+
+    author, staff = make_user(), make_user()
+    look = make_look(author)
+    told = lambda: list(NotificationLog.objects.filter(user=author).order_by("created_at").values_list("title", "body", "category"))
+    first = moderate(look, "hide", moderator=staff)
+    assert told() == [("Your look was hidden", "Hidden while we look into it. If you think we got it wrong, appeal in Settings, Reports and appeals.", "account")]
+    # An appeal kept: she hears the decision stands. Overturned: she hears it's back.
+    request = rf.post("/")
+    request.user = staff
+    appeals = AppealAdmin(Appeal, admin.site)
+    appeals.uphold(request, Appeal.objects.filter(pk=Appeal.objects.create(action=first, author=author, body="Mine").pk))
+    assert told()[-1][0] == "We looked at your appeal"
+    second = moderate(look, "hide", moderator=staff)
+    appeals.overturn(request, Appeal.objects.filter(pk=Appeal.objects.create(action=second, author=author, body="Mine").pk))
+    assert told()[-1][:2] == ("Your look was restored", "We looked again and your look is back up.")
+
+
 def test_a_hidden_comment_leaves_the_thread_and_the_count(api, make_user, make_look):
     from apps.looks.models import LookComment
     from apps.looks.moderation import moderate

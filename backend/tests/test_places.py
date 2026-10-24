@@ -72,3 +72,26 @@ def test_the_team_sees_searches_that_find_nothing_or_fail(api, make_user, photon
     assert data["meta"]["note"] == "Most typed and not found: Nowhere (DE)."
     # Area lookups aren't mixed into the searches for looks and stylists.
     assert all(row["label"] != "Nowhere" for row in staff.get("/data/insights/empty-searches/").json()["rows"])
+
+
+def test_postcode_areas_are_asked_from_the_server_and_kept(api, make_user, monkeypatch):
+    import urllib.error
+
+    asked = []
+
+    def fake(url, timeout):
+        asked.append(url)
+        if url.endswith("ZZ11ZZ"):
+            raise urllib.error.HTTPError(url, 404, "Not found", {}, None)
+        result = {"parliamentary_constituency": "Peckham", "admin_ward": "Rye Lane", "admin_district": "Southwark",
+                  "latitude": 51.47, "longitude": -0.07}
+        return io.BytesIO(json.dumps({"result": result}).encode())
+
+    monkeypatch.setattr("urllib.request.urlopen", fake)
+    me = api(make_user())
+    assert me.get("/api/places/postcode/", postcode="se15 4qj").json() == ["Peckham", "Rye Lane", "Southwark"]
+    me.get("/api/places/postcode/", postcode="SE154QJ")
+    assert len(asked) == 1  # cached: postcodes.io hears about each postcode once
+    assert me.get("/api/places/postcode/", postcode="ZZ1 1ZZ").status_code == 404
+    assert me.get("/api/places/postcode/", postcode="not one").status_code == 400
+    assert api().get("/api/places/postcode/", postcode="SE15 4QJ").status_code == 401

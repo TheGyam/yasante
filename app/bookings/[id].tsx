@@ -455,7 +455,7 @@ export default function BookingScreen() {
             <Section
               title="Before the day"
               footer={
-                ticked.length >= prepList(booking).length
+                prepList(booking).every(item => ticked.includes(item.id))
                   ? 'All set. They’ll be glad of it.'
                   : 'Tick them off as you go. Only you see this.'
               }

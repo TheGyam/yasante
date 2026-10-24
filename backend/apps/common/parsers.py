@@ -21,6 +21,9 @@ def _underscoreize(data):
         return {_camel_to_snake(k): _underscoreize(v) for k, v in data.items()}
     if isinstance(data, (list, tuple)):
         return [_underscoreize(item) for item in data]
+    # Postgres can't store a NUL in text, so it would end as a server error wherever it's saved.
+    if isinstance(data, str) and "\x00" in data:
+        raise ParseError("Text can't contain a NUL character.")
     return data
 
 

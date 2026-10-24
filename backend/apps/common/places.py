@@ -99,6 +99,31 @@ class PlaceSerializer(serializers.Serializer):
     context = serializers.CharField(help_text="Where it is, to tell same-named places apart")
 
 
+class PostcodeAreasView(APIView):
+    """
+    The area names for a UK postcode, asked from here so the phone never tells
+    postcodes.io who it is (the privacy policy says so). Signed in only, like suggestions.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [PlaceSuggestionsThrottle]
+
+    @extend_schema(
+        parameters=[OpenApiParameter("postcode", str, description="A full UK postcode, spaced or not")],
+        responses={200: serializers.ListSerializer(child=serializers.CharField())},
+    )
+    def get(self, request):
+        from apps.common.geo import POSTCODE, areas_for
+
+        postcode = (request.query_params.get("postcode") or "").strip()[:10]
+        if not POSTCODE.fullmatch(postcode):
+            return Response({"message": "That isn’t a full UK postcode."}, status=400)
+        areas = areas_for(postcode)
+        if areas is None:
+            return Response({"message": "We couldn’t find that postcode."}, status=404)
+        return Response(areas)
+
+
 class PlaceSuggestionsView(APIView):
     """Areas for the area field outside the UK. Signed in only, to be fair to the free service."""
 

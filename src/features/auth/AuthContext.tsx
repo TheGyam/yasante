@@ -9,6 +9,8 @@ import { queryClient } from '@/queryClient';
 import { api } from '@/api';
 import { apiClient } from '@/shared/lib/api';
 import { unregisterPush } from '@/shared/lib/push';
+import { useConsentStore } from '@/shared/config/consentStore';
+import { syncConsents } from '@/shared/config/consentSync';
 
 interface AuthContextType {
   user: User | null;
@@ -152,12 +154,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    // Tell the server first, while still signed in: stop this phone's notifications
-    // and end the session, so a copied refresh token stops working too. Capped, so
-    // signing out offline still signs out.
+    // Tell the server first, while still signed in: her last privacy choices, stop this
+    // phone's notifications and end the session, so a copied refresh token stops
+    // working too. Capped, so signing out offline still signs out.
     const refresh = useAuthStore.getState().tokens?.refreshToken;
     await Promise.race([
       Promise.allSettled([
+        syncConsents(),
         unregisterPush(),
         refresh ? apiClient.post('/api/auth/logout/', { refreshToken: refresh }) : null,
       ]),
@@ -181,11 +184,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      // Her choices are hers: whatever didn't reach the server must never be sent
+      // as the next person's.
+      useConsentStore.getState().forget();
       // Logout from auth store (clears tokens and user)
       logoutStore();
     } catch (error) {
       // Even if cache clearing fails, proceed with logout
       console.error('Error during logout cleanup:', error);
+      useConsentStore.getState().forget();
       logoutStore();
     }
   }, [logoutStore]);

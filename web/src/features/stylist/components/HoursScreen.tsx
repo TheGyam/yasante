@@ -89,7 +89,8 @@ export function HoursScreen({
     }));
 
   const badTimes = hours.week.some(d => d && d.start >= d.end);
-  const today = new Date().toISOString().slice(0, 10);
+  // The salon's date: just after midnight, UTC's is still yesterday.
+  const today = toSalonInput(new Date(), profile.timeZone).slice(0, 10);
   const lastDay = new Date(Date.parse(`${today}T12:00:00Z`) + (ahead - 1) * 86_400_000)
     .toISOString()
     .slice(0, 10);
@@ -337,6 +338,8 @@ export function HoursScreen({
  * Part of a day taken out of her diary: a client booked elsewhere, a school run. Saved
  * as she adds it. Clients see it as booked; only she sees the note.
  */
+const laterOf = (a: string, b: string) => (a > b ? a : b);
+
 function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: string }) {
   const { data: blocks = [] } = useTimeBlocks(accountId);
   const add = useAddTimeBlock(accountId);
@@ -439,7 +442,15 @@ function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: st
                   : whenLabel(block.start, timeZone)
               }–${toSalonInput(block.end, timeZone).slice(11)}${block.note ? `${SEP}${block.note}` : ''}`}
               icon={X}
-              onClick={() => remove.mutate(block.id)}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    'Open this time up for booking again? Anyone waiting for that day is told straight away.'
+                  )
+                ) {
+                  remove.mutate(block.id);
+                }
+              }}
             />
           ))}
         </div>
@@ -453,7 +464,10 @@ function BlockedTime({ accountId, timeZone }: { accountId: string; timeZone?: st
               back
             </Text>
             <div className={styles.chips} role="group" aria-label="Days it lands on">
-              {nextOccurrences(block.repeats, today).map(day => {
+              {nextOccurrences(
+                block.repeats,
+                laterOf(today, toSalonInput(block.start, timeZone).slice(0, 10))
+              ).map(day => {
                 const skipped = block.skips.includes(day);
                 return (
                   <Chip

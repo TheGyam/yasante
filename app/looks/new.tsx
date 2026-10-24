@@ -86,8 +86,10 @@ const useStyles = makeStyles(t => ({
     backgroundColor: t.colors.accent,
   },
   badgeText: { color: t.colors.text.onAccent },
-  remove: { position: 'absolute', top: -6, right: -6 },
-  chosenThumb: { width: THUMB_WIDTH, aspectRatio: 0.8, borderRadius: radius.sm, zIndex: 1 },
+  // Inside the tile, drawn after the photo: the strip clips anything outside it, and
+  // on Android a view drawn over the button takes its touches.
+  remove: { position: 'absolute', top: 2, right: 2 },
+  chosenThumb: { width: THUMB_WIDTH, aspectRatio: 0.8, borderRadius: radius.sm },
   stripCount: { marginTop: -space.xs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   group: { gap: space.sm },

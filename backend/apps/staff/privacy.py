@@ -36,6 +36,37 @@ def can_reveal(user):
     return user.has_perm(REVEAL_PERMISSION)
 
 
+def searchable(request, model, fields):
+    """A search match is a yes or no about the value: hidden fields only for those who may reveal them."""
+    return fields if can_reveal(request.user) else [name for name in fields if not names_hidden(model, name)]
+
+
+def search_without_hidden(request, ma, queryset, term):
+    """An admin's own search, kept off hidden fields as the workspace's lists are."""
+    from copy import copy
+
+    ma = copy(ma)
+    ma.search_fields = searchable(request, ma.model, ma.get_search_fields(request))
+    return ma.get_search_results(request, queryset, term)
+
+
+def names_hidden(model, path):
+    """Whether a lookup like `client__phone__startswith` reaches a hidden field."""
+    from django.core.exceptions import FieldDoesNotExist
+
+    for part in path.lstrip("^=@").split("__"):
+        if part in masked_fields(model):
+            return True
+        try:
+            field = model._meta.get_field(part)
+        except FieldDoesNotExist:
+            return False  # a lookup such as startswith: the path ended on a visible field
+        if not field.is_relation or field.related_model is None:
+            return False
+        model = field.related_model
+    return False
+
+
 def log_access(request, model, message, obj=None):
     """A line in the staff activity trail: who looked at or took what, and when."""
     LogEntry.objects.create(

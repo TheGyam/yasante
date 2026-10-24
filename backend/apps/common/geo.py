@@ -59,6 +59,33 @@ def locate(text):
     return tuple(found) if found and found[0] is not None else None
 
 
+def areas_for(postcode):
+    """
+    The names people use for where a postcode is: constituency ("Peckham"), ward and
+    borough. None for a postcode that doesn't exist; [] if postcodes.io can't be reached.
+    Long official names are left out; nobody says them.
+    """
+    bare = (postcode or "").replace(" ", "").upper()
+    key = f"areas:{bare}"
+    found = cache.get(key)
+    if found is None:
+        try:
+            with urllib.request.urlopen(f"{BASE}/postcodes/{urllib.parse.quote(bare)}", timeout=4) as response:
+                result = json.loads(response.read().decode("utf-8")).get("result") or {}
+        except urllib.error.HTTPError as error:
+            if error.code != 404:
+                logger.info("postcodes.io failed for %s", bare, exc_info=True)
+                return []
+            result = None
+        except (urllib.error.URLError, TimeoutError, ValueError):
+            logger.info("postcodes.io failed for %s", bare, exc_info=True)
+            return []
+        names = [] if result is None else [result.get(f) for f in ("parliamentary_constituency", "admin_ward", "admin_district")]
+        found = {"known": result is not None, "areas": list(dict.fromkeys(n for n in names if n and len(n) <= 24 and " and " not in n and "," not in n))}
+        cache.set(key, found, MONTH)
+    return found["areas"] if found["known"] else None
+
+
 def miles(a, b):
     """Straight-line miles between two (latitude, longitude) points."""
     lat1, lng1, lat2, lng2 = map(math.radians, (*a, *b))
