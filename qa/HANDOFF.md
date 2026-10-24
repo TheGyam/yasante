@@ -2,8 +2,8 @@
 
 Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.md`.
 
-- **Next:** the queue is done (24-10). Reruns: NEW-02 part P + V1c is running unattended on
-  the `en-GB` emulators; then LOOKS-02's G after W3; DIARY-01 B4–B5 once #131 is fixed.
+- **Next:** the queue is done (24-10). Reruns: NEW-02 P done (`NEW-02-20261024-0749`, F61 #143;
+  V1c still a candidate: owner to swipe by hand); next LOOKS-02's G after W3, STAFF-02 T; DIARY-01 B4–B5 once #131 is fixed.
   Audited 24-10: DIARY-01 (F49–F51), WEBBOOK-01 (F52–F54), FIXES-01 (every fix holds, F55),
   NEW-01 (F56), NEW-02 (F57, F58 privacy; P void), STAFF-02 (F59, F60: authors never told
   of moderation). `emus` boots `en-GB` and stops cleanly; `qadb type` flags pre-filled
