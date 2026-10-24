@@ -11,6 +11,8 @@ export interface EmptyStateProps {
   message?: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** The action is under way (trying again): its button spins and can't be pressed twice. */
+  actionLoading?: boolean;
 }
 
 const useStyles = makeStyles(t => ({
@@ -34,7 +36,14 @@ const useStyles = makeStyles(t => ({
   action: { marginTop: space.sm },
 }));
 
-export function EmptyState({ icon: Icon, title, message, actionLabel, onAction }: EmptyStateProps) {
+export function EmptyState({
+  icon: Icon,
+  title,
+  message,
+  actionLabel,
+  onAction,
+  actionLoading,
+}: EmptyStateProps) {
   const styles = useStyles();
   const theme = useTheme();
 
@@ -53,7 +62,13 @@ export function EmptyState({ icon: Icon, title, message, actionLabel, onAction }
         </Text>
       )}
       {actionLabel && onAction && (
-        <Button label={actionLabel} size="md" onPress={onAction} style={styles.action} />
+        <Button
+          label={actionLabel}
+          size="md"
+          onPress={onAction}
+          loading={actionLoading}
+          style={styles.action}
+        />
       )}
     </View>
   );

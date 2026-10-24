@@ -18,6 +18,12 @@ interface Failure {
   response?: { status?: number; data?: { message?: unknown; detail?: unknown } };
 }
 
+/** No answer at all: the connection, not the server. */
+export function isConnectionProblem(error: unknown): boolean {
+  const failure = (error ?? {}) as Failure;
+  return !!failure.request && !failure.response;
+}
+
 /**
  * The server's own message when it's written for people (the API sends a sentence
  * for anything the person can fix), otherwise `fallback`: what this screen was

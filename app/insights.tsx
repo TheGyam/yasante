@@ -9,6 +9,7 @@ import { makeStyles, radius, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { Screen } from '@/shared/ui/Screen';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -44,7 +45,7 @@ export default function InsightsScreen() {
   const styles = useStyles();
   const router = useRouter();
   const [period, setPeriod] = useState<InsightsPeriod>('month');
-  const { data: i, isLoading, isRefetching, refetch } = useInsights(period);
+  const { data: i, isLoading, isRefetching, refetch, error } = useInsights(period);
 
   const tiles = i
     ? [
@@ -74,8 +75,11 @@ export default function InsightsScreen() {
     <Screen title="Your hair" back refreshing={isRefetching} onRefresh={refetch} testID="insights">
       <View style={styles.body}>
         <SegmentedControl options={PERIODS} value={period} onChange={setPeriod} />
-        {isLoading || !i ? (
+        {isLoading ? (
           <Skeleton height={320} />
+        ) : !i ? (
+          // Not a skeleton for ever: a failed load says so.
+          <LoadError what="your numbers" error={error} onRetry={refetch} retrying={isRefetching} />
         ) : empty ? (
           <EmptyState
             icon={ChartNoAxesColumn}

@@ -15,6 +15,7 @@ import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { Card } from '@/shared/ui/Card';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
@@ -116,6 +117,8 @@ export default function TodayScreen() {
             actionLabel="Set up my page"
             onAction={() => router.push('/stylist-setup')}
           />
+        ) : error && !profile ? (
+          <LoadError what="your page" error={error} onRetry={refetch} retrying={isRefetching} />
         ) : profile && !profile.published ? (
           <Section footer="Only you can see it until it’s live.">
             <ListRow

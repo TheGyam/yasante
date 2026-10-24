@@ -14,6 +14,7 @@ import { SEP } from '@/shared/lib/format';
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
@@ -105,6 +106,13 @@ export default function PlannerScreen() {
 
         {active.isLoading ? (
           <Skeleton height={200} />
+        ) : active.isError && !active.data ? (
+          <LoadError
+            what={view === 'collections' ? 'your collections' : 'your care plans'}
+            error={active.error}
+            onRetry={() => active.refetch()}
+            retrying={active.isRefetching}
+          />
         ) : view === 'collections' ? (
           collections.data?.length ? (
             <View style={styles.body}>

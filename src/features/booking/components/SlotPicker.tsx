@@ -19,6 +19,7 @@ import { IconButton } from '@/shared/ui/IconButton';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
+import { LoadError } from '@/shared/ui/LoadError';
 import { dayLabel, salonTime } from '../format';
 import { useFreeSlots, useWatchSlots } from '../hooks';
 import {
@@ -261,6 +262,18 @@ export function SlotPicker({
     // A time belongs to its day: another day starts without one.
     if (value) onChange(undefined);
   };
+
+  // Her times didn't come: said so, not a skeleton for ever.
+  if (!data && slots.isError) {
+    return (
+      <LoadError
+        what="the free times"
+        error={slots.error}
+        onRetry={() => slots.refetch()}
+        retrying={slots.isRefetching}
+      />
+    );
+  }
 
   if (!data) {
     return (

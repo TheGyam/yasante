@@ -1,8 +1,17 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { errorMessage, isConnectionProblem } from '@/shared/lib/errors';
 import { space, useTheme } from '@/shared/theme';
+import { Button } from './Button';
+import { Text } from './Text';
 
 const styles = StyleSheet.create({
   footer: { height: 72, alignItems: 'center', justifyContent: 'center' },
+  failed: {
+    alignItems: 'center',
+    gap: space.sm,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.xl,
+  },
 });
 
 /**
@@ -10,8 +19,29 @@ const styles = StyleSheet.create({
  * spinner, so scrolling fast never runs into blank space — the next page is
  * already on its way (lists ask for it two screens early).
  */
-export function ListFooter({ more }: { more: boolean }) {
+export function ListFooter({
+  more = false,
+  error,
+  onRetry,
+}: {
+  more?: boolean;
+  /** The next page didn't come: said so, with a way to ask again, so the list never just stops. */
+  error?: unknown;
+  onRetry?: () => void;
+}) {
   const theme = useTheme();
+  if (error && onRetry) {
+    return (
+      <View style={styles.failed} accessibilityRole="alert">
+        <Text variant="footnote" tone="secondary" align="center">
+          {isConnectionProblem(error)
+            ? 'Couldn’t load more. You seem to be offline.'
+            : errorMessage(error, 'Couldn’t load more.')}
+        </Text>
+        <Button label="Try again" size="sm" variant="secondary" onPress={onRetry} />
+      </View>
+    );
+  }
   if (!more) return <View style={{ height: space.xl }} />;
   return (
     <View style={styles.footer}>

@@ -14,6 +14,7 @@ import { makeStyles, radius, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { Card } from '@/shared/ui/Card';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { Rise } from '@/shared/ui/Rise';
 import { Screen } from '@/shared/ui/Screen';
 import { Skeleton } from '@/shared/ui/Skeleton';
@@ -72,7 +73,7 @@ function change(
 export default function NumbersScreen() {
   const styles = useStyles();
   const router = useRouter();
-  const { data, isLoading, refetch, isRefetching } = useStylistNumbers();
+  const { data, isLoading, refetch, isRefetching, error } = useStylistNumbers();
   const currency = useMyCurrency();
 
   const timingRow = (t: ServiceTiming) => {
@@ -131,8 +132,10 @@ export default function NumbersScreen() {
       onRefresh={refetch}
       testID="stylist-numbers"
     >
-      {isLoading || !data ? (
+      {isLoading ? (
         <Skeleton height={320} />
+      ) : !data ? (
+        <LoadError what="your numbers" error={error} onRetry={refetch} retrying={isRefetching} />
       ) : (
         <View style={styles.body}>
           <Text variant="subhead" tone="secondary">

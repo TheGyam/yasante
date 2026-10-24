@@ -21,6 +21,7 @@ import { RemoteImage } from '@/shared/ui/RemoteImage';
 import { Text } from '@/shared/ui/Text';
 import { Chip } from '@/shared/ui/Chip';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { IconButton } from '@/shared/ui/IconButton';
 import { useContentInsets } from '@/shared/ui/layout';
 import { ListRow } from '@/shared/ui/ListRow';
@@ -139,6 +140,18 @@ export default function SearchScreen() {
       message="Try a style, a stylist’s name or an area."
     />
   );
+  // A search that failed isn't a search with no results.
+  const failed = (search: typeof looksSearch | typeof people) =>
+    search.isError ? (
+      <LoadError
+        what="results"
+        error={search.error}
+        onRetry={() => search.refetch()}
+        retrying={search.isRefetching}
+      />
+    ) : (
+      empty
+    );
 
   return (
     <Screen back scroll={false} padded={false} contentStyle={{ paddingBottom: 0 }}>
@@ -172,7 +185,7 @@ export default function SearchScreen() {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingHorizontal: GUTTER, paddingBottom: insets.bottom }}
-          ListEmptyComponent={looksSearch.isLoading ? null : empty}
+          ListEmptyComponent={looksSearch.isLoading ? null : failed(looksSearch)}
         />
       ) : term && filter === 'stylists' ? (
         <FlashList
@@ -182,7 +195,7 @@ export default function SearchScreen() {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingHorizontal: GUTTER, paddingBottom: insets.bottom }}
-          ListEmptyComponent={people.isLoading ? null : empty}
+          ListEmptyComponent={people.isLoading ? null : failed(people)}
         />
       ) : term && filter === 'learn' ? (
         <FlashList
@@ -242,7 +255,7 @@ export default function SearchScreen() {
               ))}
             </View>
           )}
-          {nothing && !loading && empty}
+          {nothing && !loading && failed(looksSearch.isError ? looksSearch : people)}
         </ScrollView>
       ) : (
         // Recents plus every topic can outgrow a small screen, and the tab bar

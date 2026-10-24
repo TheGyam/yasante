@@ -7,6 +7,7 @@ import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, space, useTheme } from '@/shared/theme';
 import { Card } from '@/shared/ui/Card';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { IconButton } from '@/shared/ui/IconButton';
 import { useContentInsets } from '@/shared/ui/layout';
 import { Screen, ScreenTitle, useScreenScrollHandler } from '@/shared/ui/Screen';
@@ -60,7 +61,7 @@ function Shelf() {
   const router = useRouter();
   const insets = useContentInsets();
   const onScroll = useScreenScrollHandler();
-  const { data: items = [], isLoading, isRefetching, refetch } = useShelf();
+  const { data: items = [], isLoading, isRefetching, refetch, isError, error } = useShelf();
 
   const using = items.filter(isInUse);
   const finished = items.filter(item => !isInUse(item));
@@ -134,7 +135,9 @@ function Shelf() {
         </View>
       }
       ListEmptyComponent={
-        isLoading ? null : (
+        isLoading ? null : isError ? (
+          <LoadError what="your shelf" error={error} onRetry={refetch} retrying={isRefetching} />
+        ) : (
           <EmptyState
             icon={Package}
             title="Nothing on your shelf yet"

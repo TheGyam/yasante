@@ -8,6 +8,7 @@ import { ContentRow, useContent, useFavorites, type Content } from '@/features/e
 import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, space, useTheme } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { useContentInsets } from '@/shared/ui/layout';
 import { Screen, ScreenTitle, useScreenScrollHandler } from '@/shared/ui/Screen';
 import { SegmentedControl } from '@/shared/ui/SegmentedControl';
@@ -78,7 +79,14 @@ function SavedList() {
       renderItem={({ item }) => <ContentRow content={item} onPress={open} />}
       ListHeaderComponent={header}
       ListEmptyComponent={
-        loading ? null : (
+        loading ? null : favorites.isError && !favorites.data ? (
+          <LoadError
+            what="your saved articles"
+            error={favorites.error}
+            onRetry={() => favorites.refetch()}
+            retrying={favorites.isRefetching}
+          />
+        ) : (
           <EmptyState
             icon={Bookmark}
             title="No saved articles yet"

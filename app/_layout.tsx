@@ -35,6 +35,7 @@ import { syncTimeZone } from '@/shared/lib/timeZone';
 import { checkpoint } from '@/boot';
 import { darkTheme, ThemeProvider, useTheme, useThemePreference } from '@/shared/theme';
 import { DialogHost } from '@/shared/ui/DialogHost';
+import { OfflineBanner } from '@/shared/ui/OfflineBanner';
 import { useStackPresets } from '@/shared/ui/stackOptions';
 import { queryClient } from '@/queryClient';
 import { persistOptions } from '@/shared/utils/cachePersistence';
@@ -355,6 +356,7 @@ function RootNavigator() {
         </Stack.Protected>
       </Stack>
       <ModeSwitchOverlay />
+      <OfflineBanner />
       <DialogHost />
     </>
   );

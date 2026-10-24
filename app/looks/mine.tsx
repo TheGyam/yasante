@@ -7,6 +7,7 @@ import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, makeStyles, radius, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { useContentInsets } from '@/shared/ui/layout';
 import { PressableScale } from '@/shared/ui/PressableScale';
 import { RemoteImage } from '@/shared/ui/RemoteImage';
@@ -56,7 +57,7 @@ function MyLooks() {
   const router = useRouter();
   const insets = useContentInsets();
   const onScroll = useScreenScrollHandler();
-  const { data: looks = [], isLoading } = useMyLooks();
+  const { data: looks = [], isLoading, isError, error, refetch, isRefetching } = useMyLooks();
 
   return (
     <AnimatedFlashList
@@ -97,7 +98,9 @@ function MyLooks() {
         </View>
       }
       ListEmptyComponent={
-        isLoading ? null : (
+        isLoading ? null : isError ? (
+          <LoadError what="your looks" error={error} onRetry={refetch} retrying={isRefetching} />
+        ) : (
           <EmptyState
             icon={Images}
             title="Nothing posted yet"

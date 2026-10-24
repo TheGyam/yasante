@@ -15,6 +15,7 @@ import { useWhySuggested } from '@/features/profile';
 import { GUTTER, makeStyles, radius, space } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
@@ -34,7 +35,9 @@ const useStyles = makeStyles(() => ({
 export default function LearnScreen() {
   const styles = useStyles();
   const router = useRouter();
-  const { data, isLoading, isRefetching, refetch } = useContent({ limit: PAGE_SIZE });
+  const { data, isLoading, isRefetching, refetch, isError, error } = useContent({
+    limit: PAGE_SIZE,
+  });
   const [topic, setTopic] = useState<ContentTopic | null>(null);
   // Guides for her hair come first, with her yes: say so.
   const why = useWhySuggested(['texture', 'porosity']);
@@ -98,6 +101,8 @@ export default function LearnScreen() {
             <Skeleton width={200} height={290} radius={radius.lg} />
             <Skeleton width={200} height={290} radius={radius.lg} />
           </View>
+        ) : isError && !data ? (
+          <LoadError what="the guides" error={error} onRetry={refetch} retrying={isRefetching} />
         ) : topics.length === 0 ? (
           <EmptyState
             icon={BookOpen}
