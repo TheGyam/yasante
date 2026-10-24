@@ -6,12 +6,13 @@ import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
 import { Skeleton } from '@/shared/ui/Skeleton';
+import { LoadError } from '@/shared/ui/LoadError';
 
 /** Where the work was done. Districts only — the same as a stylist's page shows. */
 export default function LookAreaScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { data: areas = [], isLoading } = useLookAreas();
+  const { data: areas = [], isLoading, isError, error, refetch, isRefetching } = useLookAreas();
   const area = useLookFilters(s => s.area);
   const setArea = useLookFilters(s => s.setArea);
 
@@ -25,6 +26,8 @@ export default function LookAreaScreen() {
     <Screen title="Area" modal testID="look-area">
       {isLoading ? (
         <Skeleton height={200} />
+      ) : isError && !areas.length ? (
+        <LoadError what="the areas" error={error} onRetry={refetch} retrying={isRefetching} />
       ) : (
         <Section footer="Only districts with looks in them are listed.">
           <ListRow

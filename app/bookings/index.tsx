@@ -16,6 +16,7 @@ import {
 import { useRouter } from '@/shared/lib/navigation';
 import { makeStyles, space } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { IconButton } from '@/shared/ui/IconButton';
 import { ListRow } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
@@ -31,7 +32,14 @@ const useStyles = makeStyles(() => ({
 export default function BookingsScreen() {
   const styles = useStyles();
   const router = useRouter();
-  const { data: bookings = [], isLoading, isRefetching, refetch } = useBookings('client');
+  const {
+    data: bookings = [],
+    isLoading,
+    isRefetching,
+    refetch,
+    isError,
+    error,
+  } = useBookings('client');
 
   const { data: waiting = [] } = useSlotInterests();
   const unwatch = useUnwatchSlots();
@@ -110,6 +118,8 @@ export default function BookingsScreen() {
       <View style={styles.body}>
         {isLoading ? (
           <Skeleton height={200} />
+        ) : isError && !bookings.length ? (
+          <LoadError what="your bookings" error={error} onRetry={refetch} retrying={isRefetching} />
         ) : bookings.length || waiting.length ? (
           <>
             {live.length > 0 && <Section title="Coming up">{live.map(row)}</Section>}

@@ -566,10 +566,23 @@ function LookThread({
         onViewableItemsChanged={tracking.onViewableItemsChanged}
         viewabilityConfig={tracking.viewabilityConfig}
         ListHeaderComponent={header}
-        ListFooterComponent={<LooksFooter loading={related.isFetchingNextPage} />}
+        ListFooterComponent={
+          <LooksFooter
+            loading={related.isFetchingNextPage}
+            // The first page or a later one: either way, said so with a way to ask again.
+            error={stage >= 3 && related.isError ? related.error : undefined}
+            onRetry={() => (related.data ? related.fetchNextPage() : related.refetch())}
+          />
+        }
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
-          if (settled && focused && related.hasNextPage && !related.isFetchingNextPage) {
+          if (
+            settled &&
+            focused &&
+            related.hasNextPage &&
+            !related.isFetchingNextPage &&
+            !related.isFetchNextPageError
+          ) {
             related.fetchNextPage();
           }
         }}

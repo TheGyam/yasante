@@ -27,6 +27,7 @@ import { DEFAULT_CURRENCY, formatMoney, SEP } from '@/shared/lib/format';
 import { makeStyles, space } from '@/shared/theme';
 import { Chip } from '@/shared/ui/Chip';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { ListRow, type ListRowTone } from '@/shared/ui/ListRow';
 import { Screen } from '@/shared/ui/Screen';
 import { Section } from '@/shared/ui/Section';
@@ -80,7 +81,7 @@ export default function BookingsScreen() {
   const [view, setView] = useState<(typeof VIEWS)[number]['value']>('requests');
   const [filter, setFilter] = useState('all');
   // ponytail: one unpaged list; page it on the server when a stylist has thousands.
-  const { data, isLoading, isRefetching, refetch } = useBookings('stylist');
+  const { data, isLoading, isRefetching, refetch, isError, error } = useBookings('stylist');
 
   const bookings = data ?? [];
   const asked = bookings.filter(booking => booking.status === 'requested');
@@ -149,6 +150,8 @@ export default function BookingsScreen() {
         <SegmentedControl options={VIEWS} value={view} onChange={setView} />
         {isLoading ? (
           <Skeleton height={200} />
+        ) : isError && !data ? (
+          <LoadError what="your requests" error={error} onRetry={refetch} retrying={isRefetching} />
         ) : view === 'requests' ? (
           asked.length || waiting.length ? (
             <>

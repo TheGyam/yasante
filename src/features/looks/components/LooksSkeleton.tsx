@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { radius, space } from '@/shared/theme';
+import { ListFooter } from '@/shared/ui/ListFooter';
 import { Skeleton } from '@/shared/ui/Skeleton';
 
 const styles = StyleSheet.create({
@@ -32,7 +33,17 @@ export function LooksSkeleton() {
  * runs into blank space. Only then: the tiles pulse, and kept mounted under the
  * grid they redrew the screen ~45 times a second, unseen, for as long as she stayed.
  */
-export function LooksFooter({ loading }: { loading: boolean }) {
+export function LooksFooter({
+  loading,
+  error,
+  onRetry,
+}: {
+  loading: boolean;
+  /** The next page failed: say so and offer it again, rather than the list just stopping. */
+  error?: unknown;
+  onRetry?: () => void;
+}) {
+  if (!loading && error && onRetry) return <ListFooter error={error} onRetry={onRetry} />;
   if (!loading) return <View style={styles.end} />;
   return (
     <View style={styles.footer} accessibilityLabel="Loading more looks">

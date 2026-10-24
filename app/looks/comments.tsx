@@ -19,6 +19,7 @@ import { useRouter } from '@/shared/lib/navigation';
 import { GUTTER, space } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { useContentInsets } from '@/shared/ui/layout';
 import { FEED_LIST, ListFooter } from '@/shared/ui/ListFooter';
 import { Screen, ScreenTitle, useScreenScrollHandler } from '@/shared/ui/Screen';
@@ -76,6 +77,13 @@ function Conversation({ lookId, title }: { lookId: string; title: string }) {
         ListEmptyComponent={
           thread.isLoading ? (
             <Skeleton height={60} />
+          ) : thread.isError && !thread.data ? (
+            <LoadError
+              what="the comments"
+              error={thread.error}
+              onRetry={() => thread.refetch()}
+              retrying={thread.isRefetching}
+            />
           ) : (
             <EmptyState
               icon={MessageCircle}
@@ -84,9 +92,18 @@ function Conversation({ lookId, title }: { lookId: string; title: string }) {
             />
           )
         }
-        ListFooterComponent={<ListFooter more={!!thread.hasNextPage} />}
+        ListFooterComponent={
+          <ListFooter
+            more={!!thread.hasNextPage}
+            error={thread.isFetchNextPageError ? thread.error : undefined}
+            onRetry={() => thread.fetchNextPage()}
+          />
+        }
         onEndReached={() => {
-          if (thread.hasNextPage && !thread.isFetchingNextPage) thread.fetchNextPage();
+          // After a failed page, Try again asks; scrolling doesn't hammer it.
+          if (thread.hasNextPage && !thread.isFetchingNextPage && !thread.isFetchNextPageError) {
+            thread.fetchNextPage();
+          }
         }}
         onEndReachedThreshold={0.5}
         drawDistance={FEED_LIST.drawDistance}

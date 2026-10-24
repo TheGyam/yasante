@@ -1,5 +1,6 @@
 import { AppState, Platform } from 'react-native';
-import { focusManager, QueryClient } from '@tanstack/react-query';
+import NetInfo from '@react-native-community/netinfo';
+import { focusManager, onlineManager, QueryClient } from '@tanstack/react-query';
 
 // React Native has no window focus: coming back to the app is the focus event, so
 // anything stale refetches then (a booking accepted while she was away, say).
@@ -10,6 +11,11 @@ if (Platform.OS !== 'web') {
     );
     return () => subscription.remove();
   });
+  // The phone's connection, so loads wait while it's off and run again the moment it's
+  // back (the browser tells React Query itself; a phone has to be asked).
+  onlineManager.setEventListener(setOnline =>
+    NetInfo.addEventListener(state => setOnline(state.isConnected !== false))
+  );
 }
 
 // Create a client with optimized cache settings for social media app

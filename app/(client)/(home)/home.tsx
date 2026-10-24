@@ -4,7 +4,7 @@ import { useRouter } from '@/shared/lib/navigation';
 import { useScrollToTop, useIsFocused } from '@react-navigation/native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import Animated from 'react-native-reanimated';
-import { Images, Plus, Search, SearchX, WifiOff } from 'lucide-react-native';
+import { Images, Plus, Search, SearchX } from 'lucide-react-native';
 import { AuthPromptModal, GreetingBanner, useAuth } from '@/features/auth';
 import { BookingNudge } from '@/features/booking';
 import { SuggestedStylists } from '@/features/stylist';
@@ -26,6 +26,7 @@ import {
 import { NudgeHost, useUser } from '@/features/profile';
 import { GUTTER, makeStyles, space, useTheme } from '@/shared/theme';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { IconButton } from '@/shared/ui/IconButton';
 import { useContentInsets } from '@/shared/ui/layout';
 import { FEED_LIST } from '@/shared/ui/ListFooter';
@@ -195,12 +196,11 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
         ListHeaderComponent={header}
         ListEmptyComponent={
           feedLoading ? null : feed.isError ? (
-            <EmptyState
-              icon={WifiOff}
-              title="Couldn’t load looks"
-              message="Check your connection and try again."
-              actionLabel="Try again"
-              onAction={() => feed.refetch()}
+            <LoadError
+              what="looks"
+              error={feed.error}
+              onRetry={() => feed.refetch()}
+              retrying={feed.isRefetching}
             />
           ) : emptyFiltered ? (
             <View style={styles.fallback}>
@@ -232,10 +232,23 @@ function HomeFeed({ onNeedsAccount }: { onNeedsAccount: () => void }) {
             />
           )
         }
-        ListFooterComponent={<LooksFooter loading={feed.isFetchingNextPage} />}
+        ListFooterComponent={
+          <LooksFooter
+            loading={feed.isFetchingNextPage}
+            error={feed.isFetchNextPageError ? feed.error : undefined}
+            onRetry={() => feed.fetchNextPage()}
+          />
+        }
         onEndReached={() => {
           // A screen covered by another reports it's at the end; only the visible one loads more.
-          if (focused && feed.hasNextPage && !feed.isFetchingNextPage) feed.fetchNextPage();
+          if (
+            focused &&
+            feed.hasNextPage &&
+            !feed.isFetchingNextPage &&
+            !feed.isFetchNextPageError
+          ) {
+            feed.fetchNextPage();
+          }
         }}
         onEndReachedThreshold={FEED_LIST.onEndReachedThreshold}
         drawDistance={FEED_LIST.drawDistance}

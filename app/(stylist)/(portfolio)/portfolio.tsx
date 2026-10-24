@@ -16,6 +16,7 @@ import { GUTTER, makeStyles, radius, space, useTheme } from '@/shared/theme';
 import { Button } from '@/shared/ui/Button';
 import { confirm } from '@/shared/ui/dialog';
 import { EmptyState } from '@/shared/ui/EmptyState';
+import { LoadError } from '@/shared/ui/LoadError';
 import { useContentInsets } from '@/shared/ui/layout';
 import { ListRow } from '@/shared/ui/ListRow';
 import { PressableScale } from '@/shared/ui/PressableScale';
@@ -55,7 +56,7 @@ function PortfolioGrid() {
   const insets = useContentInsets();
   const onScroll = useScreenScrollHandler();
 
-  const { data: photos = [], isLoading, isRefetching, refetch } = usePortfolio();
+  const { data: photos = [], isLoading, isRefetching, refetch, isError, error } = usePortfolio();
   const { data: services = [] } = useMenu();
   const [tagging, setTagging] = useState<PortfolioPhoto>();
   const retag = useUpdatePhoto();
@@ -140,7 +141,9 @@ function PortfolioGrid() {
         )}
         ListHeaderComponent={header}
         ListEmptyComponent={
-          isLoading ? null : (
+          isLoading ? null : isError ? (
+            <LoadError what="your photos" error={error} onRetry={refetch} retrying={isRefetching} />
+          ) : (
             <EmptyState
               icon={Images}
               title="Show your work"

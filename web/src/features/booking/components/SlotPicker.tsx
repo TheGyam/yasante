@@ -1,9 +1,19 @@
 import { useState, type MouseEvent } from 'react';
-import { BellRing, CalendarHeart, ChevronLeft, ChevronRight, Sun, Zap } from 'lucide-react';
+import {
+  BellRing,
+  CalendarHeart,
+  ChevronLeft,
+  ChevronRight,
+  CloudOff,
+  Sun,
+  Zap,
+} from 'lucide-react';
 import { hoursOn, type Availability } from '@/features/stylist';
+import { errorMessage } from '@/shared/lib/errors';
 import { Button } from '@/shared/ui/Button';
 import { Chip } from '@/shared/ui/Chip';
 import { Glass } from '@/shared/ui/Glass';
+import { EmptyState } from '@/shared/ui/EmptyState';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { Text } from '@/shared/ui/Text';
 import { slotParts, zoneMark } from '../format';
@@ -144,6 +154,25 @@ export function SlotPicker({
     // A time belongs to its day: another day starts without one.
     if (value) onChange(undefined);
   };
+
+  // Her times didn't come: said so, not a skeleton for ever.
+  if (!data && slots.isError) {
+    return (
+      <EmptyState
+        icon={CloudOff}
+        title="Couldn’t load the free times"
+        body={errorMessage(slots.error, 'Please try again in a moment.')}
+        action={
+          <Button
+            label="Try again"
+            variant="secondary"
+            loading={slots.isRefetching}
+            onClick={() => slots.refetch()}
+          />
+        }
+      />
+    );
+  }
 
   if (!data) {
     return (
