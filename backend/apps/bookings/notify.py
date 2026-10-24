@@ -13,6 +13,7 @@ from django.db.models.signals import post_init, post_save
 from django.dispatch import receiver
 
 from apps.common.notifications import notify
+from apps.common.timeparse import parse_iso
 
 from .models import Booking
 
@@ -177,5 +178,18 @@ def announce(sender, instance, created, **kwargs):
             f"move:{instance.move_request.get('scheduled_for')}",
             "A request to move the appointment",
             "Tap to see the new time and answer.",
+        )
+    asked = was.get("move_request")
+    if asked and not instance.move_request and instance.status == before:
+        # Answered: whoever asked hears yes or no (a cancel says so itself).
+        moved = instance.scheduled_for == parse_iso(asked.get("scheduled_for"))
+        for_client = asked.get("by") == "client"
+        other = instance.stylist_name if for_client else (instance.client_name or "Your client").split()[0]
+        reader = instance.client if for_client else None
+        (to_client if for_client else to_stylist)(
+            instance,
+            f"move-answer:{asked.get('scheduled_for')}",
+            f"{other} said yes to the new time" if moved else f"{other} kept the original time",
+            f"It’s now {_when(instance.scheduled_for, instance, reader)}." if moved else f"It stays {_when(instance.scheduled_for, instance, reader)}.",
         )
     instance._was = {f: getattr(instance, f) for f in TRACKED}

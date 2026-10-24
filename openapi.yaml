@@ -2159,6 +2159,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotificationPreferences'
           description: ''
+  /api/places/postcode/:
+    get:
+      operationId: places_postcode_list
+      description: |-
+        The area names for a UK postcode, asked from here so the phone never tells
+        postcodes.io who it is (the privacy policy says so). Signed in only, like suggestions.
+      parameters:
+      - in: query
+        name: postcode
+        schema:
+          type: string
+        description: A full UK postcode, spaced or not
+      tags:
+      - places
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+          description: ''
   /api/places/suggest/:
     get:
       operationId: places_suggest_list

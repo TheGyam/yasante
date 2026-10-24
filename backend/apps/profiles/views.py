@@ -107,7 +107,13 @@ class UserDetailView(APIView):
 
         revoke_apple(user)
 
-        from apps.bookings.models import CheckIn, Review
+        from django.contrib.admin.models import LogEntry
+        from django.contrib.contenttypes.models import ContentType
+        from django.db.models import Q
+
+        from apps.bookings.models import BookingEvent, CheckIn, Review
+        from apps.common.models import NotificationLog
+        from apps.common.people import person
         from apps.looks.models import LookComment
         from apps.web.models import WaitlistEntry
 
@@ -117,6 +123,25 @@ class UserDetailView(APIView):
             bookings = Booking.objects.filter(client=user)
             bookings.filter(at_client=True).update(address="")
             bookings.update(client_name="Deleted account", client_hair="", notes="", occasion="")
+            # Why she cancelled is hers; why the stylist declined stays with the stylist.
+            bookings.filter(status__in=["cancelled_in_time", "cancelled_late"]).update(reason="")
+            for event in BookingEvent.objects.filter(booking__client=user, actor_role="client", data__has_key="reason"):
+                event.data.pop("reason")
+                event.save(update_fields=["data"])
+            # What other people were told about her: the stylist's booking messages, and
+            # "Name: comment" on looks she commented on.
+            NotificationLog.objects.filter(data__bookingId__in=[str(pk) for pk in bookings.values_list("pk", flat=True)]).exclude(
+                user=user
+            ).update(title="A booking changed", body="")
+            name = person(user.pk)["name"]
+            looks = [f"/looks/{pk}" for pk in LookComment.objects.filter(author=user).values_list("look_id", flat=True).distinct()]
+            NotificationLog.objects.filter(data__url__in=looks).filter(
+                Q(body__startswith=f"{name}: ") | Q(title=f"{name} replied to you")
+            ).update(title="New comment", body="")
+            # The staff trail keeps that something was done, not who to.
+            LogEntry.objects.filter(
+                Q(content_type=ContentType.objects.get_for_model(user), object_id=str(user.pk)) | Q(object_repr__icontains=user.email)
+            ).update(object_repr="Deleted account")
             CheckIn.objects.filter(booking__client=user).delete()
             # The star rating stays so the stylist's average stays fair; the words and name go.
             Review.objects.filter(booking__client=user).update(author_name="Deleted account", body="")
@@ -128,6 +153,9 @@ class UserDetailView(APIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+# Where she is: saved without the hair details consent, never snapshotted.
+WHERE = {"postcode", "area"}
 
 # Where they live isn't history worth keeping, and nor is what they'd like next.
 NOT_SNAPSHOTTED = {
@@ -153,7 +181,9 @@ class HairProfileUpdateView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
         # Texture and scalp are special category details: kept only with her explicit yes.
-        if not has_consent(request.user, "personalisation"):
+        # Where she is isn't a hair detail, so finding stylists near her works without it.
+        consented = has_consent(request.user, "personalisation")
+        if not consented and not set(request.data) <= WHERE:
             return Response(
                 {"message": "Turn on “Use your hair details” in Settings to save your hair profile."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -172,6 +202,8 @@ class HairProfileUpdateView(APIView):
                 profile.latitude, profile.longitude = point or (None, None)
                 profile.save(update_fields=["latitude", "longitude"])
 
+            if not consented:  # no hair history without her yes
+                return Response(HairProfileSerializer(profile).data)
             # Create append-only snapshot for growth tracking. Where they live isn't
             # history worth keeping.
             snapshot_data = {

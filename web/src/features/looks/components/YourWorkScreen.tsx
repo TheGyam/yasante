@@ -23,7 +23,8 @@ import * as styles from './YourWork.css';
 
 /** What she's posted: her looks in the feed, and the photos on her page. */
 export function YourWorkScreen({ accountId }: { accountId: string }) {
-  const posted = (useLocation().state as { posted?: number } | null)?.posted;
+  const { posted, photos: postedPhotos = posted } =
+    (useLocation().state as { posted?: number; photos?: number } | null) ?? {};
   const looks = useMyLooks();
   const portfolio = usePortfolio(accountId);
   const deleteLook = useDeleteLook();
@@ -64,7 +65,7 @@ export function YourWorkScreen({ accountId }: { accountId: string }) {
       {posted && (
         <InlineAlert
           tone="success"
-          message={`Posted ${plural(posted, 'photo')}. They’re in the feed now.`}
+          message={`Posted ${plural(posted, 'look')}${postedPhotos && postedPhotos > posted ? ` with ${plural(postedPhotos, 'photo')}` : ''}. ${posted === 1 ? 'It’s' : 'They’re'} in the feed now.`}
         />
       )}
       {finish.data && !finish.data.tagsChecked && (

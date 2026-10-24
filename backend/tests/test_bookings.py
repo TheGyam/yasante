@@ -328,6 +328,20 @@ def test_attendance_and_moves(api, setup, book, make_user):
     assert second.status_code == 409 and "moved once" in second.json()["message"]
 
 
+def test_whoever_asked_to_move_hears_the_answer(api, setup, book, make_user):
+    from apps.common.models import NotificationLog
+
+    profile, client = setup
+    url = f"/api/bookings/{_confirmed(api, profile, client, book)}"
+    told = lambda user: list(NotificationLog.objects.filter(user=user, event_key__contains="move-answer").values_list("title", flat=True))
+    api(client).post(f"{url}/move/", {"scheduledFor": _iso(_open_at(12))})
+    api(profile.account).post(f"{url}/move/answer/", {"accept": False})
+    assert told(client) == [f"{profile.display_name} kept the original time"]
+    api(profile.account).post(f"{url}/move/", {"scheduledFor": _iso(_open_at(13))})
+    api(client).post(f"{url}/move/answer/", {"accept": True})
+    assert told(profile.account) == [f"{client.name.split()[0]} said yes to the new time"]
+
+
 def _completed(api, profile, client, book, days_ago=0):
     from apps.bookings.models import Booking
 

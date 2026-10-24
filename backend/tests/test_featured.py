@@ -688,7 +688,8 @@ def test_tell_waitlist_is_once_and_rechecks_readiness(page, work, make_user):
             log.body
             == f"You joined the waitlist for {page.profile.display_name}. Book now on Yasante."
         )
-        assert log.data == {"url": f"/{page.profile.handle}", "mode": "client"}
+        # With no phone signed in, she is emailed a link to the page instead.
+        assert log.data == {"url": f"/{page.profile.handle}", "mode": "client", "_email": f"/{page.profile.handle}"}
 
 
 def test_draft_looks_stay_private_on_all_public_paths(page, work, make_user):

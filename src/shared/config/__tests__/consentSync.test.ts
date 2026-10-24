@@ -64,6 +64,29 @@ describe('consent sync', () => {
     expect(store().consents.analytics?.syncedAt).toBeNull();
     expect(synced()).toBe(1);
   });
+
+  it('sends a choice made during a send straight after, not at the next launch', async () => {
+    let finish: () => void = () => {};
+    post.mockReturnValueOnce(new Promise(resolve => (finish = () => resolve({}))));
+    post.mockResolvedValue({});
+    store().setConsent('terms', true);
+    const sending = syncConsents();
+    store().setConsent('privacy', true);
+    void syncConsents();
+    finish();
+    await sending;
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(post).toHaveBeenCalledTimes(2);
+    expect(post.mock.calls[1][1].consents.map((c: { purpose: string }) => c.purpose)).toEqual([
+      'privacy',
+    ]);
+  });
+
+  it('forgets her choices at sign-out, so none is sent as the next person’s', () => {
+    store().setConsent('analytics', true);
+    store().forget();
+    expect(store().pendingSync()).toEqual([]);
+  });
 });
 
 describe('loading the server’s answers', () => {

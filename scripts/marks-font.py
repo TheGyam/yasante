@@ -72,26 +72,38 @@ def build():
     data = io.BytesIO()
     web.save(data)
     font = base64.b64encode(data.getvalue()).decode()
-    (ROOT / "web" / "src" / "shared" / "ui" / "marks.css").write_text(CSS.replace("FONT", font))
+    (ROOT / "web" / "src" / "shared" / "ui" / "marks.css").write_text(css(font))
 
 
-CSS = """/*
+HEAD = """/*
  * The plait (U+E000) is part of Instrument Sans for that one character, so it draws
  * wherever text does. The font is inside this file: no request, no flash.
+ * One face for each weight the site loads (main.tsx): given a weight range instead,
+ * Chromium picks the exact-weight Instrument Sans faces, which have no plait.
  * Made by scripts/marks-font.py; don't edit by hand.
  */
-@font-face {
+"""
+
+FACE = """@font-face {
   font-family: 'Instrument Sans';
   src: url(data:font/woff2;base64,FONT) format('woff2');
   unicode-range: U+E000;
-  font-weight: 100 900;
+  font-weight: WEIGHT;
   font-display: block;
 }
 
-.yasante-mark {
+"""
+
+TAIL = """.yasante-mark {
   color: var(--accent);
 }
 """
+
+WEIGHTS = ("400", "500", "600", "700")
+
+
+def css(font):
+    return HEAD + "".join(FACE.replace("FONT", font).replace("WEIGHT", w) for w in WEIGHTS) + TAIL
 
 
 if __name__ == "__main__":

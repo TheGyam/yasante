@@ -57,6 +57,8 @@ interface ConsentState {
   /** Whether this session has the account's answers from the server yet. Never stored. */
   loaded: boolean;
   setLoaded: (loaded: boolean) => void;
+  /** Signing out: her choices leave with her, so the next person's start clean. */
+  forget: () => void;
 }
 
 export const useConsentStore = create<ConsentState>()(
@@ -66,6 +68,7 @@ export const useConsentStore = create<ConsentState>()(
       consents: {},
       loaded: false,
       setLoaded: loaded => set({ loaded }),
+      forget: () => set({ consents: {}, loaded: false }),
 
       setConsent: (purpose, granted) => {
         set(state => ({

@@ -865,12 +865,14 @@ def _report(request, model, pk, allowed=REPORT_REASONS):
     reason = request.data.get("reason")
     if reason not in allowed:
         return Response({"message": "Say what’s wrong with it"}, status=400)
-    Report.objects.create(
+    # One open report per person per thing: reporting again updates it, so one
+    # account can't bury the queue.
+    Report.objects.update_or_create(
         reporter=request.user,
         content_type=ContentType.objects.get_for_model(model),
         object_id=pk,
-        reason=reason,
-        note=str(request.data.get("note") or "")[:500],
+        status="open",
+        defaults={"reason": reason, "note": str(request.data.get("note") or "")[:500]},
     )
     return Response(status=status.HTTP_201_CREATED)
 

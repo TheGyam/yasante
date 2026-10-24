@@ -4,7 +4,7 @@ from django.contrib.admin.utils import display_for_field, label_for_field, looku
 from django.core.exceptions import PermissionDenied, BadRequest
 from django.utils.html import strip_tags
 from django.views.decorators.http import require_GET
-from ..access import staff_data, visible_admins, model_admin, workspace_url, validate_parameters
+from ..access import refuse_hidden_lookups, staff_data, visible_admins, model_admin, workspace_url, validate_parameters
 from ..names import model_name as friendly_name, field_label, saved_views
 from ..privacy import masked_fields
 from datetime import datetime, date
@@ -26,6 +26,7 @@ def records(request, app_label, model_name):
         field.name for field in ma.model._meta.fields if field.many_to_one or field.one_to_one
     )
     validate_parameters(request)
+    refuse_hidden_lookups(request, ma.model)
     cl = ma.get_changelist_instance(request)
     if cl.page_num > cl.paginator.num_pages:
         raise IncorrectLookupParameters

@@ -302,7 +302,7 @@ export default function RequestScreen() {
             )}
             <View style={styles.group}>
               <Text variant="footnote" tone="secondary" style={styles.label}>
-                She asked for{' '}
+                {first} asked for{' '}
                 {booking.requestedTimes.map(t => whenLabel(t, booking.timeZone)).join(', or ')}
               </Text>
               <DateTimeField

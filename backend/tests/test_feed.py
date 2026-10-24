@@ -154,22 +154,25 @@ def test_neighbours_are_looks_the_same_people_engage_with(api, make_user, make_l
     from apps.feed.stats import refresh_neighbours
     from apps.looks.models import LookLike
 
-    a, b, c, hidden = (make_look(make_user()) for _ in range(4))
-    for _ in range(3):
+    a, b, c, hidden, private = (make_look(make_user()) for _ in range(5))
+    for _ in range(7):
         fan = make_user()
         like(api, fan, a)
         save(fan, b)
-    other = make_user()
-    like(api, other, a)
-    like(api, other, c)
-    # Liked before it was taken down.
-    LookLike.objects.create(user=other, look=hidden)
+    for _ in range(5):
+        other = make_user()
+        like(api, other, a)
+        like(api, other, c)
+        # Liked before it was taken down.
+        LookLike.objects.create(user=other, look=hidden)
     hidden.status = "removed"
     hidden.save()
+    # What one person did is never shown to anyone as a neighbour.
+    save(other, private)
 
     refresh_neighbours()
     close = list(LookNeighbour.objects.filter(look=a).values_list("neighbour_id", flat=True))
-    # Shared by three people beats shared by one; a removed look is never anyone's neighbour.
+    # Shared by seven people beats shared by five; one person's pair and a removed look never show.
     assert close == [b.pk, c.pk]
     assert LookNeighbour.objects.filter(look=b, neighbour=a).exists()
 
@@ -462,7 +465,7 @@ def test_more_like_this_leans_on_what_the_same_people_saved(api, make_user, make
         [str(more_from_her.pk), str(often_saved_with.pk)],
     )
     assert data[-1]["id"] == str(unrelated.pk) and str(same_style.pk) not in found
-    assert found[str(often_saved_with.pk)]["reason"] == "Saved by people who saved this look"
+    assert found[str(often_saved_with.pk)]["reason"] == "Popular with people who liked this look"
     assert found[str(more_from_her.pk)]["reason"].startswith("More from")
     signed_out = [item["id"] for item in api().get(f"/api/looks/{look.pk}/related/").json()["data"]]
     assert signed_out.index(str(same_style.pk)) < signed_out.index(str(unrelated.pk))

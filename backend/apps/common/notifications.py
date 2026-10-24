@@ -36,13 +36,16 @@ def muted_categories(user_id):
     return muted | (OPT_IN_CATEGORIES - set(pref.opted_in if pref else []))
 
 
-def notify(user_id, category, event_key, title, body, url=None, mode=None, action_category=None, **extra):
-    """Queue one notification. Returns its log row, or None if it was already sent."""
+def notify(user_id, category, event_key, title, body, url=None, mode=None, action_category=None, email=None, **extra):
+    """
+    Queue one notification. Returns its log row, or None if it was already sent.
+    `email` is a website page: someone with no phone signed in is emailed a link to it.
+    """
     from .models import NotificationLog
 
     if not user_id:
         return None
-    data = {k: v for k, v in {"url": url, "mode": mode, **extra}.items() if v is not None}
+    data = {k: v for k, v in {"url": url, "mode": mode, "_email": email, **extra}.items() if v is not None}
     status = "muted" if category in muted_categories(user_id) else "queued"
     try:
         with transaction.atomic():
@@ -133,21 +136,26 @@ def send_push(self, log_id: str):
 
 def _email_instead(log):
     """
-    A booking update for someone with no phone signed in (she booked on the website, or
-    runs her studio there): emailed instead, so it still reaches her. Once, like the push.
+    A booking update, or a notice sent with a website page, for someone with no phone
+    signed in (she booked on the website, or runs her studio there): emailed instead, so
+    it still reaches her. Once, like the push.
     """
     from apps.accounts.emails import send_booking_notice
     from apps.accounts.models import User
 
     from .models import NotificationLog
 
-    path = log.data.get("url")
-    if not log.data.get("bookingId") or not path:
+    path = log.data.get("url") if log.data.get("bookingId") else log.data.get("_email")
+    if not path:
         return False
     user = User.objects.filter(pk=log.user_id, is_active=True).first()
     if user is None or not user.email:
         return False
-    button = "Open the request" if path.startswith("/requests/") else "See your booking"
+    button = (
+        ("Open the request" if path.startswith("/requests/") else "See your booking")
+        if log.data.get("bookingId")
+        else "Open Yasante"
+    )
     sent = send_booking_notice(user.email, user.name, log.title, log.body, path, button)
     NotificationLog.objects.filter(pk=log.pk).update(
         status="emailed" if sent else "failed",
@@ -229,4 +237,5 @@ def notify_once(event_key, user_id, payload):
         payload.get("body", ""),
         url=payload.get("url"),
         mode=payload.get("mode"),
+        email=payload.get("email"),
     )

@@ -242,7 +242,7 @@ def reasons(items, user, surface="feed"):
         style_name = names.get(liked or (slugs[0] if slugs else ""), "")
         if surface == "related":
             text = {
-                "similar": "Saved by people who saved this look",
+                "similar": "Popular with people who liked this look",
                 "style": f"More {style_name}" if style_name else "In the same style",
                 "people": f"More from {person}" if person else "More from the same person",
                 "hair": "On the same hair texture",

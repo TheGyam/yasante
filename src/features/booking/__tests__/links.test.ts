@@ -29,6 +29,24 @@ describe('getting ready for the day', () => {
     expect(directionsLink('12 Bellenden Road', 'android')).toMatch(/google\.com\/maps\/dir/);
   });
 
+  it('fits the prep to the service and where it happens', () => {
+    const ids = (b: Partial<typeof booking>) => prepList({ ...booking, ...b }).map(i => i.id);
+    const takedown = ids({
+      serviceName: 'Take down and wash',
+      atClient: true,
+      durationMinutes: 90,
+      hairIncluded: true,
+    });
+    expect(takedown).toEqual(['asis', 'space']);
+    const braids = ids({
+      serviceName: 'Knotless braids',
+      atClient: false,
+      durationMinutes: 300,
+      hairIncluded: false,
+    });
+    expect(braids).toEqual(['takedown', 'wash', 'dry', 'hair', 'time']);
+  });
+
   it('adds buying hair only when she has to bring it', () => {
     expect(prepList({ ...booking, hairIncluded: true }).some(i => i.id === 'hair')).toBe(false);
     expect(prepList({ ...booking, hairIncluded: false }).some(i => i.id === 'hair')).toBe(true);

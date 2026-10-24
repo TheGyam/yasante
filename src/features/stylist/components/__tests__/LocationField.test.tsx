@@ -1,15 +1,14 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, renderWithTheme, waitFor } from '@/test-utils';
+import { apiClient } from '@/shared/lib/api/client';
 import { LocationField } from '../LocationField';
 
-const PECKHAM = {
-  result: {
-    parliamentary_constituency: 'Peckham',
-    admin_ward: 'Rye Lane',
-    admin_district: 'Southwark',
-  },
-};
+jest.mock('@/shared/lib/api/client', () => ({ apiClient: { get: jest.fn() } }));
+const get = apiClient.get as jest.Mock;
+
+// What our server answers for a postcode (it asks postcodes.io, so the phone never does).
+const PECKHAM = ['Peckham', 'Rye Lane', 'Southwark'];
 
 function setup(props: Partial<React.ComponentProps<typeof LocationField>> = {}) {
   const onChange = jest.fn();
@@ -23,11 +22,8 @@ function setup(props: Partial<React.ComponentProps<typeof LocationField>> = {}) 
 }
 
 beforeEach(() => {
-  global.fetch = jest.fn(async () => ({
-    ok: true,
-    status: 200,
-    json: async () => PECKHAM,
-  })) as never;
+  get.mockReset();
+  get.mockResolvedValue({ data: PECKHAM });
 });
 
 it('offers the names a postcode is known by and picks the first', async () => {
@@ -48,7 +44,9 @@ it('keeps the street and postcode together as the private address', () => {
 });
 
 it('lets them type the area when the postcode is unknown', async () => {
-  global.fetch = jest.fn(async () => ({ ok: false, status: 404, json: async () => ({}) })) as never;
+  get.mockRejectedValue(
+    Object.assign(new Error('Not found'), { isAxiosError: true, response: { status: 404 } })
+  );
   const { getByTestId, findByTestId } = setup();
   fireEvent.changeText(getByTestId('setup-postcode'), 'ZZ1 1ZZ');
   expect(await findByTestId('setup-area')).toBeTruthy();

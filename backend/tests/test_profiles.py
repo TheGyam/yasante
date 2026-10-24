@@ -251,6 +251,10 @@ def test_the_hair_profile_is_saved_only_with_her_yes(api, make_user, consent):
     refused = api(user).patch(url, {"texture": "coily"})
     assert refused.status_code == 403 and "Use your hair details" in refused.json()["message"]
     assert not HairProfile.objects.filter(user=user).exists()
+    # Where she is isn't a hair detail: saved without the yes, with no snapshot.
+    assert api(user).patch(url, {"postcode": "SE15 4QJ", "area": "Peckham"}).status_code == 200
+    assert api(user).patch(url, {"postcode": "SE15 4QJ", "texture": "coily"}).status_code == 403
+    assert HairProfile.objects.get(user=user).texture == "" and not user.hair_snapshots.exists()
     consent(user, "personalisation")
     assert api(user).patch(url, {"texture": "coily"}).status_code == 200
     consent(user, "personalisation", granted=False)

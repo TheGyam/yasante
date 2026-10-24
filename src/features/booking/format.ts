@@ -210,14 +210,36 @@ export interface PrepItem {
 }
 
 /** What to do before the day, from what she booked. Prep a stylist can't do for her. */
-export function prepList(booking: Pick<Booking, 'bringingOwnHair' | 'hairIncluded'>): PrepItem[] {
+export function prepList(
+  booking: Pick<
+    Booking,
+    'bringingOwnHair' | 'hairIncluded' | 'serviceName' | 'atClient' | 'durationMinutes'
+  >
+): PrepItem[] {
+  const service = booking.serviceName ?? '';
+  // A take-down or a wash is the stylist doing the prep: she comes as she is.
+  const takedown = /take[ -]?(down|out)|removal/i.test(service);
+  const washed = takedown || /wash|treatment|condition|steam/i.test(service);
+  const item = (on: unknown, id: string, text: string) => (on ? [{ id, text }] : []);
   return [
-    { id: 'takedown', text: 'Take out your old style, unless they’re doing it' },
-    { id: 'wash', text: 'Wash and detangle the day before' },
-    { id: 'dry', text: 'Come with it dry and stretched, no heavy product' },
-    ...(booking.bringingOwnHair || booking.hairIncluded === false
-      ? [{ id: 'hair', text: 'Buy the braiding hair — ask them how many packs' }]
-      : []),
-    { id: 'time', text: 'Clear the time — a long style can run over' },
+    ...item(takedown, 'asis', 'Come with your current style in — they’ll take it out'),
+    ...item(!takedown, 'takedown', 'Take out your old style, unless they’re doing it'),
+    ...item(!washed, 'wash', 'Wash and detangle the day before'),
+    ...item(!washed, 'dry', 'Come with it dry and stretched, no heavy product'),
+    ...item(
+      booking.bringingOwnHair || booking.hairIncluded === false,
+      'hair',
+      'Buy the braiding hair — ask them how many packs'
+    ),
+    ...item(
+      booking.atClient,
+      'space',
+      'Clear a spot by a plug socket, with a chair and good light'
+    ),
+    ...item(
+      (booking.durationMinutes ?? 0) >= 180,
+      'time',
+      'Clear the time — a long style can run over'
+    ),
   ];
 }

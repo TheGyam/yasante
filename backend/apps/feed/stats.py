@@ -25,6 +25,9 @@ NEIGHBOURS_PER_LOOK = 50
 ACTION_WEIGHTS = {"save": 3.0, "comment": 2.0, "like": 2.0, "open": 1.0, "book": 4.0}
 # Each person's most recent looks, so one very busy person can't dominate.
 LOOKS_PER_PERSON = 100
+# A pair is shown to anyone, so it must be a crowd's, never one person's private saves,
+# opens or bookings read back from a look she touched in public.
+MIN_PEOPLE_PER_PAIR = 5
 
 
 def _live_look_ids():
@@ -164,6 +167,8 @@ def refresh_neighbours(now=None):
     close = defaultdict(list)
     for (a, b), value in dot.items():
         n = shared[(a, b)]
+        if n < MIN_PEOPLE_PER_PAIR:
+            continue
         # One person liking both is a hint; ten is a pattern.
         score = value / math.sqrt(norm[a] * norm[b]) * n / (n + 2)
         close[a].append((score, b))

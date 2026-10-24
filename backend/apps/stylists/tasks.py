@@ -67,7 +67,7 @@ def tell_waitlist(profile_id):
         notify_once(f"page-open:{profile.pk}:{waiting.client_id}", waiting.client_id, {
             "category": "waitlist", "title": f"{profile.display_name} is taking bookings.",
             "body": f"You joined the waitlist for {profile.display_name}. Book now on Yasante.",
-            "url": f"/{profile.handle}", "mode": "client",
+            "url": f"/{profile.handle}", "mode": "client", "email": f"/{profile.handle}",
         })
         processed.append(waiting.pk)
         if len(processed) == 500:

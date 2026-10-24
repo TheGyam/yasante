@@ -1,3 +1,7 @@
+import { isAxiosError } from 'axios';
+
+import { apiClient } from '@/shared/lib/api/client';
+
 /** A full UK postcode, spaced or not. */
 export const POSTCODE = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
 
@@ -33,20 +37,17 @@ export function joinAddress(street: string, postcode: string) {
 
 /**
  * The names people use for where a postcode is: the constituency ("Peckham"), the
- * ward ("Rye Lane") and the borough ("Southwark"), from postcodes.io (free, no key,
- * UK open data). Long official names are left out; nobody says them.
+ * ward ("Rye Lane") and the borough ("Southwark"). Asked through our server, so
+ * postcodes.io never learns who's asking. [] when the postcode doesn't exist.
  */
 export async function areasFor(postcode: string): Promise<string[]> {
-  const response = await fetch(
-    `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode.replace(/\s+/g, ''))}`
-  );
-  if (response.status === 404) return [];
-  if (!response.ok) throw new Error('Postcode lookup failed');
-  const { result } = await response.json();
-  const names: string[] = [
-    result.parliamentary_constituency,
-    result.admin_ward,
-    result.admin_district,
-  ].filter((n): n is string => !!n && n.length <= 24 && !/ and |,/.test(n));
-  return [...new Set(names)];
+  try {
+    const { data } = await apiClient.get<string[]>('/api/places/postcode/', {
+      params: { postcode: postcode.trim() },
+    });
+    return data;
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 404) return [];
+    throw error;
+  }
 }
