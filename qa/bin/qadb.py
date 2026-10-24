@@ -421,16 +421,31 @@ def require_keyboard(what):
     """Keys sent with no field to take them reach the dev client's debug shortcuts: on
     05-10-2026 a caption typed onto a screen with no focused field opened Android's
     'Display over other apps' settings. Only type when a field has the keyboard up.
-    It can take a few seconds to come back after `tapon` closed it to reach the field
-    (POLICY-01, 24-10: the password refused twice right after its tap), so wait for it."""
-    for _ in range(8):
-        if "isVisible=true" in adb("shell", "dumpsys", "window", "InputMethod", check=False):
+    On the emulators' keyboard, tapping a password field while the email field's keyboard
+    is up focuses the field but hides the keyboard (POLICY-01 and STAFF-02, 24-10: every
+    sign-in's password was refused once). So when a field has focus and no keyboard
+    comes, tap that field once more, then wait again."""
+    def shown():
+        for _ in range(6):
+            if "isVisible=true" in adb("shell", "dumpsys", "window", "InputMethod", check=False):
+                return True
+            time.sleep(0.5)
+        return False
+
+    if shown():
+        return
+    field = focused_field()
+    if field is not None:
+        x1, y1, x2, y2 = map(int, re.findall(r"\d+", field.get("bounds", "")))
+        at = [(x1 + x2) // 2, (y1 + y2) // 2]
+        adb("shell", "input", "tap", *map(str, at))
+        journal({"cmd": "retap", "what": what, "field": field.get("resource-id") or field.get("content-desc"), "at": at})
+        print(f"the focused field had no keyboard: tapped it again at {at}")
+        if shown():
             return
-        time.sleep(0.5)
-    else:
-        journal({"cmd": "REFUSED", "what": what, "reason": "no keyboard"})
-        raise Refused(f"{what}: no text field has the keyboard. Tap the field first "
-                      "(`qadb tapon <field>`), capture a step if unsure, then try again")
+    journal({"cmd": "REFUSED", "what": what, "reason": "no keyboard"})
+    raise Refused(f"{what}: no text field has the keyboard. Tap the field first "
+                  "(`qadb tapon <field>`), capture a step if unsure, then try again")
 
 
 def focused_field():

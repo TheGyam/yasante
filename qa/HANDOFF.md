@@ -2,13 +2,15 @@
 
 Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.md`.
 
-- **Next:** the queue is done (24-10). Reruns: NEW-02 P done (`NEW-02-20261024-0749`, F61 #143;
-  V1c still a candidate: owner to swipe by hand); next LOOKS-02's G after W3, STAFF-02 T; DIARY-01 B4–B5 once #131 is fixed.
-  Audited 24-10: DIARY-01 (F49–F51), WEBBOOK-01 (F52–F54), FIXES-01 (every fix holds, F55),
-  NEW-01 (F56), NEW-02 (F57, F58 privacy; P void), STAFF-02 (F59, F60: authors never told
-  of moderation). `emus` boots `en-GB` and stops cleanly; `qadb type` flags pre-filled
-  fields. Dev client sha256 `c04a06c5…` still current. Waiting on Yaw: whether app-posted
-  stylist work should also go on her page; whether F60 matters legally (EU platform rules).
+- **Next (24-10, 09:05):** upstream `master` unchanged since #123; #124–#145 open. Done today by
+  Claude (owner: "do one or two tests on your own"): **POLICY-01** (`POLICY-01-20261024-0830`:
+  real policies right in app and site, server tips; **F63 #145** consent hand-over at sign-out)
+  and **STAFF-02 T** (`STAFF-02-20261024-0851`, holds). Static secscan green (no XPASS).
+  F62 #144 (wording). **Still to do:** LOOKS-02 part H (`agy-run LOOKS-02 "parts S, K3, W1, W2,
+  W3, H and Z only…"`): the 08:20 attempt was void, **Gemini quota out until ~11:44 CEST**;
+  then `secscan --dynamic` (needs env-up, not during a run). DIARY-01 B4–B5 waits on #131;
+  NEW-02 V1c waits on the owner's hand swipe. Waiting on Yaw: app-posted stylist work on her
+  page; F60 legally.
 - **Reporting upstream:** the owner said (24-10) to report findings as needed. File each
   confirmed finding as an issue on `TheGyam/yasante` (label `bug`), in the style of #127/#130:
   plain English, file and line, what the test showed, the fix. Never an AI-authorship line.
