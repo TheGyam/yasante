@@ -2,17 +2,17 @@
 
 Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.md`.
 
-- **Next:** WEBBOOK-01 is running unattended (started 24-10 after DIARY-01's audit; plan checked
-  against upstream 24-10). DIARY-01 is done and audited (`DIARY-01-20261024-0103`, valid;
-  F49 #131, F50 #132, F51 #133, all on the website's hours page). Dev client
-  `qa/apk/dev-client.apk`, sha256 `c04a06c5…`, is still current. Waiting on Yaw: whether
-  app-posted stylist work should also go on her page.
+- **Next:** FIXES-01 is running unattended (plan checked against upstream 24-10). Done and
+  audited 24-10, both valid: `DIARY-01-20261024-0103` (F49 #131, F50 #132, F51 #133, all
+  the website's hours page) and `WEBBOOK-01-20261024-0202` (F52 #134 move answers tell
+  nobody, F53 #135, F54 #136). Dev client `qa/apk/dev-client.apk`, sha256 `c04a06c5…`, is
+  still current. Waiting on Yaw: whether app-posted stylist work should also go on her page.
 - **Reporting upstream:** the owner said (24-10) to report findings as needed. File each
   confirmed finding as an issue on `TheGyam/yasante` (label `bug`), in the style of #127/#130:
   plain English, file and line, what the test showed, the fix. Never an AI-authorship line.
 - **Backend pytest:** use `--create-db` (as CI does). `pytest.ini` has `--reuse-db`, and a
   reused test database can have lost the data-migration rows: three false failures on 24-10.
-- **Queue after it**, one at a time with an audit each: FIXES-01, NEW-01,
+- **Queue after it**, one at a time with an audit each: NEW-01,
   NEW-02, STAFF-02 (expects the 20 seeded tips now), then a short LOOKS G rerun after W3, and DIARY-01 B4–B5 once #131 is fixed. Before each, check the plan against upstream changes
   (testIDs, wording); the terms notice after sign-in is handled in BOOK-01 S3 / AGENTS §6.
 - **Security:** `qa/bin/secscan <RUN>` is green apart from known xfails (F25, F36,

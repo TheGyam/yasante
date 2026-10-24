@@ -6,7 +6,9 @@
 runs"), plus F11 (deleting an account) and F12 (policy screens), and (part U, added
 19-10-2026) the fixes for F30, F31 and F32 that closed issues #16–#18.
 **Time:** about 90 minutes.
-**Status:** written 28-09-2026, not run yet. **Revised 19-10-2026** after the 18-10 merge:
+**Status:** written 28-09-2026, not run yet; checked against upstream 24-10-2026 (sign-out
+answers `204`, policies are published, deleting now leaves the screen; sign-up's optional
+age band needs no step; seed IDs unchanged). **Revised 19-10-2026** after the 18-10 merge:
 choosing and moving a time now go through the new picker (part F rewritten; a move can only
 pick a time she's free, so F7 is now "a Monday or 07:00 is never offered"), and part U
 added. Part F's picker steps were dry-run by Claude (`SETUP-dry-1018`); its New York
@@ -164,7 +166,7 @@ showing is a security **FAIL**. `C: key BACK`.
 ## O: Signing out (F1), and a take-down seen from another phone (F10)
 
 **O1: Sign out.** Count first:
-`grep -cE 'POST /api/auth/logout/ HTTP/1.1" 200' qa/runs/<RUN>/server.log`.
+`grep -c 'POST /api/auth/logout/ HTTP/1.1" 204' qa/runs/<RUN>/server.log` (sign-out answers `204`).
 `C: link "yasante:///settings"`, `C: swipe up`, `C: tapon "Sign out"`, confirm
 (`dialog-confirm`), wait 5 s, `C: step O1`. Expect Home as a guest (`Hey there`).
 **F1 is fixed if** the same `grep -c` has gone up by one. Paste both counts, and
@@ -200,13 +202,14 @@ must print **nothing**. Paste it (empty is the pass).
 
 ---
 
-## T: Policy screens (F12, not fixed yet)
+## T: Policy screens (F12; real documents since the 23-10 merge)
 
 For each of `terms`, `privacy`, `guidelines`, `stylist-terms`:
 `C: link "yasante:///policy/<type>"`, wait **15 s**, `C: step T-<type>`, `C: key BACK`.
-Expect the title (`Terms of use`, `Privacy policy`, `Community guidelines`,
-`Stylist terms`) and a body, **or** `Not published yet` on the screen itself. A grey
-placeholder with no text is F12: **FAIL**. A dev-build `API Error` toast doesn't count
+All four are now published in the seed, so **expect** a title and a body of text.
+**Record** the title and the first heading word for word, and any version or date line.
+`Not published yet` is now a **FAIL** (the documents exist), and so is a grey
+placeholder with no text (F12). A dev-build `API Error` toast doesn't count
 either way. After all four:
 `grep -E 'GET /api/policies' qa/runs/<RUN>/server.log | tail -8`, paste it.
 
@@ -247,13 +250,15 @@ Don't continue the setup. `K: key BACK` until you're out of it.
 
 ---
 
-## D: Deleting an account (F11, not fixed yet)
+## D: Deleting an account (F11; upstream now leaves the screen first)
 
 **D1.** On `client`, sign Efua out (as in O1), then sign in as Adwoa (BOOK-01 S3's steps).
 `qa/bin/dbcheck adwoa.diallo@yasante.dev`, paste it.
-**D2.** `C: link "yasante:///settings/privacy"`, `C: tapon "Delete account"`, confirm the
-delete, wait 6 s, `C: step D2`. **Record** the screen. Leaving settings, signed out, is a
-PASS; staying on `Privacy and data` is F11: **FAIL**. Server check (the `DELETE … 204`).
+**D2.** `C: link "yasante:///settings/privacy"`, `C: tapon "Delete account"`, wait 2 s,
+**Record** the dialog (`Delete your account?`), `C: tapon "Delete" --exact`, wait 6 s,
+`C: step D2`. **Record** the screen and any message (`Your account is deleted`). Leaving
+settings, signed out, is a PASS; staying on `Privacy and data` is F11: **FAIL**. Server
+check (the `DELETE /api/users/<id>/ 204`).
 `qa/bin/dbcheck adwoa.diallo@yasante.dev`: **record** it.
 
 ---

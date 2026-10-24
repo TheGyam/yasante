@@ -68,8 +68,8 @@ wait 3 s, `K: step B1b`. **Record** where it goes (`K: url`) and what it asks.
 **B2: Sign in.** If B1b asked to sign in, follow it: `K: fill "Email" "new@yasante.dev"`,
 `K: fill "Password" "password123"`, `K: click "Sign in" --role=button`, wait 3 s. Else
 `K: open /auth/login?next=/book/braidsbyama --site` and sign in the same way. Wait 3 s,
-`K: step B2`. **Expect** `/book/braidsbyama`, his name in the header, a `Sign out` in the
-header.
+`K: step B2`. **Expect** `/book/braidsbyama` and a `Sign out` in the header (the header shows no
+name; corrected after the 24-10 run).
 
 **B3: The service and the time.** `K: click "Take down and wash"` (`K: find` first: the
 service buttons read `<name>, <price>`), wait 2 s, `K: step B3`. **Record** the price, the

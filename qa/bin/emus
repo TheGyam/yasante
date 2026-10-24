@@ -32,6 +32,14 @@ booted() { # serial
   [[ "$(adb -s "$1" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == 1 ]]
 }
 
+launch() { # port [wipe]
+  systemctl --user stop "yasante-emu-$1" 2>/dev/null || true
+  systemctl --user reset-failed "yasante-emu-$1" 2>/dev/null || true
+  systemd-run --user --quiet --unit="yasante-emu-$1" --collect \
+    "$EMU" -avd "${AVD[$1]}" -port "$1" -no-snapshot-save -no-boot-anim -no-audio \
+    ${2:+-wipe-data}
+}
+
 up() {
   local wipe=${1:-} n=${2:-3}
   local ports=("${ALL[@]:0:$n}")
@@ -40,15 +48,18 @@ up() {
     ensure_avd "$name"
     sed -i 's/^hw.keyboard=.*/hw.keyboard=no/' "$HOME/.android/avd/$name.avd/config.ini"
     if booted "$serial" && [[ -z "$wipe" ]]; then echo "$serial already up"; continue; fi
-    systemctl --user stop "yasante-emu-$port" 2>/dev/null || true
-    systemctl --user reset-failed "yasante-emu-$port" 2>/dev/null || true
-    systemd-run --user --quiet --unit="yasante-emu-$port" --collect \
-      "$EMU" -avd "$name" -port "$port" -no-snapshot-save -no-boot-anim -no-audio \
-      ${wipe:+-wipe-data}
+    launch "$port" "$wipe"
   done
   for port in "${ports[@]}"; do
     local serial="emulator-$port"
     for _ in $(seq 120); do booted "$serial" && break; sleep 2; done
+    # A wiped cold boot sometimes hangs (WEBBOOK-01, 24-10); the wipe is already done, so
+    # one plain restart is enough.
+    if ! booted "$serial"; then
+      echo "$serial did not boot in 4 min; restarting it once"
+      launch "$port"
+      for _ in $(seq 120); do booted "$serial" && break; sleep 2; done
+    fi
     booted "$serial" || { echo "$serial did not boot"; exit 1; }
     # Emulator-only settings: no autofill/save-password prompts, screen stays on.
     adb -s "$serial" shell settings put secure autofill_service null >/dev/null 2>&1 || true
