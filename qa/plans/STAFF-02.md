@@ -9,6 +9,9 @@ appeal is decided and the look comes back; a product someone adds waits for appr
 then everyone can find it; a tip written in the workspace becomes the app's tip of the
 day; a reported review is removed from a stylist's page. Rechecks F17, F19 and F20.
 **Time:** about 75 minutes.
+**Checked against upstream 24-10-2026:** every testID and line still resolves (report reasons
+are `reason-<value>`; `Hide?` is the action's label plus `?`). Part T rewritten for the 20
+seeded tips (sort order and the filtered list for T3).
 
 Read `qa/AGENTS.md` first (again: **section 8 is new** and covers the browser). Its rules
 override anything here. `qadb step` and `qaweb step` open each step's section in the same
@@ -202,21 +205,25 @@ product still shows a `pending`/waiting mark.
 
 **T1: Write it.** `W: open /records/content/tip/new`,
 `W: fill Text "QA staff tip: rinse with cool water to finish." --exact`, leave `Active`
-on and `Sort order` `0`, `W: click Save --exact --role=button`, `W: step T1`. Expect
-`Created the new tip`. (A fresh seed has no tips on the server, so this is the only one.)
+on, `W: fill "Sort order" "2"`, `W: click Save --exact --role=button`, `W: step T1`. Expect
+`Created the new tip`. (The seed has 20 tips, sort orders 0–19. The app shows tip number
+*day of the year* mod *how many*, in sort order: on **24 October** that's place 3 of 21,
+so sort order `2` puts the QA tip there. Run on another day, it won't be the day's tip:
+say so at T2 and record the tip shown.)
 
 **T2: The app shows it.** On Abena: `A: stop`, `A: launch`, wait until the app is back
 (about 10 s; if the dev-menu intro shows again, close it as in S2), `A: link "yasante:///"`, wait 4 s, `A: step T2`. Expect `TIP OF THE DAY`
 with `QA staff tip: rinse with cool water to finish.` **Server check:**
 `grep -E 'GET /api/tips/' qa/runs/<RUN>/server.log | tail -1` shows `200`.
 
-**T3: Switch it off.** `W: open /records/content/tip`, `W: click More --exact`,
+**T3: Switch it off.** `W: open "/records/content/tip?q=QA staff"` (one row: the QA tip),
+`W: click More --exact`,
 `W: click "Quick edit this page" --role=menuitem`, `W: uncheck Active`,
 `W: click "Save quick edits"`, `W: step T3`. Expect the tip with `Active` `No`.
 
 **T4: The app drops it.** `A: stop`, `A: launch`, wait 10 s, `A: link "yasante:///"`,
 wait 4 s, `A: step T4`. **Record** the tip shown. **Expect** it is **not** the QA tip any
-more. Still showing it is a **FAIL** unless the server log shows no new `GET /api/tips/`
+more (with 20 active, 24 October shows the seeded tip at place 17). Still showing it is a **FAIL** unless the server log shows no new `GET /api/tips/`
 (then say the app kept its copy, and paste the log line).
 
 ---

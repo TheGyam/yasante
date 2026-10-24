@@ -46,7 +46,7 @@ launch() { # port [wipe]
   systemctl --user reset-failed "yasante-emu-$1" 2>/dev/null || true
   systemd-run --user --quiet --unit="yasante-emu-$1" --collect \
     "$EMU" -avd "${AVD[$1]}" -port "$1" -no-snapshot-save -no-boot-anim -no-audio \
-    -crash-report-mode never ${2:+-wipe-data}
+    -crash-report-mode never -change-locale en-GB ${2:+-wipe-data}
 }
 
 up() {
@@ -70,6 +70,17 @@ up() {
       for _ in $(seq 120); do booted "$serial" && break; sleep 2; done
     fi
     booted "$serial" || { echo "$serial did not boot"; exit 1; }
+    # -change-locale applies en-GB after boot and restarts Android's framework (about 5 s
+    # later, the package service gone for 2 s): wait it out before installing anything.
+    for _ in $(seq 30); do
+      [[ "$(adb -s "$serial" shell getprop persist.sys.locale 2>/dev/null | tr -d '\r')" == en-GB ]] && break
+      sleep 1
+    done
+    local ok=0
+    for _ in $(seq 60); do
+      if adb -s "$serial" shell pm path android >/dev/null 2>&1; then ((++ok >= 3)) && break; else ok=0; fi
+      sleep 1
+    done
     # Emulator-only settings: no autofill/save-password prompts, screen stays on.
     adb -s "$serial" shell settings put secure autofill_service null >/dev/null 2>&1 || true
     adb -s "$serial" shell svc power stayon true >/dev/null 2>&1 || true

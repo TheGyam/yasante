@@ -2,11 +2,11 @@
 
 Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.md`.
 
-- **Next:** NEW-02 is running unattended (plan checked against upstream 24-10). Done and
-  audited 24-10, all valid: `DIARY-01-20261024-0103` (F49 #131, F50 #132, F51 #133),
-  `WEBBOOK-01-20261024-0202` (F52 #134 move answers tell nobody, F53 #135, F54 #136),
-  `FIXES-01-20261024-0322` (every fix holds; F55 #137), `NEW-01-20261024-0507` (F56 #138).
-  `emus` now stops emulators cleanly (a crash dialog had blocked boots). Dev client sha256
+- **Next:** STAFF-02 is running unattended (plan checked against upstream 24-10; part T
+  rewritten for the 20 seeded tips). Then a short NEW-02 rerun of part P and V1c. Done and
+  audited 24-10: DIARY-01 (F49–F51), WEBBOOK-01 (F52–F54), FIXES-01 (every fix holds,
+  F55), NEW-01 (F56), NEW-02 (F57 #139, F58 #140 privacy; part P void: emulators were
+  `en-US`). `emus` now boots emulators `en-GB` and stops them cleanly. Dev client sha256
   `c04a06c5…` still current. Waiting on Yaw: whether app-posted stylist work should also
   go on her page.
 - **Reporting upstream:** the owner said (24-10) to report findings as needed. File each
@@ -15,7 +15,7 @@ Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.
 - **Backend pytest:** use `--create-db` (as CI does). `pytest.ini` has `--reuse-db`, and a
   reused test database can have lost the data-migration rows: three false failures on 24-10.
 - **Queue after it**, one at a time with an audit each:
-  STAFF-02 (expects the 20 seeded tips now), then a short LOOKS G rerun after W3, and DIARY-01 B4–B5 once #131 is fixed. Before each, check the plan against upstream changes
+  the NEW-02 P/V1c rerun, then a short LOOKS G rerun after W3, and DIARY-01 B4–B5 once #131 is fixed. Before each, check the plan against upstream changes
   (testIDs, wording); the terms notice after sign-in is handled in BOOK-01 S3 / AGENTS §6.
 - **Security:** `qa/bin/secscan <RUN>` is green apart from known xfails (F25, F36,
   F41–F47). Upstream issues #124–#129 are open (F41–F47); their fixes will show up as XPASS.
