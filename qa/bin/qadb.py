@@ -420,8 +420,14 @@ def keyboard_top():
 def require_keyboard(what):
     """Keys sent with no field to take them reach the dev client's debug shortcuts: on
     05-10-2026 a caption typed onto a screen with no focused field opened Android's
-    'Display over other apps' settings. Only type when a field has the keyboard up."""
-    if "isVisible=true" not in adb("shell", "dumpsys", "window", "InputMethod", check=False):
+    'Display over other apps' settings. Only type when a field has the keyboard up.
+    It can take a few seconds to come back after `tapon` closed it to reach the field
+    (POLICY-01, 24-10: the password refused twice right after its tap), so wait for it."""
+    for _ in range(8):
+        if "isVisible=true" in adb("shell", "dumpsys", "window", "InputMethod", check=False):
+            return
+        time.sleep(0.5)
+    else:
         journal({"cmd": "REFUSED", "what": what, "reason": "no keyboard"})
         raise Refused(f"{what}: no text field has the keyboard. Tap the field first "
                       "(`qadb tapon <field>`), capture a step if unsure, then try again")
