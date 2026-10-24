@@ -34,7 +34,6 @@ def _answers(client, base, field, right, wrong):
     return hit != miss, hit, miss
 
 
-@pytest.mark.xfail(strict=True, reason="F42: a URL filter on a hidden field changes the record list's count")
 def test_a_phone_number_cant_be_found_by_filtering(make_user):
     client, staff = _viewer(make_user, "view_user")
     person = make_user(name="Ama")
@@ -44,7 +43,6 @@ def test_a_phone_number_cant_be_found_by_filtering(make_user):
     assert LogEntry.objects.count() == logged
 
 
-@pytest.mark.xfail(strict=True, reason="F42: a URL filter on a hidden field changes the record list's count")
 def test_hair_details_cant_be_found_by_filtering(make_user):
     from apps.profiles.models import HairProfile
 
@@ -62,7 +60,6 @@ def test_the_control_a_visible_field_still_filters(make_user):
     assert leaks, f"email: {hit} vs {miss}"
 
 
-@pytest.mark.xfail(strict=True, reason="F42: the record search matches on the hidden phone number")
 def test_a_phone_number_cant_be_found_by_searching(make_user):
     client, staff = _viewer(make_user, "view_user")
     person = make_user(name="Ama")
@@ -75,7 +72,6 @@ def _editor(make_user, *codenames):
     return _viewer(make_user, *codenames)
 
 
-@pytest.mark.xfail(strict=True, reason="F46: a form sent back with an error shows the hidden values it kept")
 def test_a_form_with_an_error_does_not_show_the_hidden_phone(make_user):
     from tests.test_staff_privacy import form_as_shown
 
@@ -88,7 +84,6 @@ def test_a_form_with_an_error_does_not_show_the_hidden_phone(make_user):
     assert person.phone not in r.content.decode()
 
 
-@pytest.mark.xfail(strict=True, reason="F46: a form sent back with an error shows the hidden values it kept")
 def test_a_form_with_an_error_does_not_show_hidden_hair_details(make_user):
     from apps.profiles.models import HairProfile
     from tests.test_staff_privacy import form_as_shown
@@ -100,8 +95,10 @@ def test_a_form_with_an_error_does_not_show_hidden_hair_details(make_user):
     body["user"] = "00000000-0000-0000-0000-000000000000"
     r = client.post(url, body)
     assert r.status_code == 422, r.content
-    page = r.content.decode()
-    assert not [word for word in ("coily", "flaky", "SE15 4QJ") if word in page]
+    # The words are also option labels in the dropdowns, so check the fields' values.
+    shown = {f["name"]: f["value"] for s in r.json()["sections"] for f in s["fields"]}
+    assert not [name for name in ("texture", "scalp", "postcode")
+                if any(word in str(shown.get(name)) for word in ("coily", "flaky", "SE15 4QJ"))], shown
 
 
 def test_the_control_a_typed_value_is_echoed(make_user):

@@ -294,7 +294,7 @@ day, top to bottom), then `V: click "Save hours"`, `V: step B5b`. Expect `Saved.
 `V: upload "<that label>" qa-photo-2.jpg`, `V: step B7b`. `V: select Style "Knotless braids"`,
 `V: select Service "QA Knotless"`, `V: fill "Caption (optional)" "QA web post: knotless, mid-back."`,
 `V: click "Post 1 photo"`, `V: step B7c`. Expect
-`/portfolio`, `Posted 1 photo. They’re in the feed now.`, `In the feed · 1`.
+`/portfolio`, `Posted 1 look. It’s in the feed now.` (since #144), `In the feed · 1`.
 Server check.
 
 **B8: Her own photo again.** `V: open /looks/new --site`, upload **`qa-photo-1.jpg`** (the

@@ -101,8 +101,8 @@ Server: `POST /api/bookings/` **201**. `qa/bin/bookings naomi.grant@yasante.dev`
 newest ID is **B1**. **Views:** paste `qa/bin/bookings naomi.grant@yasante.dev <B1>`.
 
 **F3: The stylist reads it (F4).** `S: link "yasante:///requests/<B1>"`, wait 3 s,
-`S: step F3`, `S: swipe up`, `S: step F3b`. **Record, word for word:** `She asked for …`
-(or `They asked for …`), `Answer by …` (or the deadline line), and any start time.
+`S: step F3`, `S: swipe up`, `S: step F3b`. **Record, word for word:** `<client's first name> asked for …`
+(since #136), `Answer by …` (or the deadline line), and any start time.
 **F4 is fixed if** every time Yaa sees is T's clock time without the `UK time` mark (this
 phone is on UK time). If they differ, mark **FAIL** and quote both.
 

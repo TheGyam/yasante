@@ -43,7 +43,6 @@ def her(api, make_user):
     return user, delete
 
 
-@pytest.mark.xfail(strict=True, reason="F44: her own cancel reason stays on the booking and its history")
 def test_her_cancel_reason_goes(api, her, make_stylist, book):
     user, delete = her
     booking = book(user, make_stylist())["id"]
@@ -53,7 +52,6 @@ def test_her_cancel_reason_goes(api, her, make_stylist, book):
     assert _traces("TRACE-cancel", user.email, user.phone) == []
 
 
-@pytest.mark.xfail(strict=True, reason="F44: other people's notifications keep her name")
 def test_her_name_goes_from_other_peoples_notifications(api, her, make_user, make_look):
     user, delete = her
     look = make_look(make_user())
@@ -63,7 +61,6 @@ def test_her_name_goes_from_other_peoples_notifications(api, her, make_user, mak
     assert _traces(NAME, "TRACE-comment", user.email) == []
 
 
-@pytest.mark.xfail(strict=True, reason="F44: the staff trail keeps her name and email")
 def test_her_email_goes_from_the_staff_trail(api, her, make_user):
     user, delete = her
     client, _ = staff_client(make_user, superuser=True)

@@ -11,7 +11,10 @@ day, and emulators are always on their first day. Upstream has unit tests for th
 **Time:** about 70 minutes.
 **Checked against upstream 24-10-2026:** every testID and line still there (`section-area` is
 `section-${key}`; capitals like `TIP OF THE DAY` are styling); UK postcodes still go to
-postcodes.io (Photon is only for stylists outside the UK).
+postcodes.io (Photon is only for stylists outside the UK). **Since #149 (24-10):** the app
+asks our server (`GET /api/places/postcode/`), and the server asks postcodes.io (F58 #140);
+a postcode that doesn't exist gets a message (F61 #143); `Show stylists near me` no longer
+needs hair-details consent (F57 #139).
 
 Read `qa/AGENTS.md` first (again, since it changed). Its rules override anything here.
 `qadb step` opens each step's section in the report; fill it in before the next step.

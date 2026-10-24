@@ -47,14 +47,12 @@ def _wide():
     return now - timedelta(days=1), now + timedelta(days=1)
 
 
-@pytest.mark.xfail(strict=True, reason="F45: trend groups count bookings, not people")
 def test_one_persons_twenty_bookings_are_not_a_group(make_user, booked, styles):
     booked(make_user(), 20)
     rows, _ = _report(*_wide())
     assert rows == [], rows
 
 
-@pytest.mark.xfail(strict=True, reason="F45: trend groups count bookings, not people")
 def test_one_volunteers_hair_is_not_a_group(make_user, booked, styles, consent):
     volunteer = make_user(texture="coily")
     consent(volunteer, "research")
@@ -74,7 +72,6 @@ def test_the_control_twenty_people_are_a_group(make_user, booked, styles, consen
     assert meta["byHair"] == [{"style": "Knotless braids", "hair": "coily", "bookings": 20}]
 
 
-@pytest.mark.xfail(strict=True, reason="F45: a range ending mid-month lets two reports be subtracted to one booking")
 def test_moving_the_range_a_day_does_not_isolate_one_booking(make_user, booked, styles):
     from apps.staff.insights import UK
 

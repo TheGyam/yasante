@@ -26,7 +26,6 @@ EVENT = {"session": "qa-session-1", "surface": "home", "lookId": "e3e70682-c209-
 
 
 @pytest.mark.parametrize("stray", [0, None, "AAA"])
-@pytest.mark.xfail(strict=True, reason="F64: a feed event that isn't an object is a 500 (TypeError)")
 def test_a_feed_event_that_is_not_an_object_is_refused(stray):
     """Open to signed-out visitors, so anyone can make this 500."""
     client = APIClient()
@@ -35,13 +34,13 @@ def test_a_feed_event_that_is_not_an_object_is_refused(stray):
     assert 400 <= r.status_code < 500, r.status_code
 
 
+@pytest.mark.django_db
 def test_feed_events_control():
     client = APIClient()
     r = client.post("/api/feed/events/", {"events": [EVENT]}, format="json")
     assert r.status_code < 300, r.status_code
 
 
-@pytest.mark.xfail(strict=True, reason="F64: a preference category that isn't a string is a 500 (AttributeError)")
 def test_a_preference_category_that_is_not_a_string_is_refused(make_user):
     client = APIClient()
     client.force_authenticate(make_user())
@@ -50,7 +49,6 @@ def test_a_preference_category_that_is_not_a_string_is_refused(make_user):
     assert 400 <= r.status_code < 500, r.status_code
 
 
-@pytest.mark.xfail(strict=True, reason="F64: a NUL character in a care plan is a 500 (DataError from Postgres)")
 def test_a_nul_character_in_a_care_plan_is_refused(make_user):
     client = APIClient()
     client.force_authenticate(make_user())

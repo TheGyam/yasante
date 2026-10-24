@@ -8,6 +8,9 @@ from rest_framework.test import APIClient
 
 
 def _signed_in(user):
+    from django.core.cache import cache
+
+    cache.clear()  # test_limits may have used up the sign-in limit already
     r = APIClient().post("/api/auth/login/", {"email": user.email, "password": "password123"}, format="json")
     assert r.status_code == 200, r.content
     client = APIClient()
@@ -15,7 +18,6 @@ def _signed_in(user):
     return client, r.json()["refreshToken"]
 
 
-@pytest.mark.xfail(strict=True, reason="F25: refresh still issues tokens to a deactivated account")
 def test_a_deactivated_account_is_locked_out_at_once(make_user):
     """Staff switch off `Is active`: the app's existing tokens must stop working
     (djangorestframework-simplejwt CVE-2024-22513 is about exactly this)."""

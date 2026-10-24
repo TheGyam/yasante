@@ -38,7 +38,6 @@ def _setup(make_user, make_look):
     return look, efua, secret
 
 
-@pytest.mark.xfail(strict=True, reason="F47: one person's private save leads 'More like this' for anyone")
 def test_one_persons_private_save_is_not_shown_as_like_this(api, make_user, make_look):
     look, efua, secret = _setup(make_user, make_look)
     _private_save(efua, secret)

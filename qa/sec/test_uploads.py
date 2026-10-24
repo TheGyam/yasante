@@ -74,7 +74,6 @@ def test_a_photo_format_is_accepted(api, make_user, fmt):
     assert r.status_code == 201, f"{fmt} -> {r.status_code}"
 
 
-@pytest.mark.xfail(strict=True, reason="F41: Image.open(upload) has no formats=, so every Pillow decoder is reachable")
 @pytest.mark.parametrize("fmt", sorted(OTHER_FORMATS))
 def test_only_photo_formats_are_decoded(api, make_user, media_root, fmt):
     r = _post(api, make_user(), _encoded(fmt, OTHER_FORMATS[fmt]), "photo.jpg")

@@ -171,7 +171,7 @@ Tick the terms, `C: tapon booking-send`, wait 4 s, `C: step F1`. Server: `POST
 /api/bookings/` **201**. Get the ID with `qa/bin/bookings naomi.grant@yasante.dev` → **B1**.
 
 **F2: Kojo reads it.** `S: link "yasante:///requests/<B1>"`, wait 3 s, `S: step F2`,
-`S: swipe up`, `S: step F2b`. **Record, word for word:** the `She asked for …` (or `They asked for …`) line and the
+`S: swipe up`, `S: step F2b`. **Record, word for word:** the `<client's first name> asked for …` line (since #136; `She asked for` would be a FAIL) and the
 `Start at` value. **Views:** paste `qa/bin/bookings naomi.grant@yasante.dev <B1>`
 (`requested_times`, in UTC).
 - **Expect** the asked-for time and `Start at` to be the **same** clock time as T, with no

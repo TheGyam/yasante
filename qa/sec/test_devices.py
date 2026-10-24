@@ -13,7 +13,7 @@ pytestmark = pytest.mark.django_db
 TOKEN = "ExponentPushToken[qa-victim-0000000000]"
 
 
-@pytest.mark.xfail(strict=True, reason="F36 (candidate): a known push token can be taken by another account")
+@pytest.mark.xfail(strict=True, reason="F36: a known push token can be taken by another account (kept by design, #15; #149)")
 def test_another_account_cannot_take_her_push_token(api, make_user):
     from apps.accounts.models import DeviceToken
 

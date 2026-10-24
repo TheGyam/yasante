@@ -185,9 +185,12 @@ why, and a `400` for `/api/stylists/me/blocks/`. **Record** the message. A block
 Efua's waiting request is a **FAIL**.
 
 **B7: Removing a block.** **Record** first, from B1's `screen.png`, how the chips look (each
-has an ×). `A: click "QA school run"`, wait 3 s, `A: step B7`. **Record** whether
-anything asked before it went (in the code, one click removes it). Expect the chip gone
-and `DELETE /api/stylists/me/blocks/<id>/` `204`. Efua: picker, DAY_W, `C: step B7b`:
+has an ×). `A: click "QA school run"`, wait 2 s, `A: step B7`: since #133 a browser pop-up
+asks first and `qaweb` answers **Cancel**. **Record** the pop-up's text from `qaweb`'s log
+(expect `Open this time up for booking again? Anyone waiting for that day is told straight
+away.`) and that the chip is still there. Then `A: click --accept-dialog "QA school run"`,
+wait 3 s, `A: step B7a`. Expect the chip gone and `DELETE /api/stylists/me/blocks/<id>/` `204`
+(one only). Efua: picker, DAY_W, `C: step B7b`:
 10:00 and 11:00 starts are back (13:00 still not: the lunch repeats).
 
 ---
@@ -218,7 +221,7 @@ it a refusal: if so, write that and skip to R5). Kojo: picker, DAY_T, `K: step R
 opens"`, wait 3 s, `K: step R4c`. **Record** the message; **server check:**
 `grep 'slot-interests' qa/runs/<RUN>/server.log | tail -2`.
 
-**R5: The time opens.** Ama removes R4's block (`A: click "QA full day"`), wait 3 s, `A: step R5`.
+**R5: The time opens.** Ama removes R4's block (`A: click --accept-dialog "QA full day"`), wait 3 s, `A: step R5`.
 `qa/bin/pushlog new@yasante.dev 3`: paste it. **Expect** a notification to Kojo about
 DAY_T (the commit: removing a block tells the waitlist). **Record** it word for word.
 
@@ -240,7 +243,10 @@ DAY_T (the commit: removing a block tells the waitlist). **Record** it word for 
 - Check each held time against `qa/bin/bookings` and the `TimeBlock` rows myself; the
   free-times answer for DAY_W/DAY_T/DAY_F before and after B1, B3, B4, B5, B7 should match
   B2–B7b.
-- B7: one click on a block chip deletes it with no confirm (`HoursScreen.tsx:442`). If the
-  run shows the same, it's a UX finding (an accidental click frees a school run to clients).
+- B7: F51 #133 was one click deleting a block with no confirm; #149 added a `confirm()`.
+  The Cancel click must leave the block (no DELETE); only the accepted one removes it.
+- B4/B5: F49 #131 (the skip chips were the next 7 days from today, so a repeat starting
+  later was refused `400`); #149 counts from the block's first day. B3 starts on DAY_W, so
+  B4's skip of DAY_T is the recheck.
 - Writes expected: N1–N4 PATCHes, blocks B1, B3, (B6b refused), R4, skip ×2, DELETE ×2,
   requests B6 + R2 (one 201, one refused), slot interest R4c.

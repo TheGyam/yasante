@@ -57,7 +57,6 @@ def test_look_reports_are_limited(api, make_user, make_look):
     assert 429 in codes, sorted(set(codes))
 
 
-@pytest.mark.xfail(strict=True, reason="F43: ReviewReportView has no throttle and no duplicate check")
 def test_review_reports_are_limited(api, make_user, make_stylist, book):
     from apps.bookings.models import ReviewReport
 

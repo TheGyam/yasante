@@ -140,7 +140,7 @@ client side** and filled in on the stylist side.
 Expect: the client's name, `Knotless braids · Mid-back · Medium`, `£200`,
 `First booking on Yasante` (Naomi has no history with anyone), her hair details, the note
 `QA booking one`, and `Answer by …`.
-**Record** two things exactly: the line `She asked for …` and the value next to
+**Record** two things exactly: the line `<client's first name> asked for …` (since #136; `She asked for` would be a FAIL) and the value next to
 `Start at`. They should show the same time. If they differ, mark **FAIL** (candidate F4:
 the time picker isn't in the stylist's time zone).
 
