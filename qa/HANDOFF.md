@@ -2,12 +2,15 @@
 
 Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.md`.
 
-- **Next (24-10, 12:25):** upstream `master` still unchanged since #123 (fetched 11:17);
-  #124–#147 open, no PRs. **LOOKS-02 part H done** (`LOOKS-02-20261024-1148`, unattended,
+- **Next (24-10, 13:00):** upstream `master` still unchanged since #123 (fetched 13:00);
+  #124–#147 open (#148 closed as a duplicate of #147), no PRs. **The ungated queue is empty:**
+  the "NEW-02 P rerun" listed at 12:25 was already done in `NEW-02-20261024-0749` (P1–P4,
+  valid, F61 #143). Everything left waits on Yaw: DIARY-01 B4–B5 after #131, POLICY-01 N/X
+  after #145, F65 recheck on the site after #147, and XPASS checks as #124–#129 land. On
+  any upstream move: merge, run the suites, recheck first. Emulators down.
+- **Earlier (24-10, 12:25):** **LOOKS-02 part H done** (`LOOKS-02-20261024-1148`, unattended,
   valid: the 3-photo work shows and pages right in app and site); qadb's re-tap works. New
-  **F65 #147** (website plait mark is an empty box: `@font-face` weight). Queue left: the NEW-02
-  P rerun, then DIARY-01 B4–B5 once #131 is fixed and POLICY-01 N/X once #145 is; on any
-  upstream move, merge and recheck first.
+  **F65 #147** (website plait mark is an empty box: `@font-face` weight).
 - **Earlier (24-10, 09:05):** upstream `master` unchanged since #123; #124–#145 open. Done today by
   Claude (owner: "do one or two tests on your own"): **POLICY-01** (`POLICY-01-20261024-0830`:
   real policies right in app and site, server tips; **F63 #145** consent hand-over at sign-out)
@@ -23,7 +26,7 @@ Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.
 - **Backend pytest:** use `--create-db` (as CI does). `pytest.ini` has `--reuse-db`, and a
   reused test database can have lost the data-migration rows: three false failures on 24-10.
 - **Queue after it**, one at a time with an audit each:
-  the NEW-02 P rerun (V1c withdrawn; the LOOKS G rerun was done as part H, 24-10 12:16), and DIARY-01 B4–B5 once #131 is fixed. Before each, check the plan against upstream changes
+  DIARY-01 B4–B5 once #131 is fixed, POLICY-01 N/X once #145 is (NEW-02 P rerun done 08:20; LOOKS G rerun done as part H, 12:16). Before each, check the plan against upstream changes
   (testIDs, wording); the terms notice after sign-in is handled in BOOK-01 S3 / AGENTS §6.
 - **Security:** `qa/bin/secscan <RUN>` is green apart from known xfails (F25, F36,
   F41–F47). Upstream issues #124–#129 are open (F41–F47); their fixes will show up as XPASS.
