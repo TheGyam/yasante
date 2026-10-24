@@ -151,6 +151,9 @@ class SessionAdmin(OutstandingTokenAdmin):
 
     @admin.action(description="End these sessions (they sign in again)", permissions=["view"])
     def end_sessions(self, request, queryset):
+        from .sessions import end
+
         for token in queryset:
             BlacklistedToken.objects.get_or_create(token=token)
+        end(queryset.values_list("jti", flat=True))
         self.message_user(request, f"Ended {queryset.count()} sessions.")

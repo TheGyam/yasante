@@ -192,6 +192,10 @@ class DeviceToken(models.Model):
     token = models.CharField(max_length=500, unique=True)
     platform = models.CharField(max_length=20)  # ios, android, web
     created_at = models.DateTimeField(auto_now_add=True)
+    # The sign-in it came with (its current refresh token's id), and when that sign-in
+    # lapses: notifications stop with it (accounts/sessions.py).
+    session = models.CharField(max_length=64, blank=True, default="", db_index=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = "accounts_device_token"

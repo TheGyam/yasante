@@ -31,6 +31,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from . import social
 from .emails import send_email_code, send_password_reset
 from .models import DeviceToken, EmailChallenge, Invite, User
+from .sessions import end as end_sessions, end_all as end_all_sessions, issue as issue_session, jti_of, register as register_device, rotated as session_rotated
 from .serializers import (
     AuthResponseSerializer,
     DeviceTokenSerializer,
@@ -199,13 +200,15 @@ class RefreshTokenView(APIView):
             user = User.objects.get(id=old_refresh["user_id"])
             # Switched off: this device's sign-in ends now, and stays ended if it's switched back on.
             if not user.is_active:
+                end_sessions([old_refresh["jti"]])
                 raise TokenError("inactive")
-            new_refresh = RefreshToken.for_user(user)
+            new_refresh, access = issue_session(user)
+            session_rotated(old_refresh["jti"], new_refresh)
 
             # The old refresh token is now revoked, so the new one goes back with it.
             return Response(
                 {
-                    "access_token": str(new_refresh.access_token),
+                    "access_token": str(access),
                     "refresh_token": str(new_refresh),
                     "expires_at": int(
                         (
@@ -319,6 +322,8 @@ def revoke_all_sessions(user):
 
     for token in OutstandingToken.objects.filter(user=user):
         BlacklistedToken.objects.get_or_create(token=token)
+    # And no phone gets her notifications until she signs in on it again.
+    end_all_sessions(user)
 
 
 @extend_schema_view(post=extend_schema(request=LogoutRequestSerializer, responses={204: None}))
@@ -333,6 +338,8 @@ class LogoutView(APIView):
 
         raw = request.data.get("refresh_token") or request.data.get("refresh")
         if raw:
+            # This phone stops getting her notifications, even if the app couldn't say so.
+            end_sessions([jti_of(raw)])
             try:
                 RefreshToken(raw).blacklist()
             except TokenError:
@@ -552,9 +559,8 @@ class DeviceTokenCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        # Upsert — if the token already exists for another user, move it
-        DeviceToken.objects.filter(token=serializer.validated_data["token"]).delete()
-        serializer.save(user=self.request.user)
+        data = serializer.validated_data
+        serializer.instance = register_device(self.request.user, self.request.auth, data["token"], data["platform"])
 
 
 class DeviceTokenDeleteView(generics.DestroyAPIView):

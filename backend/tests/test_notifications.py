@@ -10,6 +10,9 @@ from django.utils import timezone
 
 from apps.common.models import NotificationLog
 
+# A phone whose sign-in is still live.
+LIVE = timezone.now() + timedelta(days=7)
+
 pytestmark = pytest.mark.django_db
 
 
@@ -111,8 +114,8 @@ def test_push_goes_to_expo_tokens_and_forgets_dead_ones(make_user, settings, mon
     from apps.common import notifications
 
     user = make_user()
-    DeviceToken.objects.create(user=user, token="ExponentPushToken[a]", platform="android")
-    DeviceToken.objects.create(user=user, token="ExponentPushToken[b]", platform="ios")
+    DeviceToken.objects.create(user=user, token="ExponentPushToken[a]", platform="android", expires_at=LIVE)
+    DeviceToken.objects.create(user=user, token="ExponentPushToken[b]", platform="ios", expires_at=LIVE)
     log = notifications.notify(user.pk, "account", "k", "Hi", "There", url="/x", action_category="attendance")
     settings.PUSH_DELIVERY = "expo"
     sent = []
@@ -170,7 +173,7 @@ def test_without_a_phone_signed_in_a_booking_update_comes_by_email(api, setup, b
     assert NotificationLog.objects.get(user=profile.account).status == "emailed"
 
     # The client has the app: accepting reaches her phone, not her inbox.
-    DeviceToken.objects.create(user=client, token="ExponentPushToken[c]", platform="ios")
+    DeviceToken.objects.create(user=client, token="ExponentPushToken[c]", platform="ios", expires_at=LIVE)
     with django_capture_on_commit_callbacks(execute=True):
         api(profile.account).post(
             f"/api/bookings/{booking['id']}/accept/",
@@ -212,3 +215,60 @@ def test_a_wash_day_reminder_comes_at_her_usual_time_only_when_she_asked(make_us
     assert sent() == 1  # once that day
     wash_day_reminders(now=datetime(2026, 10, 26, 9, 5, tzinfo=tz.utc))
     assert sent() == 1  # Monday isn't wash day
+
+
+def test_a_phone_gets_her_notifications_only_while_its_sign_in_lasts(api, make_user, settings):
+    """The push token belongs to the sign-in that registered it, and ends with it, however it ends."""
+    from rest_framework.test import APIClient
+
+    from apps.accounts.models import DeviceToken
+
+    user = make_user()
+
+    def sign_in(token):
+        r = APIClient().post("/api/auth/login/", {"email": user.email, "password": "password123"}, format="json")
+        phone = APIClient()
+        phone.credentials(HTTP_AUTHORIZATION=f"Bearer {r.json()['accessToken']}")
+        assert phone.post("/api/devices/", {"token": token, "platform": "ios"}, format="json").status_code == 201
+        return r.json()["refreshToken"]
+
+    live = lambda: set(DeviceToken.objects.filter(expires_at__gt=timezone.now()).values_list("token", flat=True))
+    first = sign_in("ExponentPushToken[one]")
+    sign_in("ExponentPushToken[two]")
+    assert live() == {"ExponentPushToken[one]", "ExponentPushToken[two]"}
+    # Refreshing keeps the phone, on the new token.
+    refreshed = APIClient().post("/api/auth/refresh-token/", {"refreshToken": first}, format="json").json()["refreshToken"]
+    assert live() == {"ExponentPushToken[one]", "ExponentPushToken[two]"}
+    # Signing out ends that phone's notifications, even if the app never said so.
+    APIClient().post("/api/auth/logout/", {"refreshToken": refreshed}, format="json")
+    assert live() == {"ExponentPushToken[two]"}
+    # Signing out everywhere (and a password reset, which uses the same) ends the rest.
+    other = sign_in("ExponentPushToken[three]")
+    api(user).post("/api/auth/logout-all/")
+    assert live() == set() and other
+
+
+def test_pushes_carry_the_expo_access_token(settings):
+    from apps.common.notifications import _expo_headers
+
+    settings.EXPO_ACCESS_TOKEN = ""
+    assert "Authorization" not in _expo_headers()
+    settings.EXPO_ACCESS_TOKEN = "secret"
+    assert _expo_headers()["Authorization"] == "Bearer secret"
+
+
+def test_no_push_to_a_lapsed_sign_in_or_a_switched_off_account(make_user, settings, monkeypatch):
+    from apps.accounts.models import DeviceToken
+    from apps.common import notifications
+
+    settings.PUSH_DELIVERY = "expo"
+    sent = []
+    monkeypatch.setattr(notifications, "_post_to_expo", lambda messages: sent.extend(messages) or [{"status": "ok"}] * len(messages))
+    lapsed, off = make_user(), make_user()
+    DeviceToken.objects.create(user=lapsed, token="ExponentPushToken[old]", platform="ios", expires_at=timezone.now() - timedelta(minutes=1))
+    DeviceToken.objects.create(user=off, token="ExponentPushToken[off]", platform="ios", expires_at=LIVE)
+    off.is_active = False
+    off.save(update_fields=["is_active"])
+    for person in (lapsed, off):
+        notifications.send_push(str(notifications.notify(person.pk, "account", f"k{person.pk}", "Hi", "There").pk))
+    assert sent == []
