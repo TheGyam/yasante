@@ -96,7 +96,7 @@ Then the same for Kwame with `H:` and `staff.helper@yasante.dev`, `H: step S4b`.
 **R1: Abena reports Efua's look.** `A: link "yasante:///looks/0c9028cd-f011-52a7-922e-a7a1b917c981"`,
 wait 3 s, `A: step R1`. Expect Efua's `Wash day. My twist-out finally behaved.`
 `A: tapon "Options for"`, wait 2 s, `A: step R1b`. Expect `Report this look` with reasons.
-`A: tapon reason-not-their-work`, `A: tapon "What happened?"`,
+`A: tapon reason-other` (only `Something else` shows the note field), `A: tapon "What happened?"`,
 `A: type "QA report for the staff test"`, `A: tapon look-report-send`, wait 3 s,
 `A: step R1c`. Expect `Thanks for telling us`. Server check:
 `POST /api/looks/0c9028cd-…/report/ 201`.
@@ -211,7 +211,8 @@ on, `W: fill "Sort order" "2"`, `W: click Save --exact --role=button`, `W: step 
 so sort order `2` puts the QA tip there. Run on another day, it won't be the day's tip:
 say so at T2 and record the tip shown.)
 
-**T2: The app shows it.** On Abena: `A: stop`, `A: launch`, wait until the app is back
+**T2: The app shows it.** Tips are kept on the phone for a day, so a relaunch won't fetch
+the new one: `A: clear`, then BOOK-01 S2–S3 for Abena (sign in again), then wait until the app is back
 (about 10 s; if the dev-menu intro shows again, close it as in S2), `A: link "yasante:///"`, wait 4 s, `A: step T2`. Expect `TIP OF THE DAY`
 with `QA staff tip: rinse with cool water to finish.` **Server check:**
 `grep -E 'GET /api/tips/' qa/runs/<RUN>/server.log | tail -1` shows `200`.
@@ -221,7 +222,7 @@ with `QA staff tip: rinse with cool water to finish.` **Server check:**
 `W: click "Quick edit this page" --role=menuitem`, `W: uncheck Active`,
 `W: click "Save quick edits"`, `W: step T3`. Expect the tip with `Active` `No`.
 
-**T4: The app drops it.** `A: stop`, `A: launch`, wait 10 s, `A: link "yasante:///"`,
+**T4: The app drops it.** `A: clear`, BOOK-01 S2–S3 for Abena again, then `A: link "yasante:///"`,
 wait 4 s, `A: step T4`. **Record** the tip shown. **Expect** it is **not** the QA tip any
 more (with 20 active, 24 October shows the seeded tip at place 17). Still showing it is a **FAIL** unless the server log shows no new `GET /api/tips/`
 (then say the app kept its copy, and paste the log line).

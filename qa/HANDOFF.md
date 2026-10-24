@@ -2,13 +2,13 @@
 
 Read `qa/AGENTS.md`, `qa/README.md`, then the open items at the top of `qa/task.md`.
 
-- **Next:** STAFF-02 is running unattended (plan checked against upstream 24-10; part T
-  rewritten for the 20 seeded tips). Then a short NEW-02 rerun of part P and V1c. Done and
-  audited 24-10: DIARY-01 (F49–F51), WEBBOOK-01 (F52–F54), FIXES-01 (every fix holds,
-  F55), NEW-01 (F56), NEW-02 (F57 #139, F58 #140 privacy; part P void: emulators were
-  `en-US`). `emus` now boots emulators `en-GB` and stops them cleanly. Dev client sha256
-  `c04a06c5…` still current. Waiting on Yaw: whether app-posted stylist work should also
-  go on her page.
+- **Next:** the queue is done (24-10). Reruns: NEW-02 part P + V1c is running unattended on
+  the `en-GB` emulators; then LOOKS-02's G after W3; DIARY-01 B4–B5 once #131 is fixed.
+  Audited 24-10: DIARY-01 (F49–F51), WEBBOOK-01 (F52–F54), FIXES-01 (every fix holds, F55),
+  NEW-01 (F56), NEW-02 (F57, F58 privacy; P void), STAFF-02 (F59, F60: authors never told
+  of moderation). `emus` boots `en-GB` and stops cleanly; `qadb type` flags pre-filled
+  fields. Dev client sha256 `c04a06c5…` still current. Waiting on Yaw: whether app-posted
+  stylist work should also go on her page; whether F60 matters legally (EU platform rules).
 - **Reporting upstream:** the owner said (24-10) to report findings as needed. File each
   confirmed finding as an issue on `TheGyam/yasante` (label `bug`), in the style of #127/#130:
   plain English, file and line, what the test showed, the fix. Never an AI-authorship line.

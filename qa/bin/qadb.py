@@ -455,8 +455,13 @@ def cmd_type(text):
     secret = field is not None and field.get("password") == "true"
     if got is None or secret:
         verdict = "not checked (UI tree unavailable)" if got is None else "not checked (password field)"
-    elif got.endswith(text):
+    elif got == text:
         verdict = "field reads back correctly"
+    elif got.endswith(text):
+        # Typing appends: a field the app filled in first keeps that text in front
+        # (STAFF-02 saved a product called "QA BrandQA Staff Curl Cream" this way).
+        verdict = (f"field reads back correctly, but it now holds {got!r}: {got[:-len(text)]!r} "
+                   "was there before. If that wasn't meant, `qadb clearfield` and type again")
     else:
         journal({"cmd": "type", "text": text, "readback": got, "mismatch": True})
         raise Refused(
