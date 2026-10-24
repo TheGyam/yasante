@@ -32,12 +32,21 @@ booted() { # serial
   [[ "$(adb -s "$1" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == 1 ]]
 }
 
-launch() { # port [wipe]
+stop_emu() { # port
+  # The emulator rarely exits within systemd's 45 s on SIGTERM, and Fedora's
+  # 10-timeout-abort.conf then SIGABRTs it: a core dump, and on the next start a
+  # crash-report consent dialog that blocks the boot (FIXES-01, 24-10). Ask it to quit first.
+  adb -s "emulator-$1" emu kill >/dev/null 2>&1 || true
+  for _ in $(seq 15); do systemctl --user is-active -q "yasante-emu-$1" || break; sleep 1; done
   systemctl --user stop "yasante-emu-$1" 2>/dev/null || true
+}
+
+launch() { # port [wipe]
+  stop_emu "$1"
   systemctl --user reset-failed "yasante-emu-$1" 2>/dev/null || true
   systemd-run --user --quiet --unit="yasante-emu-$1" --collect \
     "$EMU" -avd "${AVD[$1]}" -port "$1" -no-snapshot-save -no-boot-anim -no-audio \
-    ${2:+-wipe-data}
+    -crash-report-mode never ${2:+-wipe-data}
 }
 
 up() {
@@ -80,10 +89,7 @@ up() {
 }
 
 down() {
-  for port in "${ALL[@]}"; do
-    adb -s "emulator-$port" emu kill >/dev/null 2>&1 || true
-    systemctl --user stop "yasante-emu-$port" 2>/dev/null || true
-  done
+  for port in "${ALL[@]}"; do stop_emu "$port"; done
   echo "emulators down"
 }
 
